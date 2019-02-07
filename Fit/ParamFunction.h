@@ -673,8 +673,6 @@ namespace MathFit
 			{
 				return mLinearParams.FixParameter(iParamID);
 			}
-
-			return false;
 		}
 
 		/**
@@ -703,8 +701,6 @@ namespace MathFit
 			{
 				return mLinearParams.FixParameter(iParamID, fValue);
 			}
-
-			return false;
 		}
 
 		/**
@@ -729,8 +725,6 @@ namespace MathFit
 			{
 				return mLinearParams.ReleaseParameter(iParamID);
 			}
-
-			return false;
 		}
 
 		/**
@@ -759,8 +753,6 @@ namespace MathFit
 			{
 				return mLinearParams.SetParameter(iParamID, fValue);
 			}
-
-			return false;
 		}
 
 		/**
@@ -789,8 +781,6 @@ namespace MathFit
 			{
 				return mLinearParams.SetAllDefaultParameter(iParamID, fValue);
 			}
-
-			return false;
 		}
 
 		/**
@@ -844,8 +834,6 @@ namespace MathFit
 					return mLinearParams.LinkParameter(iSrcID, ipfTarget.mLinearParams, iTargetID);
 				}
 			}
-
-			return false;
 		}
 
 		/**
@@ -897,8 +885,6 @@ namespace MathFit
 					return mLinearParams.UnlinkParameter(iSrcID, ipfTarget.mLinearParams, iTargetID);
 				}
 			}
-
-			return false;
 		}
 
 		/**

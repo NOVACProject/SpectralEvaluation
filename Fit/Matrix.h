@@ -1608,7 +1608,7 @@ namespace MathFit
 		TFitData* GetSafePtr() const
 		{
 			MATHFIT_ASSERT(mSizeX > 0 && mSizeY > 0);
-			MATHFIT_ASSERT(_CrtIsValidPointer(mData, sizeof(mData[0]) * mSizeX * mSizeY, TRUE));
+			MATHFIT_ASSERT(_CrtIsValidPointer(mData, sizeof(mData[0]) * mSizeX * mSizeY, 1));
 
 			return mData;
 		}

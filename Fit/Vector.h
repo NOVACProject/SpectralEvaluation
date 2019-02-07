@@ -12,7 +12,11 @@
 #include <crtdbg.h>
 #endif
 
+#undef min
+#undef max
+
 #include <iostream>
+#include <algorithm>
 #include <math.h>
 #include "FitBasic.h"
 #include "FitException.h"
@@ -539,7 +543,7 @@ namespace MathFit
 
 			// copy the data elements
 			int i;
-			int iNumElem = min(iNewSize, GetSize());
+			int iNumElem = std::min(iNewSize, GetSize());
 			for(i = 0; i < iNumElem; i++)
 				vNew.SetAt(i, GetAt(i));
 
@@ -1024,7 +1028,7 @@ namespace MathFit
 
 			MATHFIT_ASSERT(iOffset >= 0 && (iOffset + iLength) <= mLength && iLength > 0);
 
-			TFitData fMax = (TFitData)max(fabs(Max(iOffset, iLength)), fabs(Min(iOffset, iLength)));
+			TFitData fMax = (TFitData)std::max(fabs(Max(iOffset, iLength)), fabs(Min(iOffset, iLength)));
 			Div(fMax);
 			return fMax;
 		}
