@@ -2,11 +2,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
-#include "../resource.h"
 #include "BasicMath.h"
-//#include "MFCTools.h"
-//#include "MathHistory.h"
 #include "../Fit/GaussFunction.h"
 #include "../Fit/CubicSplineFunction.h"
 #include "../Fit/StandardMetricFunction.h"
@@ -14,8 +10,6 @@
 #include "../Fit/DiscreteFunction.h"
 #include "../Fit/StandardFit.h"
 #include "../Fit/DOASVector.h"
-//#include "windoastools.h"
-//#include "DoubleMonitoredArrayData.h"
 #include <math.h>
 #include <vector>
 

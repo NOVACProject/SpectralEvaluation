@@ -1,14 +1,13 @@
-#include "StdAfx.h"
-#include "referencefitresult.h"
+#include "ReferenceFitResult.h"
 
-using namespace Evaluation;
-
-CReferenceFitResult::CReferenceFitResult(void)
+namespace Evaluation
 {
-//  this->m_specieName = NULL;
+CReferenceFitResult::CReferenceFitResult()
+{
 }
 
-CReferenceFitResult::~CReferenceFitResult(void)
+CReferenceFitResult::~CReferenceFitResult()
 {
-//  this->m_specieName = NULL;
+}
+
 }
