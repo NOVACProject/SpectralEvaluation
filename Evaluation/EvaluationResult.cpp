@@ -1,5 +1,5 @@
 #include "EvaluationResult.h"
-#include "../../Common/Spectra/SpectrumInfo.h"
+#include "../Spectra/SpectrumInfo.h"
 
 namespace Evaluation
 {
