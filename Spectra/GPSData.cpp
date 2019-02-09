@@ -1,5 +1,4 @@
-#include "StdAfx.h"
-#include "gpsdata.h"
+#include "GPSData.h"
 
 #include <math.h>
 
