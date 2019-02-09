@@ -1,4 +1,5 @@
 #include "CrossSectionData.h"
+#include "BasicMath.h"
 #include <fstream>
 
 namespace Evaluation
@@ -125,7 +126,6 @@ int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
     }
 
     int valuesReadNum = 0;
-    int nColumns = 1;
 
     // read reference spectrum into the 'fValue's array
     const int maxSize = 65536;
@@ -163,6 +163,50 @@ int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
         return 1; // failed to read any lines
     }
     fileRef.close();
+
+    return 0;
+}
+
+
+int HighPassFilter(CCrossSectionData& crossSection)
+{
+    CBasicMath mathObject;
+
+    mathObject.Mul(crossSection.m_crossSection.data(), crossSection.m_length, -2.5e15);
+    mathObject.Delog(crossSection.m_crossSection.data(), crossSection.m_length);
+    mathObject.HighPassBinomial(crossSection.m_crossSection.data(), crossSection.m_length, 500);
+    mathObject.Log(crossSection.m_crossSection.data(), crossSection.m_length);
+    mathObject.Div(crossSection.m_crossSection.data(), crossSection.m_length, 2.5e15);
+
+    return 0;
+}
+
+int HighPassFilter_Ring(CCrossSectionData& crossSection)
+{
+    CBasicMath mathObject;
+
+    mathObject.HighPassBinomial(crossSection.m_crossSection.data(), crossSection.m_length, 500);
+    mathObject.Log(crossSection.m_crossSection.data(), crossSection.m_length);
+
+    return 0;
+}
+
+
+int Multiply(CCrossSectionData& crossSection, double scalar)
+{
+    CBasicMath mathObject;
+
+    mathObject.Mul(crossSection.m_crossSection.data(), crossSection.m_length, scalar);
+
+
+    return 0;
+}
+
+int Log(CCrossSectionData& crossSection)
+{
+    CBasicMath mathObject;
+
+    mathObject.Log(crossSection.m_crossSection.data(), crossSection.m_length);
 
     return 0;
 }

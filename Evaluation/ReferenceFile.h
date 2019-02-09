@@ -75,6 +75,9 @@ namespace Evaluation
             and m_squeezeValue is the minimum squeeze value allowed */
         double        m_squeezeMaxValue = 1.0;
 
+        /** this is true if this cross section file is filtered already on disk */
+        bool          m_isFiltered = false;
+
         /** The actual data of this reference - file. This is equal to
                 nullptr if the reference data has not been read in yet, otherwise
                 this will contain the data from the reference file. 
@@ -101,5 +104,9 @@ namespace Evaluation
             otherwise value2 is not used */
         void SetSqueeze(SHIFT_TYPE option, double value, double value2 = 1e16);
 
+        /** Reads the data of this reference file from disk.
+            The file is taken from the member variable 'm_path' (which of course must be initialized first)
+            and the result is written to 'm_data'. If this fails then m_data will be NULL */
+        int ReadCrossSectionDataFromFile();
     };
 }

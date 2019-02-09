@@ -48,7 +48,6 @@ namespace Evaluation{
             @return non-zero value on fail */
         int ReadCrossSectionFile(const std::string &fileName);
 
-    private:
         /** An array containing the wavelength information.*/
         std::vector <double> m_waveLength;
         
@@ -58,4 +57,14 @@ namespace Evaluation{
         /** The length of the cross section */
         unsigned long m_length = 0;
     };
+
+    /** Performs a high-pass filtering of this cross section file */
+    int HighPassFilter(CCrossSectionData& crossSection);
+    int HighPassFilter_Ring(CCrossSectionData& crossSection);
+
+    /** Multiplies this cross section with the given constant */
+    int Multiply(CCrossSectionData& crossSection, double scalar);
+
+    /** Calculates the logarithm of this cross section file */
+    int Log(CCrossSectionData& crossSection);
 }

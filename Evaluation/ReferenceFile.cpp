@@ -1,4 +1,5 @@
 #include "ReferenceFile.h"
+#include "CrossSectionData.h"
 
 namespace Evaluation
 {
@@ -25,6 +26,7 @@ CReferenceFile &CReferenceFile::operator=(const CReferenceFile &ref2)
     this->m_squeezeOption       = ref2.m_squeezeOption;
     this->m_squeezeValue        = ref2.m_squeezeValue;
     this->m_squeezeMaxValue     = ref2.m_squeezeMaxValue;
+    this->m_isFiltered          = ref2.m_isFiltered;
 
     return *this;
 }
@@ -64,4 +66,27 @@ void CReferenceFile::SetSqueeze(SHIFT_TYPE option, double value, double value2)
         this->m_squeezeMaxValue = value2;
     }
 }
+
+int CReferenceFile::ReadCrossSectionDataFromFile()
+{
+    /* if (!IsExistingFile(m_path)) {
+        return 1;
+    } */
+
+    if (m_data != nullptr)
+    {
+        delete m_data;
+    }
+
+    m_data = new CCrossSectionData();
+    if (m_data->ReadCrossSectionFile(m_path))
+    {
+        delete m_data;
+        m_data = nullptr;
+        return 1;
+    }
+
+    return 0;
+}
+
 }
