@@ -11,6 +11,8 @@ public:
     CGPSData(const CGPSData &gps2);
     CGPSData &operator=(const CGPSData &gps2);
 
+    bool operator==(const CGPSData &gps2) const;
+
     ~CGPSData();
 
     /** The altitude from the GPS data, in meters above sea-level */

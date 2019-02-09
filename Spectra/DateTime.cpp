@@ -2,6 +2,7 @@
 #include <time.h>
 #include <cstring>
 #include <string>
+#include "../Utils.h"
 
 CDateTime::CDateTime(const CDateTime &t2) {
     year = t2.year;
@@ -298,7 +299,8 @@ void CDateTime::DecrementOneDay() {
     }
 }
 
-/* bool CDateTime::ParseDate(const char* dateStr, CDateTime &t) {
+bool CDateTime::ParseDate(const char* dateStr, CDateTime &t)
+{
     char *pt = NULL, *pt2 = NULL;
     char str[256]; // local copy
     snprintf(str, 255, "%s", (const char*)dateStr);
@@ -306,10 +308,11 @@ void CDateTime::DecrementOneDay() {
     y = m = d = 0;
 
     // look if this is a function...
-    if (Equals(dateStr, "TODAY(", 6)) {
+    if (EqualsIgnoringCase(dateStr, "TODAY(", 6))
+    {
         int numberOfDays = 0;
         t.SetToNow();
-        sprintf(str, "%s", (const char*)dateStr.Right(dateStr.GetLength() - 6));
+        sprintf(str, "%s", (const char*)(dateStr + 7));
         char *right = strchr(str, ')');
         if (NULL != right) {
             right[0] = '\0';
@@ -387,7 +390,7 @@ void CDateTime::DecrementOneDay() {
     t.month = (unsigned char)m;
     t.day = (unsigned char)d;
     return true;
-} */
+}
 
 int	DayNr(const unsigned short day[3]) {
     CDateTime d;

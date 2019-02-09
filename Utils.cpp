@@ -13,7 +13,7 @@ bool EqualsIgnoringCase(const std::string& str1, const std::string& str2)
 
 bool EqualsIgnoringCase(const std::string& str1, const std::string& str2, unsigned int nCharacters)
 {
-    const size_t compLength = std::min(nCharacters, std::max(strlen(str1.c_str()), strlen(str2.c_str())));
+    const size_t compLength = std::min((size_t)nCharacters, std::max(strlen(str1.c_str()), strlen(str2.c_str())));
 #ifdef _MSC_VER
     return (0 == _strnicmp(str1.c_str(), str2.c_str(), compLength));
 #else

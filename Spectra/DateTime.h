@@ -74,7 +74,7 @@ public:
         NOTE only the date is parsed not the time!!!!
         @return true on success else false.
     */
-    // static bool ParseDate(const char* dateStr, CDateTime &t);
+    static bool ParseDate(const char* dateStr, CDateTime &t);
 
 };
 
