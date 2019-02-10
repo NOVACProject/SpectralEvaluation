@@ -410,8 +410,24 @@ bool CalculatePlumeCompleteness(const double *scanAngles, const double *phi, con
     return true;
 }
 
+double CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation, long numPoints)
+{
+    // type-conversion
+    bool *be = new bool[numPoints];
+    for (size_t ii = 0; ii < badEvaluation.size(); ++ii)
+    {
+        be[ii] = badEvaluation[ii];
+    }
 
-double CalculatePlumeOffset(const double *columns, const bool *badEvaluation, long numPoints) {
+    double value = CalculatePlumeOffset(columns.data(), be, numPoints);
+
+    delete[] be;
+
+    return value;
+}
+
+double CalculatePlumeOffset(const double *columns, const bool *badEvaluation, long numPoints)
+{
     double avg;
     long i;
 

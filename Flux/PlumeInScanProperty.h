@@ -80,3 +80,4 @@ bool CalculatePlumeCompleteness(const double *scanAngles, const double *phi, con
 /** Calculates the 'offset' of the scan, i.e. the column amount in the sky spectrum, by judging from 
     the lowest columns in the scan. */
 double CalculatePlumeOffset(const double *columns, const bool *badEvaluation, long numPoints);
+double CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation, long numPoints);
