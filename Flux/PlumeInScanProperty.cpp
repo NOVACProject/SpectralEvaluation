@@ -30,6 +30,37 @@ template <class T> T Max(T *pBuffer, long bufLen) {
     return maxValue;
 }
 
+/** This function finds the 'N' lowest values in the supplied array.
+On successfull return the array 'output' will be filled with the N lowest
+values in the input array, sorted in ascending order.
+@param array - the array to look into
+@param nElements - the number of elements in the supplied array
+@param output - the output array, must be at least 'N'- elements long
+@param N - the number of values to take out. 	*/
+template <class T> bool FindNLowest(const T array[], long nElements, T output[], int N, int *indices = NULL) {
+    for (int i = 0; i < N; ++i)
+        output[i] = 1e16; // to get some initial value
+
+                          // loop through all elements in the array
+    for (int i = 0; i < nElements; ++i) {
+
+        // compare this element with all elements in the output array.
+        for (int j = 0; j < N; ++j) {
+            if (array[i] < output[j]) {
+                // If we found a higher value, shift all other values down one step...
+                for (int k = N - 1; k > j; --k) {
+                    output[k] = output[k - 1];
+                    if (indices)							indices[k] = indices[k - 1];
+                }
+                output[j] = array[i];
+                if (indices)								indices[j] = i;
+                break;
+            }
+        }
+    }
+    return true;
+}
+
 /// --------------------------- FINDING THE PLUME IN ONE SCAN ---------------------------
 
 // VERSION 1: FROM NOVACPROGRAM
@@ -377,4 +408,45 @@ bool CalculatePlumeCompleteness(const double *scanAngles, const double *phi, con
         plumeProperties.m_completeness = 1.0;
 
     return true;
+}
+
+
+double CalculatePlumeOffset(const double *columns, const bool *badEvaluation, long numPoints) {
+    double avg;
+    long i;
+
+    // calculate the offset as the average of the three lowest column values 
+    //    that are not considered as 'bad' values
+
+    double *testColumns = new double[numPoints];
+
+    int numColumns = 0;
+    for (i = 0; i < numPoints; ++i) {
+        if (badEvaluation[i])
+            continue;
+
+        testColumns[numColumns++] = columns[i];
+    }
+
+    if (numColumns <= 5) {
+        delete[] testColumns;
+        return 0.0;
+    }
+
+    // Find the N lowest column values
+    int N = (int)(0.2 * numColumns);
+    double *m = new double[N];
+    memset(m, (int)1e6, N * sizeof(double));
+    if (FindNLowest(testColumns, numColumns, m, N)) {
+        avg = Average(m, N);
+        delete[] testColumns;
+        delete[] m;
+        return avg;
+    }
+
+    delete[] testColumns;
+    delete[] m;
+
+    // could not calculate a good offset.
+    return 0;
 }
