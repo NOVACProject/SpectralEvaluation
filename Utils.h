@@ -21,6 +21,9 @@ void Remove(std::string& str, char character);
 /** Converts all letters to upper-case in the provided string. */
 void MakeUpper(std::string& str);
 
+/** Converts all letters to lower-case in the provided string. */
+void MakeLower(std::string& str);
+
 /** @return true if the provided string contains the given substring */
 bool Contains(const std::string& string, const std::string& substring);
 

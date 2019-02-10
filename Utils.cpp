@@ -49,6 +49,11 @@ void MakeUpper(std::string& str)
 {
     std::transform(str.begin(), str.end(), str.begin(), [](char c) { return char(::toupper(c)); });
 }
+void MakeLower(std::string& str)
+{
+    std::transform(str.begin(), str.end(), str.begin(), [](char c) { return char(::tolower(c)); });
+}
+
 
 bool Contains(const std::string& str, const std::string& substring)
 {
