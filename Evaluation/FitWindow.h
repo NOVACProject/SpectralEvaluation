@@ -30,22 +30,22 @@ namespace Evaluation
         CFitWindow(const CFitWindow &wnd);
 
         /** The lower edge of the fit window (in pixels) */
-        int fitLow;
+        int fitLow = 320;
 
         /** The upper edge of the fit window (in pixels) */
-        int fitHigh;
+        int fitHigh = 460;
 
         /** The channel which is used in this fit window
             For a normal spectrometer this is equal to 0
             For the SD2000-spectrometers this can be 0 or 1 */
-        int channel;
+        int channel = 0;
 
         /** The reference files to use */
         // TODO: Use std::vector for this, to remove unnecessary limit on number of references
         CReferenceFile ref[MAX_N_REFERENCES];
 
         /** The number of references to use */
-        int nRef;
+        int nRef = 0;
 
         /** The Fraunhofer-reference spectrum which we can use
             to determine the shift (&squeeze) between the measured
@@ -55,22 +55,22 @@ namespace Evaluation
         CReferenceFile fraunhoferRef;
 
         /** The order of the polynomial that will also be fitted */
-        int polyOrder;
+        int polyOrder = 5;
 
         /** The length of the spectra */
-        int specLength;
+        int specLength = 2048;
 
         /** The pixel number that corresponds to the first data point in the spectrum
             (this is normally 0 but for the OceanOptics spectrometers it is possible
             to read out only a small part of the pixels, e.g. a spectrum that is
             the values in the pixels 321 to 470) */
-        int startChannel;
+        int startChannel = 0;
 
         /** The name of the fit window */
-        std::string name = "";
+        std::string name = "SO2";
 
-        /** The type of fit */
-        FIT_TYPE fitType;
+        /** The type of fit. Novac standard is FIT_HP_DIV. */
+        FIT_TYPE fitType = FIT_HP_DIV; 
 
         /** true if the sky-spectrum should be allowed to shift.
                 only useful if fitType is FIT_HP_SUB or FIT_POLY */
@@ -78,16 +78,17 @@ namespace Evaluation
 
         /** Larger than 1 if the spectra are read out in an interlaced way.
             This parameter works in the same way as the CSpectrumInfo::m_interlaceStep */
-        int interlaceStep;
+        int interlaceStep = 1;
 
         /** 'UV' is true if the start wavelength of the spectrum is 290 nm or shorter */
-        bool UV;
+        // TODO: replace this with the pixel-range which should be used for the offset-correction (which this variable is used for)
+        bool UV = true;
 
         /** True if the scan should be twice, once for finding the highest column value.
             The spectrum with the highest column value is then evluated again with
             the shift of all references set to free and the optimum shift value is found.
             The scan is then evaluated again using this shift value. */
-        bool findOptimalShift;
+        bool findOptimalShift = false;
 
         // ------------------ METHODS ----------------------------------
 
