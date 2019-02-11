@@ -4,6 +4,7 @@ cmake_minimum_required (VERSION 3.6)
 
 set(SPECTRUM_EVALUATION_HEADERS
     ${CMAKE_CURRENT_LIST_DIR}/BasicMath.h
+    ${CMAKE_CURRENT_LIST_DIR}/EvaluationBase.h
     ${CMAKE_CURRENT_LIST_DIR}/EvaluationResult.h
     ${CMAKE_CURRENT_LIST_DIR}/FitParameter.h
     ${CMAKE_CURRENT_LIST_DIR}/FitWindow.h
@@ -15,6 +16,7 @@ set(SPECTRUM_EVALUATION_HEADERS
 
 set(SPECTRUM_EVALUATION_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/BasicMath.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/EvaluationBase.cpp
     ${CMAKE_CURRENT_LIST_DIR}/EvaluationResult.cpp
     ${CMAKE_CURRENT_LIST_DIR}/FitWindow.cpp
     ${CMAKE_CURRENT_LIST_DIR}/CrossSectionData.cpp
