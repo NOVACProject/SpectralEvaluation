@@ -26,6 +26,13 @@ namespace Evaluation
         // TODO: Change the last parameter from begin a boolean to instead begin the pixel-range which should be used!!
         void RemoveOffset(double *spectrum, int sumChn, bool UV = true);
 
+        /** Returns the evaluation result for the last spectrum
+               @return a reference to a 'CEvaluationResult' - data structure which holds the information from the last evaluation */
+        const CEvaluationResult& GetEvaluationResult() const { return m_result; }
+
+        /** Returns the polynomial that was fitted in the last evaluation */
+        const double *GetPolynomial() const { return m_result.m_polynomial; }
+
     protected:
 
         // The CReferenceSpectrumFunctions are used in the evaluation process to model
