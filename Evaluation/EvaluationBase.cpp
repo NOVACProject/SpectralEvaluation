@@ -65,8 +65,8 @@ namespace Evaluation
             case SHIFT_FIX:		ref[i]->FixParameter(CReferenceSpectrumFunction::SHIFT, m_window.ref[i].m_shiftValue); break;
             case SHIFT_LINK:	ref[(int)m_window.ref[i].m_shiftValue]->LinkParameter(CReferenceSpectrumFunction::SHIFT, *ref[i], CReferenceSpectrumFunction::SHIFT); break;
             case SHIFT_LIMIT:	ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)m_window.ref[i].m_shiftValue, (TFitData)m_window.ref[i].m_shiftMaxValue, 1); break;
-            default:			ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)-10.0, (TFitData)10.0, (TFitData)1e0); break;
-                ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SHIFT, (TFitData)0.0);
+            default:			ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SHIFT, (TFitData)0.0); 
+                                ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)-10.0, (TFitData)10.0, (TFitData)1e0); break; // TODO: Get these limits as parameters!
             }
 
             // Check the options for the squeeze
@@ -75,7 +75,7 @@ namespace Evaluation
             case SHIFT_LINK:	ref[(int)m_window.ref[i].m_squeezeValue]->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *ref[i], CReferenceSpectrumFunction::SQUEEZE); break;
             case SHIFT_LIMIT:	ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)m_window.ref[i].m_squeezeValue, (TFitData)m_window.ref[i].m_squeezeMaxValue, 1e7); break;
             default:			ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SQUEEZE, (TFitData)1.0);
-                ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)0.98, (TFitData)1.02, (TFitData)1e0); break;
+                                ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)0.98, (TFitData)1.02, (TFitData)1e0); break; // TODO: Get these limits as parameters!
             }
         }
 
@@ -174,7 +174,7 @@ namespace Evaluation
         //	LowPassBinomial(measArray,window.specLength, 5);
     }
 
-    void CEvaluationBase::PrepareSpectra_HP_Sub(double *skyArray, double *measArray, const CFitWindow &window) {
+    void CEvaluationBase::PrepareSpectra_HP_Sub(double* /*skyArray*/, double *measArray, const CFitWindow &window) {
 
         // 1. remove any remaining offset in the measured spectrum
         RemoveOffset(measArray, window.specLength, window.UV);
@@ -186,7 +186,7 @@ namespace Evaluation
         Log(measArray, window.specLength);
     }
 
-    void CEvaluationBase::PrepareSpectra_Poly(double *skyArray, double *measArray, const CFitWindow &window) {
+    void CEvaluationBase::PrepareSpectra_Poly(double* /*skyArray*/, double *measArray, const CFitWindow &window) {
 
         // 1. remove any remaining offset in the measured spectrum
         RemoveOffset(measArray, window.specLength, window.UV);
