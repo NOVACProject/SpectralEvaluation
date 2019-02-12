@@ -42,9 +42,11 @@ namespace Evaluation
 
         /** The reference files to use */
         // TODO: Use std::vector for this, to remove unnecessary limit on number of references
+        // TODO: Rename to m_ref for consistency
         CReferenceFile ref[MAX_N_REFERENCES];
 
         /** The number of references to use */
+        // TODO: Remove when 'ref' is a std::vector.
         int nRef = 0;
 
         /** The Fraunhofer-reference spectrum which we can use
@@ -94,5 +96,9 @@ namespace Evaluation
 
         /** Clearing the settings do default values */
         void Clear();
-    };
+   };
+
+   /** Reads all the references specified in the window from disk.
+        @return true if all references could be read sucessfully. */
+   bool ReadReferences(CFitWindow& window);
 }

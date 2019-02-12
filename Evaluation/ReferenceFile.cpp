@@ -27,6 +27,11 @@ CReferenceFile &CReferenceFile::operator=(const CReferenceFile &ref2)
     this->m_squeezeValue        = ref2.m_squeezeValue;
     this->m_squeezeMaxValue     = ref2.m_squeezeMaxValue;
     this->m_isFiltered          = ref2.m_isFiltered;
+    
+    if (ref2.m_data != nullptr)
+    {
+        this->m_data = new CCrossSectionData(*ref2.m_data);
+    }
 
     return *this;
 }
