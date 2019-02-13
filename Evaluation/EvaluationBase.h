@@ -44,6 +44,16 @@ namespace Evaluation
             @return 1 if any error occurred, or if the window is not defined. */
         int Evaluate(const CSpectrum& measured, int numSteps = 1000);
 
+        /** Evaluate the supplied spectrum using the solarReference found in 'window'
+            @param measured - the spectrum for which to determine the shift & squeeze
+                        relative to the solarReference-spectrum found in 'window'
+            @param window - the settings for the fit. The shift and squeeze between
+                        the measured spectrum and the solarReference-spectrum will be determined
+                        for the pixel-range 'window.fitLow' and 'window.fitHigh'
+            @return 0 if the fit succeeds and the shift & squeeze could be determined
+            @return 1 if any error occured. */
+        int EvaluateShift(const CSpectrum &measured, double &shift, double &shiftError, double &squeeze, double &squeezeError);
+
         /** Returns the evaluation result for the last spectrum
                @return a reference to a 'CEvaluationResult' - data structure which holds the information from the last evaluation */
         const CEvaluationResult& GetEvaluationResult() const { return m_result; }
