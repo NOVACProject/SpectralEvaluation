@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../SpectralEvaluation/Spectra/GPSData.h"
-#include "../../SpectralEvaluation/Spectra/DateTime.h"
+#include "GPSData.h"
+#include "DateTime.h"
 #include "SpectrometerModel.h"
 
 /** <b>CSpectrumInfo</b> is a class that contains all auxilliary information about

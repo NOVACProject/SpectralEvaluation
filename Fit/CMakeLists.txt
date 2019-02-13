@@ -49,6 +49,7 @@ set(SPECTRUM_FIT_HEADERS
     
     
 set(SPECTRUM_FIT_SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/MessageLog.cpp
     PARENT_SCOPE)
 
     

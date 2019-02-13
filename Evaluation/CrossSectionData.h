@@ -1,7 +1,11 @@
 #pragma once
 
 #include <vector>
-#include "../Fit/Vector.h"
+
+namespace MathFit
+{
+    class CVector;
+}
 
 namespace Evaluation{
     /** 
@@ -53,9 +57,6 @@ namespace Evaluation{
         
         /** An array containing the actual cross-section */
         std::vector <double> m_crossSection;
-        
-        /** The length of the cross section */
-        unsigned long m_length = 0;
     };
 
     /** Performs a high-pass filtering of this cross section file */

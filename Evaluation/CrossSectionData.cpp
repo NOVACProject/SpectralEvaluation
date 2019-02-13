@@ -1,5 +1,6 @@
 #include "CrossSectionData.h"
 #include "BasicMath.h"
+#include "../Fit/Vector.h"
 #include <fstream>
 
 namespace Evaluation
@@ -15,8 +16,6 @@ CCrossSectionData::~CCrossSectionData()
 
 CCrossSectionData &CCrossSectionData::operator=(const CCrossSectionData &xs2)
 {
-    this->m_length = xs2.m_length;
-
     // copy the data of the arrays
     this->m_crossSection = std::vector<double>(begin(xs2.m_crossSection), end(xs2.m_crossSection));
     this->m_waveLength   = std::vector<double>(begin(xs2.m_waveLength), end(xs2.m_waveLength));
@@ -46,7 +45,6 @@ void CCrossSectionData::Set(double *wavelength, double *crossSection, unsigned l
     if(nullptr == wavelength) throw std::invalid_argument("Cannot set the cross section data using a null wavelength data pointer.");
     if (nullptr == wavelength) throw std::invalid_argument("Cannot set the cross section data using a null data pointer.");
 
-    this->m_length = pointNum;
     m_waveLength.resize(pointNum);
     m_crossSection.resize(pointNum);
 
@@ -59,8 +57,6 @@ void CCrossSectionData::Set(double *wavelength, double *crossSection, unsigned l
 
 void CCrossSectionData::Set(double *crossSection, unsigned long pointNum)
 {
-    this->m_length = pointNum;
-
     m_waveLength.resize(pointNum);
     m_crossSection.resize(pointNum);
 
@@ -75,8 +71,6 @@ void CCrossSectionData::Set(double *crossSection, unsigned long pointNum)
 
 void CCrossSectionData::Set(MathFit::CVector &crossSection, unsigned long pointNum)
 {
-    this->m_length = pointNum;
-
     m_waveLength.resize(pointNum);
     m_crossSection.resize(pointNum);
 
@@ -89,23 +83,29 @@ void CCrossSectionData::Set(MathFit::CVector &crossSection, unsigned long pointN
 
 double CCrossSectionData::GetAt(unsigned int index) const
 {
-    if(index > m_length) {
+    if(index >= m_crossSection.size())
+    {
         return 0.0;
-    } else {
+    }
+    else
+    {
         return m_crossSection.at(index);
     }
 }
 
 unsigned long CCrossSectionData::GetSize() const
 {
-    return this->m_length;
+    return (unsigned long)this->m_crossSection.size();
 }
 
 double CCrossSectionData::GetWavelengthAt(unsigned int index) const
 {
-    if(index > this->m_length) {
+    if(index >= m_waveLength.size())
+    {
         return 0.0;
-    } else{
+    }
+    else
+    {
         return m_waveLength.at(index);
     }
 }
@@ -114,7 +114,6 @@ int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
 {
     this->m_waveLength.clear();
     this->m_crossSection.clear();
-    this->m_length = 0U;
 
     std::ifstream fileRef;
 
@@ -172,11 +171,13 @@ int HighPassFilter(CCrossSectionData& crossSection)
 {
     CBasicMath mathObject;
 
-    mathObject.Mul(crossSection.m_crossSection.data(), crossSection.m_length, -2.5e15);
-    mathObject.Delog(crossSection.m_crossSection.data(), crossSection.m_length);
-    mathObject.HighPassBinomial(crossSection.m_crossSection.data(), crossSection.m_length, 500);
-    mathObject.Log(crossSection.m_crossSection.data(), crossSection.m_length);
-    mathObject.Div(crossSection.m_crossSection.data(), crossSection.m_length, 2.5e15);
+    const int length = (int)crossSection.m_crossSection.size();
+
+    mathObject.Mul(crossSection.m_crossSection.data(), length, -2.5e15);
+    mathObject.Delog(crossSection.m_crossSection.data(), length);
+    mathObject.HighPassBinomial(crossSection.m_crossSection.data(), length, 500);
+    mathObject.Log(crossSection.m_crossSection.data(), length);
+    mathObject.Div(crossSection.m_crossSection.data(), length, 2.5e15);
 
     return 0;
 }
@@ -185,8 +186,10 @@ int HighPassFilter_Ring(CCrossSectionData& crossSection)
 {
     CBasicMath mathObject;
 
-    mathObject.HighPassBinomial(crossSection.m_crossSection.data(), crossSection.m_length, 500);
-    mathObject.Log(crossSection.m_crossSection.data(), crossSection.m_length);
+    const int length = (int)crossSection.m_crossSection.size();
+
+    mathObject.HighPassBinomial(crossSection.m_crossSection.data(), length, 500);
+    mathObject.Log(crossSection.m_crossSection.data(), length);
 
     return 0;
 }
@@ -196,7 +199,7 @@ int Multiply(CCrossSectionData& crossSection, double scalar)
 {
     CBasicMath mathObject;
 
-    mathObject.Mul(crossSection.m_crossSection.data(), crossSection.m_length, scalar);
+    mathObject.Mul(crossSection.m_crossSection.data(), (int)crossSection.m_crossSection.size(), scalar);
 
 
     return 0;
@@ -206,7 +209,7 @@ int Log(CCrossSectionData& crossSection)
 {
     CBasicMath mathObject;
 
-    mathObject.Log(crossSection.m_crossSection.data(), crossSection.m_length);
+    mathObject.Log(crossSection.m_crossSection.data(), (int)crossSection.m_crossSection.size());
 
     return 0;
 }
