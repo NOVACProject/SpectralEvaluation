@@ -40,8 +40,6 @@ namespace MathFit
 		CParameterVector()
 		{
 			mSize = mSizeInternal = 0;
-			mIndex = nullptr;
-			mBackIndex = nullptr;
 			mLink = nullptr;
 		}
 
@@ -61,11 +59,6 @@ namespace MathFit
 		*/
 		~CParameterVector()
 		{
-			if(mIndex)
-				delete(mIndex);
-			if(mBackIndex)
-				delete(mBackIndex);
-
 			CParameterLinkItem* pItem = mLink;
 			while(pItem)
 			{
@@ -86,12 +79,8 @@ namespace MathFit
 		{
 			mSize = mSizeInternal = iSize;
 
-			if(mIndex)
-				delete(mIndex);
-			mIndex = nullptr;
-			if(mBackIndex)
-				delete(mBackIndex);
-			mBackIndex = nullptr;
+            mIndex.clear(); // Was: delete mIndex; mIndex = nullptr;
+			mBackIndex.clear(); // Was: delete mBackIndex; mBackIndex = nullptr;
 			mLink = nullptr;
 
 			mParams.SetSize(iSize);
@@ -109,8 +98,8 @@ namespace MathFit
 
 			if(iSize > 0 )
 			{
-				mIndex = new int[iSize];
-				mBackIndex = new int[iSize];
+                mIndex.resize(iSize); // Was: mIndex = new int[iSize];
+                mBackIndex.resize(iSize); // Was: mBackIndex = new int[iSize];
 
 				// clear default parameters
 				mDefaultParameter.Zero();
@@ -975,12 +964,14 @@ namespace MathFit
 		/**
 		* Holds a list to map from global parameter IDs to exported parameter IDs.
 		*/
-		int* mIndex;
+		// int* mIndex;
+        std::vector<int> mIndex; // Type changed 2019-02-13 by MJ to avoid crash from not handling the allocated heap memory correctly
 		/**
 		* Holds a list to map from exported parameter IDs to global parameter IDs.
 		*/
-		int* mBackIndex;
-		/**
+		// int* mBackIndex;
+        std::vector<int> mBackIndex; // Type changed 2019-02-13 by MJ to avoid crash from not handling the allocated heap memory correctly
+                                 /**
 		* Holds the number of exported parameters.
 		*/
 		int mSize;
