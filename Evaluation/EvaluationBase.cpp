@@ -24,16 +24,19 @@ namespace Evaluation
 {
     CEvaluationBase::CEvaluationBase()
     {
+        CreateXDataVector(MAX_SPECTRUM_LENGTH);
     }
 
     CEvaluationBase::CEvaluationBase(const CFitWindow &window)
     {
         this->m_window = window;
+        CreateXDataVector(MAX_SPECTRUM_LENGTH);
         CreateReferenceSpectra();
     }
 
     CEvaluationBase::~CEvaluationBase()
     {
+        ClearRefereneSpectra();
     }
 
     void CEvaluationBase::SetFitWindow(const CFitWindow &window)
@@ -41,7 +44,6 @@ namespace Evaluation
         this->m_window = window;
         CreateReferenceSpectra();
     }
-
 
     void CEvaluationBase::CreateXDataVector(int numberOfChannels)
     {
@@ -52,24 +54,33 @@ namespace Evaluation
         }
     }
 
+    void CEvaluationBase::ClearRefereneSpectra()
+    {
+        for (auto* r : m_ref)
+        {
+            delete r;
+        }
+        m_ref.clear();
+    }
+
     int CEvaluationBase::CreateReferenceSpectra()
     {
         CVector yValues;
 
-        m_ref.clear();
+        ClearRefereneSpectra();
 
         // 1) Create the references
         for (int i = 0; i < m_window.nRef; i++)
         {
-            CReferenceSpectrumFunction newRef;
+            CReferenceSpectrumFunction* newRef = new CReferenceSpectrumFunction();
 
             // reset all reference's parameters
-            newRef.ResetLinearParameter();
-            newRef.ResetNonlinearParameter();
+            newRef->ResetLinearParameter();
+            newRef->ResetNonlinearParameter();
 
             // enable amplitude normalization. This should normally be done in order to avoid numerical
             // problems during fitting.
-            newRef.SetNormalize(true);
+            newRef->SetNormalize(true);
 
             // set the spectral data of the reference spectrum to the object. This also causes an internal
             // transformation of the spectral data into a B-Spline that will be used to interpolate the 
@@ -83,7 +94,7 @@ namespace Evaluation
 
             {
                 auto tempXVec = vXData.SubVector(0, m_window.ref[i].m_data->GetSize());
-                if (!newRef.SetData(tempXVec, yValues))
+                if (!newRef->SetData(tempXVec, yValues))
                 {
                     Error0("Error initializing spline object!");
                     return(1);
@@ -100,26 +111,26 @@ namespace Evaluation
         {
             // Chech the options for the column value
             switch (m_window.ref[i].m_columnOption) {
-            case SHIFT_FIX:     m_ref[i].FixParameter(CReferenceSpectrumFunction::CONCENTRATION, m_window.ref[i].m_columnValue * m_ref[i].GetAmplitudeScale()); break;
-            case SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_columnValue].LinkParameter(CReferenceSpectrumFunction::CONCENTRATION, m_ref[i], CReferenceSpectrumFunction::CONCENTRATION); break;
+            case SHIFT_FIX:     m_ref[i]->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, m_window.ref[i].m_columnValue * m_ref[i]->GetAmplitudeScale()); break;
+            case SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_columnValue]->LinkParameter(CReferenceSpectrumFunction::CONCENTRATION, *m_ref[i], CReferenceSpectrumFunction::CONCENTRATION); break;
             }
 
             // Check the options for the shift
             switch (m_window.ref[i].m_shiftOption) {
-            case SHIFT_FIX:     m_ref[i].FixParameter(CReferenceSpectrumFunction::SHIFT, m_window.ref[i].m_shiftValue); break;
-            case SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_shiftValue].LinkParameter(CReferenceSpectrumFunction::SHIFT, m_ref[i], CReferenceSpectrumFunction::SHIFT); break;
-            case SHIFT_LIMIT:   m_ref[i].SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)m_window.ref[i].m_shiftValue, (TFitData)m_window.ref[i].m_shiftMaxValue, 1); break;
-            default:            m_ref[i].SetDefaultParameter(CReferenceSpectrumFunction::SHIFT, (TFitData)0.0);
-                                m_ref[i].SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)-10.0, (TFitData)10.0, (TFitData)1e0); break; // TODO: Get these limits as parameters!
+            case SHIFT_FIX:     m_ref[i]->FixParameter(CReferenceSpectrumFunction::SHIFT, m_window.ref[i].m_shiftValue); break;
+            case SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_shiftValue]->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_ref[i], CReferenceSpectrumFunction::SHIFT); break;
+            case SHIFT_LIMIT:   m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)m_window.ref[i].m_shiftValue, (TFitData)m_window.ref[i].m_shiftMaxValue, 1); break;
+            default:            m_ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SHIFT, (TFitData)0.0);
+                                m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)-10.0, (TFitData)10.0, (TFitData)1e0); break; // TODO: Get these limits as parameters!
             }
 
             // Check the options for the squeeze
             switch (m_window.ref[i].m_squeezeOption) {
-            case SHIFT_FIX:     m_ref[i].FixParameter(CReferenceSpectrumFunction::SQUEEZE, m_window.ref[i].m_squeezeValue); break;
-            case SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_squeezeValue].LinkParameter(CReferenceSpectrumFunction::SQUEEZE, m_ref[i], CReferenceSpectrumFunction::SQUEEZE); break;
-            case SHIFT_LIMIT:   m_ref[i].SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)m_window.ref[i].m_squeezeValue, (TFitData)m_window.ref[i].m_squeezeMaxValue, 1e7); break;
-            default:            m_ref[i].SetDefaultParameter(CReferenceSpectrumFunction::SQUEEZE, (TFitData)1.0);
-                                m_ref[i].SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)0.98, (TFitData)1.02, (TFitData)1e0); break; // TODO: Get these limits as parameters!
+            case SHIFT_FIX:     m_ref[i]->FixParameter(CReferenceSpectrumFunction::SQUEEZE, m_window.ref[i].m_squeezeValue); break;
+            case SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_squeezeValue]->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_ref[i], CReferenceSpectrumFunction::SQUEEZE); break;
+            case SHIFT_LIMIT:   m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)m_window.ref[i].m_squeezeValue, (TFitData)m_window.ref[i].m_squeezeMaxValue, 1e7); break;
+            default:            m_ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SQUEEZE, (TFitData)1.0);
+                                m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)0.98, (TFitData)1.02, (TFitData)1e0); break; // TODO: Get these limits as parameters!
             }
         }
 
@@ -276,6 +287,8 @@ namespace Evaluation
 
     int CEvaluationBase::Evaluate(const CSpectrum &measured, int numSteps)
     {
+        assert(vXData.GetSize() >= measured.m_length);
+
         int fitLow, fitHigh; // the limits for the DOAS fit
         int i; // iterator
 
@@ -345,7 +358,7 @@ namespace Evaluation
         // reference spectra used in the DOAS model function
         for (i = 0; i < m_window.nRef; ++i)
         {
-            cRefSum.AddReference(m_ref[i]); // <-- at last add the reference to the summation object
+            cRefSum.AddReference(*m_ref[i]); // <-- at last add the reference to the summation object
         }
 
         // create the additional polynomial with the correct order
@@ -420,12 +433,12 @@ namespace Evaluation
             for (i = 0; i < m_window.nRef; i++)
             {
                 m_result.m_referenceResult[i].m_specieName      = std::string(m_window.ref[i].m_specieName);
-                m_result.m_referenceResult[i].m_column          = (double)m_ref[i].GetModelParameter(CReferenceSpectrumFunction::CONCENTRATION);
-                m_result.m_referenceResult[i].m_columnError     = (double)m_ref[i].GetModelParameterError(CReferenceSpectrumFunction::CONCENTRATION);
-                m_result.m_referenceResult[i].m_shift           = (double)m_ref[i].GetModelParameter(CReferenceSpectrumFunction::SHIFT);
-                m_result.m_referenceResult[i].m_shiftError      = (double)m_ref[i].GetModelParameterError(CReferenceSpectrumFunction::SHIFT);
-                m_result.m_referenceResult[i].m_squeeze         = (double)m_ref[i].GetModelParameter(CReferenceSpectrumFunction::SQUEEZE);
-                m_result.m_referenceResult[i].m_squeezeError    = (double)m_ref[i].GetModelParameterError(CReferenceSpectrumFunction::SQUEEZE);
+                m_result.m_referenceResult[i].m_column          = (double)m_ref[i]->GetModelParameter(CReferenceSpectrumFunction::CONCENTRATION);
+                m_result.m_referenceResult[i].m_columnError     = (double)m_ref[i]->GetModelParameterError(CReferenceSpectrumFunction::CONCENTRATION);
+                m_result.m_referenceResult[i].m_shift           = (double)m_ref[i]->GetModelParameter(CReferenceSpectrumFunction::SHIFT);
+                m_result.m_referenceResult[i].m_shiftError      = (double)m_ref[i]->GetModelParameterError(CReferenceSpectrumFunction::SHIFT);
+                m_result.m_referenceResult[i].m_squeeze         = (double)m_ref[i]->GetModelParameter(CReferenceSpectrumFunction::SQUEEZE);
+                m_result.m_referenceResult[i].m_squeezeError    = (double)m_ref[i]->GetModelParameterError(CReferenceSpectrumFunction::SQUEEZE);
 
                 //// get the final fit result
                 //CVector tmpVector;
@@ -460,6 +473,8 @@ namespace Evaluation
 
     int CEvaluationBase::EvaluateShift(const CSpectrum &measured, double &shift, double &shiftError, double &squeeze, double &squeezeError)
     {
+        assert(vXData.GetSize() >= measured.m_length);
+
         int i;
         CVector vMeas;
         CVector yValues;
@@ -581,10 +596,10 @@ namespace Evaluation
         // Link the shifts of the 'normal' cross sections to the shift of the solar spectrum
         for (i = 0; i < m_window.nRef; ++i) {
             // Link the shift and squeeze to the solar-reference
-            solarSpec->LinkParameter(CReferenceSpectrumFunction::SHIFT, m_ref[i], CReferenceSpectrumFunction::SHIFT);
-            solarSpec->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, m_ref[i], CReferenceSpectrumFunction::SQUEEZE);
+            solarSpec->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_ref[i], CReferenceSpectrumFunction::SHIFT);
+            solarSpec->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_ref[i], CReferenceSpectrumFunction::SQUEEZE);
 
-            cRefSum.AddReference(m_ref[i]); // <-- at last add the reference to the summation object
+            cRefSum.AddReference(*m_ref[i]); // <-- at last add the reference to the summation object
         }
 
         // create the additional polynomial with the correct order

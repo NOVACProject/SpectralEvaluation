@@ -65,7 +65,8 @@ namespace Evaluation
 
         // The CReferenceSpectrumFunctions are used in the evaluation process to model
         // the reference spectra for the different species that are being fitted.
-        std::vector<CReferenceSpectrumFunction> m_ref;
+        //  The vector must hold pointers to the references, as these cannot be copied...
+        std::vector<CReferenceSpectrumFunction*> m_ref;
         CReferenceSpectrumFunction *solarSpec;
 
         /** The sky spectrum to use in the evaluations. This is set by calling 'SetSkySpectrum' which must be called prior to calling 'Evaluate' */
@@ -80,6 +81,9 @@ namespace Evaluation
         /** Initializes the elements of the CReferenceSpectrumFunction-array 'ref' using the information in m_window
             This must be called once prior to calling 'Evaluate', after the FitWindow has been set and the references read in from disk. */
         int CreateReferenceSpectra();
+
+        /** Clears the elemnts in m_ref. This MUST be called before setting new references as the program will otherwise leak memory */
+        void ClearRefereneSpectra();
 
         /** This generates the member 'vxData' and fills it with the values it should contain. */
         void CreateXDataVector(int numberOfChannels);

@@ -62,6 +62,11 @@ namespace MathFit
 			InitObject();
 		}
 
+		// Copying the CReferenceSpectrumFunction was explicitly forbidden on 2019-02-13 by MJ to avoid 
+		//  crash from not handling the allocated heap memory correctly
+		CReferenceSpectrumFunction(const CReferenceSpectrumFunction&) = delete;
+		CReferenceSpectrumFunction& operator=(const CReferenceSpectrumFunction&) = delete;
+
 		/**
 		* Creates an empty reference object with the given basis function.
 		*
