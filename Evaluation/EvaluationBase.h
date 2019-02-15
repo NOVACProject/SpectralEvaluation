@@ -16,6 +16,11 @@ namespace Evaluation
     public:
         CEvaluationBase();
 
+        // This object is not copyable due to the nature of its members.
+        //  This could be implemented in the future if necessary
+        CEvaluationBase(const CEvaluationBase&) = delete;
+        CEvaluationBase& operator=(const CEvaluationBase&) = delete;
+
         explicit CEvaluationBase(const CFitWindow &window);
 
         virtual ~CEvaluationBase();
@@ -29,6 +34,10 @@ namespace Evaluation
         /** The result of the last performed evaluation. Defined only after Evaluate() has been called. */
         CEvaluationResult m_result;
 
+        /** The last error from calling 'Evaluate' or 'EvaluateShift'.
+            This is set by Evaluate and EvaluateShift and is only set if these methods return an error. */
+        std::string m_lastError = "";
+
         /** Removes the offset from the supplied spectrum */
         // TODO: Change the last parameter from begin a boolean to instead begin the pixel-range which should be used!!
         void RemoveOffset(double *spectrum, int sumChn, bool UV = true);
@@ -41,17 +50,17 @@ namespace Evaluation
                 and using the sky-spectrum which has been set by a previous call to 'SetSkySpectrum'
             The provided spectrum must have been corrected for dark.
             @return 0 if all is ok.
-            @return 1 if any error occurred, or if the window is not defined. */
+            @return 1 if any error occurred, or if the window is not defined. This will also set m_lastError. */
         int Evaluate(const CSpectrum& measured, int numSteps = 1000);
 
-        /** Evaluate the supplied spectrum using the solarReference found in 'window'
-            @param measured - the spectrum for which to determine the shift & squeeze
+        /** Evaluate the optimum shift and squeeze to use for evaluating the measured spectrum.
+            This is done by reading in the Fraunhofer reference spectrum in m_window.fraunhoferRef.
+            If this Fraunhofer reference spectrum is sampled on the same grid as the references in m_window.reference
+                then the returned shift and squeeze is the optimum shift and squeeze to use when evaluating the spectra.
+            @param measured the spectrum for which to determine the shift & squeeze
                         relative to the solarReference-spectrum found in 'window'
-            @param window - the settings for the fit. The shift and squeeze between
-                        the measured spectrum and the solarReference-spectrum will be determined
-                        for the pixel-range 'window.fitLow' and 'window.fitHigh'
             @return 0 if the fit succeeds and the shift & squeeze could be determined
-            @return 1 if any error occured. */
+            @return 1 if any error occured, see m_lastError for the error message. */
         int EvaluateShift(const CSpectrum &measured, double &shift, double &shiftError, double &squeeze, double &squeezeError);
 
         /** Returns the evaluation result for the last spectrum
@@ -67,7 +76,6 @@ namespace Evaluation
         // the reference spectra for the different species that are being fitted.
         //  The vector must hold pointers to the references, as these cannot be copied...
         std::vector<CReferenceSpectrumFunction*> m_ref;
-        CReferenceSpectrumFunction *solarSpec;
 
         /** The sky spectrum to use in the evaluations. This is set by calling 'SetSkySpectrum' which must be called prior to calling 'Evaluate' */
         std::vector<double> m_sky;

@@ -135,29 +135,31 @@ namespace Evaluation
         }
 
         // THIS FOLLOWING CODE COMES FROM THE NOVACPPP. IMPLEMENT HERE ALSO!!
-        /*
         // If we should also include the sky-spectrum in the fit
-        if (m_skySpectrum.m_length > 0 && (m_window.fitType == FIT_HP_SUB || m_window.fitType == FIT_POLY)) {
+        if (m_sky.size() > 0 && (m_window.fitType == FIT_HP_SUB || m_window.fitType == FIT_POLY))
+        {
+            const int i = m_window.nRef;
+
             // reset all reference's parameters
-            ref[i]->ResetLinearParameter();
-            ref[i]->ResetNonlinearParameter();
+            m_ref[i]->ResetLinearParameter();
+            m_ref[i]->ResetNonlinearParameter();
 
             // enable amplitude normalization. This should normally be done in order to avoid numerical
             // problems during fitting.
-            ref[i]->SetNormalize(true);
+            m_ref[i]->SetNormalize(true);
 
             // set the spectral data of the reference spectrum to the object. This also causes an internal
             // transformation of the spectral data into a B-Spline that will be used to interpolate the
             // reference spectrum during shift and squeeze operations
             //if(!ref[i]->SetData(vXData.SubVector(0, m_referenceData[i].GetSize()), m_referenceData[i]))
-            yValues.SetSize(m_skySpectrum.m_length);
-            for (int k = 0; k < m_skySpectrum.m_length; ++k) {
+            yValues.SetSize((int)m_sky.size());
+            for (int k = 0; k < (int)m_sky.size(); ++k) {
                 yValues.SetAt(k, m_sky[k]);
             }
 
             {
-                auto tempXVec = vXData.SubVector(0, m_skySpectrum.m_length);
-                if (!ref[i]->SetData(tempXVec, yValues))
+                auto tempXVec = vXData.SubVector(0, (int)m_sky.size());
+                if (!m_ref[i]->SetData(tempXVec, yValues))
                 {
                     Error0("Error initializing spline object!");
                     return(1);
@@ -166,20 +168,20 @@ namespace Evaluation
 
             // Chech the options for the column value
             if (m_window.fitType == FIT_POLY)
-                ref[i]->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, -1.0 * ref[i]->GetAmplitudeScale());
+                m_ref[i]->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, -1.0 * m_ref[i]->GetAmplitudeScale());
             else
-                ref[i]->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, 1.0 * ref[i]->GetAmplitudeScale());
+                m_ref[i]->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, 1.0 * m_ref[i]->GetAmplitudeScale());
 
             // Check the options for the shift & squeeze
             if (m_window.shiftSky) {
-                ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)-3.0, (TFitData)3.0, 1);
-                ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)0.95, (TFitData)1.05, 1e7);
+                m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)-3.0, (TFitData)3.0, 1);
+                m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)0.95, (TFitData)1.05, 1e7);
             }
             else {
-                ref[i]->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
-                ref[i]->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
+                m_ref[i]->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
+                m_ref[i]->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
             }
-        } */
+        }
 
         return 0;
     }
@@ -282,6 +284,12 @@ namespace Evaluation
             Log(m_sky.data(), (int)m_sky.size());
         }
 
+        if(m_window.fitType != FIT_HP_DIV)
+        {
+            // Include the sky-spectrum as a reference into the fit
+            CreateReferenceSpectra();
+        }
+
         return 0;
     }
 
@@ -289,13 +297,16 @@ namespace Evaluation
     {
         assert(vXData.GetSize() >= measured.m_length);
 
+        m_lastError = "";
+
         int fitLow, fitHigh; // the limits for the DOAS fit
         int i; // iterator
 
         // Check so that the length of the spectra agree with each other
         if (m_window.specLength != measured.m_length)
         {
-            return(1);
+            m_lastError = "Failed to evaluate: the length of the measured spectrum does not equal the spectrum length of the fit-window used.";
+            return 1;
         }
 
         // Get the correct limits for the fit
@@ -306,6 +317,7 @@ namespace Evaluation
             fitHigh = m_window.fitHigh - measured.m_info.m_startChannel;
             if (fitLow < 0 || fitHigh > measured.m_length)
             {
+                m_lastError = "Invalid fit region, fit-low is negative or fit-high is larger than the length of the measured spectrum.";
                 return 1;
             }
         }
@@ -397,6 +409,7 @@ namespace Evaluation
             {
                 // message.Format("Fit Failed!");
                 // ShowMessage(message);
+                m_lastError = "Failed to evaluate: fit failed.";
                 return 1;
             }
 
@@ -467,6 +480,8 @@ namespace Evaluation
             // message.Format("A Fit Exception has occurred. Are the reference files OK?");
             // ShowMessage(message);
 
+            m_lastError = "Failed to evaluate: a fit exception occurred.";
+
             return (1);
         }
     }
@@ -474,6 +489,8 @@ namespace Evaluation
     int CEvaluationBase::EvaluateShift(const CSpectrum &measured, double &shift, double &shiftError, double &squeeze, double &squeezeError)
     {
         assert(vXData.GetSize() >= measured.m_length);
+
+        m_lastError = "";
 
         int i;
         CVector vMeas;
@@ -483,18 +500,27 @@ namespace Evaluation
 
         // Check so that the length of the spectra agree with each other
         if (m_window.specLength != measured.m_length)
-            return(1);
+        {
+            m_lastError = "Failed to evaluate shift: the length of the measured spectrum does not equal the spectrum length of the fit-window used.";
+            return 1;
+        }
 
         // Check that we have a solar-spectrum to check against
         if (m_window.fraunhoferRef.m_path.size() < 6)
+        {
+            m_lastError = "Failed to evaluate shift: the fraunhofer reference does not exist.";
             return 1;
+        }
 
         if (measured.m_info.m_startChannel != 0 || measured.m_length < m_window.specLength) {
             // Partial spectra
             fitLow = m_window.fitLow - measured.m_info.m_startChannel;
             fitHigh = m_window.fitHigh - measured.m_info.m_startChannel;
             if (fitLow < 0 || fitHigh > measured.m_length)
+            {
+                m_lastError = "Invalid fit region, fit-low is negative or fit-high is larger than the length of the measured spectrum.";
                 return 1;
+            }
         }
         else {
             fitLow = m_window.fitLow;
@@ -502,7 +528,7 @@ namespace Evaluation
         }
 
         // initialize the solar-spectrum function
-        solarSpec = new CReferenceSpectrumFunction();
+        CReferenceSpectrumFunction *solarSpec = new CReferenceSpectrumFunction();
 
         // Make a local copy of the data
         double *measArray = (double *)calloc(measured.m_length, sizeof(double));
@@ -571,7 +597,7 @@ namespace Evaluation
         auto tempXVec = vXData.SubVector(0, localSolarSpectrumData.GetSize());
         if (!solarSpec->SetData(tempXVec, localSolarSpectrumData))
         {
-            Error0("Error initializing spline object!");
+            m_lastError = "Failed to evaluate shift: could not initialize spline object for the solar spectrum.";
             free(measArray);
             delete solarSpec;
             return(1);
@@ -637,6 +663,7 @@ namespace Evaluation
                 // novac::CString message;
                 // message.Format("Fit Failed!");
                 // ShowMessage(message);
+                m_lastError = "Failed to evaluate shift: fit failed.";
                 free(measArray);
                 delete solarSpec;
                 return 1;
@@ -692,6 +719,8 @@ namespace Evaluation
             // novac::CString message;
             // message.Format("A Fit Exception has occurred. Are the reference files OK?");
             // ShowMessage(message);
+
+            m_lastError = "Failed to evaluate shift: a fit exception occurred.";
 
             // clean up the evaluation
             free(measArray);
