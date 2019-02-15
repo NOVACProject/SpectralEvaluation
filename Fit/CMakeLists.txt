@@ -30,6 +30,7 @@ set(SPECTRUM_FIT_HEADERS
     ${CMAKE_CURRENT_LIST_DIR}/LnFunction.h
     ${CMAKE_CURRENT_LIST_DIR}/Matrix.h
     ${CMAKE_CURRENT_LIST_DIR}/Minimizer.h
+    ${CMAKE_CURRENT_LIST_DIR}/MessageLog.h
     ${CMAKE_CURRENT_LIST_DIR}/MulFunction.h
     ${CMAKE_CURRENT_LIST_DIR}/NegateFunction.h
     ${CMAKE_CURRENT_LIST_DIR}/NonlinearParameterFunction.h
@@ -48,6 +49,7 @@ set(SPECTRUM_FIT_HEADERS
     
     
 set(SPECTRUM_FIT_SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/MessageLog.cpp
     PARENT_SCOPE)
 
     

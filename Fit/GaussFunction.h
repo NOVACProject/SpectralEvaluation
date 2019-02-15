@@ -152,10 +152,8 @@ namespace MathFit
 		*
 		* @return	The basis function in regard to the given linear parameter.
 		*/
-		virtual TFitData GetLinearBasisFunction(TFitData fXValue, int iParamID, bool bFixedID = true)
+		virtual TFitData GetLinearBasisFunction(TFitData fXValue, int /*iParamID*/, bool /*bFixedID = true*/)
 		{
-			MATHFIT_ASSERT((bFixedID && iParamID >= 0 && iParamID < mLinearParams.GetSize()) || (!bFixedID && iParamID >= 0 && iParamID < mLinearParams.GetAllSize()));
-
 			// get the function value without the scale factor
 			TFitData fVal = fXValue - GetCenter();
 			fVal *= fVal;
