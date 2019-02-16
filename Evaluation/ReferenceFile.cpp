@@ -13,28 +13,50 @@ CReferenceFile::~CReferenceFile()
 }
 
 /** assignment operator */
-CReferenceFile &CReferenceFile::operator=(const CReferenceFile &ref2)
+CReferenceFile &CReferenceFile::operator=(const CReferenceFile &other)
 {
-    this->m_path                = std::string(ref2.m_path);
-    this->m_specieName          = std::string(ref2.m_specieName);
-    this->m_columnOption        = ref2.m_columnOption;
-    this->m_columnValue         = ref2.m_columnValue;
-    this->m_columnMaxValue      = ref2.m_columnMaxValue;
-    this->m_shiftOption         = ref2.m_shiftOption;
-    this->m_shiftValue          = ref2.m_shiftValue;
-    this->m_shiftMaxValue       = ref2.m_shiftMaxValue;
-    this->m_squeezeOption       = ref2.m_squeezeOption;
-    this->m_squeezeValue        = ref2.m_squeezeValue;
-    this->m_squeezeMaxValue     = ref2.m_squeezeMaxValue;
-    this->m_isFiltered          = ref2.m_isFiltered;
+    this->m_path                = std::string(other.m_path);
+    this->m_specieName          = std::string(other.m_specieName);
+    this->m_columnOption        = other.m_columnOption;
+    this->m_columnValue         = other.m_columnValue;
+    this->m_columnMaxValue      = other.m_columnMaxValue;
+    this->m_shiftOption         = other.m_shiftOption;
+    this->m_shiftValue          = other.m_shiftValue;
+    this->m_shiftMaxValue       = other.m_shiftMaxValue;
+    this->m_squeezeOption       = other.m_squeezeOption;
+    this->m_squeezeValue        = other.m_squeezeValue;
+    this->m_squeezeMaxValue     = other.m_squeezeMaxValue;
+    this->m_isFiltered          = other.m_isFiltered;
     
-    if (ref2.m_data != nullptr)
+    if (other.m_data != nullptr)
     {
-        this->m_data = new CCrossSectionData(*ref2.m_data);
+        this->m_data = new CCrossSectionData(*other.m_data);
     }
 
     return *this;
 }
+
+CReferenceFile::CReferenceFile(const CReferenceFile& other)
+{
+    this->m_path            = std::string(other.m_path);
+    this->m_specieName      = std::string(other.m_specieName);
+    this->m_columnOption    = other.m_columnOption;
+    this->m_columnValue     = other.m_columnValue;
+    this->m_columnMaxValue  = other.m_columnMaxValue;
+    this->m_shiftOption     = other.m_shiftOption;
+    this->m_shiftValue      = other.m_shiftValue;
+    this->m_shiftMaxValue   = other.m_shiftMaxValue;
+    this->m_squeezeOption   = other.m_squeezeOption;
+    this->m_squeezeValue    = other.m_squeezeValue;
+    this->m_squeezeMaxValue = other.m_squeezeMaxValue;
+    this->m_isFiltered      = other.m_isFiltered;
+
+    if (other.m_data != nullptr)
+    {
+        this->m_data = new CCrossSectionData(*other.m_data);
+    }
+}
+
 
 /** Setting the column */
 void CReferenceFile::SetColumn(SHIFT_TYPE option, double value, double value2)

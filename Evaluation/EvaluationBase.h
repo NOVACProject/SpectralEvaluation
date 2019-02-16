@@ -8,6 +8,11 @@
 
 class CSpectrum;
 
+namespace MathFit
+{
+    class CStandardFit;
+}
+
 namespace Evaluation
 {
     /** The CEvaluationBase is the base class for all evaluation-classes 
@@ -32,13 +37,17 @@ namespace Evaluation
         /** @return a reference to the local fit window */
         const CFitWindow& FitWindow() const { return m_window;}
 
-        /** The result of the last performed evaluation. Defined only after Evaluate() has been called. */
+        /** The result of the last performed evaluation.
+            Defined only after Evaluate() or EvaluateShift() have been called. */
         CEvaluationResult m_result;
 
-        /** The residual of the latest fit */
+        /** The residual of the last performed evaluation.
+            Defined only after Evaluate() or EvaluateShift() have been called. */
         CVector m_residual;
 
-        /** The scaled reference spectra. The first reference spectrum is the fitted
+        /** The scaled reference spectra.
+            Defined only after Evaluate() or EvaluateShift() have been called.
+            The first reference spectrum is the fitted
                 polynomial and the following 'MAX_N_REFERENCES + 1' are the scaled references. */
         // TODO: Implement saving this
         CCrossSectionData m_fitResult[MAX_N_REFERENCES + 2];
@@ -79,6 +88,10 @@ namespace Evaluation
         /** Returns the polynomial that was fitted in the last evaluation */
         const double *GetPolynomial() const { return m_result.m_polynomial; }
 
+        /** @return the number of references included in the fit. 
+            This may be higher than the number of referene from the fit window if e.g. the sky-spectrum is included in the fit */
+        size_t NumberOfReferencesFitted() const { return m_ref.size(); }
+
     protected:
 
         // The CReferenceSpectrumFunctions are used in the evaluation process to model
@@ -116,5 +129,8 @@ namespace Evaluation
 
         // Prepares the spectra for evaluation
         void PrepareSpectra_Poly(double *sky, double *meas, const CFitWindow &window);
+
+        /** Updates the m_residual and m_result.delta */
+        void SaveResidual(MathFit::CStandardFit& firstFit);
     };
 }

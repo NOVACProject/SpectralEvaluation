@@ -138,15 +138,15 @@ namespace Evaluation
         // If we should also include the sky-spectrum in the fit
         if (m_sky.size() > 0 && (m_window.fitType == FIT_HP_SUB || m_window.fitType == FIT_POLY))
         {
-            const int i = m_window.nRef;
+            CReferenceSpectrumFunction* newRef = new CReferenceSpectrumFunction();
 
             // reset all reference's parameters
-            m_ref[i]->ResetLinearParameter();
-            m_ref[i]->ResetNonlinearParameter();
+            newRef->ResetLinearParameter();
+            newRef->ResetNonlinearParameter();
 
             // enable amplitude normalization. This should normally be done in order to avoid numerical
             // problems during fitting.
-            m_ref[i]->SetNormalize(true);
+            newRef->SetNormalize(true);
 
             // set the spectral data of the reference spectrum to the object. This also causes an internal
             // transformation of the spectral data into a B-Spline that will be used to interpolate the
@@ -159,7 +159,7 @@ namespace Evaluation
 
             {
                 auto tempXVec = vXData.SubVector(0, (int)m_sky.size());
-                if (!m_ref[i]->SetData(tempXVec, yValues))
+                if (!newRef->SetData(tempXVec, yValues))
                 {
                     Error0("Error initializing spline object!");
                     return(1);
@@ -168,19 +168,22 @@ namespace Evaluation
 
             // Chech the options for the column value
             if (m_window.fitType == FIT_POLY)
-                m_ref[i]->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, -1.0 * m_ref[i]->GetAmplitudeScale());
+                newRef->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, -1.0 * newRef->GetAmplitudeScale());
             else
-                m_ref[i]->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, 1.0 * m_ref[i]->GetAmplitudeScale());
+                newRef->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, 1.0 * newRef->GetAmplitudeScale());
 
             // Check the options for the shift & squeeze
             if (m_window.shiftSky) {
-                m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)-3.0, (TFitData)3.0, 1);
-                m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)0.95, (TFitData)1.05, 1e7);
+                newRef->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)-3.0, (TFitData)3.0, 1);
+                newRef->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)0.95, (TFitData)1.05, 1e7);
             }
             else {
-                m_ref[i]->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
-                m_ref[i]->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
+                newRef->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
+                newRef->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
             }
+
+            // Finally add this reference to the vector
+            this->m_ref.push_back(newRef);
         }
 
         return 0;
@@ -216,7 +219,6 @@ namespace Evaluation
 
         //  1. Remove any remaining offset
         RemoveOffset(measArray, window.specLength, window.UV);
-        RemoveOffset(skyArray, window.specLength, window.UV);
 
         // 2. Divide the measured spectrum with the sky spectrum
         Div(measArray, skyArray, window.specLength, 0.0);
@@ -293,6 +295,19 @@ namespace Evaluation
         return 0;
     }
 
+    void CEvaluationBase::SaveResidual(CStandardFit& cFirstFit)
+    {
+        //// get residuum vector and expand it to a DOAS vector object. Do NOT assign the vector data to the new object!
+        //// display some statistical stuff about the residual data
+        CDOASVector vResiduum;
+        vResiduum.Attach(cFirstFit.GetResiduum(), false);
+        m_residual.SetSize(vResiduum.GetSize());
+        m_residual.Zero();
+        m_residual.Add(vResiduum);
+
+        m_result.m_delta = (double)vResiduum.Delta();
+    }
+
     int CEvaluationBase::Evaluate(const CSpectrum &measured, int numSteps)
     {
         assert(vXData.GetSize() >= measured.m_length);
@@ -300,7 +315,6 @@ namespace Evaluation
         m_lastError = "";
 
         int fitLow, fitHigh; // the limits for the DOAS fit
-        int i; // iterator
 
         // Check so that the length of the spectra agree with each other
         if (m_window.specLength != measured.m_length)
@@ -368,9 +382,9 @@ namespace Evaluation
 
         // now we add the required CReferenceSpectrumFunction objects that actually represent the 
         // reference spectra used in the DOAS model function
-        for (i = 0; i < m_window.nRef; ++i)
+        for (CReferenceSpectrumFunction* reference : this->m_ref)
         {
-            cRefSum.AddReference(*m_ref[i]); // <-- at last add the reference to the summation object
+            cRefSum.AddReference(*reference); // <-- at last add the reference to the summation object
         }
 
         // create the additional polynomial with the correct order
@@ -419,45 +433,39 @@ namespace Evaluation
             // get the basic fit results
             m_result.m_stepNum   = (long)cFirstFit.GetFitSteps();
             m_result.m_chiSquare = (double)cFirstFit.GetChiSquare();
-            m_result.m_referenceResult.resize(m_window.nRef);
+            m_result.m_referenceResult.resize(this->m_ref.size());
 
             for (int tmpInt = 0; tmpInt <= m_window.polyOrder; ++tmpInt)
             {
                 m_result.m_polynomial[tmpInt] = (double)cPoly.GetCoefficient(tmpInt);
             }
 
-            //// get residuum vector and expand it to a DOAS vector object. Do NOT assign the vector data to the new object!
-            //// display some statistical stuff about the residual data
-            CDOASVector vResiduum;
-            vResiduum.Attach(cFirstFit.GetResiduum(), false);
-            m_residual.SetSize(vResiduum.GetSize());
-            m_residual.Zero();
-            m_residual.Add(vResiduum);
-
-            m_result.m_delta = (double)vResiduum.Delta();
+            SaveResidual(cFirstFit);
 
             // get the fitResult for the polynomial
-            //CVector tmpVector;
-            //tmpVector.SetSize(specLen);
-            //cPoly.GetValues(vXData.SubVector(measured.startChannel, window.specLength), tmpVector);
-            //m_fitResult[0].Set(tmpVector, specLen);
+            CVector tmpVector;
+            tmpVector.SetSize(fitHigh - fitLow);
+            auto tempXVec = vXData.SubVector(fitLow, fitHigh - fitLow);
+            cPoly.GetValues(tempXVec, tmpVector);
+            m_fitResult[0].Set(tmpVector, fitHigh - fitLow);
 
             // finally display the fit results for each reference spectrum including their appropriate error
-            for (i = 0; i < m_window.nRef; i++)
+            for (size_t ii = 0; ii < this->m_ref.size(); ii++)
             {
-                m_result.m_referenceResult[i].m_specieName      = std::string(m_window.ref[i].m_specieName);
-                m_result.m_referenceResult[i].m_column          = (double)m_ref[i]->GetModelParameter(CReferenceSpectrumFunction::CONCENTRATION);
-                m_result.m_referenceResult[i].m_columnError     = (double)m_ref[i]->GetModelParameterError(CReferenceSpectrumFunction::CONCENTRATION);
-                m_result.m_referenceResult[i].m_shift           = (double)m_ref[i]->GetModelParameter(CReferenceSpectrumFunction::SHIFT);
-                m_result.m_referenceResult[i].m_shiftError      = (double)m_ref[i]->GetModelParameterError(CReferenceSpectrumFunction::SHIFT);
-                m_result.m_referenceResult[i].m_squeeze         = (double)m_ref[i]->GetModelParameter(CReferenceSpectrumFunction::SQUEEZE);
-                m_result.m_referenceResult[i].m_squeezeError    = (double)m_ref[i]->GetModelParameterError(CReferenceSpectrumFunction::SQUEEZE);
+                m_result.m_referenceResult[ii].m_specieName      = (ii < (size_t)m_window.nRef) ? std::string(m_window.ref[ii].m_specieName) : "Sky";
+                m_result.m_referenceResult[ii].m_column          = (double)m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::CONCENTRATION);
+                m_result.m_referenceResult[ii].m_columnError     = (double)m_ref[ii]->GetModelParameterError(CReferenceSpectrumFunction::CONCENTRATION);
+                m_result.m_referenceResult[ii].m_shift           = (double)m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::SHIFT);
+                m_result.m_referenceResult[ii].m_shiftError      = (double)m_ref[ii]->GetModelParameterError(CReferenceSpectrumFunction::SHIFT);
+                m_result.m_referenceResult[ii].m_squeeze         = (double)m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::SQUEEZE);
+                m_result.m_referenceResult[ii].m_squeezeError    = (double)m_ref[ii]->GetModelParameterError(CReferenceSpectrumFunction::SQUEEZE);
 
                 //// get the final fit result
-                //CVector tmpVector;
-                //tmpVector.SetSize(specLen);
-                //ref[i]->GetValues(vXData.SubVector(measured.startChannel, measured.specLength), tmpVector);
-                //m_fitResult[i+1].Set(tmpVector, specLen);
+                CVector tmpVector;
+                tmpVector.SetSize(fitHigh - fitLow);
+                auto tempXVec = vXData.SubVector(fitLow, fitHigh - fitLow);
+                m_ref[ii]->GetValues(tempXVec, tmpVector);
+                m_fitResult[ii + 1].Set(tmpVector, fitHigh - fitLow);
             }
 
             return 0;
@@ -677,15 +685,7 @@ namespace Evaluation
             // double chiSquare			= (double)cFirstFit.GetChiSquare();
             // unsigned long speciesNum	= (unsigned long)m_window.nRef;
 
-            //// get residuum vector and expand it to a DOAS vector object. Do NOT assign the vector data to the new object!
-            //// display some statistical stuff about the residual data
-            CDOASVector vResiduum;
-            vResiduum.Attach(cFirstFit.GetResiduum(), false);
-            m_residual.SetSize(vResiduum.GetSize());
-            m_residual.Zero();
-            m_residual.Add(vResiduum);
-
-            m_result.m_delta = (double)vResiduum.Delta();
+            SaveResidual(cFirstFit);
 
             // finally get the fit-result
             // double column       = (double)solarSpec->GetModelParameter(CReferenceSpectrumFunction::CONCENTRATION);

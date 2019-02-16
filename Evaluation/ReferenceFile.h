@@ -29,8 +29,9 @@ namespace Evaluation
         CReferenceFile();
         ~CReferenceFile();
 
-        /** assignment operator */
-        CReferenceFile &operator=(const CReferenceFile &ref2);
+        /** Copying this object */
+        CReferenceFile &operator=(const CReferenceFile& other);
+        CReferenceFile(const CReferenceFile& other);
 
         /** The name of the specie */
         std::string   m_specieName = "";
@@ -75,7 +76,9 @@ namespace Evaluation
             and m_squeezeValue is the minimum squeeze value allowed */
         double        m_squeezeMaxValue = 1.0;
 
-        /** this is true if this cross section file is filtered already on disk */
+        /** This is true if this cross section file is filtered already on disk
+            If this is false and the fit-tyype if HP_SUB or HP_DIV then the reference will be 
+            High-pass filtered when they are being read in (FitWindow::ReadReferences). */
         bool          m_isFiltered = false;
 
         /** The actual data of this reference - file. This is equal to

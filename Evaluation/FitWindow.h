@@ -42,7 +42,6 @@ namespace Evaluation
 
         /** The reference files to use */
         // TODO: Use std::vector for this, to remove unnecessary limit on number of references
-        // TODO: Rename to m_ref for consistency
         CReferenceFile ref[MAX_N_REFERENCES];
 
         /** The number of references to use */
@@ -72,7 +71,7 @@ namespace Evaluation
         std::string name = "SO2";
 
         /** The type of fit. Novac standard is FIT_HP_DIV. */
-        FIT_TYPE fitType = FIT_HP_DIV; 
+        FIT_TYPE fitType = FIT_HP_DIV;
 
         /** true if the sky-spectrum should be allowed to shift.
                 only useful if fitType is FIT_HP_SUB or FIT_POLY */
