@@ -461,9 +461,6 @@ namespace Evaluation
                 m_result.m_referenceResult[ii].m_squeezeError    = (double)m_ref[ii]->GetModelParameterError(CReferenceSpectrumFunction::SQUEEZE);
 
                 //// get the final fit result
-                CVector tmpVector;
-                tmpVector.SetSize(fitHigh - fitLow);
-                auto tempXVec = vXData.SubVector(fitLow, fitHigh - fitLow);
                 m_ref[ii]->GetValues(tempXVec, tmpVector);
                 m_fitResult[ii + 1].Set(tmpVector, fitHigh - fitLow);
             }
