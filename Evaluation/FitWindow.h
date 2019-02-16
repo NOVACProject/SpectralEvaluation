@@ -100,4 +100,13 @@ namespace Evaluation
    /** Reads all the references specified in the window from disk.
         @return true if all references could be read sucessfully. */
    bool ReadReferences(CFitWindow& window);
+
+   /** Performs a high-pass filtering on all references which are not labelled as m_isFiltered. */
+   void HighPassFilterReferences(CFitWindow& window);
+
+   /** Performs a rescaling of all read in references to the unit of Molecules/cm2.
+       It is here assumed that any reference which is NOT filtered is in the unit of Molecules/cm2
+       and any reference which IS filtered is in the unit of PPMM. The reference will be scaled accordingly. */
+   void ScaleReferencesToMolecCm2(CFitWindow& window);
+
 }

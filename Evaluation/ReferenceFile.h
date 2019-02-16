@@ -69,17 +69,20 @@ namespace Evaluation
         SHIFT_TYPE    m_squeezeOption = SHIFT_FIX;
 
         /** The value for the squeeze */
-        double        m_squeezeValue = 1.0;
+        double          m_squeezeValue = 1.0;
 
         /** if m_squeezeOption is SHIFT_LIMIT,
             this is the maximum squeeze value allowed
             and m_squeezeValue is the minimum squeeze value allowed */
-        double        m_squeezeMaxValue = 1.0;
+        double          m_squeezeMaxValue = 1.0;
 
-        /** This is true if this cross section file is filtered already on disk
-            If this is false and the fit-tyype if HP_SUB or HP_DIV then the reference will be 
-            High-pass filtered when they are being read in (FitWindow::ReadReferences). */
-        bool          m_isFiltered = false;
+        /** This is true if this cross section file is high-pass filtered already on disk
+            If this is false and the fit-type if HP_SUB or HP_DIV then the reference will be 
+            High-pass filtered when they are being read in (FitWindow::ReadReferences). 
+            NOTICE that in the NovacProgram are the references given for real-time evaluation always filtered
+            and this flag must be set to true before running the evaluation. In NovacPPP are the references given
+            always NOT filtered. */
+        bool            m_isFiltered = false;
 
         /** The actual data of this reference - file. This is equal to
                 nullptr if the reference data has not been read in yet, otherwise

@@ -100,33 +100,50 @@ namespace Evaluation
                 // failure = true;
                 return false;
             }
-
-            // If we are supposed to high-pass filter the spectra then
-            //	we should also high-pass filter the cross-sections
-            if (window.fitType == Evaluation::FIT_HP_DIV || window.fitType == Evaluation::FIT_HP_SUB)
-            {
-                if (window.ref[referenceIndex].m_isFiltered == false)
-                {
-                    if (EqualsIgnoringCase(window.ref[referenceIndex].m_specieName, "ring"))
-                    {
-                        HighPassFilter_Ring(*window.ref[referenceIndex].m_data);
-                    }
-                    else
-                    {
-                        HighPassFilter(*window.ref[referenceIndex].m_data);
-                    }
-                }
-                else
-                {
-                    // The filtered cross sections are scaled to the unit of ppmm
-                    //	rescale them to molecules/cm2 as all other cross sections
-                    Multiply(*window.ref[referenceIndex].m_data, (1.0 / 2.5e15));
-                }
-            }// endif
         }
 
         return true;
     }
 
+    void HighPassFilterReferences(CFitWindow& window)
+    {
+        if (window.fitType != Evaluation::FIT_HP_DIV || window.fitType != Evaluation::FIT_HP_SUB)
+        {
+            return;
+        }
+
+        for (int referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
+        {
+            // Local handle for more convenient syntax.
+            CReferenceFile& thisReference = window.ref[referenceIndex];
+
+            if (!thisReference.m_isFiltered)
+            {
+                if (EqualsIgnoringCase(thisReference.m_specieName, "ring"))
+                {
+                    HighPassFilter_Ring(*thisReference.m_data);
+                }
+                else
+                {
+                    HighPassFilter(*thisReference.m_data);
+                }
+            }
+        }
+    }
+
+    void ScaleReferencesToMolecCm2(CFitWindow& window)
+    {
+        for (int referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
+        {
+            // Local handle for more convenient syntax.
+            CReferenceFile& thisReference = window.ref[referenceIndex];
+
+            if (thisReference.m_isFiltered)
+            {
+                // Convert from ppmm to moleculues / cm2
+                Multiply(*thisReference.m_data, (1.0 / 2.5e15));
+            }
+        }
+    }
 
 }

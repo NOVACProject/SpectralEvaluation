@@ -470,7 +470,7 @@ namespace Evaluation
 
             return 0;
         }
-        catch (CFitException e)
+        catch (CFitException& e)
         {
             // in case that something went wrong, display the error to the user.
             // normally you will get error in two cases:
@@ -487,8 +487,11 @@ namespace Evaluation
 
             // message.Format("A Fit Exception has occurred. Are the reference files OK?");
             // ShowMessage(message);
-
             m_lastError = "Failed to evaluate: a fit exception occurred.";
+            if (nullptr != e.mMessage && strlen(e.mMessage) > 0)
+            {
+                m_lastError = m_lastError + " Message: '" + std::string{e.mMessage} + "'";
+            }
 
             return (1);
         }
