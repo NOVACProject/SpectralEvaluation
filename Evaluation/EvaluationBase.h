@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BasicMath.h"
+#include "CrossSectionData.h"
 #include "FitWindow.h"
 #include "EvaluationResult.h"
 #include "../Fit/ReferenceSpectrumFunction.h"
@@ -33,6 +34,14 @@ namespace Evaluation
 
         /** The result of the last performed evaluation. Defined only after Evaluate() has been called. */
         CEvaluationResult m_result;
+
+        /** The residual of the latest fit */
+        CVector m_residual;
+
+        /** The scaled reference spectra. The first reference spectrum is the fitted
+                polynomial and the following 'MAX_N_REFERENCES + 1' are the scaled references. */
+        // TODO: Implement saving this
+        CCrossSectionData m_fitResult[MAX_N_REFERENCES + 2];
 
         /** The last error from calling 'Evaluate' or 'EvaluateShift'.
             This is set by Evaluate and EvaluateShift and is only set if these methods return an error. */

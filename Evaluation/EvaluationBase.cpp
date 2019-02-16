@@ -430,9 +430,9 @@ namespace Evaluation
             //// display some statistical stuff about the residual data
             CDOASVector vResiduum;
             vResiduum.Attach(cFirstFit.GetResiduum(), false);
-            //m_residual.SetSize(vResiduum.GetSize());
-            //m_residual.Zero();
-            //m_residual.Add(vResiduum);
+            m_residual.SetSize(vResiduum.GetSize());
+            m_residual.Zero();
+            m_residual.Add(vResiduum);
 
             m_result.m_delta = (double)vResiduum.Delta();
 
@@ -681,9 +681,9 @@ namespace Evaluation
             //// display some statistical stuff about the residual data
             CDOASVector vResiduum;
             vResiduum.Attach(cFirstFit.GetResiduum(), false);
-            // m_residual.SetSize(vResiduum.GetSize());
-            // m_residual.Zero();
-            // m_residual.Add(vResiduum);
+            m_residual.SetSize(vResiduum.GetSize());
+            m_residual.Zero();
+            m_residual.Add(vResiduum);
 
             m_result.m_delta = (double)vResiduum.Delta();
 
