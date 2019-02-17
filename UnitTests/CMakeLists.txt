@@ -7,6 +7,9 @@ cmake_minimum_required (VERSION 3.6)
 add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/main.cpp
     ${CMAKE_CURRENT_LIST_DIR}/catch.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Convolution.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_CrossSectionData.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Evaluation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitWindow.cpp
 )
 

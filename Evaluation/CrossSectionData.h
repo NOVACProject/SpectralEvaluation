@@ -13,7 +13,6 @@ namespace Evaluation{
         used in the fitting procedure. Each instance of this class holds
         the information of one reference used.
         The references can be either differential or not. */
-
     class CCrossSectionData
     {
     public:
@@ -23,6 +22,16 @@ namespace Evaluation{
         
         ~CCrossSectionData();
         
+        // ----------------------- DATA -----------------------
+
+        /** An array containing the wavelength information.*/
+        std::vector <double> m_waveLength;
+
+        /** An array containing the actual cross-section */
+        std::vector <double> m_crossSection;
+
+        // ----------------------- METHODS -----------------------
+
         /** Sets the cross-section information at the given pixel */
         void SetAt(int index, double wavel, double value);
 
@@ -51,12 +60,6 @@ namespace Evaluation{
             @return 0 on success
             @return non-zero value on fail */
         int ReadCrossSectionFile(const std::string &fileName);
-
-        /** An array containing the wavelength information.*/
-        std::vector <double> m_waveLength;
-        
-        /** An array containing the actual cross-section */
-        std::vector <double> m_crossSection;
     };
 
     /** Performs a high-pass filtering of this cross section file */

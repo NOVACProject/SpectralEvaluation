@@ -13,6 +13,9 @@
 
 #if _MSC_VER > 1000
 #pragma once
+#pragma warning(push)
+#pragma warning(disable:4239)
+#pragma warning(disable:4100)
 #endif // _MSC_VER > 1000
 
 namespace MathFit
@@ -415,4 +418,9 @@ namespace MathFit
 		IConvolutionCoreFunction& mCore;
 	};
 }
+
+#if _MSC_VER > 1000
+#pragma warning(pop)
+#endif
+
 #endif

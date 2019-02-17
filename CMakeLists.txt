@@ -25,8 +25,8 @@ add_library(NovacSpectralEvaluation
     ${SPECTRUM_FIT_SOURCES}
     ${SPECTRUM_FLUX_HEADERS}
     ${SPECTRUM_FLUX_SOURCES}
-    ${SPECTRUM_SPECTRA_HEADERS}
-    ${SPECTRUM_SPECTRA_SOURCES}
+    ${SPECTRUM_CLASS_HEADERS}
+    ${SPECTRUM_CLASS_SOURCES}
     ${CMAKE_CURRENT_SOURCE_DIR}/Utils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Utils.h
 )
@@ -35,12 +35,12 @@ add_library(NovacSpectralEvaluation
 source_group("Header Files\\Evaluation"             FILES ${SPECTRUM_EVALUATION_HEADERS})
 source_group("Header Files\\Fit"                    FILES ${SPECTRUM_FIT_HEADERS})
 source_group("Header Files\\Flux"                   FILES ${SPECTRUM_FLUX_HEADERS})
-source_group("Header Files\\Spectra"                FILES ${SPECTRUM_SPECTRA_HEADERS})
+source_group("Header Files\\Spectra"                FILES ${SPECTRUM_CLASS_HEADERS})
 
 source_group("Source Files\\Evaluation"             FILES ${SPECTRUM_EVALUATION_SOURCES})
 source_group("Source Files\\Fit"                    FILES ${SPECTRUM_FIT_SOURCES})
 source_group("Source Files\\Flux"                   FILES ${SPECTRUM_FLUX_SOURCES})
-source_group("Source Files\\Spectra"                FILES ${SPECTRUM_SPECTRA_SOURCES})
+source_group("Source Files\\Spectra"                FILES ${SPECTRUM_CLASS_SOURCES})
 
 
 ## -------------------- SpectralEvaluationTests -------------------------
