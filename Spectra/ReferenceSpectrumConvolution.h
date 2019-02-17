@@ -30,3 +30,6 @@ bool ConvolveReference(const std::vector<double>& pixelToWavelengthMapping, cons
     The result will be sampled on the same wavelength grid as the highResReference. 
     This expects the slf to be shifted to have the center in the middle of the vector. */
 bool Convolve(const SimpleSpectrum& slf, const SimpleSpectrum& highResReference, std::vector<double>& result);
+
+/** Takes a simple slit-function as input and returns the Full Width at Half Maximum (FWHM), in the x-axis unit of the SLF. */
+double CalculateFhwm(const SimpleSpectrum& slf);
