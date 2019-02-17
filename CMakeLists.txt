@@ -29,6 +29,8 @@ add_library(NovacSpectralEvaluation
     ${SPECTRUM_CLASS_SOURCES}
     ${CMAKE_CURRENT_SOURCE_DIR}/Utils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Utils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/VectorUtils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/VectorUtils.h
 )
 
 #Organize the files into folders, for ease of use

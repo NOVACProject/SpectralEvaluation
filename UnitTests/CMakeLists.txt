@@ -11,6 +11,8 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_CrossSectionData.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Evaluation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitWindow.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Utils.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_VectorUtils.cpp
 )
 
 target_include_directories(SpectralEvaluationTests PRIVATE ${SPECTRALEVAUATION_INCLUDE_DIRS})
