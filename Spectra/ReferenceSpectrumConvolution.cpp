@@ -1,5 +1,7 @@
 #include "ReferenceSpectrumConvolution.h"
 #include <iostream>
+#include <algorithm>
+#include <assert.h>
 
 bool ConvolveReference(
     const std::vector<double>& /*pixelToWavelengthMapping*/,
@@ -25,6 +27,30 @@ bool ConvolveReference(
     }
 } */
 
+double Max(const std::vector<double>& values)
+{
+    double m = 0.0;
+
+    for (double v : values)
+    {
+        m = std::max(m, v);
+    }
+
+    return m;
+}
+
+void Normalize(const std::vector<double>& input, std::vector<double>& output)
+{
+    output.resize(input.size());
+
+    const double maxValue = Max(input);
+
+    for (size_t ii = 0; ii < input.size(); ++ii)
+    {
+        output[ii] = input[ii] / maxValue;
+    }
+}
+
 bool Convolve(
     const SimpleSpectrum& slf,
     const SimpleSpectrum& highResReference,
@@ -44,6 +70,11 @@ bool Convolve(
     const size_t refSize = highResReference.value.size();
     const size_t coreSize = slf.value.size();
 
+    // To preserve the energy, we need to normalize the slit-function to the range 0->1
+    std::vector<double> normalizedSlf;
+    Normalize(slf.value, normalizedSlf);
+    assert(normalizedSlf.size() == slf.value.size());
+
     // create an intermediate result which has the correct number of values for the calculations
     std::vector<double> intermediate(refSize + coreSize - 1, 0.0);
 
@@ -56,7 +87,7 @@ bool Convolve(
 
         for (size_t k = kmin; k <= kmax; k++)
         {
-            intermediate[n] += highResReference.value[k] * slf.value[n - k];
+            intermediate[n] += highResReference.value[k] * normalizedSlf[n - k];
         }
     }
 
