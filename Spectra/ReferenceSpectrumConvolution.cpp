@@ -33,7 +33,7 @@ struct UniformGrid
     double maxValue = 0.0;
     size_t length = 0U;
 
-    double Resolution() const { return (maxValue - minValue) / (double)length;}
+    double Resolution() const { return (maxValue - minValue) / (double)(length - 1);}
 
     inline double At(size_t idx) const
     {
@@ -265,19 +265,10 @@ bool ConvolveReference(
     UniformGrid highResGrid;
     highResGrid.minValue = highResReference.m_waveLength.front();
     highResGrid.maxValue = highResReference.m_waveLength.back();
-    highResGrid.length = (size_t)((highResGrid.maxValue - highResGrid.minValue) / highestResolution);
+    highResGrid.length   = 2 * (size_t)((highResGrid.maxValue - highResGrid.minValue) / highestResolution);
 
     CCrossSectionData uniformHighResReference;
     Resample(highResReference, highResGrid.Resolution(), uniformHighResReference.m_crossSection);
-
-#ifdef _DEBUG
-    uniformHighResReference.m_waveLength.resize(uniformHighResReference.m_crossSection.size());
-    for (int ii = 0; ii < (int)uniformHighResReference.m_crossSection.size(); ++ii)
-    {
-        uniformHighResReference.m_waveLength[ii] = uniformHighResReference.GetAt(ii);
-    }
-    FileIo::SaveCrossSectionFile("tempHighResReference.xs", uniformHighResReference);
-#endif // _DEBUG
 
     // We also need to resample the slit-function to be on the same wavelength-grid as the high-res reference.
     std::vector<double> resampledSlf;
@@ -288,22 +279,6 @@ bool ConvolveReference(
     NormalizeArea(resampledSlf, normalizedSlf);
     assert(normalizedSlf.size() == resampledSlf.size());
     assert(fabs(Sum(normalizedSlf) - 1.0) < 0.1);
-
-#ifdef _DEBUG
-    CCrossSectionData tempSlf;
-    UniformGrid slfGrid;
-    slfGrid.minValue = slf.m_crossSection.front();
-    slfGrid.maxValue = slf.m_crossSection.back();
-    slfGrid.length   = normalizedSlf.size();
-    tempSlf.m_waveLength.resize(normalizedSlf.size());
-    tempSlf.m_crossSection.resize(normalizedSlf.size());
-    for (size_t ii = 0; ii < normalizedSlf.size(); ++ii)
-    {
-        tempSlf.m_waveLength[ii] = uniformHighResReference.GetAt((int)ii);
-        tempSlf.m_crossSection[ii] = normalizedSlf[ii];
-    }
-    FileIo::SaveCrossSectionFile("tempSlf.xs", tempSlf);
-#endif // _DEBUG
 
     const size_t refSize = uniformHighResReference.m_crossSection.size();
     const size_t coreSize = normalizedSlf.size();
