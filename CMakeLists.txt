@@ -15,6 +15,7 @@ set(SPECTRALEVAUATION_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR} CACHE STRING "")
 # Create a library from the SpectralEvaluation classes
 add_subdirectory(Evaluation)
 add_subdirectory(Fit)
+add_subdirectory(File)
 add_subdirectory(Flux)
 add_subdirectory(Spectra)
 
@@ -27,6 +28,8 @@ add_library(NovacSpectralEvaluation
     ${SPECTRUM_FLUX_SOURCES}
     ${SPECTRUM_CLASS_HEADERS}
     ${SPECTRUM_CLASS_SOURCES}
+    ${SPECTRUM_FILE_HEADERS}
+    ${SPECTRUM_FILE_SOURCES}
     ${CMAKE_CURRENT_SOURCE_DIR}/Utils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Utils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/VectorUtils.cpp

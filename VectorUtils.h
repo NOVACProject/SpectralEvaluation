@@ -24,9 +24,18 @@ double Min(const std::vector<double>& values, size_t& idx);
     If values.size() == 0 then 0.0 is returned. */
 double Min(const std::vector<double>& values);
 
-/** Normalizes a vector of values such that the highest value will be 1.0 and the lowest 0.0  
+/** @return the sum of all the given values 
+    If values.size() == 0 then 0.0 is returned. */
+double Sum(const std::vector<double>& values);
+
+/** Normalizes a vector of values such that the highest value will be 1.0 and the lowest 0.0.
     If input.size() == 0 then output.size() will also be zero. */
 void Normalize(const std::vector<double>& input, std::vector<double>& output);
+
+/** Normalizes a vector of values such that the lowest value will be 0.0 and the
+    sum of all the valeus will be 1.0.
+    If input.size() == 0 then output.size() will also be zero. */
+void NormalizeArea(const std::vector<double>& input, std::vector<double>& output);
 
 /** Finds the (fractiona) index where the values in the provided vector crosses the y='valueToFind' line 
     in the index-range [startIdx, stopIdx[. 

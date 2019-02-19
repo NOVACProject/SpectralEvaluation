@@ -1,5 +1,6 @@
 #include "ReferenceFile.h"
 #include "CrossSectionData.h"
+#include "../Spectra/ReferenceSpectrumConvolution.h"
 
 namespace Evaluation
 {
@@ -15,7 +16,11 @@ CReferenceFile::~CReferenceFile()
 /** assignment operator */
 CReferenceFile &CReferenceFile::operator=(const CReferenceFile &other)
 {
-    this->m_path                = std::string(other.m_path);
+    this->m_path                        = std::string(other.m_path);
+    this->m_crossSectionFile            = std::string(other.m_crossSectionFile);
+    this->m_slitFunctionFile            = std::string(other.m_slitFunctionFile);
+    this->m_wavelengthCalibrationFile   = std::string(other.m_wavelengthCalibrationFile);
+
     this->m_specieName          = std::string(other.m_specieName);
     this->m_columnOption        = other.m_columnOption;
     this->m_columnValue         = other.m_columnValue;
@@ -38,7 +43,11 @@ CReferenceFile &CReferenceFile::operator=(const CReferenceFile &other)
 
 CReferenceFile::CReferenceFile(const CReferenceFile& other)
 {
-    this->m_path            = std::string(other.m_path);
+    this->m_path                        = std::string(other.m_path);
+    this->m_crossSectionFile            = std::string(other.m_crossSectionFile);
+    this->m_slitFunctionFile            = std::string(other.m_slitFunctionFile);
+    this->m_wavelengthCalibrationFile   = std::string(other.m_wavelengthCalibrationFile);
+
     this->m_specieName      = std::string(other.m_specieName);
     this->m_columnOption    = other.m_columnOption;
     this->m_columnValue     = other.m_columnValue;
@@ -96,9 +105,10 @@ void CReferenceFile::SetSqueeze(SHIFT_TYPE option, double value, double value2)
 
 int CReferenceFile::ReadCrossSectionDataFromFile()
 {
-    /* if (!IsExistingFile(m_path)) {
+    if (m_path.size() == 0)
+    {
         return 1;
-    } */
+    }
 
     if (m_data != nullptr)
     {
@@ -107,6 +117,24 @@ int CReferenceFile::ReadCrossSectionDataFromFile()
 
     m_data = new CCrossSectionData();
     if (m_data->ReadCrossSectionFile(m_path))
+    {
+        delete m_data;
+        m_data = nullptr;
+        return 1;
+    }
+
+    return 0;
+}
+
+int CReferenceFile::ConvolveReference()
+{
+    if (m_data != nullptr)
+    {
+        delete m_data;
+    }
+    m_data = new CCrossSectionData();
+
+    if (! Evaluation::ConvolveReference(m_wavelengthCalibrationFile, m_slitFunctionFile, m_crossSectionFile, *m_data))
     {
         delete m_data;
         m_data = nullptr;

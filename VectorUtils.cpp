@@ -57,12 +57,36 @@ double Min(const std::vector<double>& values)
     return Min(values, idx);
 }
 
+double Sum(const std::vector<double>& values)
+{
+    double sum = 0.0;
+    for(size_t ii = 0; ii < values.size(); ++ii)
+    {
+        sum += values[ii];
+    }
+    
+    return sum;
+}
+
 void Normalize(const std::vector<double>& input, std::vector<double>& output)
 {
     output.resize(input.size());
 
     const double minValue = Min(input);
     const double maxValue = Max(input);
+
+    for (size_t ii = 0; ii < input.size(); ++ii)
+    {
+        output[ii] = (input[ii] - minValue) / (maxValue - minValue);
+    }
+}
+
+void NormalizeArea(const std::vector<double>& input, std::vector<double>& output)
+{
+    output.resize(input.size());
+
+    const double minValue = Min(input);
+    const double maxValue = Sum(input);
 
     for (size_t ii = 0; ii < input.size(); ++ii)
     {
