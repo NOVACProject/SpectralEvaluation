@@ -9,6 +9,7 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/catch.hpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Convolution.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_CrossSectionData.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_DateTime.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Evaluation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitWindow.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Utils.cpp

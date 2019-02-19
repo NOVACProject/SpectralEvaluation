@@ -249,7 +249,7 @@ void CDateTime::Decrement(int secs) {
         }
 
         // we should decrement less than 86400 seconds (less than one day)
-        nSecsSinceMidnight = 86400 - secs;
+        nSecsSinceMidnight = nSecsSinceMidnight + 86400 - secs;
 
         this->hour = (unsigned char)(nSecsSinceMidnight / 3600);
         this->minute = (unsigned char)((nSecsSinceMidnight - 3600 * hour) / 60);
