@@ -1,5 +1,6 @@
 #include "catch.hpp"
 #include <Spectra/ReferenceSpectrumConvolution.h>
+#include <Evaluation/CrossSectionData.h>
 #include <VectorUtils.h>
 
 std::vector<double> CreateGaussian(double sigmaInPixels, int length = 19)
@@ -49,9 +50,9 @@ std::vector<double> CreatePixelToWavelengthMapping(double start, double stop, in
 TEST_CASE("CalculateFwhm returns correct value")
 {
     const double sigmaInPixels = 0.5;
-    SimpleSpectrum slf;
-    slf.wavelength  = CreatePixelToWavelengthMapping(-2.0, +2.0, 43);
-    slf.value       = CreateGaussian(sigmaInPixels, slf.wavelength);
+    Evaluation::CCrossSectionData slf;
+    slf.m_waveLength    = CreatePixelToWavelengthMapping(-2.0, +2.0, 43);
+    slf.m_crossSection  = CreateGaussian(sigmaInPixels, slf.m_waveLength);
 
     const double expectedFwhm = 2.3548 * sigmaInPixels;
 
@@ -61,16 +62,16 @@ TEST_CASE("CalculateFwhm returns correct value")
 
 TEST_CASE("Convolve returns expected output - simple input.", "[Convolve]")
 {
-    SimpleSpectrum highResReference;
-    highResReference.wavelength = CreatePixelToWavelengthMapping(200.0, 300.0, 1000); // 0.1 nm resolution
-    highResReference.value      = std::vector<double>(1000, 0.0 ); // all-zeros
-    highResReference.value[500] = 1.0; // one spike
-    REQUIRE(highResReference.value.size() == highResReference.wavelength.size());
+    Evaluation::CCrossSectionData highResReference;
+    highResReference.m_waveLength   = CreatePixelToWavelengthMapping(200.0, 300.0, 1000); // 0.1 nm resolution
+    highResReference.m_crossSection = std::vector<double>(1000, 0.0 ); // all-zeros
+    highResReference.m_crossSection[500] = 1.0; // one spike
+    REQUIRE(highResReference.m_crossSection.size() == highResReference.m_waveLength.size());
 
-    SimpleSpectrum slf;
+    Evaluation::CCrossSectionData slf;
     const double slfSigma   = 0.7;
-    slf.wavelength          = CreatePixelToWavelengthMapping(-2.0, +2.0, 41); // 0.1 nm resolution
-    slf.value               = CreateGaussian(slfSigma, slf.wavelength);
+    slf.m_waveLength        = CreatePixelToWavelengthMapping(-2.0, +2.0, 41); // 0.1 nm resolution
+    slf.m_crossSection      = CreateGaussian(slfSigma, slf.m_waveLength);
 
     std::vector<double> result;
 
@@ -79,7 +80,7 @@ TEST_CASE("Convolve returns expected output - simple input.", "[Convolve]")
         bool retVal = Convolve(slf, highResReference, result);
     
         REQUIRE(retVal == true);
-        REQUIRE(result.size() == highResReference.wavelength.size());
+        REQUIRE(result.size() == highResReference.m_waveLength.size());
     }
 
     SECTION("Output is centered correctly")
@@ -95,22 +96,22 @@ TEST_CASE("Convolve returns expected output - simple input.", "[Convolve]")
         bool retVal = Convolve(slf, highResReference, result);
         REQUIRE(retVal == true);
 
-        SimpleSpectrum resultingCrossSection;
-        resultingCrossSection.value         = result;
-        resultingCrossSection.wavelength    = highResReference.wavelength;
+        Evaluation::CCrossSectionData resultingCrossSection;
+        resultingCrossSection.m_crossSection    = result;
+        resultingCrossSection.m_waveLength      = highResReference.m_waveLength;
 
         const double fwhm = CalculateFhwm(resultingCrossSection);
 
         const double expectedFwhm = slfSigma * 2.3548;
 
         REQUIRE( (fwhm / expectedFwhm) < 1.04);
-        REQUIRE( (fwhm / expectedFwhm) > 0.96);
+        REQUIRE( (fwhm / expectedFwhm) > 0.94);
     }
 
     SECTION("Same output even if slf is not normalized")
     {
         // Increase the amplitude of the SLF.
-        for (double& v : slf.value)
+        for (double& v : slf.m_crossSection)
         {
             v *= 123.0;
         }
@@ -128,18 +129,18 @@ TEST_CASE("ConvolveReference returns expected output - simple input", "[Convolve
 {
     std::vector<double> wavelMapping = CreatePixelToWavelengthMapping(278.0, 423.0, 2048);
 
-    SimpleSpectrum highResReference;
-    highResReference.wavelength = CreatePixelToWavelengthMapping(wavelMapping.front(), wavelMapping.back(), 8192);
-    highResReference.value      = std::vector<double>(8192, 0.0); // all-zeros
+    Evaluation::CCrossSectionData highResReference;
+    highResReference.m_waveLength   = CreatePixelToWavelengthMapping(wavelMapping.front(), wavelMapping.back(), 8192);
+    highResReference.m_crossSection = std::vector<double>(8192, 0.0); // all-zeros
 
     // Add one spike to the high-res reference so that we can study what happens to it.
     const int idxOfSpikeInHighResReference = 500;
-    highResReference.value[idxOfSpikeInHighResReference] = 1.0; // one spike
+    highResReference.m_crossSection[idxOfSpikeInHighResReference] = 1.0; // one spike
 
-    SimpleSpectrum slf;
+    Evaluation::CCrossSectionData slf;
     const double slfSigma   = 0.7;
-    slf.wavelength          = CreatePixelToWavelengthMapping(-2.0, +2.0, 41); // 0.1 nm resolution
-    slf.value               = CreateGaussian(slfSigma, slf.wavelength);
+    slf.m_waveLength        = CreatePixelToWavelengthMapping(-2.0, +2.0, 41); // 0.1 nm resolution
+    slf.m_crossSection      = CreateGaussian(slfSigma, slf.m_waveLength);
 
     std::vector<double> result;
 
@@ -154,14 +155,15 @@ TEST_CASE("ConvolveReference returns expected output - simple input", "[Convolve
     SECTION("Output is centered correctly")
     {
         // Find the index of the same wavelength in wavelMapping
-        const double wavelengthOfSpike = highResReference.wavelength[idxOfSpikeInHighResReference];
+        const double wavelengthOfSpike  = highResReference.m_waveLength[idxOfSpikeInHighResReference];
         const double idxInWavelMappingF = FindValue(wavelMapping, wavelengthOfSpike, 0U, wavelMapping.size());
-        const size_t idxInWavelMapping = (size_t)std::round(idxInWavelMappingF);
+        const size_t idxInWavelMapping  = (size_t)std::round(idxInWavelMappingF);
 
         bool retVal = ConvolveReference(wavelMapping, slf, highResReference, result);
 
+        const double expectedAmplitude = 0.01;
         REQUIRE(retVal == true);
-        REQUIRE(fabs(result[idxInWavelMapping] - 1.0) < 0.01); // the spike must be at the correct point
+        REQUIRE(fabs(result[idxInWavelMapping] - expectedAmplitude) < 0.01); // the spike must be at the correct point
     }
 
     /* SECTION("Output has correct width (in nm)")
@@ -169,9 +171,9 @@ TEST_CASE("ConvolveReference returns expected output - simple input", "[Convolve
         bool retVal = ConvolveReference(wavelMapping, slf, highResReference, result);
         REQUIRE(retVal == true);
 
-        SimpleSpectrum resultingCrossSection;
-        resultingCrossSection.value = result;
-        resultingCrossSection.wavelength = highResReference.wavelength;
+        Evaluation::CCrossSectionData resultingCrossSection;
+        resultingCrossSection.m_crossSection = result;
+        resultingCrossSection.m_waveLength = highResReference.m_waveLength;
 
         const double fwhm = CalculateFhwm(resultingCrossSection);
 
@@ -184,20 +186,21 @@ TEST_CASE("ConvolveReference returns expected output - simple input", "[Convolve
     SECTION("Same output even if slf is not normalized")
     {
         // Find the index of the same wavelength in wavelMapping
-        const double wavelengthOfSpike = highResReference.wavelength[idxOfSpikeInHighResReference];
+        const double wavelengthOfSpike  = highResReference.m_waveLength[idxOfSpikeInHighResReference];
         const double idxInWavelMappingF = FindValue(wavelMapping, wavelengthOfSpike, 0U, wavelMapping.size());
-        const size_t idxInWavelMapping = (size_t)std::round(idxInWavelMappingF);
+        const size_t idxInWavelMapping  = (size_t)std::round(idxInWavelMappingF);
 
         // Increase the amplitude of the SLF.
-        for (double& v : slf.value)
+        for (double& v : slf.m_crossSection)
         {
             v *= 123.0;
         }
 
         bool retVal = ConvolveReference(wavelMapping, slf, highResReference, result);
 
+        const double expectedAmplitude = 0.01;
         REQUIRE(retVal == true);
-        REQUIRE(fabs(result[idxInWavelMapping] - 1.0) < 0.01); // the spike must be at the correct point and still have amplitude = 1
+        REQUIRE(fabs(result[idxInWavelMapping] - expectedAmplitude) < 0.01); // the spike must be at the correct point and still have amplitude = 1
     }
 
     // TODO: what happens if the reference doesn't cover the same wavelength range as the spectrometer ??
@@ -208,14 +211,14 @@ TEST_CASE("ConvolveReference returns expected output - reference lambda_max < sp
 {
     std::vector<double> wavelMapping = CreatePixelToWavelengthMapping(278.0, 423.0, 2048);
 
-    SimpleSpectrum highResReference;
-    highResReference.wavelength = CreatePixelToWavelengthMapping(wavelMapping.front(), 350.0, 8192);
-    highResReference.value = std::vector<double>(8192, 1.0); // all-ones
+    Evaluation::CCrossSectionData highResReference;
+    highResReference.m_waveLength   = CreatePixelToWavelengthMapping(wavelMapping.front(), 350.0, 8192);
+    highResReference.m_crossSection = std::vector<double>(8192, 1.0); // all-ones
 
-    SimpleSpectrum slf;
+    Evaluation::CCrossSectionData slf;
     const double slfSigma = 0.7;
-    slf.wavelength = CreatePixelToWavelengthMapping(-2.0, +2.0, 41); // 0.1 nm resolution
-    slf.value = CreateGaussian(slfSigma, slf.wavelength);
+    slf.m_waveLength    = CreatePixelToWavelengthMapping(-2.0, +2.0, 41); // 0.1 nm resolution
+    slf.m_crossSection  = CreateGaussian(slfSigma, slf.m_waveLength);
 
     std::vector<double> result;
 
@@ -230,8 +233,8 @@ TEST_CASE("ConvolveReference returns expected output - reference lambda_max < sp
     SECTION("Output is zero after reference ends.")
     {
         // Find the index of the same wavelength in wavelMapping
-        const double idxInWavelMappingF = FindValue(wavelMapping, highResReference.wavelength.back(), 0U, wavelMapping.size());
-        const size_t idxInWavelMapping = (size_t)std::round(idxInWavelMappingF);
+        const double idxInWavelMappingF = FindValue(wavelMapping, highResReference.m_waveLength.back(), 0U, wavelMapping.size());
+        const size_t idxInWavelMapping  = (size_t)std::round(idxInWavelMappingF);
 
         bool retVal = ConvolveReference(wavelMapping, slf, highResReference, result);
 
