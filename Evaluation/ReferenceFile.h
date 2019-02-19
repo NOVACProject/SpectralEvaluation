@@ -36,11 +36,26 @@ namespace Evaluation
         /** The name of the specie */
         std::string   m_specieName = "";
 
-        /** The path to the reference file */
+        /** The path to the reference file.
+            This is a ready-to-use cross section on the correct wavelength grid convolved 
+            with the instruments slit-function. This may or may not be high-pass filtered
+            (that option is given by 'm_isFiltered' below).
+            The main option is to use this file to evaluate the spectra. 
+            This may be empty, in which case the cross section will be generated using
+            m_crossSectionFile, m_slitFunctionFile and m_wavelengthCalibrationFile below. */
         std::string   m_path = "";
 
+        /** The path to a high-resolved cross section which can be convolved with 
+            'm_slitFunctionFile' and resampled to the wavelength in 'm_wavelengthCalibrationFile'
+            to generate a reference file. If m_path is empty then these three must be provided
+            in order to generate the reference on the fly. */
+        std::string   m_crossSectionFile = "";
+        std::string   m_slitFunctionFile = "";
+        std::string   m_wavelengthCalibrationFile = "";
+
         /** The magic gas-factor is the conversion factor 
-            between ppmm and mg */
+            between ppmm and mg and is necessary to calculate a flux.
+            The factor 2.66 is for SO2, other gases needs other values. */
         double        m_gasFactor = 2.66;
 
         /** The option for the column value. */
@@ -112,7 +127,13 @@ namespace Evaluation
 
         /** Reads the data of this reference file from disk.
             The file is taken from the member variable 'm_path' (which of course must be initialized first)
-            and the result is written to 'm_data'. If this fails then m_data will be NULL */
+            and the result is written to 'm_data'. If this fails then m_data will be NULL.
+            @return 0 on success. */
         int ReadCrossSectionDataFromFile();
+
+        /** Performs a convolution using the files m_crossSectionFile, m_slitFunctionFile and m_wavelengthCalibrationFile
+            and saves the result in m_data.
+            @return 0 on success.*/
+        int ConvolveReference();
     };
 }
