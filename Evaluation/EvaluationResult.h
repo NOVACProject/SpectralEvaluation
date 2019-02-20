@@ -11,8 +11,8 @@ namespace Evaluation
 #define MARK_BAD_EVALUATION 0x0001
 #define MARK_DELETED 0x0002
 
-    /** <b>CEvaluationResult</b> is a generic class to describe the results after evaluating
-            a single spectrum. It contains an array of CReferenceFitResult:s - one for each
+    /** CEvaluationResult is a storage container for the results after evaluating one single spectrum. 
+            It contains an array of CReferenceFitResult:s - one for each
             reference spectrum that was included in the fit, and other information about the fit -
             such as Delta, ChiSquare, the number of iterations required and the fitted polynomial. */
     class CEvaluationResult

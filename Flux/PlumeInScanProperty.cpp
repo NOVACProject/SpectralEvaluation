@@ -65,7 +65,7 @@ template <class T> bool FindNLowest(const T array[], long nElements, T output[],
 /// --------------------------- FINDING THE PLUME IN ONE SCAN ---------------------------
 
 // VERSION 1: FROM NOVACPROGRAM
-bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, long numPoints, double &plumeCentre_alpha, double &plumeCentre_phi, double &plumeEdge_low, double &plumeEdge_high) {
+bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, long numPoints, CPlumeInScanProperty& plumeProperties) {
 
     // There is a plume iff there is a region, where the column-values are considerably
     //	much higher than in the rest of the scan
@@ -127,28 +127,44 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
             sumAngle_phi += p[k] * col[k];
             sumWeight += col[k];
         }
-        plumeCentre_alpha = sumAngle_alpha / sumWeight;
-        plumeCentre_phi = sumAngle_phi / sumWeight; // if phi == NULL then this will be non-sense
+        plumeProperties.plumeCenter = sumAngle_alpha / sumWeight;
+        plumeProperties.plumeCenter2 = sumAngle_phi / sumWeight; // if phi == NULL then this will be non-sense
 
-                                                    // The edges of the plume
-        plumeEdge_low = angle[0];
-        plumeEdge_high = angle[nCol - 1];
+        // The edges of the plume
+        // TODO: this could really be better, with interpolation between the angles...
+        plumeProperties.plumeEdgeLow = angle[0];
+        plumeProperties.plumeEdgeHigh = angle[nCol - 1];
         double minCol = Min(col.data(), nCol);
         double maxCol_div_e = (Max(col.data(), nCol) - minCol) * 0.3679;
-        for (int k = 0; k < nCol; ++k) {
-            if (angle[k] > plumeCentre_alpha) {
+        double maxCol_half  = (Max(col.data(), nCol) - minCol) * 0.5;
+        for (int k = 0; k < nCol; ++k)
+        {
+            if (angle[k] > plumeProperties.plumeCenter)
+            {
                 break;
             }
-            else if ((col[k] - minCol) < maxCol_div_e) {
-                plumeEdge_low = angle[k];
+            if ((col[k] - minCol) < maxCol_div_e)
+            {
+                plumeProperties.plumeEdgeLow = angle[k];
+            }
+            if ((col[k] - minCol) < maxCol_half)
+            {
+                plumeProperties.plumeHalfLow = angle[k];
             }
         }
-        for (int k = nCol - 1; k >= 0; --k) {
-            if (angle[k] <= plumeCentre_alpha) {
+        for (int k = nCol - 1; k >= 0; --k)
+        {
+            if (angle[k] <= plumeProperties.plumeCenter)
+            {
                 break;
             }
-            else if ((col[k] - minCol) < maxCol_div_e) {
-                plumeEdge_high = angle[k];
+            if ((col[k] - minCol) < maxCol_div_e)
+            {
+                plumeProperties.plumeEdgeHigh = angle[k];
+            }
+            if ((col[k] - minCol) < maxCol_half)
+            {
+                plumeProperties.plumeHalfHigh = angle[k];
             }
         }
 
@@ -230,43 +246,62 @@ bool FindPlume(const double *scanAngles, const double *phi, const double *column
             sumAngle_phi += p[k] * col[k];
             sumWeight += col[k];
         }
-        plumeProperties.m_plumeCentre[0] = sumAngle_alpha / sumWeight;
-        plumeProperties.m_plumeCentre[1] = sumAngle_phi / sumWeight; // if phi == NULL then this will be non-sense
+        plumeProperties.plumeCenter = sumAngle_alpha / sumWeight;
+        plumeProperties.plumeCenter2 = sumAngle_phi / sumWeight; // if phi == NULL then this will be non-sense
 
                                                                      // The edges of the plume and the error in the estimated plume centres
-        plumeProperties.m_plumeEdge_low = angle[0];
-        plumeProperties.m_plumeEdge_high = angle[nCol - 1];
+        plumeProperties.plumeEdgeLow = angle[0];
+        plumeProperties.plumeEdgeHigh = angle[nCol - 1];
         double peakLow = angle[0];
         double peakHigh = angle[nCol - 1];
         double maxCol_div_e = Max(col, nCol) * 0.3679;
-        double maxCol_90 = Max(col, nCol) * 0.90;
+        double maxCol_90    = Max(col, nCol) * 0.90;
+        double maxCol_half  = (Max(col, nCol)) * 0.5;
 
         // Search for the lower edge of the plume ...
-        for (int k = 0; k < nCol - 2; ++k) {
-            if (angle[k] > plumeProperties.m_plumeCentre[0]) {
+        // TODO: this could really be better, with interpolation between the angles...
+        for (int k = 0; k < nCol - 2; ++k)
+        {
+            if (angle[k] > plumeProperties.plumeCenter)
+            {
                 break;
             }
-            else if (Average(col + k, 2) < maxCol_div_e) {
-                plumeProperties.m_plumeEdge_low = angle[k];
+            if (Average(col + k, 2) < maxCol_div_e)
+            {
+                plumeProperties.plumeEdgeLow = angle[k];
             }
-            if ((col[k] < maxCol_90) && (col[k + 1] >= maxCol_90)) {
+            if (Average(col + k, 2) < maxCol_half)
+            {
+                plumeProperties.plumeHalfLow = angle[k];
+            }
+            if ((col[k] < maxCol_90) && (col[k + 1] >= maxCol_90))
+            {
                 peakLow = angle[k];
             }
         }
 
         // .. and then the upper edge
-        for (int k = nCol - 1; k >= 1; --k) {
-            if (angle[k] <= plumeProperties.m_plumeCentre[0]) {
+        for (int k = nCol - 1; k >= 1; --k)
+        {
+            if (angle[k] <= plumeProperties.plumeCenter)
+            {
                 break;
             }
-            else if (Average(col + k - 1, 2) < maxCol_div_e) {
-                plumeProperties.m_plumeEdge_high = angle[k];
+            if (Average(col + k - 1, 2) < maxCol_div_e)
+            {
+                plumeProperties.plumeEdgeHigh = angle[k];
             }
-            if ((col[k] < maxCol_90) && (col[k - 1] >= maxCol_90)) {
+            if (Average(col + k - 1, 2) < maxCol_half)
+            {
+                plumeProperties.plumeHalfHigh = angle[k];
+            }
+            if ((col[k] < maxCol_90) && (col[k - 1] >= maxCol_90))
+            {
                 peakHigh = angle[k];
             }
         }
-        plumeProperties.m_plumeCentreError[0] = (peakHigh - peakLow) / 2;
+
+        plumeProperties.plumeCenterError = (peakHigh - peakLow) / 2;
 
         delete[] col;	delete[] colE;
         delete[] angle; delete[] p;
@@ -284,13 +319,12 @@ bool FindPlume(const double *scanAngles, const double *phi, const double *column
 
 // VERSION 1: FROM NOVACPROGRAM
 bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, double offset, long numPoints, double &completeness) {
-    double plumeCentre_alpha, plumeCentre_phi;
-    double plumeEdge_low, plumeEdge_high;
+    CPlumeInScanProperty plumeProperties;
 
     int nDataPointsToAverage = 5;
 
     // Check if there is a plume at all...
-    bool inPlume = FindPlume(scanAngles, phi, columns, columnErrors, badEvaluation, numPoints, plumeCentre_alpha, plumeCentre_phi, plumeEdge_low, plumeEdge_high);
+    bool inPlume = FindPlume(scanAngles, phi, columns, columnErrors, badEvaluation, numPoints, plumeProperties);
     if (!inPlume) {
         completeness = 0.0; // <-- no plume at all
         return false;
@@ -355,7 +389,7 @@ bool CalculatePlumeCompleteness(const double *scanAngles, const double *phi, con
     // Check if there is a plume at all...
     bool inPlume = FindPlume(scanAngles, phi, columns, columnErrors, badEvaluation, numPoints, plumeProperties);
     if (!inPlume) {
-        plumeProperties.m_completeness = 0.0; // <-- no plume at all
+        plumeProperties.completeness = 0.0; // <-- no plume at all
         return false;
     }
 
@@ -372,7 +406,7 @@ bool CalculatePlumeCompleteness(const double *scanAngles, const double *phi, con
     }
     if (nAverage < nDataPointsToAverage) {
         // not enough data-points to make an ok average, return fail
-        plumeProperties.m_completeness = 0.0; // <-- no plume at all
+        plumeProperties.completeness = 0.0; // <-- no plume at all
         return false;
     }
     avgLeft /= nDataPointsToAverage;
@@ -390,7 +424,7 @@ bool CalculatePlumeCompleteness(const double *scanAngles, const double *phi, con
     }
     if (nAverage < nDataPointsToAverage) {
         // not enough data-points to make an ok average, return fail
-        plumeProperties.m_completeness = 0.0; // <-- no plume at all
+        plumeProperties.completeness = 0.0; // <-- no plume at all
         return false;
     }
     avgRight /= nDataPointsToAverage;
@@ -404,9 +438,9 @@ bool CalculatePlumeCompleteness(const double *scanAngles, const double *phi, con
     }
 
     // The completeness
-    plumeProperties.m_completeness = 1.0 - 0.5 * std::max(avgLeft, avgRight) / maxColumn;
-    if (plumeProperties.m_completeness > 1.0)
-        plumeProperties.m_completeness = 1.0;
+    plumeProperties.completeness = 1.0 - 0.5 * std::max(avgLeft, avgRight) / maxColumn;
+    if (plumeProperties.completeness > 1.0)
+        plumeProperties.completeness = 1.0;
 
     return true;
 }
