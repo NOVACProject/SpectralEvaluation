@@ -1,6 +1,6 @@
 #pragma once
 
-#include <PPPLib/SpectralEvaluation/Configuration/DarkSettings.h>
+#include "../Configuration/DarkSettings.h"
 
 class CSpectrum;
 namespace FileHandler
