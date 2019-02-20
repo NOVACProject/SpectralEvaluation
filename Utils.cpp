@@ -45,6 +45,30 @@ void Remove(std::string& str, char character)
     str.erase(std::remove(str.begin(), str.end(), character), str.end());
 }
 
+int ReverseFind(const std::string& str, char ch)
+{
+    const char* pt = strrchr(str.c_str(), int(ch));
+    if (nullptr == pt)
+    {
+        return -1;
+    }
+    else
+    {
+        return int(pt - str.c_str());
+    }
+}
+
+std::string Right(const std::string& input, size_t nChars)
+{
+    return input.substr(input.size() - nChars, nChars);
+}
+
+std::string Left(const std::string& input, size_t nChars)
+{
+    return input.substr(0, nChars);
+}
+
+
 void MakeUpper(std::string& str)
 {
     std::transform(str.begin(), str.end(), str.begin(), [](char c) { return char(::toupper(c)); });

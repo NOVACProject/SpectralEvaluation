@@ -13,6 +13,7 @@ project(NovacSpectralEvaluation)
 set(SPECTRALEVAUATION_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR} CACHE STRING "")
 
 # Create a library from the SpectralEvaluation classes
+add_subdirectory(Configuration)
 add_subdirectory(Evaluation)
 add_subdirectory(Fit)
 add_subdirectory(File)
@@ -30,6 +31,8 @@ add_library(NovacSpectralEvaluation
     ${SPECTRUM_CLASS_SOURCES}
     ${SPECTRUM_FILE_HEADERS}
     ${SPECTRUM_FILE_SOURCES}
+    ${SPECTRUM_CONFIGURATION_HEADERS}
+    ${SPECTRUM_CONFIGURATION_SOURCES}
     ${CMAKE_CURRENT_SOURCE_DIR}/Utils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Utils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/VectorUtils.cpp
@@ -37,12 +40,15 @@ add_library(NovacSpectralEvaluation
 )
 
 #Organize the files into folders, for ease of use
+source_group("Header Files\\Configuration"          FILES ${SPECTRUM_CONFIGURATION_HEADERS})
 source_group("Header Files\\Evaluation"             FILES ${SPECTRUM_EVALUATION_HEADERS})
 source_group("Header Files\\File"                   FILES ${SPECTRUM_FILE_HEADERS})
 source_group("Header Files\\Fit"                    FILES ${SPECTRUM_FIT_HEADERS})
 source_group("Header Files\\Flux"                   FILES ${SPECTRUM_FLUX_HEADERS})
 source_group("Header Files\\Spectra"                FILES ${SPECTRUM_CLASS_HEADERS})
 
+
+source_group("Source Files\\Configuration"          FILES ${SPECTRUM_CONFIGURATION_SOURCES})
 source_group("Source Files\\Evaluation"             FILES ${SPECTRUM_EVALUATION_SOURCES})
 source_group("Source Files\\File"                   FILES ${SPECTRUM_FILE_SOURCES})
 source_group("Source Files\\Fit"                    FILES ${SPECTRUM_FIT_SOURCES})

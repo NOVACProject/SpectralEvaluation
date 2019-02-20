@@ -23,6 +23,13 @@ void Trim(std::string& str, const char* characters = " ");
     @return the number of characters removed. */
 void Remove(std::string& str, char character);
 
+/** Extracts the right-most or left-most characters in a std::string */
+std::string Right(const std::string& input, size_t nChars);
+std::string Left(const std::string& input, size_t nChars);
+
+/** Finds the last occurrence of the given character in the provided string, -1 if the character is not found. */
+int ReverseFind(const std::string& str, char ch);
+
 /** Converts all letters to upper-case in the provided string. */
 void MakeUpper(std::string& str);
 

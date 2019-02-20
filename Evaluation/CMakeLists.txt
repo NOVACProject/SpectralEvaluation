@@ -11,6 +11,7 @@ set(SPECTRUM_EVALUATION_HEADERS
     ${CMAKE_CURRENT_LIST_DIR}/CrossSectionData.h
     ${CMAKE_CURRENT_LIST_DIR}/ReferenceFile.h
     ${CMAKE_CURRENT_LIST_DIR}/ReferenceFitResult.h
+    ${CMAKE_CURRENT_LIST_DIR}/SpectralEvaluationBase.h
     PARENT_SCOPE)
 
 
@@ -22,4 +23,5 @@ set(SPECTRUM_EVALUATION_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/CrossSectionData.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ReferenceFile.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ReferenceFitResult.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/SpectralEvaluationBase.cpp
     PARENT_SCOPE)
