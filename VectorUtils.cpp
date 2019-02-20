@@ -1,5 +1,6 @@
 #include "VectorUtils.h"
 #include <algorithm>
+#include <cmath>
 
 double Max(const std::vector<double>& values, size_t& idx)
 {

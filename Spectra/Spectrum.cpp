@@ -5,6 +5,7 @@
 #include <cstdarg>
 #include <cassert>
 #include <cstring>
+#include <cmath>
 
 #undef min
 #undef max

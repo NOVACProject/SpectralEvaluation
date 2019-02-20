@@ -1,5 +1,6 @@
 #include "File.h"
 #include "../Evaluation/CrossSectionData.h"
+#include <cstring>
 
 namespace FileIo
 {

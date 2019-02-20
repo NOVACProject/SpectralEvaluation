@@ -1,6 +1,7 @@
 #include "Utils.h"
 #include <algorithm>
 #include <vector>
+#include <cstring>
 
 bool EqualsIgnoringCase(const std::string& str1, const std::string& str2)
 {

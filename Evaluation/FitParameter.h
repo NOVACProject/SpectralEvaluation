@@ -3,7 +3,7 @@
 namespace Evaluation
 {
     /** constants for selection of fit-parameters*/
-    const enum FIT_PARAMETER{ 
+    enum FIT_PARAMETER{ 
         COLUMN, 
         COLUMN_ERROR, 
         SHIFT, 

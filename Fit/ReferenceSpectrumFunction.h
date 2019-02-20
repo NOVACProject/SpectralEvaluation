@@ -14,7 +14,9 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#ifdef _MSC_VER
 #pragma warning (push, 3)
+#endif
 
 namespace MathFit
 {
@@ -650,5 +652,8 @@ namespace MathFit
 	};
 }
 
+#ifdef _MSC_VER
 #pragma warning (pop)
+#endif
+
 #endif // !defined(AFX_DOASFUNCTIONS_H__F778D400_2C41_4092_8BA9_F789F5766579__INCLUDED_)

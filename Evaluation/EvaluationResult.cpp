@@ -1,5 +1,7 @@
 #include "EvaluationResult.h"
 #include "../Spectra/SpectrumInfo.h"
+#include <cstring>
+#include <cmath>
 
 namespace Evaluation
 {

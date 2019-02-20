@@ -164,7 +164,7 @@ namespace MathFit
 					mCorrelInternal.SetAt(j, i, 0);
 				}
 
-				return true;
+                return true;
 		}
 
 		/**

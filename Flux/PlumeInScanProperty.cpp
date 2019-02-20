@@ -1,5 +1,6 @@
 #include "PlumeInScanProperty.h"
 #include <algorithm>
+#include <cstring>
 
 template <class T> double Average(T array[], long nElements) {
     if (nElements <= 0)

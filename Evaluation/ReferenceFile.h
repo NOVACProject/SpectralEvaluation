@@ -7,7 +7,7 @@ namespace Evaluation
     class CCrossSectionData;
 
     /* the options for the shift and squeeze */
-    const enum SHIFT_TYPE{
+    enum SHIFT_TYPE{
         SHIFT_FREE,     /* Include the shift and squeeze in the fit */
         SHIFT_FIX,      /* Set the shift/squeee to a fixed value */
         SHIFT_LINK,     /* Links the shift/squeeze to the value of another reference */

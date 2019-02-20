@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 // ---------------------------------------------------------------------------------------------------------------
 // -------------- This header contains methods used to prepare reference spectra for the evaluation --------------

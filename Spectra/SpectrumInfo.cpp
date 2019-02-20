@@ -1,4 +1,5 @@
 #include "spectruminfo.h"
+#include <cstring>
 
 CSpectrumInfo::CSpectrumInfo(void)
 {
