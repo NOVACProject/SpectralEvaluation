@@ -38,11 +38,13 @@ add_library(NovacSpectralEvaluation
 
 #Organize the files into folders, for ease of use
 source_group("Header Files\\Evaluation"             FILES ${SPECTRUM_EVALUATION_HEADERS})
+source_group("Header Files\\File"                   FILES ${SPECTRUM_FILE_HEADERS})
 source_group("Header Files\\Fit"                    FILES ${SPECTRUM_FIT_HEADERS})
 source_group("Header Files\\Flux"                   FILES ${SPECTRUM_FLUX_HEADERS})
 source_group("Header Files\\Spectra"                FILES ${SPECTRUM_CLASS_HEADERS})
 
 source_group("Source Files\\Evaluation"             FILES ${SPECTRUM_EVALUATION_SOURCES})
+source_group("Source Files\\File"                   FILES ${SPECTRUM_FILE_SOURCES})
 source_group("Source Files\\Fit"                    FILES ${SPECTRUM_FIT_SOURCES})
 source_group("Source Files\\Flux"                   FILES ${SPECTRUM_FLUX_SOURCES})
 source_group("Source Files\\Spectra"                FILES ${SPECTRUM_CLASS_SOURCES})
