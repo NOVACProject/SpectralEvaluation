@@ -10,13 +10,13 @@ namespace FileHandler
 
 namespace Evaluation
 {
-    /** SpectralEvaluationBase is the base class for the SpectralEvaluation-classes found in 
+    /** ScanEvaluationBase is the base class for the ScanEvaluation-classes found in 
         NovacPPP and NovacProgram. This collects the common elements between the two program */
-    class SpectralEvaluationBase
+    class ScanEvaluationBase
     {
     public:
-        SpectralEvaluationBase();
-        virtual ~SpectralEvaluationBase();
+        ScanEvaluationBase();
+        virtual ~ScanEvaluationBase();
 
         /** Setting the option for wheather the spectra are averaged or not.
             averaged=true means that the spectra are averaged instead of summed.

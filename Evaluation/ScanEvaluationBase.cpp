@@ -1,4 +1,4 @@
-#include "SpectralEvaluationBase.h"
+#include "ScanEvaluationBase.h"
 #include "../Spectra/Spectrum.h"
 #include "../File/ScanFileHandler.h"
 #include "../File/STDFile.h"
@@ -6,17 +6,17 @@
 
 namespace Evaluation
 {
-    SpectralEvaluationBase::SpectralEvaluationBase()
+    ScanEvaluationBase::ScanEvaluationBase()
     {
 
     }
 
-    SpectralEvaluationBase::~SpectralEvaluationBase()
+    ScanEvaluationBase::~ScanEvaluationBase()
     {
 
     }
 
-    bool SpectralEvaluationBase::ReadSpectrumFromFile(const std::string& fullFilename, CSpectrum& spec)
+    bool ScanEvaluationBase::ReadSpectrumFromFile(const std::string& fullFilename, CSpectrum& spec)
     {
         if (fullFilename.size() < 3)
         {
@@ -33,7 +33,7 @@ namespace Evaluation
         return false;
     }
 
-    bool SpectralEvaluationBase::GetOffsetSpectrum(FileHandler::CScanFileHandler &scan, const Configuration::CDarkSettings& darkSettings, CSpectrum &offsetSpectrum)
+    bool ScanEvaluationBase::GetOffsetSpectrum(FileHandler::CScanFileHandler &scan, const Configuration::CDarkSettings& darkSettings, CSpectrum &offsetSpectrum)
     {
         if (darkSettings.m_offsetOption == Configuration::DARK_MODEL_OPTION::USER_SUPPLIED)
         {
@@ -45,7 +45,7 @@ namespace Evaluation
         }
     }
 
-    bool SpectralEvaluationBase::GetDarkCurrentSpectrum(FileHandler::CScanFileHandler &scan, const Configuration::CDarkSettings& darkSettings, CSpectrum &darkCurrent, bool& needsOffsetCorrection)
+    bool ScanEvaluationBase::GetDarkCurrentSpectrum(FileHandler::CScanFileHandler &scan, const Configuration::CDarkSettings& darkSettings, CSpectrum &darkCurrent, bool& needsOffsetCorrection)
     {
         needsOffsetCorrection = true;
         if (darkSettings.m_darkCurrentOption == Configuration::DARK_MODEL_OPTION::USER_SUPPLIED)
@@ -66,7 +66,7 @@ namespace Evaluation
         }
     }
 
-    bool SpectralEvaluationBase::ModelDarkSpectrum(FileHandler::CScanFileHandler &scan, const Configuration::CDarkSettings& darkSettings, const CSpectrum &spec, CSpectrum &dark)
+    bool ScanEvaluationBase::ModelDarkSpectrum(FileHandler::CScanFileHandler &scan, const Configuration::CDarkSettings& darkSettings, const CSpectrum &spec, CSpectrum &dark)
     {
         bool offsetCorrectDC = true;
 
@@ -125,7 +125,7 @@ namespace Evaluation
         }
     }
 
-    bool SpectralEvaluationBase::GetDark(FileHandler::CScanFileHandler& scan, const CSpectrum &spec, CSpectrum &dark, const Configuration::CDarkSettings* darkSettings)
+    bool ScanEvaluationBase::GetDark(FileHandler::CScanFileHandler& scan, const CSpectrum &spec, CSpectrum &dark, const Configuration::CDarkSettings* darkSettings)
     {
         CSpectrum offset, darkCurrent, offset_dc;
 
