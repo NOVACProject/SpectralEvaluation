@@ -2,12 +2,4 @@
 
 namespace Evaluation
 {
-CReferenceFitResult::CReferenceFitResult()
-{
-}
-
-CReferenceFitResult::~CReferenceFitResult()
-{
-}
-
 }

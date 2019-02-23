@@ -4,24 +4,20 @@
 #include <string>
 #include "../Utils.h"
 
-CDateTime::CDateTime(const CDateTime &t2) {
-    year = t2.year;
-    month = t2.month;
-    day = t2.day;
-    hour = t2.hour;
-    minute = t2.minute;
-    second = t2.second;
-    millisecond = t2.millisecond;
+CDateTime::CDateTime(const CDateTime &t2)
+    : year(t2.year), month(t2.month), day(t2.day), hour(t2.hour), minute(t2.minute), second(t2.second), millisecond(t2.millisecond)
+{
 }
 
-CDateTime::CDateTime(int y, int mo, int d, int h, int mi, int s) {
-    year    = (unsigned short)y;
-    month   = (unsigned char)mo;
-    day     = (unsigned char)d;
-    hour    = (unsigned char)h;
-    minute  = (unsigned char)mi;
-    second  = (unsigned char)s;
-    millisecond = 0;
+CDateTime::CDateTime(int y, int mo, int d, int h, int mi, int s)
+    : year((unsigned short)y),
+    month((unsigned char)mo),
+    day((unsigned char)d),
+    hour((unsigned char)h),
+    minute((unsigned char)mi),
+    second((unsigned char)s),
+    millisecond(0)
+{
 }
 
 bool CDateTime::operator <(const CDateTime &t2) const
@@ -125,10 +121,10 @@ void CDateTime::SetToNow() {
     time(&t);
     tim = localtime(&t);
 
-    this->year  = (unsigned short)(1900 + tim->tm_year);
+    this->year = (unsigned short)(1900 + tim->tm_year);
     this->month = (unsigned char)(1 + tim->tm_mon);
-    this->day   = (unsigned char)tim->tm_mday;
-    this->hour  = (unsigned char)tim->tm_hour;
+    this->day = (unsigned char)tim->tm_mday;
+    this->hour = (unsigned char)tim->tm_hour;
     this->minute = (unsigned char)tim->tm_min;
     this->second = (unsigned char)tim->tm_sec;
 }
