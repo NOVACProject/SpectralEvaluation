@@ -28,6 +28,10 @@ double Min(const std::vector<double>& values);
     If values.size() == 0 then 0.0 is returned. */
 double Sum(const std::vector<double>& values);
 
+/** Finds the 'N' lowest values in the input vector and fills them into the result vector
+    If N == 0 or input.size() == 0 then result will be an empty vector upon return. */
+void FindNLowest(const std::vector<double>& input, size_t N, std::vector<double>& result);
+
 /** Normalizes a vector of values such that the highest value will be 1.0 and the lowest 0.0.
     If input.size() == 0 then output.size() will also be zero. */
 void Normalize(const std::vector<double>& input, std::vector<double>& output);

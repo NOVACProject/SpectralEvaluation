@@ -69,6 +69,21 @@ double Sum(const std::vector<double>& values)
     return sum;
 }
 
+void FindNLowest(const std::vector<double>& input, size_t N, std::vector<double>& result)
+{
+    if (0 == N || 0 == input.size())
+    {
+        result.clear();
+        return;
+    }
+    N = std::min(N, input.size()); // never sort beyond the end of the data
+
+    std::vector<double> temp(begin(input), end(input));
+    std::nth_element(begin(temp), begin(temp) + N, end(temp));
+    result = std::vector<double>(begin(temp), begin(temp) + N);
+    std::sort(begin(result), end(result));
+}
+
 void Normalize(const std::vector<double>& input, std::vector<double>& output)
 {
     output.resize(input.size());

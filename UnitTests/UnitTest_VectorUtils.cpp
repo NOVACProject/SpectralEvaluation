@@ -180,3 +180,53 @@ TEST_CASE("GetAt", "[GetAt][VectorUtils]")
         REQUIRE(3.25 == Approx(GetAt(values, 2.25)));
     }
 }
+
+TEST_CASE("FindNLowest", "[FindNLowest][VectorUtils]")
+{
+    std::vector<double> input;
+    std::vector<double> result;
+
+    SECTION("Empty input, returns empty result vector")
+    {
+        result.resize(10);
+        FindNLowest(input, 1, result);
+        REQUIRE(result.size() == 0);
+    }
+
+    SECTION("Typical case - returns n lowest values (n = 3)")
+    {
+        input = {3, 7, 2, 9, 4, 12, 3, 7};
+        FindNLowest(input, 3, result);
+        REQUIRE(3 == result.size());
+        REQUIRE(2 == result[0]);
+        REQUIRE(3 == result[1]);
+        REQUIRE(3 == result[2]);
+    }
+
+    SECTION("Typical case - returns n lowest values (n = 5)")
+    {
+        input = { 3, 7, 2, 9, 4, 12, 3, 7 };
+        FindNLowest(input, 5, result);
+        REQUIRE(5 == result.size());
+        REQUIRE(2 == result[0]);
+        REQUIRE(3 == result[1]);
+        REQUIRE(3 == result[2]);
+        REQUIRE(4 == result[3]);
+        REQUIRE(7 == result[4]);
+    }
+
+    SECTION("N > input.size(), returns all values sorted")
+    {
+        input = { 3, 7, 2, 9, 4, 12, 3, 7 };
+        FindNLowest(input, 12, result);
+        REQUIRE(8 == result.size());
+        REQUIRE(2 == result[0]);
+        REQUIRE(3 == result[1]);
+        REQUIRE(3 == result[2]);
+        REQUIRE(4 == result[3]);
+        REQUIRE(7 == result[4]);
+        REQUIRE(7 == result[5]);
+        REQUIRE(9 == result[6]);
+        REQUIRE(12 == result[7]);
+    }
+}

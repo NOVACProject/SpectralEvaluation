@@ -77,10 +77,8 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
     @param numPoints - the number of points in the scan. Must also be the length
                             of the vectors 'columns', 'columnErrors', and 'badEvaluation'
     @param completeness - Will on successful return be filled with the completeness of the plume */
-bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, double offset, long numPoints, double &completeness);
-bool CalculatePlumeCompleteness(const double *scanAngles, const double *phi, const double *columns, const double *columnErrors, const bool *badEvaluation, double offset, long numPoints, CPlumeInScanProperty &plumeProperties);
+bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, double offset, long numPoints, CPlumeInScanProperty &plumeProperties);
 
 /** Calculates the 'offset' of the scan, i.e. the column amount in the sky spectrum, by judging from 
     the lowest columns in the scan. */
-double CalculatePlumeOffset(const double *columns, const bool *badEvaluation, long numPoints);
 double CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation, long numPoints);
