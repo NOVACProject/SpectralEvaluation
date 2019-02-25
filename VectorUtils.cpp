@@ -69,6 +69,21 @@ double Sum(const std::vector<double>& values)
     return sum;
 }
 
+double Average(const std::vector<double>& values)
+{
+    if (values.size() == 0)
+    {
+        return 0.0;
+    }
+    if (values.size() == 1)
+    {
+        return values.front();
+    }
+    const double sum = Sum(values);
+    return (sum / (double)values.size());
+}
+
+
 void FindNLowest(const std::vector<double>& input, size_t N, std::vector<double>& result)
 {
     if (0 == N || 0 == input.size())
