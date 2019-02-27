@@ -1,7 +1,7 @@
 #include "catch.hpp"
-#include <Spectra/ReferenceSpectrumConvolution.h>
-#include <Evaluation/CrossSectionData.h>
-#include <VectorUtils.h>
+#include <SpectralEvaluation/Spectra/ReferenceSpectrumConvolution.h>
+#include <SpectralEvaluation/Evaluation/CrossSectionData.h>
+#include <SpectralEvaluation/VectorUtils.h>
 
 std::vector<double> CreateGaussian(double sigmaInPixels, int length = 19)
 {

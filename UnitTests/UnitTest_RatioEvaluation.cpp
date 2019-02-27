@@ -1,6 +1,6 @@
 #include "catch.hpp"
-#include <Evaluation/RatioEvaluation.h>
-#include <Evaluation/BasicScanEvaluationResult.h>
+#include <SpectralEvaluation/Evaluation/RatioEvaluation.h>
+#include <SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h>
 
 using namespace Evaluation;
 

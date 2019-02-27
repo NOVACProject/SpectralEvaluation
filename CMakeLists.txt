@@ -10,15 +10,15 @@ project(NovacSpectralEvaluation)
 
 ## -------------------- NovacSpectralEvaluation -------------------------
 
-set(SPECTRALEVAUATION_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR} CACHE STRING "")
+set(SPECTRALEVAUATION_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include CACHE STRING "")
 
 # Create a library from the SpectralEvaluation classes
-add_subdirectory(Configuration)
-add_subdirectory(Evaluation)
-add_subdirectory(Fit)
-add_subdirectory(File)
-add_subdirectory(Flux)
-add_subdirectory(Spectra)
+add_subdirectory(src/Configuration)
+add_subdirectory(src/Evaluation)
+add_subdirectory(src/Fit)
+add_subdirectory(src/File)
+add_subdirectory(src/Flux)
+add_subdirectory(src/Spectra)
 
 add_library(NovacSpectralEvaluation
     ${SPECTRUM_EVALUATION_HEADERS}
@@ -33,11 +33,13 @@ add_library(NovacSpectralEvaluation
     ${SPECTRUM_FILE_SOURCES}
     ${SPECTRUM_CONFIGURATION_HEADERS}
     ${SPECTRUM_CONFIGURATION_SOURCES}
-    ${CMAKE_CURRENT_SOURCE_DIR}/Utils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Utils.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/VectorUtils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/VectorUtils.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Utils.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/VectorUtils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/VectorUtils.cpp
 )
+
+target_include_directories(NovacSpectralEvaluation PUBLIC ${SPECTRALEVAUATION_INCLUDE_DIRS})
 
 #Organize the files into folders, for ease of use
 source_group("Header Files\\Configuration"          FILES ${SPECTRUM_CONFIGURATION_HEADERS})

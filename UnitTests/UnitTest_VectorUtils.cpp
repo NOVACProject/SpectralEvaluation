@@ -1,5 +1,5 @@
 #include "catch.hpp"
-#include <VectorUtils.h>
+#include <SpectralEvaluation/VectorUtils.h>
 
 TEST_CASE("Min", "[Min][VectorUtils]")
 {
