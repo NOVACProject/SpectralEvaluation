@@ -1,6 +1,6 @@
 #include "catch.hpp"
-#include <Evaluation/FitWindow.h>
-#include <Evaluation/CrossSectionData.h>
+#include <SpectralEvaluation/Evaluation/FitWindow.h>
+#include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 
 TEST_CASE("FitWindow - Default constructor", "[CFitWindow]")
 {

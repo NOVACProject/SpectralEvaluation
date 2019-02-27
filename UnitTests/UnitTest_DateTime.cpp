@@ -1,5 +1,5 @@
 #include "catch.hpp"
-#include <Spectra/DateTime.h>
+#include <SpectralEvaluation/DateTime.h>
 #include <time.h>
 
 TEST_CASE("CDateTime - Default constructor - all values set to zero", "[DateTime]")

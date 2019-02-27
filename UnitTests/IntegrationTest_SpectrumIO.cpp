@@ -1,6 +1,6 @@
-#include <File/SpectrumIO.h>
-#include <Spectra/Spectrum.h>
-#include <File/MKPack.h>
+#include <SpectralEvaluation/File/SpectrumIO.h>
+#include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/File/MKPack.h>
 #include "catch.hpp"
 
 namespace novac

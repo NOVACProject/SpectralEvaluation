@@ -1,5 +1,5 @@
 #include "catch.hpp"
-#include <Flux/PlumeInScanProperty.h>
+#include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 
 struct PlumeMeasurement
 {

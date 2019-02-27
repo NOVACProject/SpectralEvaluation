@@ -1,5 +1,5 @@
-#include <File/ScanFileHandler.h>
-#include <Utils.h>
+#include <SpectralEvaluation/File/ScanFileHandler.h>
+#include <SpectralEvaluation/Utils.h>
 #include "catch.hpp"
 
 namespace novac
