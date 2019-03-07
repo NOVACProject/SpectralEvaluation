@@ -8,8 +8,8 @@ namespace MathFit
     class CVector;
 }
 
-namespace Evaluation{
-    /** 
+namespace Evaluation {
+    /**
         The CReferenceData class holds information on the cross sections
         used in the fitting procedure. Each instance of this class holds
         the information of one reference used.
@@ -18,11 +18,9 @@ namespace Evaluation{
     {
     public:
         CCrossSectionData();
-        
+
         CCrossSectionData &operator=(const CCrossSectionData &xs2);
-        
-        ~CCrossSectionData();
-        
+
         // ----------------------- DATA -----------------------
 
         /** An array containing the wavelength information.*/
@@ -36,15 +34,15 @@ namespace Evaluation{
         /** Sets the cross-section information at the given pixel */
         void SetAt(int index, double wavel, double value);
 
-        /** Sets the cross-section information to the values in the 
+        /** Sets the cross-section information to the values in the
             supplied array */
         void Set(double *wavelength, double *crossSection, unsigned long pointNum);
 
-        /** Sets the cross-section information to the values in the 
+        /** Sets the cross-section information to the values in the
             supplied array */
         void Set(double *crossSection, unsigned long pointNum);
 
-        /** Sets the cross-section information to the values in the 
+        /** Sets the cross-section information to the values in the
             supplied array */
         void Set(MathFit::CVector &crossSection, unsigned long pointNum);
 
@@ -57,14 +55,25 @@ namespace Evaluation{
         /** Gets the wavelength at the given pixel */
         double GetWavelengthAt(unsigned int index) const;
 
-        /** Reads the cross section from a file 
+        /** Reads the cross section from a file
             @return 0 on success
             @return non-zero value on fail */
         int ReadCrossSectionFile(const std::string &fileName);
     };
 
-    /** Performs a high-pass filtering of this cross section file */
-    int HighPassFilter(CCrossSectionData& crossSection);
+    /** Performs a high-pass filtering of this cross section file.
+        This will:
+            1) multiply by 2.5e15
+            2) exponentiate the cross section
+            3) high-pass filter (binomial, 500 passes)
+            4) log the cross section and
+            5) divide by 2.5e15 (optional)
+        If 'scaleToPpmm' is true then the reference is mutliplied by 2.5e15 before the filtering and divide by the same number after. */
+    int HighPassFilter(CCrossSectionData& crossSection, bool scaleToPpmm = true);
+
+    /** Performs a high-pass filtering of a ring spectrum. This will:
+        1) high-pass filter (binomial, 500 passes).
+        2) log the cross section. */
     int HighPassFilter_Ring(CCrossSectionData& crossSection);
 
     /** Multiplies this cross section with the given constant */

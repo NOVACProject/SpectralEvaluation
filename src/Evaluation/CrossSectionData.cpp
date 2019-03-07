@@ -10,10 +10,6 @@ CCrossSectionData::CCrossSectionData()
 {
 }
 
-CCrossSectionData::~CCrossSectionData()
-{
-}
-
 CCrossSectionData &CCrossSectionData::operator=(const CCrossSectionData &xs2)
 {
     // copy the data of the arrays
@@ -167,17 +163,25 @@ int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
 }
 
 
-int HighPassFilter(CCrossSectionData& crossSection)
+int HighPassFilter(CCrossSectionData& crossSection, bool scaleToPpmm)
 {
     CBasicMath mathObject;
 
     const int length = (int)crossSection.m_crossSection.size();
 
-    mathObject.Mul(crossSection.m_crossSection.data(), length, -2.5e15);
+    if(scaleToPpmm)
+    {
+        mathObject.Mul(crossSection.m_crossSection.data(), length, -2.5e15);
+    }
+
     mathObject.Delog(crossSection.m_crossSection.data(), length);
     mathObject.HighPassBinomial(crossSection.m_crossSection.data(), length, 500);
     mathObject.Log(crossSection.m_crossSection.data(), length);
-    mathObject.Div(crossSection.m_crossSection.data(), length, 2.5e15);
+
+    if(scaleToPpmm)
+    {
+        mathObject.Div(crossSection.m_crossSection.data(), length, 2.5e15);
+    }
 
     return 0;
 }
