@@ -1,6 +1,7 @@
 #include <SpectralEvaluation/VectorUtils.h>
 #include <algorithm>
 #include <cmath>
+#include <assert.h>
 
 double Max(const std::vector<double>& values, size_t& idx)
 {
@@ -83,6 +84,24 @@ double Average(const std::vector<double>& values)
     return (sum / (double)values.size());
 }
 
+double Area(const std::vector<double>& values, double xStep)
+{
+    if (values.size() < 2)
+    {
+        return 0.0;
+    }
+
+    double sum = 0.0;
+    for (size_t ii = 1; ii < values.size(); ++ii)
+    {
+        sum += (values[ii] + values[ii-1]);
+    }
+
+    sum *= 0.5 * xStep;
+
+    return sum;
+}
+
 
 void FindNLowest(const std::vector<double>& input, size_t N, std::vector<double>& result)
 {
@@ -116,13 +135,31 @@ void NormalizeArea(const std::vector<double>& input, std::vector<double>& output
 {
     output.resize(input.size());
 
+    const double minValue    = Min(input);
+    const double sumOfValues = Sum(input);
+;
+
+    for (size_t ii = 0; ii < input.size(); ++ii)
+    {
+        output[ii] = (input[ii] - minValue) / sumOfValues;
+    }
+
+    assert(fabs(Sum(output) - 1.0) < 0.1);
+}
+
+void NormalizeArea(const std::vector<double>& input, double xStep, std::vector<double>& output)
+{
+    output.resize(input.size());
+
     const double minValue = Min(input);
-    const double maxValue = Sum(input);
+    const double maxValue = Area(input, xStep);
 
     for (size_t ii = 0; ii < input.size(); ++ii)
     {
         output[ii] = (input[ii] - minValue) / (maxValue - minValue);
     }
+
+    assert(fabs(Area(output, xStep) - 1.0) < 0.1);
 }
 
 double FindValue(const std::vector<double>& values, double valueToFind, size_t startIdx, size_t stopIdx)
@@ -178,5 +215,25 @@ double GetAt(const std::vector<double>& values, double idx)
     double alpha = idx - std::floor(idx);
 
     return x1 * (1 - alpha) + x2 * alpha;
+}
+
+double Centroid(const std::vector<double>& values)
+{
+    if (values.size() <= 1)
+    {
+        return 0.0;
+    }
+
+    std::vector<double> compoundMass(values.size(), 0.0);
+    compoundMass[0] = values[0];
+
+    for (size_t ii = 1; ii < values.size(); ++ii)
+    {
+        compoundMass[ii] = compoundMass[ii-1] + values[ii];
+    }
+
+    const double totalMass = compoundMass.back();
+
+    return FindValue(compoundMass, 0.5 * totalMass, 0, compoundMass.size());
 }
 

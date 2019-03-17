@@ -1,7 +1,10 @@
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Evaluation/BasicMath.h>
 #include <SpectralEvaluation/Fit/Vector.h>
+#include <SpectralEvaluation/Fit/CubicSplineFunction.h>
+#include <SpectralEvaluation/Spectra/Grid.h>
 #include <fstream>
+#include <numeric>
 
 namespace Evaluation
 {
@@ -10,15 +13,16 @@ CCrossSectionData::CCrossSectionData()
 {
 }
 
-CCrossSectionData::~CCrossSectionData()
+CCrossSectionData::CCrossSectionData(const CCrossSectionData& other)
+    : m_crossSection(begin(other.m_crossSection), end(other.m_crossSection)),
+      m_waveLength(begin(other.m_waveLength), end(other.m_waveLength))
 {
 }
 
-CCrossSectionData &CCrossSectionData::operator=(const CCrossSectionData &xs2)
+CCrossSectionData &CCrossSectionData::operator=(const CCrossSectionData &other)
 {
-    // copy the data of the arrays
-    this->m_crossSection = std::vector<double>(begin(xs2.m_crossSection), end(xs2.m_crossSection));
-    this->m_waveLength   = std::vector<double>(begin(xs2.m_waveLength), end(xs2.m_waveLength));
+    this->m_crossSection = std::vector<double>(begin(other.m_crossSection), end(other.m_crossSection));
+    this->m_waveLength   = std::vector<double>(begin(other.m_waveLength), end(other.m_waveLength));
 
     return *this;
 }
@@ -43,7 +47,7 @@ void CCrossSectionData::SetAt(int index, double wavel, double value)
 void CCrossSectionData::Set(double *wavelength, double *crossSection, unsigned long pointNum)
 {
     if(nullptr == wavelength) throw std::invalid_argument("Cannot set the cross section data using a null wavelength data pointer.");
-    if (nullptr == wavelength) throw std::invalid_argument("Cannot set the cross section data using a null data pointer.");
+    if (nullptr == crossSection) throw std::invalid_argument("Cannot set the cross section data using a null data pointer.");
 
     m_waveLength.resize(pointNum);
     m_crossSection.resize(pointNum);
@@ -167,7 +171,7 @@ int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
 }
 
 
-int HighPassFilter(CCrossSectionData& crossSection)
+int HighPassFilter(CCrossSectionData& crossSection, bool scaleToPpmm)
 {
     CBasicMath mathObject;
 
@@ -177,7 +181,11 @@ int HighPassFilter(CCrossSectionData& crossSection)
     mathObject.Delog(crossSection.m_crossSection.data(), length);
     mathObject.HighPassBinomial(crossSection.m_crossSection.data(), length, 500);
     mathObject.Log(crossSection.m_crossSection.data(), length);
-    mathObject.Div(crossSection.m_crossSection.data(), length, 2.5e15);
+
+    if(!scaleToPpmm)
+    {
+        mathObject.Div(crossSection.m_crossSection.data(), length, 2.5e15);
+    }
 
     return 0;
 }
@@ -212,6 +220,64 @@ int Log(CCrossSectionData& crossSection)
     mathObject.Log(crossSection.m_crossSection.data(), (int)crossSection.m_crossSection.size());
 
     return 0;
+}
+
+
+void Resample(const CCrossSectionData& slf, double resolution, std::vector<double>& resampledSlf)
+{
+    const double xMin = slf.m_waveLength.front();
+    const double xMax = slf.m_waveLength.back();
+
+    std::vector<double> xCopy(begin(slf.m_waveLength), end(slf.m_waveLength)); // a non-const local copy
+    std::vector<double> yCopy(begin(slf.m_crossSection), end(slf.m_crossSection)); // a non-const local copy
+
+    MathFit::CVector slfX(xCopy.data(), (int)xCopy.size(), 1, false);
+    MathFit::CVector slfY(yCopy.data(), (int)yCopy.size(), 1, false);
+
+    // Create a spline from the slit-function.
+    MathFit::CCubicSplineFunction spline(slfX, slfY);
+
+    // Create a new grid for the SLF with the same resolution as the 'grid' but with the same xMin and xMax values
+    UniformGrid newGridForSlf;
+    newGridForSlf.minValue = slf.m_waveLength.front();
+    newGridForSlf.maxValue = slf.m_waveLength.back();
+    newGridForSlf.length   = 1 + (size_t)(std::round((newGridForSlf.maxValue - newGridForSlf.minValue) / resolution));
+
+    // do the resampling...
+    resampledSlf.resize(newGridForSlf.length);
+    for (size_t ii = 0; ii < newGridForSlf.length; ++ii)
+    {
+        const double x = newGridForSlf.At(ii);
+
+        if (x >= xMin && x <= xMax)
+        {
+            resampledSlf[ii] = spline.GetValue(x);
+        }
+        else
+        {
+            resampledSlf[ii] = 0.0;
+        }
+    }
+}
+
+void Shift(std::vector<double>& data, double pixelCount)
+{
+    std::vector<double> xData(data.size(), 0.0);
+    std::iota(begin(xData), end(xData), 0.0);
+
+    std::vector<double> yData(begin(data), end(data));
+
+    MathFit::CVector slfX(xData.data(), (int)xData.size(), 1, false);
+    MathFit::CVector slfY(yData.data(), (int)yData.size(), 1, false);
+
+    CBasicMath math;
+    math.ShiftAndSqueeze(slfX, slfY, 0.0, pixelCount, 1.0);
+
+    data.resize(slfY.GetSize());
+    for (int ii = 0; ii < slfY.GetSize(); ++ii)
+    {
+        data[ii] = slfY.GetAt(ii);
+    }
 }
 
 }

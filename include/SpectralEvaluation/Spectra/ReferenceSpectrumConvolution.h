@@ -16,6 +16,11 @@ namespace Evaluation
         This expects the slf to be shifted to have the center in the middle of the vector. */
     bool ConvolveReference(const std::string& pixelToWavelengthMapping, const std::string& slf, const std::string& highResReference, CCrossSectionData& result);
 
+    /** Performs a convolution of the high resolution reference function with the given gaussian slf (slit function, the convolution core)
+        and resamples the result to the given pixelToWavelengthMapping.
+        This expects the slf to be shifted to have the center in the middle of the vector. */
+    bool ConvolveReferenceGaussian(const std::string& pixelToWavelengthMapping, double gaussianSigma, const std::string& highResReference, CCrossSectionData& result);
+
     /** Performs a convolution of the high resolution reference function with the given slf (slit function, the convolution core)
         and resamples the result to the given pixelToWavelengthMapping.
         This expects the slf to be shifted to have the center in the middle of the vector. */

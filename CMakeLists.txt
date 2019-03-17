@@ -2,11 +2,13 @@
 
 cmake_minimum_required (VERSION 3.6)
 
-# Output the executables to the '/bin' directory
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/bin)
+get_directory_property(hasParent PARENT_DIRECTORY)
 
-project(NovacSpectralEvaluation)
-
+if(NOT hasParent)
+    # Output the executables to the '/bin' directory
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/bin)
+    project(NovacSpectralEvaluation)
+endif()
 
 ## -------------------- NovacSpectralEvaluation -------------------------
 

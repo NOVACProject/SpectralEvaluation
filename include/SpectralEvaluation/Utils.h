@@ -10,6 +10,7 @@
 /** Compares two strings without regard to case.
     @return true if the strings are identical */
 bool EqualsIgnoringCase(const std::string& str1, const std::string& str2);
+bool EqualsIgnoringCase(const char* str1, const char* str2);
 
 /** Compares at most 'nCharacters' of two strings without regard to case.
     @return true if the strings are identical */

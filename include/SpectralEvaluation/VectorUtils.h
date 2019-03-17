@@ -32,6 +32,15 @@ double Sum(const std::vector<double>& values);
     If values.size() == 0 then 0.0 is returned. */
 double Average(const std::vector<double>& values);
 
+/** @return the area under the provided function, assuming it is sampled
+    on a uniform grid with x-axis step size 'xStep'.
+    If values.size() == 0 then 0.0 is returned. */
+double Area(const std::vector<double>& values, double xStep);
+
+/** Calculates the index value which corresponds to the center of mass for the 
+    given input dataset. */
+double Centroid(const std::vector<double>& values);
+
 /** Finds the 'N' lowest values in the input vector and fills them into the result vector
     If N == 0 or input.size() == 0 then result will be an empty vector upon return. */
 void FindNLowest(const std::vector<double>& input, size_t N, std::vector<double>& result);
@@ -41,9 +50,14 @@ void FindNLowest(const std::vector<double>& input, size_t N, std::vector<double>
 void Normalize(const std::vector<double>& input, std::vector<double>& output);
 
 /** Normalizes a vector of values such that the lowest value will be 0.0 and the
-    sum of all the valeus will be 1.0.
+    sum of all the values will be 1.0.
     If input.size() == 0 then output.size() will also be zero. */
 void NormalizeArea(const std::vector<double>& input, std::vector<double>& output);
+
+/** Normalizes a function sampled on a uniform grid, with x-axis step size of 'xStep' 
+    such that the lowest value will be 0.0 and area under the graph will be 1.0.
+    If input.size() == 0 then output.size() will also be zero. */
+void NormalizeArea(const std::vector<double>& input, double xStep, std::vector<double>& output);
 
 /** Finds the (fractiona) index where the values in the provided vector crosses the y='valueToFind' line 
     in the index-range [startIdx, stopIdx[. 
