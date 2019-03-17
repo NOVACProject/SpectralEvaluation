@@ -76,16 +76,20 @@ void ConvolutionCore(const std::vector<double>& input, const std::vector<double>
     result.resize(refSize + coreSize - 1, 0.0);
 
     // The actual convolution. Here a dead-simple raw convolution calculation. This can be made faster using FFT if required.
+    //  Get the pointers to the data, this avoids range-checking for each and every value (at least in debug mode)
+    const double* inputPtr = input.data();
+    const double* corePtr  = core.data();
+    double* resultPtr      = result.data();
     for (size_t n = 0; n < refSize + coreSize - 1; ++n)
     {
         result[n] = 0;
 
-        size_t kmin = (n >= coreSize - 1) ? n - (coreSize - 1) : 0;
-        size_t kmax = (n < refSize - 1) ? n : refSize - 1;
+        const size_t kmin = (n >= coreSize - 1) ? n - (coreSize - 1) : 0;
+        const size_t kmax = (n < refSize - 1) ? n : refSize - 1;
 
         for (size_t k = kmin; k <= kmax; k++)
         {
-            result[n] += input[k] * core[n - k];
+            resultPtr[n] += inputPtr[k] * corePtr[n - k];
         }
     }
 }

@@ -135,9 +135,13 @@ void NormalizeArea(const std::vector<double>& input, std::vector<double>& output
 {
     output.resize(input.size());
 
+    if (input.size() == 0)
+    {
+        return;
+    }
+
     const double minValue    = Min(input);
-    const double sumOfValues = Sum(input);
-;
+    const double sumOfValues = Sum(input) - minValue * input.size();
 
     for (size_t ii = 0; ii < input.size(); ++ii)
     {

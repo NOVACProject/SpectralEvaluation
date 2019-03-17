@@ -87,6 +87,42 @@ TEST_CASE("Normalize with empty input", "[Normalize][VectorUtils]")
 
 
 
+TEST_CASE("NormalizeArea", "[NormalizeArea][VectorUtils]")
+{
+    std::vector<double> values{ 2, 3, 4, 5, 6, 7, 8, 9, 8, 7, 6, 5, 4, 3 };
+    std::vector<double> result;
+
+    NormalizeArea(values, result);
+
+    SECTION("Result has correct length")
+    {
+        REQUIRE(result.size() == values.size());
+    }
+
+    SECTION("Minimum value is zero")
+    {
+        REQUIRE(0.0 == result[0]);
+        REQUIRE(0.0 == Min(result));
+    }
+
+    SECTION("Sum of all values is one")
+    {
+        REQUIRE(1.0 == Sum(result));
+    }
+}
+
+TEST_CASE("NormalizeArea with empty input", "[Normalize][VectorUtils]")
+{
+    std::vector<double> input, result;
+
+    NormalizeArea(input, result);
+
+    REQUIRE(0 == result.size());
+}
+
+
+
+
 TEST_CASE("FindValue - Constantly increasing vector", "[FindValue][VectorUtils]")
 {
     const std::vector<double> values{ 1, 2, 3, 4 };
