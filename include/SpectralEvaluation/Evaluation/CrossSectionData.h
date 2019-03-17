@@ -18,8 +18,9 @@ namespace Evaluation {
     {
     public:
         CCrossSectionData();
+        CCrossSectionData(const CCrossSectionData& other);
 
-        CCrossSectionData &operator=(const CCrossSectionData &xs2);
+        CCrossSectionData &operator=(const CCrossSectionData &other);
 
         // ----------------------- DATA -----------------------
 

@@ -13,11 +13,16 @@ CCrossSectionData::CCrossSectionData()
 {
 }
 
-CCrossSectionData &CCrossSectionData::operator=(const CCrossSectionData &xs2)
+CCrossSectionData::CCrossSectionData(const CCrossSectionData& other)
+    : m_crossSection(begin(other.m_crossSection), end(other.m_crossSection)),
+      m_waveLength(begin(other.m_waveLength), end(other.m_waveLength))
 {
-    // copy the data of the arrays
-    this->m_crossSection = std::vector<double>(begin(xs2.m_crossSection), end(xs2.m_crossSection));
-    this->m_waveLength   = std::vector<double>(begin(xs2.m_waveLength), end(xs2.m_waveLength));
+}
+
+CCrossSectionData &CCrossSectionData::operator=(const CCrossSectionData &other)
+{
+    this->m_crossSection = std::vector<double>(begin(other.m_crossSection), end(other.m_crossSection));
+    this->m_waveLength   = std::vector<double>(begin(other.m_waveLength), end(other.m_waveLength));
 
     return *this;
 }
@@ -42,7 +47,7 @@ void CCrossSectionData::SetAt(int index, double wavel, double value)
 void CCrossSectionData::Set(double *wavelength, double *crossSection, unsigned long pointNum)
 {
     if(nullptr == wavelength) throw std::invalid_argument("Cannot set the cross section data using a null wavelength data pointer.");
-    if (nullptr == wavelength) throw std::invalid_argument("Cannot set the cross section data using a null data pointer.");
+    if (nullptr == crossSection) throw std::invalid_argument("Cannot set the cross section data using a null data pointer.");
 
     m_waveLength.resize(pointNum);
     m_crossSection.resize(pointNum);
