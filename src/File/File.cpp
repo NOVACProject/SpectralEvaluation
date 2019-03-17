@@ -125,11 +125,11 @@ namespace FileIo
         {
             if (twoColumns)
             {
-                fprintf(f, "%.9g %.9e\n", data.m_waveLength[ii], data.m_crossSection[ii]);
+                fprintf(f, "%.9lf %.9le\n", data.m_waveLength[ii], data.m_crossSection[ii]);
             }
             else
             {
-                fprintf(f, "%.9e\n", data.m_crossSection[ii]);
+                fprintf(f, "%.9le\n", data.m_crossSection[ii]);
             }
         }
 

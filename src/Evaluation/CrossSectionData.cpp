@@ -1,7 +1,10 @@
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Evaluation/BasicMath.h>
 #include <SpectralEvaluation/Fit/Vector.h>
+#include <SpectralEvaluation/Fit/CubicSplineFunction.h>
+#include <SpectralEvaluation/Spectra/Grid.h>
 #include <fstream>
+#include <numeric>
 
 namespace Evaluation
 {
@@ -169,16 +172,12 @@ int HighPassFilter(CCrossSectionData& crossSection, bool scaleToPpmm)
 
     const int length = (int)crossSection.m_crossSection.size();
 
-    if(scaleToPpmm)
-    {
-        mathObject.Mul(crossSection.m_crossSection.data(), length, -2.5e15);
-    }
-
+    mathObject.Mul(crossSection.m_crossSection.data(), length, -2.5e15);
     mathObject.Delog(crossSection.m_crossSection.data(), length);
     mathObject.HighPassBinomial(crossSection.m_crossSection.data(), length, 500);
     mathObject.Log(crossSection.m_crossSection.data(), length);
 
-    if(scaleToPpmm)
+    if(!scaleToPpmm)
     {
         mathObject.Div(crossSection.m_crossSection.data(), length, 2.5e15);
     }
@@ -216,6 +215,64 @@ int Log(CCrossSectionData& crossSection)
     mathObject.Log(crossSection.m_crossSection.data(), (int)crossSection.m_crossSection.size());
 
     return 0;
+}
+
+
+void Resample(const CCrossSectionData& slf, double resolution, std::vector<double>& resampledSlf)
+{
+    const double xMin = slf.m_waveLength.front();
+    const double xMax = slf.m_waveLength.back();
+
+    std::vector<double> xCopy(begin(slf.m_waveLength), end(slf.m_waveLength)); // a non-const local copy
+    std::vector<double> yCopy(begin(slf.m_crossSection), end(slf.m_crossSection)); // a non-const local copy
+
+    MathFit::CVector slfX(xCopy.data(), (int)xCopy.size(), 1, false);
+    MathFit::CVector slfY(yCopy.data(), (int)yCopy.size(), 1, false);
+
+    // Create a spline from the slit-function.
+    MathFit::CCubicSplineFunction spline(slfX, slfY);
+
+    // Create a new grid for the SLF with the same resolution as the 'grid' but with the same xMin and xMax values
+    UniformGrid newGridForSlf;
+    newGridForSlf.minValue = slf.m_waveLength.front();
+    newGridForSlf.maxValue = slf.m_waveLength.back();
+    newGridForSlf.length   = 1 + (size_t)(std::round((newGridForSlf.maxValue - newGridForSlf.minValue) / resolution));
+
+    // do the resampling...
+    resampledSlf.resize(newGridForSlf.length);
+    for (size_t ii = 0; ii < newGridForSlf.length; ++ii)
+    {
+        const double x = newGridForSlf.At(ii);
+
+        if (x >= xMin && x <= xMax)
+        {
+            resampledSlf[ii] = spline.GetValue(x);
+        }
+        else
+        {
+            resampledSlf[ii] = 0.0;
+        }
+    }
+}
+
+void Shift(std::vector<double>& data, double pixelCount)
+{
+    std::vector<double> xData(data.size(), 0.0);
+    std::iota(begin(xData), end(xData), 0.0);
+
+    std::vector<double> yData(begin(data), end(data));
+
+    MathFit::CVector slfX(xData.data(), (int)xData.size(), 1, false);
+    MathFit::CVector slfY(yData.data(), (int)yData.size(), 1, false);
+
+    CBasicMath math;
+    math.ShiftAndSqueeze(slfX, slfY, 0.0, pixelCount, 1.0);
+
+    data.resize(slfY.GetSize());
+    for (int ii = 0; ii < slfY.GetSize(); ++ii)
+    {
+        data[ii] = slfY.GetAt(ii);
+    }
 }
 
 }

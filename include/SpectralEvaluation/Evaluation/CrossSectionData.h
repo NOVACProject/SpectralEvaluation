@@ -71,9 +71,10 @@ namespace Evaluation {
         If 'scaleToPpmm' is true then the reference is mutliplied by 2.5e15 before the filtering and divide by the same number after. */
     int HighPassFilter(CCrossSectionData& crossSection, bool scaleToPpmm = true);
 
-    /** Performs a high-pass filtering of a ring spectrum. This will:
-        1) high-pass filter (binomial, 500 passes).
-        2) log the cross section. */
+    /** Performs a high-pass filtering of a ring spectrum. 
+        This will:
+            1) high-pass filter (binomial, 500 passes).
+            2) log the cross section. */
     int HighPassFilter_Ring(CCrossSectionData& crossSection);
 
     /** Multiplies this cross section with the given constant */
@@ -81,4 +82,16 @@ namespace Evaluation {
 
     /** Calculates the logarithm of this cross section file */
     int Log(CCrossSectionData& crossSection);
+
+    /** Resamples a cross section to a given new resolution to a uniform grid.
+        The result will be sampled on the same wavelength range (given by crossSection.m_wavelength)
+            with a uniform step-size of 'resolution'.
+        @param crossSection the cross section to resample.
+        @param resolution the desired new resolution. 
+        @param result will be filled with the resampled cross section. */
+    void Resample(const CCrossSectionData& crossSection, double resolution, std::vector<double>& result);
+
+    /** Shifts the provided data the given number of pixels (positive values corresponds to shifting towards 
+        higher indices). This will approximate the data using a cubic spline and then shift the spline. */
+    void Shift(std::vector<double>& data, double pixelCount);
 }
