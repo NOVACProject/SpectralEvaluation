@@ -4,6 +4,7 @@
 #include <SpectralEvaluation/File/File.h>
 #include <SpectralEvaluation/VectorUtils.h>
 #include <SpectralEvaluation/Spectra/Grid.h>
+#include <SpectralEvaluation/Air.h>
 #include <iostream>
 #include <assert.h>
 
@@ -98,7 +99,8 @@ bool ConvolveReference(
     const std::string& pixelToWavelengthMappingFile,
     const std::string& slfFile,
     const std::string& highResReferenceFile,
-    CCrossSectionData& result)
+    CCrossSectionData& result,
+    WavelengthConversion conversion)
 {
     CCrossSectionData pixelToWavelengthMapping;
     if (!FileIo::ReadCrossSectionFile(pixelToWavelengthMappingFile, pixelToWavelengthMapping, true))
@@ -118,7 +120,7 @@ bool ConvolveReference(
         return false;
     }
 
-    if (!ConvolveReference(pixelToWavelengthMapping.m_waveLength, slf, highResReference, result.m_crossSection))
+    if (!ConvolveReference(pixelToWavelengthMapping.m_waveLength, slf, highResReference, result.m_crossSection, conversion))
     {
         return false;
     }
@@ -156,7 +158,8 @@ bool ConvolveReferenceGaussian(
     const std::string& pixelToWavelengthMappingFile,
     double gaussianSigma,
     const std::string& highResReferenceFile,
-    CCrossSectionData& result)
+    CCrossSectionData& result,
+    WavelengthConversion conversion)
 {
     CCrossSectionData pixelToWavelengthMapping;
     if (!FileIo::ReadCrossSectionFile(pixelToWavelengthMappingFile, pixelToWavelengthMapping, true))
@@ -175,7 +178,7 @@ bool ConvolveReferenceGaussian(
     const double slfDeltaLambda = std::min(0.25 * Resolution(highResReference.m_waveLength), gaussianSigma * 0.125);
     CreateGaussian(gaussianSigma, slfDeltaLambda, slf);
 
-    if (!ConvolveReference(pixelToWavelengthMapping.m_waveLength, slf, highResReference, result.m_crossSection))
+    if (!ConvolveReference(pixelToWavelengthMapping.m_waveLength, slf, highResReference, result.m_crossSection, conversion))
     {
         return false;
     }
@@ -186,11 +189,24 @@ bool ConvolveReferenceGaussian(
     return true;
 }
 
+void Convert(const CCrossSectionData& highResReference, WavelengthConversion conversion, CCrossSectionData& result)
+{
+    result = highResReference;
+
+    if (conversion == WavelengthConversion::VacuumToAir)
+    {
+        for (size_t ii = 0; ii < highResReference.m_waveLength.size(); ++ii)
+        {
+            result.m_waveLength[ii] = NmVacuumToNmAir(highResReference.m_waveLength[ii]);
+        }
+    }
+}
 
 bool Convolve(
     const CCrossSectionData& slf,
     const CCrossSectionData& highResReference,
-    std::vector<double>& result)
+    std::vector<double>& result,
+    WavelengthConversion conversion)
 {
     if (slf.m_waveLength.size() != slf.m_crossSection.size())
     {
@@ -203,18 +219,22 @@ bool Convolve(
         return false;
     }
 
+    // If desired, convert the high-res reference from vacuum to air
+    CCrossSectionData convertedHighResReference;
+    Convert(highResReference, conversion, convertedHighResReference);
+
     // We need to make sure we work on the correct resolution, the highest possible to get the most accurate results.
-    const double highestResolution = std::min(Resolution(highResReference.m_waveLength), Resolution(slf.m_waveLength));
+    const double highestResolution = std::min(Resolution(convertedHighResReference.m_waveLength), Resolution(slf.m_waveLength));
 
     // Resample the highResReference to be on a uniform grid.
     // Study the SLF and the reference to see which has the highest resolution and take that.
     UniformGrid highResGrid;
-    highResGrid.minValue = highResReference.m_waveLength.front();
-    highResGrid.maxValue = highResReference.m_waveLength.back();
+    highResGrid.minValue = convertedHighResReference.m_waveLength.front();
+    highResGrid.maxValue = convertedHighResReference.m_waveLength.back();
     highResGrid.length   = (size_t)((highResGrid.maxValue - highResGrid.minValue) / highestResolution);
 
     std::vector<double> uniformHighResReference;
-    Resample(highResReference, highResGrid.Resolution(), uniformHighResReference);
+    Resample(convertedHighResReference, highResGrid.Resolution(), uniformHighResReference);
 
     // We also need to resample the slit-function to be on the same wavelength-grid as the high-res reference.
     std::vector<double> uniformSlf;
@@ -234,14 +254,14 @@ bool Convolve(
 
     // Cut down the result to the same size as the output is supposed to be
     CCrossSectionData resultSpec;
-    resultSpec.m_crossSection        = std::vector<double>(begin(intermediate) + coreSize / 2, begin(intermediate) + refSize + coreSize / 2);
-    resultSpec.m_waveLength   = std::vector<double>(resultSpec.m_crossSection.size());
+    resultSpec.m_crossSection   = std::vector<double>(begin(intermediate) + coreSize / 2, begin(intermediate) + refSize + coreSize / 2);
+    resultSpec.m_waveLength     = std::vector<double>(resultSpec.m_crossSection.size());
     for (size_t ii = 0; ii < resultSpec.m_waveLength.size(); ++ii)
     {
         resultSpec.m_waveLength[ii] = highResGrid.minValue + (highResGrid.maxValue - highResGrid.minValue) * (double)ii / (resultSpec.m_waveLength.size() - 1);
     }
 
-    Resample(resultSpec, Resolution(highResReference.m_waveLength), result);
+    Resample(resultSpec, Resolution(convertedHighResReference.m_waveLength), result);
 
     return true;
 }
@@ -250,7 +270,8 @@ bool ConvolveReference(
     const std::vector<double>& pixelToWavelengthMapping,
     const CCrossSectionData& slf,
     const CCrossSectionData& highResReference,
-    std::vector<double>& result)
+    std::vector<double>& result,
+    WavelengthConversion conversion)
 {
     if (slf.m_waveLength.size() != slf.m_crossSection.size())
     {
@@ -263,28 +284,27 @@ bool ConvolveReference(
         return false;
     }
 
-    // We need to make sure we work on the correct resolution, the highest possible to get the most accurate results.
-    const double highestResolution = std::min(Resolution(highResReference.m_waveLength), Resolution(slf.m_waveLength));
+    // If desired, convert the high-res reference from vacuum to air
+    CCrossSectionData convertedHighResReference;
+    Convert(highResReference, conversion, convertedHighResReference);
 
-    // Resample the highResReference to be on a uniform grid.
+    // We need to make sure we work on the correct resolution, the highest possible to get the most accurate results.
+    const double highestResolution = std::min(Resolution(convertedHighResReference.m_waveLength), Resolution(slf.m_waveLength));
+
+    // Resample the convertedHighResReference to be on a uniform grid.
     // Study the SLF and the reference to see which has the highest resolution and take that.
     UniformGrid convolutionGrid;
-    convolutionGrid.minValue = highResReference.m_waveLength.front();
-    convolutionGrid.maxValue = highResReference.m_waveLength.back();
+    convolutionGrid.minValue = convertedHighResReference.m_waveLength.front();
+    convolutionGrid.maxValue = convertedHighResReference.m_waveLength.back();
     convolutionGrid.length   = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / highestResolution);
 
     std::vector<double> uniformHighResReference;
-    Resample(highResReference, convolutionGrid.Resolution(), uniformHighResReference);
+    Resample(convertedHighResReference, convolutionGrid.Resolution(), uniformHighResReference);
     assert(uniformHighResReference.size() == convolutionGrid.length);
 
     // We also need to resample the slit-function to be on the same wavelength-grid as the high-res reference.
     std::vector<double> resampledSlf;
     Resample(slf, convolutionGrid.Resolution(), resampledSlf);
-
-    // Shift the SLF such that the centroid is in the center
-    /* const double centerPixel = Centroid(resampledSlf);
-    Shift(resampledSlf, centerPixel - resampledSlf.size() * 0.5);
-    const double newCenterPixel = Centroid(resampledSlf); */
 
     // To preserve the energy, we need to normalize the slit-function to the range [0->1]
     std::vector<double> normalizedSlf;
