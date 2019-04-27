@@ -452,4 +452,10 @@ double JulianDay(const CDateTime &utcTime) {
     return JD;
 }
 
+void SplitToHourMinuteSecond(const int time, int &hours, int &minutes, int &seconds)
+{
+    hours = (int)(time / 3600);
+    minutes = (time - hours * 3600) / 60;
+    seconds = time % 60;
+}
 
