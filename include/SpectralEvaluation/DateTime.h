@@ -94,4 +94,8 @@ int DayNr(const CDateTime &day);
 /** Returns the Julian Day corresponding to the given date and time of day. */
 double JulianDay(const CDateTime &utcTime);
 
+/** Splits a time, given in seconds since midnight to hour, minutes and seconds */
+void SplitToHourMinuteSecond(const int time, int &hours, int &minutes, int &seconds);
+
+
 #endif
