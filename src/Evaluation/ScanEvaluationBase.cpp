@@ -3,6 +3,7 @@
 #include <SpectralEvaluation/File/ScanFileHandler.h>
 #include <SpectralEvaluation/File/STDFile.h>
 #include <SpectralEvaluation/File/TXTFile.h>
+#include <SpectralEvaluation/Configuration/DarkSettings.h>
 
 namespace Evaluation
 {

@@ -1,11 +1,15 @@
 #pragma once
 
-#include "../Configuration/DarkSettings.h"
+#include <string>
 
 class CSpectrum;
 namespace FileHandler
 {
     class CScanFileHandler;
+}
+namespace Configuration
+{
+    struct CDarkSettings;
 }
 
 namespace Evaluation
