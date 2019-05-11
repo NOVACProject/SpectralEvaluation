@@ -133,8 +133,8 @@ namespace Evaluation
         // 1. The user wants to take the dark spectrum directly from the measurement
         //		as the second spectrum in the scan.
         if (darkSettings == nullptr ||
-            darkSettings->m_darkSpecOption == Configuration::DARK_SPEC_OPTION::MEASURE ||
-            darkSettings->m_darkSpecOption == Configuration::DARK_SPEC_OPTION::MODEL_SOMETIMES)
+            darkSettings->m_darkSpecOption == Configuration::DARK_SPEC_OPTION::MEASURED_IN_SCAN ||
+            darkSettings->m_darkSpecOption == Configuration::DARK_SPEC_OPTION::MODEL_WHEN_NOT_MEASURED_IN_SCAN)
         {
             if (0 != scan.GetDark(dark))
             {
@@ -188,7 +188,7 @@ namespace Evaluation
         }
 
         // 4. The user has his own favourite dark-spectrum that he wants to use
-        if (darkSettings->m_darkSpecOption == Configuration::DARK_SPEC_OPTION::DARK_USER_SUPPLIED)
+        if (darkSettings->m_darkSpecOption == Configuration::DARK_SPEC_OPTION::USER_SUPPLIED)
         {
             if (!ReadSpectrumFromFile(darkSettings->m_offsetSpec, dark))
                 return false;
