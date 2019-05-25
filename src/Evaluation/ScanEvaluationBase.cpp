@@ -128,22 +128,26 @@ namespace Evaluation
 
     bool ScanEvaluationBase::GetDark(FileHandler::CScanFileHandler& scan, const CSpectrum &spec, CSpectrum &dark, const Configuration::CDarkSettings* darkSettings)
     {
-        CSpectrum offset, darkCurrent, offset_dc;
-
         // 1. The user wants to take the dark spectrum directly from the measurement
-        //		as the second spectrum in the scan.
-        if (darkSettings == nullptr ||
-            darkSettings->m_darkSpecOption == Configuration::DARK_SPEC_OPTION::MEASURED_IN_SCAN ||
-            darkSettings->m_darkSpecOption == Configuration::DARK_SPEC_OPTION::MODEL_WHEN_NOT_MEASURED_IN_SCAN)
+        //      as the second spectrum in the scan.
+        if (darkSettings == nullptr || darkSettings->m_darkSpecOption == Configuration::DARK_SPEC_OPTION::MEASURED_IN_SCAN)
         {
             if (0 != scan.GetDark(dark))
             {
                 m_lastErrorMessage = "Could not read dark-spectrum from scan " + scan.GetFileName();
                 return false;
             }
+            return true;
+        }
+        else if(darkSettings->m_darkSpecOption == Configuration::DARK_SPEC_OPTION::MODEL_WHEN_NOT_MEASURED_IN_SCAN)
+        {
+            if (0 != scan.GetDark(dark))
+            {
+                m_lastErrorMessage = "Could not read dark-spectrum from scan " + scan.GetFileName() + " proceeds to modelling the dark from offset + dark-current";
+            }
 
             // if there is no dark spectrum but one offset and one dark-current spectrum,
-            //	then read those instead and model the dark spectrum
+            //   then read those instead and model the dark spectrum
             if (dark.m_length == 0)
             {
                 if (ModelDarkSpectrum(scan, *darkSettings, spec, dark))
@@ -163,14 +167,14 @@ namespace Evaluation
                 dark.InterpolateSpectrum();
             }
 
-            // Check so that the exposure-time of the dark-spectrum is same as the 
-            //	exposure time of the measured spectrum
+            // Check so that the exposure-time of the dark-spectrum is same as the
+            //   exposure time of the measured spectrum
             if (dark.ExposureTime() != spec.ExposureTime()) {
                 m_lastErrorMessage = "WARNING: EXPOSURE-TIME OF DARK-SPECTRUM IS NOT SAME AS FOR MEASURED SPECTRUM. INCORRECT DARK-CORRECTION!! " + scan.GetFileName();
             }
 
             // Make sure that there are the same number of exposures in the
-            //	dark-spectrum as in the measured spectrum
+            //  dark-spectrum as in the measured spectrum
             if (dark.NumSpectra() != spec.NumSpectra()) {
                 dark.Mult(spec.NumSpectra() / (double)dark.NumSpectra());
             }
@@ -182,19 +186,28 @@ namespace Evaluation
         if (darkSettings->m_darkSpecOption == Configuration::DARK_SPEC_OPTION::MODEL_ALWAYS)
         {
             if (ModelDarkSpectrum(scan, *darkSettings, spec, dark))
+            {
                 return true;
+            }
             else
+            {
+                m_lastErrorMessage = "Warning: Incorrect settings: check settings for dark current correction";
                 return false;
+            }
         }
 
         // 4. The user has his own favourite dark-spectrum that he wants to use
         if (darkSettings->m_darkSpecOption == Configuration::DARK_SPEC_OPTION::USER_SUPPLIED)
         {
             if (!ReadSpectrumFromFile(darkSettings->m_offsetSpec, dark))
+            {
+                m_lastErrorMessage = "Error: Failed to read the dark-spectrum: " + darkSettings->m_offsetSpec + " cannot evaluate scan";
                 return false;
+            }
 
             // If the dark-spectrum is read out in an interlaced way then interpolate it back to it's original state
-            if (dark.m_info.m_interlaceStep > 1) {
+            if (dark.m_info.m_interlaceStep > 1)
+            {
                 dark.InterpolateSpectrum();
             }
 
@@ -202,6 +215,7 @@ namespace Evaluation
         }
 
         // something is not implemented
+        m_lastErrorMessage = "Error: Failed to get dark spectrum for scan, not implemented option found.";
         return false;
     }
 
