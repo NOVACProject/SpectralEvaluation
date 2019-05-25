@@ -65,5 +65,9 @@ namespace Evaluation
         /** Retrieves the dark spectrum to use for the provided spectrum given the settings from the user.
             @return true on success. */
         bool GetDark(FileHandler::CScanFileHandler& scan, const CSpectrum &spec, CSpectrum &dark, const Configuration::CDarkSettings* darkSettings);
+
+        bool GetSkySpectrumFromAverageOfGoodSpectra(FileHandler::CScanFileHandler& scan, CSpectrum &sky) const;
+
+        bool GetSkySpectrumFromFile(const std::string& filename, CSpectrum& sky);
     };
 }

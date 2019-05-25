@@ -3,6 +3,7 @@
 #include <SpectralEvaluation/File/ScanFileHandler.h>
 #include <SpectralEvaluation/File/STDFile.h>
 #include <SpectralEvaluation/File/TXTFile.h>
+#include <SpectralEvaluation/Utils.h>
 #include <SpectralEvaluation/Configuration/DarkSettings.h>
 
 namespace Evaluation
@@ -139,7 +140,7 @@ namespace Evaluation
             }
             return true;
         }
-        else if(darkSettings->m_darkSpecOption == Configuration::DARK_SPEC_OPTION::MODEL_WHEN_NOT_MEASURED_IN_SCAN)
+        else if (darkSettings->m_darkSpecOption == Configuration::DARK_SPEC_OPTION::MODEL_WHEN_NOT_MEASURED_IN_SCAN)
         {
             if (0 != scan.GetDark(dark))
             {
@@ -218,5 +219,73 @@ namespace Evaluation
         m_lastErrorMessage = "Error: Failed to get dark spectrum for scan, not implemented option found.";
         return false;
     }
+
+    bool ScanEvaluationBase::GetSkySpectrumFromAverageOfGoodSpectra(FileHandler::CScanFileHandler& scan, CSpectrum &sky) const
+    {
+        const int interlaceSteps = scan.GetInterlaceSteps();
+        const int startChannel = scan.GetStartChannel();
+        const int fitLow = m_fitLow / interlaceSteps - startChannel;
+        const int fitHigh = m_fitHigh / interlaceSteps - startChannel;
+
+        CSpectrum tmp;
+        scan.GetSky(tmp);
+        scan.ResetCounter();
+
+        // Get the maximum intensity of this spectrometer model (with a little bit of margin)
+        const double spectrometerDynamicRange = (CSpectrometerModel::GetMaxIntensity(tmp.m_info.m_specModel) - 20);
+
+        double spectrumIntensityInFitRegion = tmp.MaxValue(fitLow, fitHigh);
+        if (spectrumIntensityInFitRegion < spectrometerDynamicRange * tmp.NumSpectra() && !tmp.IsDark())
+        {
+            sky = tmp;
+        }
+        else
+        {
+            sky.Clear();
+        }
+
+        while (scan.GetNextSpectrum(tmp))
+        {
+            spectrumIntensityInFitRegion = tmp.MaxValue(fitLow, fitHigh);
+            if (spectrumIntensityInFitRegion < spectrometerDynamicRange * tmp.NumSpectra() && !tmp.IsDark())
+            {
+                sky.Add(tmp);
+            }
+        }
+        scan.ResetCounter();
+
+        if (sky.m_info.m_interlaceStep > 1)
+        {
+            sky.InterpolateSpectrum();
+        }
+
+        return true;
+    }
+
+    bool ScanEvaluationBase::GetSkySpectrumFromFile(const std::string& filename, CSpectrum& sky)
+    {
+        if (filename.size() < 5)
+        {
+            m_lastErrorMessage = "Cannot get the sky-spectrum, the filename was empty";
+            return false;
+        }
+        const std::string extension = Right(filename, 4);
+
+        if (EqualsIgnoringCase(extension, ".pak"))
+        {
+            SpectrumIO::CSpectrumIO reader;
+            return reader.ReadSpectrum(filename, 0, sky);
+        }
+        
+        if (EqualsIgnoringCase(extension, ".std"))
+        {
+            return SpectrumIO::CSTDFile::ReadSpectrum(sky, filename);
+        }
+
+        // If we don't recognize the sky-spectrum format
+        m_lastErrorMessage = "Unknown format for sky spectrum. Please use .pak or .std";
+        return false;
+    }
+
 
 }
