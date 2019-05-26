@@ -5,6 +5,7 @@
 #include <SpectralEvaluation/File/TXTFile.h>
 #include <SpectralEvaluation/Utils.h>
 #include <SpectralEvaluation/Configuration/DarkSettings.h>
+#include <SpectralEvaluation/Configuration/SkySettings.h>
 
 namespace Evaluation
 {
@@ -217,6 +218,61 @@ namespace Evaluation
 
         // something is not implemented
         m_lastErrorMessage = "Error: Failed to get dark spectrum for scan, not implemented option found.";
+        return false;
+    }
+
+    bool ScanEvaluationBase::GetSky(FileHandler::CScanFileHandler& scan, const Configuration::CSkySettings& settings, CSpectrum &sky)
+    {
+        // If the sky spectrum is the first spectrum in the scan
+        if (settings.skyOption == Configuration::SKY_OPTION::MEASURED_IN_SCAN)
+        {
+            if (0 == scan.GetSky(sky))
+            {
+                m_lastErrorMessage = "Could not get sky spectrum from scan, no spectrum is labelled as sky.";
+                return false;
+            }
+
+            if (sky.m_info.m_interlaceStep > 1)
+            {
+                sky.InterpolateSpectrum();
+            }
+
+            return true;
+        }
+
+        // If the sky spectrum is the average of all credible spectra
+        if (settings.skyOption == Configuration::SKY_OPTION::AVERAGE_OF_GOOD_SPECTRA_IN_SCAN)
+        {
+            if (!GetSkySpectrumFromAverageOfGoodSpectra(scan, sky))
+            {
+                m_lastErrorMessage = "Failed to get sky spectrum from scan, no spectra are good enough.";
+            }
+            return true;
+        }
+
+        // If the user wants to use another spectrum than 'sky' as reference-spectrum...
+        if (settings.skyOption == Configuration::SKY_OPTION::SPECTRUM_INDEX_IN_SCAN)
+        {
+            if (0 == scan.GetSpectrum(sky, settings.indexInScan))
+            {
+                m_lastErrorMessage = "Failed to get sky spectrum from index in scan, could not find given spectrum.";
+                return false;
+            }
+
+            if (sky.m_info.m_interlaceStep > 1)
+            {
+                sky.InterpolateSpectrum();
+            }
+
+            return true;
+        }
+
+        // If the user has supplied a special sky-spectrum to use
+        if (settings.skyOption == Configuration::SKY_OPTION::USER_SUPPLIED)
+        {
+            return GetSkySpectrumFromFile(settings.skySpectrumFile, sky);
+        }
+
         return false;
     }
 

@@ -10,6 +10,7 @@ namespace FileHandler
 namespace Configuration
 {
     struct CDarkSettings;
+    struct CSkySettings;
 }
 
 namespace Evaluation
@@ -63,8 +64,15 @@ namespace Evaluation
         bool ReadSpectrumFromFile(const std::string& fullFilename, CSpectrum& spec);
 
         /** Retrieves the dark spectrum to use for the provided spectrum given the settings from the user.
-            @return true on success. */
+            @return true on success.
+            This will set m_lastErrorMessage if failed to get the spectrum. */
         bool GetDark(FileHandler::CScanFileHandler& scan, const CSpectrum &spec, CSpectrum &dark, const Configuration::CDarkSettings* darkSettings);
+
+        /** This returns the sky spectrum that is to be used in the fitting.
+            Which spectrum to be used is taken from the given settings.
+            @return true on success. 
+            This will set m_lastErrorMessage if failed to get the spectrum. */
+        bool GetSky(FileHandler::CScanFileHandler& scan, const Configuration::CSkySettings& settings, CSpectrum &sky);
 
         /** Creates a spectrum which is the average of all non-saturated and not-dark spectra in the given scan.
             @return true on successful spectrum creation. */
