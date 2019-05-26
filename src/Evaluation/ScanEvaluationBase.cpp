@@ -1,4 +1,6 @@
 #include <SpectralEvaluation/Evaluation/ScanEvaluationBase.h>
+#include <SpectralEvaluation/Evaluation/FitWindow.h>
+#include <SpectralEvaluation/Evaluation/EvaluationBase.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/File/ScanFileHandler.h>
 #include <SpectralEvaluation/File/STDFile.h>
@@ -6,6 +8,8 @@
 #include <SpectralEvaluation/Utils.h>
 #include <SpectralEvaluation/Configuration/DarkSettings.h>
 #include <SpectralEvaluation/Configuration/SkySettings.h>
+
+#include <sstream>
 
 namespace Evaluation
 {
@@ -346,5 +350,161 @@ namespace Evaluation
         return false;
     }
 
+
+    int ScanEvaluationBase::GetIndexOfSpectrumWithBestIntensity(const CFitWindow &fitWindow, FileHandler::CScanFileHandler& scan)
+    {
+        const int INDEX_OF_SKYSPECTRUM = -1;
+        const int NO_SPECTRUM_INDEX = -2;
+        CSpectrum sky;
+
+        // Find the spectrum for which we should determine shift & squeeze
+        //      This spectrum should have high enough intensity in the fit-region
+        //      without being saturated.
+        int indexOfMostSuitableSpectrum = NO_SPECTRUM_INDEX;
+        scan.GetSky(sky);
+        double fitSaturation = -1.0;
+        double bestSaturation = -1.0;
+        double fitIntensity = sky.MaxValue(fitWindow.fitLow, fitWindow.fitHigh);
+        double maxInt = CSpectrometerModel::GetMaxIntensity(sky.m_info.m_specModel);
+        
+        if (sky.NumSpectra() > 0)
+        {
+            fitSaturation = fitIntensity / (sky.NumSpectra() * maxInt);
+        }
+        else
+        {
+            fitSaturation = fitIntensity / (maxInt * sky.NumSpectra());
+        }
+        
+        if (fitSaturation < 0.9 && fitSaturation > 0.1)
+        {
+            indexOfMostSuitableSpectrum = INDEX_OF_SKYSPECTRUM;
+            bestSaturation = fitSaturation;
+        }
+
+        scan.ResetCounter(); // start from the beginning
+
+        CSpectrum spectrum;
+        int curIndex = 0;
+        while (scan.GetNextSpectrum(spectrum))
+        {
+            fitIntensity = spectrum.MaxValue(fitWindow.fitLow, fitWindow.fitHigh);
+            maxInt = CSpectrometerModel::GetMaxIntensity(spectrum.m_info.m_specModel);
+
+            // Get the saturation-ratio for this spectrum
+            if (spectrum.NumSpectra() > 0)
+            {
+                fitSaturation = fitIntensity / (spectrum.NumSpectra() * maxInt);
+            }
+            else
+            {
+                fitSaturation = fitIntensity / (maxInt * spectrum.NumSpectra());
+            }
+
+            // Check if this spectrum is good...
+            if (fitSaturation < 0.9 && fitSaturation > 0.1)
+            {
+                if (fitSaturation > bestSaturation)
+                {
+                    indexOfMostSuitableSpectrum = curIndex;
+                    bestSaturation = fitSaturation;
+                }
+            }
+
+            // Go to the next spectrum
+            ++curIndex;
+        }
+
+        return indexOfMostSuitableSpectrum;
+    }
+
+
+    CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferReference(const CFitWindow &fitWindow, const Configuration::CDarkSettings& darkSettings, FileHandler::CScanFileHandler& scan)
+    {
+        CSpectrum sky, spectrum, dark;
+        const int INDEX_OF_SKYSPECTRUM = -1;
+        const int NO_SPECTRUM_INDEX = -2;
+
+        // 1. Find the spectrum for which we should determine shift & squeeze
+        //      This spectrum should have high enough intensity in the fit-region
+        //      without being saturated.
+        const int indexOfMostSuitableSpectrum = GetIndexOfSpectrumWithBestIntensity(fitWindow, scan);
+
+        // 2. Get the spectrum we should evaluate...
+        if (indexOfMostSuitableSpectrum == NO_SPECTRUM_INDEX)
+        {
+            m_lastErrorMessage = "  Could not find any suitable spectrum to determine shift from.";
+            return nullptr; // we could not find any good spectrum to use...
+        }
+        else if (indexOfMostSuitableSpectrum == INDEX_OF_SKYSPECTRUM)
+        {
+            scan.GetSky(spectrum);
+            m_lastErrorMessage = "Determining shift and squeeze from sky-spectrum";
+        }
+        else
+        {
+            scan.GetSpectrum(spectrum, indexOfMostSuitableSpectrum);
+            std::stringstream msg;
+            msg << "Determining shift and squeeze from spectrum " << indexOfMostSuitableSpectrum;
+            m_lastErrorMessage = msg.str();
+        }
+
+
+        if (spectrum.NumSpectra() > 0 && !m_averagedSpectra)
+        {
+            spectrum.Div(spectrum.NumSpectra());
+        }
+
+
+        if (!GetDark(scan, spectrum, dark, &darkSettings))
+        {
+            m_lastErrorMessage = "Failed to get dark spectrum, determination of shift-and-squeeze from Fraunhofer lines failed.";
+            return nullptr; // fail
+        }
+        if (dark.NumSpectra() > 0 && !m_averagedSpectra)
+        {
+            dark.Div(dark.NumSpectra());
+        }
+        spectrum.Sub(dark);
+
+
+
+        // 3. Do the evaluation.
+        CFitWindow copyOfFitWindow = fitWindow;
+        CEvaluationBase shiftEvaluator(copyOfFitWindow);
+        shiftEvaluator.SetSkySpectrum(sky);
+
+        double shift, shiftError, squeeze, squeezeError;
+        if (shiftEvaluator.EvaluateShift(spectrum, shift, shiftError, squeeze, squeezeError))
+        {
+            // We failed to make the fit, what shall we do now??
+            std::stringstream msg;
+            msg << "Failed to determine shift and squeeze in scan " << scan.GetFileName() << ". Will proceed with default parameters";
+            m_lastErrorMessage = msg.str();
+            return nullptr;
+        }
+
+        if (fabs(shiftError) < 1 && fabs(squeezeError) < 0.01)
+        {
+            CFitWindow improvedFitWindow = fitWindow;
+
+            // The fit is good enough to use the values
+            for (int it = 0; it < improvedFitWindow.nRef; ++it)
+            {
+                improvedFitWindow.ref[it].m_shiftOption     = SHIFT_FIX;
+                improvedFitWindow.ref[it].m_squeezeOption   = SHIFT_FIX;
+                improvedFitWindow.ref[it].m_shiftValue      = shift;
+                improvedFitWindow.ref[it].m_squeezeValue    = squeeze;
+            }
+
+            std::stringstream msg;
+            msg << "  Shift: " << shift << " +- " << shiftError << "; Squeeze: " << squeeze << " +- " << squeezeError;
+            m_lastErrorMessage = msg.str();
+            return new CEvaluationBase(improvedFitWindow);
+        }
+
+        m_lastErrorMessage = "Fit not good enough. Will proceed with default parameters.";
+        return nullptr;
+    }
 
 }

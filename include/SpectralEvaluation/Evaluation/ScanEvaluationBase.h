@@ -15,6 +15,9 @@ namespace Configuration
 
 namespace Evaluation
 {
+    class CEvaluationBase;
+    class CFitWindow;
+
     /** ScanEvaluationBase is the base class for the ScanEvaluation-classes found in 
         NovacPPP and NovacProgram. This collects the common elements between the two program */
     class ScanEvaluationBase
@@ -27,6 +30,19 @@ namespace Evaluation
             averaged=true means that the spectra are averaged instead of summed.
             The default Novac option is that the spectra are summed (averaged=false). */
         void SetOption_AveragedSpectra(bool averaged) { this->m_averagedSpectra = averaged; }
+
+        /** Attempts to determine the optimium shift and squeeze value to use when evaluating the provided scan.
+                This assumes that the provided fitWindow has a defined fitWindow.fraunhoferRef member.
+                This will set the shift/squeeze of the fraunhofer-ref to 'free' and link all other references to it.
+            @param fitWindow Defines the references and fit-range to use.
+            @param scan The scan to evaluate.
+            @return a new evaluator (with a new fit-window set) to use to evaluate this scan with the shift/squeeze fixed to a good value.
+            @return nullptr if the determination failed. */
+        CEvaluationBase* FindOptimumShiftAndSqueezeFromFraunhoferReference(const CFitWindow &fitWindow, const Configuration::CDarkSettings& darkSettings, FileHandler::CScanFileHandler& scan);
+
+        /** @return the index of the spectrum with the 'most suitable intensity for fitting', i.e. this is the 
+            spectrum with the highest intensity which isn't (close to being) saturated. */
+        static int GetIndexOfSpectrumWithBestIntensity(const CFitWindow &fitWindow, FileHandler::CScanFileHandler& scan);
 
     protected:
         /** This is the lower edge of the fit region used in the last evaluation performed (in pixels). 
