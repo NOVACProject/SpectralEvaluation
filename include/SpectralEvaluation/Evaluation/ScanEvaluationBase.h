@@ -66,8 +66,14 @@ namespace Evaluation
             @return true on success. */
         bool GetDark(FileHandler::CScanFileHandler& scan, const CSpectrum &spec, CSpectrum &dark, const Configuration::CDarkSettings* darkSettings);
 
+        /** Creates a spectrum which is the average of all non-saturated and not-dark spectra in the given scan.
+            @return true on successful spectrum creation. */
         bool GetSkySpectrumFromAverageOfGoodSpectra(FileHandler::CScanFileHandler& scan, CSpectrum &sky) const;
 
+        /** Reads a 'sky' spectrum from file. This can read the 'sky' spectrum in one .pak
+            file or one spectrum from a .std file.
+            @return true on successful spectrum read.
+            Sets m_lastErrorMessage if the reading failed */
         bool GetSkySpectrumFromFile(const std::string& filename, CSpectrum& sky);
     };
 }

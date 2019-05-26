@@ -226,6 +226,7 @@ namespace Evaluation
         const int startChannel = scan.GetStartChannel();
         const int fitLow = m_fitLow / interlaceSteps - startChannel;
         const int fitHigh = m_fitHigh / interlaceSteps - startChannel;
+        int nofSpectraAveraged = 0;
 
         CSpectrum tmp;
         scan.GetSky(tmp);
@@ -238,6 +239,7 @@ namespace Evaluation
         if (spectrumIntensityInFitRegion < spectrometerDynamicRange * tmp.NumSpectra() && !tmp.IsDark())
         {
             sky = tmp;
+            nofSpectraAveraged = 1;
         }
         else
         {
@@ -250,6 +252,7 @@ namespace Evaluation
             if (spectrumIntensityInFitRegion < spectrometerDynamicRange * tmp.NumSpectra() && !tmp.IsDark())
             {
                 sky.Add(tmp);
+                ++nofSpectraAveraged;
             }
         }
         scan.ResetCounter();
@@ -259,7 +262,7 @@ namespace Evaluation
             sky.InterpolateSpectrum();
         }
 
-        return true;
+        return (nofSpectraAveraged > 0);
     }
 
     bool ScanEvaluationBase::GetSkySpectrumFromFile(const std::string& filename, CSpectrum& sky)
