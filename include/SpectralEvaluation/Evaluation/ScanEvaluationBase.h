@@ -32,13 +32,17 @@ namespace Evaluation
         void SetOption_AveragedSpectra(bool averaged) { this->m_averagedSpectra = averaged; }
 
         /** Attempts to determine the optimium shift and squeeze value to use when evaluating the provided scan.
-                This assumes that the provided fitWindow has a defined fitWindow.fraunhoferRef member.
+                This assumes that the provided fitWindow has a defined fitWindow.fraunhoferRef member with an already read in cross section.
                 This will set the shift/squeeze of the fraunhofer-ref to 'free' and link all other references to it.
             @param fitWindow Defines the references and fit-range to use.
             @param scan The scan to evaluate.
             @return a new evaluator (with a new fit-window set) to use to evaluate this scan with the shift/squeeze fixed to a good value.
             @return nullptr if the determination failed. */
-        CEvaluationBase* FindOptimumShiftAndSqueezeFromFraunhoferReference(const CFitWindow &fitWindow, const Configuration::CDarkSettings& darkSettings, FileHandler::CScanFileHandler& scan);
+        CEvaluationBase* FindOptimumShiftAndSqueezeFromFraunhoferReference(
+            const CFitWindow &fitWindow,
+            const Configuration::CDarkSettings& darkSettings,
+            const Configuration::CSkySettings& skySettings,
+            FileHandler::CScanFileHandler& scan);
 
         /** @return the index of the spectrum with the 'most suitable intensity for fitting', i.e. this is the 
             spectrum with the highest intensity which isn't (close to being) saturated. */

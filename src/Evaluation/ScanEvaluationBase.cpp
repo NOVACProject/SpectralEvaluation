@@ -230,7 +230,7 @@ namespace Evaluation
         // If the sky spectrum is the first spectrum in the scan
         if (settings.skyOption == Configuration::SKY_OPTION::MEASURED_IN_SCAN)
         {
-            if (0 == scan.GetSky(sky))
+            if (0 != scan.GetSky(sky))
             {
                 m_lastErrorMessage = "Could not get sky spectrum from scan, no spectrum is labelled as sky.";
                 return false;
@@ -419,9 +419,18 @@ namespace Evaluation
     }
 
 
-    CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferReference(const CFitWindow &fitWindow, const Configuration::CDarkSettings& darkSettings, FileHandler::CScanFileHandler& scan)
+    CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferReference(
+        const CFitWindow &fitWindow,
+        const Configuration::CDarkSettings& darkSettings,
+        const Configuration::CSkySettings& skySettings,
+        FileHandler::CScanFileHandler& scan)
     {
-        CSpectrum sky, spectrum, dark;
+        // Check that the Fraunhofer reference has been read in
+        if (fitWindow.fraunhoferRef.m_data == nullptr || fitWindow.fraunhoferRef.m_data->m_crossSection.size() == 0)
+        {
+            return nullptr;
+        }
+
         const int INDEX_OF_SKYSPECTRUM = -1;
         const int NO_SPECTRUM_INDEX = -2;
 
@@ -431,6 +440,7 @@ namespace Evaluation
         const int indexOfMostSuitableSpectrum = GetIndexOfSpectrumWithBestIntensity(fitWindow, scan);
 
         // 2. Get the spectrum we should evaluate...
+        CSpectrum spectrum;
         if (indexOfMostSuitableSpectrum == NO_SPECTRUM_INDEX)
         {
             m_lastErrorMessage = "  Could not find any suitable spectrum to determine shift from.";
@@ -455,7 +465,7 @@ namespace Evaluation
             spectrum.Div(spectrum.NumSpectra());
         }
 
-
+        CSpectrum dark;
         if (!GetDark(scan, spectrum, dark, &darkSettings))
         {
             m_lastErrorMessage = "Failed to get dark spectrum, determination of shift-and-squeeze from Fraunhofer lines failed.";
@@ -468,6 +478,16 @@ namespace Evaluation
         spectrum.Sub(dark);
 
 
+        CSpectrum sky;
+        if (!GetSky(scan, skySettings, sky))
+        {
+            m_lastErrorMessage = "Failed to get sky spectrum, determination of shift-and-squeeze from Fraunhofer lines failed.";
+            return nullptr; // fail
+        }
+        if (sky.NumSpectra() > 0 && !m_averagedSpectra)
+        {
+            sky.Div(sky.NumSpectra());
+        }
 
         // 3. Do the evaluation.
         CFitWindow copyOfFitWindow = fitWindow;
