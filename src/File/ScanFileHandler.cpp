@@ -201,25 +201,20 @@ int CScanFileHandler::GetNextSpectrum(CSpectrum &spec) {
     return 1;
 }
 
-/** Returns the desired spectrum in the scan */
-int CScanFileHandler::GetSpectrum(CSpectrum &spec, long specNo) {
-    CSpectrumIO reader;
-
-    if (m_spectrumBufferNum == (unsigned int)m_specNum) {
+int CScanFileHandler::GetSpectrum(CSpectrum &spec, long specNo)
+{
+    if (specNo < m_spectrumBufferNum)
+    {
         // We've read in the spectra into the buffer, just read it from there
         // instead of reading from the file itself.
-        if (m_specReadSoFarNum >= m_spectrumBufferNum) {
-            this->m_lastError = SpectrumIO::CSpectrumIO::ERROR_SPECTRUM_NOT_FOUND;
-            ++m_specReadSoFarNum; // <-- go to the next spectum
-            return 0;
-        }
-        else {
-            spec = m_spectrumBuffer.at(m_specReadSoFarNum);
-        }
+        spec = m_spectrumBuffer.at(specNo);
     }
-    else {
-        // read the sky and the dark spectra
-        if (true != reader.ReadSpectrum(m_fileName, specNo, spec)) {
+    else
+    {
+        // read the desired spectrum from file
+        CSpectrumIO reader;
+        if (true != reader.ReadSpectrum(m_fileName, specNo, spec))
+        {
             this->m_lastError = reader.m_lastError;
             return 0;
         }
