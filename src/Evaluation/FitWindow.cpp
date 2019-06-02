@@ -2,6 +2,8 @@
 #include <SpectralEvaluation/Utils.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 
+#include <iostream>
+
 namespace Evaluation
 {
 
@@ -74,30 +76,19 @@ namespace Evaluation
         // For each reference in the fit-window, read it in and make sure that it exists...
         for (int referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
         {
-            // TODO: Implement this!
-            /* if (!IsExistingFile(window.ref[referenceIndex].m_path))
-            {
-                // the file does not exist, try to change it to include the path of the configuration-directory...
-                fileName.Format("%sconfiguration%c%s", (const char*)m_exePath, Poco::Path::separator(), window.ref[referenceIndex].m_path.c_str());
-                if (IsExistingFile(fileName))
-                {
-                    window.ref[referenceIndex].m_path = fileName.ToStdString();
-                }
-                else
-                {
-                    errorMessage.Format("Cannot read reference file %s", window.ref[referenceIndex].m_path.c_str());
-                    ShowMessage(errorMessage);
-                    failure = true;
-                    continue;
-                }
-            } */
-
             // Read in the cross section
             if (window.ref[referenceIndex].ReadCrossSectionDataFromFile())
             {
-                // errorMessage.Format("Failed to read cross section file: %s", window.ref[referenceIndex].m_path.c_str());
-                // ShowMessage(errorMessage);
-                // failure = true;
+                std::cout << "Failed to read cross section file: " << window.ref[referenceIndex].m_path.c_str() << std::endl;
+                return false;
+            }
+        }
+
+        if (window.fraunhoferRef.m_path.size() > 4)
+        {
+            if (window.fraunhoferRef.ReadCrossSectionDataFromFile())
+            {
+                std::cout << "Failed to read Fraunhofer reference file: " << window.fraunhoferRef.m_path.c_str() << std::endl;
                 return false;
             }
         }
