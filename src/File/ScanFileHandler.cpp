@@ -203,7 +203,7 @@ int CScanFileHandler::GetNextSpectrum(CSpectrum &spec) {
 
 int CScanFileHandler::GetSpectrum(CSpectrum &spec, long specNo)
 {
-    if (specNo < m_spectrumBufferNum)
+    if ((unsigned int)specNo < m_spectrumBufferNum)
     {
         // We've read in the spectra into the buffer, just read it from there
         // instead of reading from the file itself.
