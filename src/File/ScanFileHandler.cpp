@@ -33,7 +33,7 @@ CScanFileHandler::~CScanFileHandler()
 bool CScanFileHandler::CheckScanFile(const std::string& fileName)
 {
     CSpectrumIO reader;
-    std::string strings[] = { std::string("sky"), std::string("zenith"), std::string("dark"), std::string("offset"), std::string("dark_cur"), std::string("darkcur") };
+    const std::string strings[] = { std::string("sky"), std::string("zenith"), std::string("dark"), std::string("offset"), std::string("dark_cur"), std::string("darkcur") };
     int indices[] = { -1, -1, -1, -1, -1, -1 };
     bool error = false;
     CSpectrum tempSpec;
@@ -54,12 +54,16 @@ bool CScanFileHandler::CheckScanFile(const std::string& fileName)
     {
         m_spectrumBuffer.resize(m_specNum);
         FILE *f = fopen(m_fileName.c_str(), "rb");
-        if (f != NULL) {
-            for (int k = 0; k < m_specNum; ++k) {
-                if (true == reader.ReadNextSpectrum(f, tempSpec)) {
+        if (f != NULL)
+        {
+            for (unsigned int k = 0; k < m_specNum; ++k)
+            {
+                if (true == reader.ReadNextSpectrum(f, tempSpec))
+                {
                     m_spectrumBuffer[k] = tempSpec;
                 }
-                else {
+                else
+                {
                     printf("Could not read spectrum from file: %s", fileName.c_str());
                     this->m_lastError = reader.m_lastError;
                     fclose(f);
@@ -70,7 +74,8 @@ bool CScanFileHandler::CheckScanFile(const std::string& fileName)
         }
         m_spectrumBufferNum = m_specNum;
     }
-    else {
+    else
+    {
         // The file's too large, don't store it in memory!
         m_spectrumBufferNum = 0;
         m_spectrumBuffer.clear();

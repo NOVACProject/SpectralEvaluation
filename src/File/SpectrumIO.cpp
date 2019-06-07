@@ -79,20 +79,20 @@ namespace SpectrumIO
 
     std::uint32_t CSpectrumIO::ScanSpectrumFile(const std::string &fileName, const std::string *specNamesToLookFor, int numSpecNames, int *indices)
     {
-        std::string errorMessage; // a string used for error messages
         std::uint32_t specNum = 0;
-        int headerSize, nameIndex;
 
         FILE *f = fopen(fileName.c_str(), "rb");
 
-        if (f == NULL) {
+        if (f == nullptr)
+        {
             printf("Could not open spectrum file: %s", fileName.c_str());
             m_lastError = ERROR_COULD_NOT_OPEN_FILE;
-            return(1);
+            return 0;
         }
 
         while (1)
         {
+            int headerSize;
             int ret = ReadNextSpectrumHeader(f, headerSize);
             if (ret == 1)
                 break;
@@ -104,14 +104,18 @@ namespace SpectrumIO
             std::string specName{MKZY.name};
             CleanString(specName);
             Trim(specName, " \t");
-            size_t size1 = specName.size();
-            for (nameIndex = 0; nameIndex < numSpecNames; ++nameIndex) {
-                // first of all, the strings must have equal size to be equal...
-                size_t size2 = specNamesToLookFor[nameIndex].size();
-                if (size1 != size2)
-                    continue;
+            const size_t size1 = specName.size();
 
-                if (EqualsIgnoringCase(specNamesToLookFor[nameIndex], specName)) {
+            for (int nameIndex = 0; nameIndex < numSpecNames; ++nameIndex)
+            {
+                // first of all, the strings must have equal size to be equal...
+                if (size1 != specNamesToLookFor[nameIndex].size())
+                {
+                    continue;
+                }
+
+                if (EqualsIgnoringCase(specNamesToLookFor[nameIndex], specName))
+                {
                     indices[nameIndex] = specNum;
                     continue;
                 }
