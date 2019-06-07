@@ -93,7 +93,7 @@ namespace SpectrumIO
                 'indices' will on return the (zero-based) index
 
             @return - The number of spectra in the spectrum file */
-        int ScanSpectrumFile(const std::string &fileName, const std::string *specNamesToLookFor, int numSpecNames, int *indices);
+        std::uint32_t ScanSpectrumFile(const std::string &fileName, const std::string *specNamesToLookFor, int numSpecNames, int *indices);
 
         /** If any error occurs in the reading of the file, this int is set to
             any of the errors defined above. */

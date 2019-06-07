@@ -8,10 +8,9 @@ class CGPSData;
 
 namespace FileHandler
 {
-    /** <b>CScanFileHandler</b> is a class to read in information from the scan-files (all the spectra
-        from one scan are supposted to be packed together in one file in Manne's 'pak'-format.
-         Each instance of 'CScanFileHandler' is capable of reading data from one .pak-file.
-    */
+    /** <b>CScanFileHandler</b> is a class to read in information from the scan-files 
+        (all the spectra from one scan are supposed to be packed together in one file in Manne's 'pak'-format.
+         Each instance of 'CScanFileHandler' is capable of reading data from one .pak-file. */
     class CScanFileHandler
     {
     public:
@@ -147,7 +146,7 @@ namespace FileHandler
         std::string m_fileName;
 
         /** The total number of spectra in the current .pak-file */
-        int m_specNum;
+        std::uint32_t m_specNum = 0;
 
         /** An array containing the spectra in the current spectrum file.
             These are read in when 'CheckScanFile' is called and retrieved
@@ -158,12 +157,5 @@ namespace FileHandler
         /** The number of spectra read in to the m_spectrumBuffer
             This might not be the same as 'm_specNum' */
         unsigned int m_spectrumBufferNum;
-
-        // ----------------------------------------------------------------------
-        // --------------------- PRIVATE METHODS --------------------------------
-        // ----------------------------------------------------------------------
-
-
-
     };
 }

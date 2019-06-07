@@ -77,7 +77,8 @@ namespace SpectrumIO
         return specNum;
     }
 
-    int CSpectrumIO::ScanSpectrumFile(const std::string &fileName, const std::string *specNamesToLookFor, int numSpecNames, int *indices) {
+    std::uint32_t CSpectrumIO::ScanSpectrumFile(const std::string &fileName, const std::string *specNamesToLookFor, int numSpecNames, int *indices)
+    {
         std::string errorMessage; // a string used for error messages
         std::uint32_t specNum = 0;
         int headerSize, nameIndex;
