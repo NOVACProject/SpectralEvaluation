@@ -50,7 +50,8 @@ namespace FileHandler
         /** Checks the scan saved in the given filename
             If any file-error occurs the parameter 'm_lastError' will be set.
             @param fileName - the name of the file in which the spectra of the scan are saved.
-            @return true on success. @return false if any error occurs */
+            @return true on success.
+            @return false if any error occurs */
         bool CheckScanFile(const std::string& fileName);
 
         /** Gets the next spectrum in the scan.

@@ -7,6 +7,11 @@
 #include <cstring>
 #include <vector>
 
+
+#ifdef _MSC_VER
+#pragma warning (push, 4)
+#endif
+
 #undef min
 #undef max
 
@@ -651,3 +656,6 @@ namespace SpectrumIO
     }
 }
 
+#ifdef _MSC_VER
+#pragma warning (pop)
+#endif
