@@ -98,7 +98,7 @@ namespace Evaluation
 
     void HighPassFilterReferences(CFitWindow& window)
     {
-        if (window.fitType != Evaluation::FIT_HP_DIV || window.fitType != Evaluation::FIT_HP_SUB)
+        if (window.fitType != Evaluation::FIT_HP_DIV && window.fitType != Evaluation::FIT_HP_SUB)
         {
             return;
         }
