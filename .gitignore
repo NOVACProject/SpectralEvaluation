@@ -1,2 +1,4 @@
 build
 backups
+/bin/Release
+/bin/Debug

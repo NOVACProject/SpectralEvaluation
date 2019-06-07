@@ -7,7 +7,18 @@ cmake_minimum_required (VERSION 3.6)
 add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/main.cpp
     ${CMAKE_CURRENT_LIST_DIR}/catch.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTest_ScanFileHandler.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTest_SpectrumIO.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Air.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Convolution.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_CrossSectionData.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_DateTime.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Evaluation.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FindPlume.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitWindow.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_RatioEvaluation.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Utils.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_VectorUtils.cpp
 )
 
 target_include_directories(SpectralEvaluationTests PRIVATE ${SPECTRALEVAUATION_INCLUDE_DIRS})
