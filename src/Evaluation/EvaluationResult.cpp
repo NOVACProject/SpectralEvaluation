@@ -1,6 +1,5 @@
 #include <SpectralEvaluation/Evaluation/EvaluationResult.h>
 #include <SpectralEvaluation/Spectra/SpectrumInfo.h>
-#include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 #include <cstring>
 #include <cmath>
 
@@ -84,7 +83,7 @@ namespace Evaluation
         m_evaluationStatus &= ~MARK_BAD_EVALUATION;
 
         // The maximum intensity for one spectrum (# bits in the ADC)
-        double maxInt = CSpectrometerDatabase::GetInstance().GetModel(info.m_specModelName).maximumIntensity;
+        double maxInt = CSpectrometerModel::GetMaxIntensity(info.m_specModel);
 
         // The maximum saturation-level in the fit-region
         double fitSaturation = 0.0;
