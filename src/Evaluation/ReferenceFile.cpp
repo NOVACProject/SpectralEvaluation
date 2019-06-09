@@ -35,7 +35,7 @@ CReferenceFile &CReferenceFile::operator=(const CReferenceFile &other)
     
     if (other.m_data != nullptr)
     {
-        this->m_data = new CCrossSectionData(*other.m_data);
+        this->m_data.reset(new CCrossSectionData(*other.m_data));
     }
 
     return *this;
@@ -62,7 +62,7 @@ CReferenceFile::CReferenceFile(const CReferenceFile& other)
 
     if (other.m_data != nullptr)
     {
-        this->m_data = new CCrossSectionData(*other.m_data);
+        this->m_data.reset(new CCrossSectionData(*other.m_data));
     }
 }
 
@@ -110,16 +110,10 @@ int CReferenceFile::ReadCrossSectionDataFromFile()
         return 1;
     }
 
-    if (m_data != nullptr)
-    {
-        delete m_data;
-    }
-
-    m_data = new CCrossSectionData();
+    m_data.reset(new CCrossSectionData());
     if (m_data->ReadCrossSectionFile(m_path))
     {
-        delete m_data;
-        m_data = nullptr;
+        m_data.reset();
         return 1;
     }
 
@@ -128,16 +122,11 @@ int CReferenceFile::ReadCrossSectionDataFromFile()
 
 int CReferenceFile::ConvolveReference()
 {
-    if (m_data != nullptr)
-    {
-        delete m_data;
-    }
-    m_data = new CCrossSectionData();
+    m_data.reset(new CCrossSectionData());
 
     if (! Evaluation::ConvolveReference(m_wavelengthCalibrationFile, m_slitFunctionFile, m_crossSectionFile, *m_data))
     {
-        delete m_data;
-        m_data = nullptr;
+        m_data.reset();
         return 1;
     }
 
