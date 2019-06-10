@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
 namespace Evaluation
@@ -101,9 +102,8 @@ namespace Evaluation
 
         /** The actual data of this reference - file. This is equal to
                 nullptr if the reference data has not been read in yet, otherwise
-                this will contain the data from the reference file. 
-                (only used in NovacPPP) */
-        CCrossSectionData *m_data = nullptr;
+                this will contain the data from the reference file. */
+        std::unique_ptr<CCrossSectionData> m_data = nullptr;
 
         // ------------------------ METHODS ---------------------------
 
