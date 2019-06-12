@@ -75,7 +75,7 @@ namespace Evaluation
 
         /** true if the sky-spectrum should be allowed to shift.
                 only useful if fitType is FIT_HP_SUB or FIT_POLY */
-        bool shiftSky;
+		int shiftSky;
 
         /** Larger than 1 if the spectra are read out in an interlaced way.
             This parameter works in the same way as the CSpectrumInfo::m_interlaceStep */
@@ -83,13 +83,13 @@ namespace Evaluation
 
         /** 'UV' is true if the start wavelength of the spectrum is 290 nm or shorter */
         // TODO: replace this with the pixel-range which should be used for the offset-correction (which this variable is used for)
-        bool UV = true;
+		int UV = 1;
 
         /** True if the scan should be twice, once for finding the highest column value.
             The spectrum with the highest column value is then evluated again with
             the shift of all references set to free and the optimum shift value is found.
             The scan is then evaluated again using this shift value. */
-        bool findOptimalShift = false;
+		int findOptimalShift = 0;
 
         // ------------------ METHODS ----------------------------------
 
