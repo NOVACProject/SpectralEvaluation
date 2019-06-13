@@ -1,5 +1,16 @@
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 #include <SpectralEvaluation/Utils.h>
+#include <algorithm>
+
+SpectrometerModel::PixelRange::PixelRange()
+    : from(0), to(0)
+{
+}
+
+SpectrometerModel::PixelRange::PixelRange(int low, int high)
+    : from(std::min(low, high)), to(std::max(low, high))
+{
+}
 
 CSpectrometerDatabase::CSpectrometerDatabase()
 {

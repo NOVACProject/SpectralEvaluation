@@ -5,6 +5,15 @@
 
 struct SpectrometerModel
 {
+    struct PixelRange
+    {
+        PixelRange();
+        PixelRange(int low, int high);
+
+        int from;
+        int to;
+    };
+
     SpectrometerModel()
         : modelName("S2000"), maximumIntensity(4095), numberOfChannels(1)
     {
@@ -15,11 +24,25 @@ struct SpectrometerModel
     {
     }
 
+    // The given name for this spectrometer model. Name comparisons are not case sensitive.
     std::string modelName = "S2000";
+
+    // The maximum intensity of this device, defines the dynamic range.
     double maximumIntensity = 4096;
+
+    // The number of pixels on the detector.
+    int numberOfPixels = 2048;
+
+    // The number of optically covered pixels, used to determine an electronic offset.
+    PixelRange coveredPixels = PixelRange(20, 200);
+
+    // The (maximum) number of channels.
     int numberOfChannels = 1;
+
+    // Set to true for user defined models, used to separate built-in models from user defined ones.
     bool isCustom = true;
 
+    // @return true if this model is not well defined.
     bool IsUnknown() const { return modelName.size() == 0; }
 };
 
