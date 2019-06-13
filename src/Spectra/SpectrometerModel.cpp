@@ -112,3 +112,28 @@ std::vector<std::string> CSpectrometerDatabase::ListModels() const
 
     return items;
 }
+
+bool CSpectrometerDatabase::Exists(const std::string& modelName) const
+{
+    for (const SpectrometerModel& entry : modelDb)
+    {
+        if (EqualsIgnoringCase(modelName, entry.modelName))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CSpectrometerDatabase::AddModel(const SpectrometerModel& newModel)
+{
+    if (Exists(newModel.modelName))
+    {
+        return false;
+    }
+
+    modelDb.push_back(newModel);
+
+    return true;
+}
+
