@@ -2,7 +2,6 @@
 #include <SpectralEvaluation/Evaluation/FitWindow.h>
 #include <SpectralEvaluation/Evaluation/EvaluationBase.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
-#include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 #include <SpectralEvaluation/File/ScanFileHandler.h>
 #include <SpectralEvaluation/File/STDFile.h>
 #include <SpectralEvaluation/File/TXTFile.h>
@@ -294,7 +293,7 @@ namespace Evaluation
         scan.ResetCounter();
 
         // Get the maximum intensity of this spectrometer model (with a little bit of margin)
-        const double spectrometerDynamicRange = (CSpectrometerDatabase::GetInstance().GetModel(tmp.m_info.m_specModelName).maximumIntensity - 20);
+        const double spectrometerDynamicRange = (CSpectrometerModel::GetMaxIntensity(tmp.m_info.m_specModel) - 20);
 
         double spectrumIntensityInFitRegion = tmp.MaxValue(fitLow, fitHigh);
         if (spectrumIntensityInFitRegion < spectrometerDynamicRange * tmp.NumSpectra() && !tmp.IsDark())
@@ -366,7 +365,7 @@ namespace Evaluation
         double fitSaturation = -1.0;
         double bestSaturation = -1.0;
         double fitIntensity = sky.MaxValue(fitWindow.fitLow, fitWindow.fitHigh);
-        double maxInt = CSpectrometerDatabase::GetInstance().GetModel(sky.m_info.m_specModelName).maximumIntensity;
+        double maxInt = CSpectrometerModel::GetMaxIntensity(sky.m_info.m_specModel);
         
         if (sky.NumSpectra() > 0)
         {
@@ -390,7 +389,7 @@ namespace Evaluation
         while (scan.GetNextSpectrum(spectrum))
         {
             fitIntensity = spectrum.MaxValue(fitWindow.fitLow, fitWindow.fitHigh);
-            maxInt = CSpectrometerDatabase::GetInstance().GetModel(spectrum.m_info.m_specModelName).maximumIntensity;
+            maxInt = CSpectrometerModel::GetMaxIntensity(spectrum.m_info.m_specModel);
 
             // Get the saturation-ratio for this spectrum
             if (spectrum.NumSpectra() > 0)

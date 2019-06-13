@@ -212,7 +212,7 @@ int CScanFileHandler::GetNextSpectrum(CSpectrum &spec) {
         this->m_startTime = spec.m_info.m_startTime;
 
     // Extract the spectrometer-model from the serial-number of the spectrometer
-    spec.m_info.m_specModelName = CSpectrometerDatabase::GetInstance().GuessModelFromSerial(spec.m_info.m_device).modelName;
+    spec.m_info.m_specModel = CSpectrometerModel::GetModel(spec.m_info.m_device);
 
     return 1;
 }

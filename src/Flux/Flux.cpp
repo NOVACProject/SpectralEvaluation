@@ -3,7 +3,7 @@
 
 #include <cmath>
 
-double CalculateFluxFlatScanner(const double *scanAngle, const double *column, double offset, int nDataPoints, double windSpeed, double windDirection, double relativePlumeHeight, double compass)
+double CalculateFluxFlatScanner(const double *scanAngle, const double *column, double offset, int nDataPoints, double windSpeed, double windDirection, double relativePlumeHeight, double compass, double gasFactor)
 {
     double avgVCD, VCD1, VCD2, TAN1, TAN2, distance;
     double flux = 0;
@@ -29,7 +29,7 @@ double CalculateFluxFlatScanner(const double *scanAngle, const double *column, d
         distance = relativePlumeHeight * std::abs(TAN2 - TAN1);
 
         // The average vertical column
-        avgVCD = (VCD1 + VCD2) * 0.5;
+        avgVCD = (1E-6) * gasFactor *(VCD1 + VCD2) * 0.5;
 
         // The flux...
         partialFlux = distance * avgVCD * windSpeed * windFactor;
@@ -39,7 +39,7 @@ double CalculateFluxFlatScanner(const double *scanAngle, const double *column, d
     return std::abs(flux);
 }
 
-double CalculateFluxConicalScanner(const double *scanAngle, const double *column, double offset, int nDataPoints, double windSpeed, double windDirection, double relativePlumeHeight, double compass, double coneAngle, double tilt)
+double CalculateFluxConicalScanner(const double *scanAngle, const double *column, double offset, int nDataPoints, double windSpeed, double windDirection, double relativePlumeHeight, double compass, double gasFactor, double coneAngle, double tilt)
 {
     double flux = 0;
     double partialFlux, columnAmplification;
@@ -90,8 +90,8 @@ double CalculateFluxConicalScanner(const double *scanAngle, const double *column
         if (std::abs(std::abs(alpha[i]) - HALF_PI) < 1e-2 || std::abs(std::abs(alpha[i + 1]) - HALF_PI) < 1e-2)
             continue;// This algorithm does not work very well for scanangles around +-90 degrees
 
-                     // The average vertical column
-        double avgVCD = (scd[i] * columnCorrection[i] + scd[i + 1] * columnCorrection[i + 1]) * 0.5;
+        // The average vertical column
+        double avgVCD = (1e-6) * gasFactor *(scd[i] * columnCorrection[i] + scd[i + 1] * columnCorrection[i + 1]) * 0.5;
 
         // The horizontal distance
         double S = relativePlumeHeight * sqrt(pow(x[i + 1] - x[i], 2) + pow(y[i + 1] - y[i], 2));

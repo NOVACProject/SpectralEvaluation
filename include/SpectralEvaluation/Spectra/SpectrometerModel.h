@@ -6,6 +6,39 @@
 /** The class <b>CSpectrometerModel</b> contains a collection of the
         the spectrometer types/models that can be connected with the scanning
         instruments. */
+
+enum SPECTROMETER_MODEL {
+    S2000,
+    USB2000,
+    USB4000,
+    HR2000,
+    HR4000,
+    QE65000,
+    MAYAPRO,
+    UNKNOWN_SPECTROMETER,
+    NUM_CONF_SPEC_MODELS // the number of spectrometers that are configured
+};
+
+class CSpectrometerModel
+{
+public:
+    CSpectrometerModel(void);
+    ~CSpectrometerModel(void);
+
+    /** Retrieves the maximum intensity for the supplied spectrometer model */
+    static double GetMaxIntensity(const std::string& modelNumber);
+    static double GetMaxIntensity(const SPECTROMETER_MODEL modelNumber);
+
+    /** Converts a SPECTROMETER_MODEL to a string item */
+    static bool ToString(SPECTROMETER_MODEL model, std::string &str);
+
+    /** Converts a string item to a SPECTROMETER_MODEL */
+    static SPECTROMETER_MODEL GetModel(const std::string &str);
+
+    /** Gets the number of configured spectrometer models */
+    static int GetNumSpectrometerModels();
+};
+
 struct SpectrometerModel
 {
     SpectrometerModel(const std::string& name, double maxIntensity)
@@ -27,19 +60,19 @@ public:
         return singletonInstance;
     }
 
-    /** @return The properties of the provided spectrometer model. 
-        If the model cannot be found, then an 'unknown spectrometer' is returned. */
+    /** @return The properties of the provided spectrometer model.
+    If the model cannot be found, then an 'unknown spectrometer' is returned. */
     SpectrometerModel GetModel(const std::string& modelname);
 
     /** @return The properties of the spectrometer with the provided index into this database.
-        If the model cannot be found, then an 'unknown spectrometer' is returned. */
+    If the model cannot be found, then an 'unknown spectrometer' is returned. */
     SpectrometerModel GetModel(int modelIndex);
 
     /** Attempts to guess the spectrometer model from a provided serialnumber. */
     SpectrometerModel GuessModelFromSerial(const std::string& deviceSerialNumber);
 
     /** @return The index of the provided spectrometer model in the list returned by 'ListModels()'.
-        @return -1 if the model cannot be found. */
+    @return -1 if the model cannot be found. */
     int GetModelIndex(const std::string& modelname);
 
     /** @return a list of all configured spectrometer models */
@@ -60,4 +93,3 @@ private:
     std::vector<SpectrometerModel> modelDb;
     const SpectrometerModel unknown = SpectrometerModel{ "", 4095 };
 };
-
