@@ -38,12 +38,12 @@ TEST_CASE("FitWindow - Copy constructor", "[CFitWindow]")
         Evaluation::CReferenceFile ref1;
         ref1.m_specieName = "SO2";
         ref1.m_path = "C:/Novac/So2.txt";
-        ref1.m_data = CreateCrossSection(1);
+        ref1.m_data.reset(CreateCrossSection(1));
         
         Evaluation::CReferenceFile ref2;
         ref2.m_specieName = "O3";
         ref2.m_path = "C:/Novac/O3.txt";
-        ref2.m_data = CreateCrossSection(2);
+        ref2.m_data.reset(CreateCrossSection(2));
 
         original.ref[0] = ref1;
         original.ref[1] = ref2;
