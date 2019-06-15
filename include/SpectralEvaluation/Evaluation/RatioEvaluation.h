@@ -2,6 +2,8 @@
 
 #include <SpectralEvaluation/Evaluation/ScanEvaluationBase.h>
 #include <SpectralEvaluation/Evaluation/FitWindow.h>
+#include <SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h>
+#include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include <vector>
 
 namespace Evaluation
@@ -49,16 +51,26 @@ namespace Evaluation
             m_referenceFit = referenceFitWindows;
         }
 
+        void SetupFirstResult(const BasicScanEvaluationResult& result, const CPlumeInScanProperty& properties)
+        {
+            m_masterResult = result;
+            m_masterResultProperties = properties;
+        }
+
         /** Runs all the ratio evaluations.
             @return A vector with all the calculated quotients. The length of this vector
                 equals the number of reference-fit windows passed to 'Initialize' which must have been called before this.
             @return an empty vector if the evaluations fail. */
-        std::vector<Ratio> Run();
+        std::vector<Ratio> Run(FileHandler::CScanFileHandler& scan);
 
     private:
         /** The fit window against which the ratio will be calculated (typically SO2). 
             The ratio will be performed against the first specie in the fit window. */
         CFitWindow m_masterFitWindow;
+
+        /** The results from evaluation from the scan using the m_masterFitWindow */
+        BasicScanEvaluationResult m_masterResult;
+        CPlumeInScanProperty m_masterResultProperties;
 
         /** The fit windows which will be used to estimate the minor specie, typically BrO.
             The name of each fit-window must equal the name of the sub-specie to calculate.
@@ -70,11 +82,11 @@ namespace Evaluation
     };
 
     /** @return true if the provided evaluation result is suitable for performing a ratio-evaluation. */
-    bool IsSuitableScanForRatioEvaluation(const RatioEvaluationSettings& settings, const BasicScanEvaluationResult& result);
+    bool IsSuitableScanForRatioEvaluation(const RatioEvaluationSettings& settings, const BasicScanEvaluationResult& result, const CPlumeInScanProperty& properties);
 
     /** Estimates which spectra should be used for a ratio-evaluation, assuming that one should be performed. 
         @param referenceSpectra Will be filled with the index of the spectra which should be averaged to a reference spectrum.
         @param inPlumeSpectra Will be filled with the index of the spectra which should be averaged to an in-plume spectrum. */
-    void SelectSpectraForRatioEvaluation(const RatioEvaluationSettings& settings, const BasicScanEvaluationResult& scanResult, std::vector<int>& referenceSpectra, std::vector<int>& inPlumeSpectra);
+    void SelectSpectraForRatioEvaluation(const RatioEvaluationSettings& settings, const BasicScanEvaluationResult& scanResult, const CPlumeInScanProperty& properties, std::vector<int>& referenceSpectra, std::vector<int>& inPlumeSpectra);
 
 }
