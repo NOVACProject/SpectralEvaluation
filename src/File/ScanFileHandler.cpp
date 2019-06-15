@@ -312,7 +312,8 @@ void  CScanFileHandler::ResetCounter() {
         m_specReadSoFarNum += 1;
 }
 
-int CScanFileHandler::GetSpectrumNumInFile() {
+int CScanFileHandler::GetSpectrumNumInFile() const 
+{
     return 	m_specNum;
 }
 /** Returns the interlace steps for the spectra in this scan-file.
