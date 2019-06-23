@@ -32,31 +32,44 @@ namespace Evaluation
         }
 
         CSpectrum inPlumeSpectrum;
-        for (int specIdx : plumeSpectra)
-        {
-            CSpectrum tmpSpec;
-            if (scan.GetSpectrum(tmpSpec, specIdx))
-            {
-                inPlumeSpectrum.Add(tmpSpec);
-            }
-        }
+        AverageSpectra(scan, plumeSpectra, inPlumeSpectrum);
 
         CSpectrum outOfPlumeSpectrum;
-        for (int specIdx : referenceSpectra)
+        AverageSpectra(scan, referenceSpectra, outOfPlumeSpectrum);
+
+        // TODO: Correct dark
+
+        // Calculate the SO2 column in the spectrum
+        double masterColumn = 0.0;
         {
-            CSpectrum tmpSpec;
-            if (scan.GetSpectrum(tmpSpec, specIdx))
+            CEvaluationBase eval{ m_masterFitWindow };
+            eval.SetSkySpectrum(outOfPlumeSpectrum);
+            if (eval.Evaluate(inPlumeSpectrum))
             {
-                outOfPlumeSpectrum.Add(tmpSpec);
+                // TODO: Handle errors here...
+            }
+            else
+            {
+                masterColumn = eval.m_result.m_referenceResult[0].m_column;
             }
         }
-
 
         for (const CFitWindow& window : m_referenceFit)
         {
             CEvaluationBase eval{window};
             eval.SetSkySpectrum(outOfPlumeSpectrum);
-            eval.Evaluate(inPlumeSpectrum);
+            if (eval.Evaluate(inPlumeSpectrum))
+            {
+                // Handle errors here
+            }
+            else
+            {
+                Ratio r;
+                r.minorResult   = eval.m_result.m_referenceResult[0].m_column;
+                r.majorResult   = masterColumn;
+                r.ratio         = eval.m_result.m_referenceResult[0].m_column / masterColumn;
+                // TODO: Error estimation
+            }
         }
 
         return result;
@@ -98,4 +111,28 @@ namespace Evaluation
         return;
     }
 
+    int AverageSpectra(FileHandler::CScanFileHandler& scan, const std::vector<int>& indices, CSpectrum& result)
+    {
+        if (indices.size() == 0)
+        {
+            return 0;
+        }
+
+        scan.GetSpectrum(result, indices[0]);
+        int nofAveragedSpectra = 1;
+
+        for (size_t ii = 1; ii < indices.size(); ++ii)
+        {
+            CSpectrum tmpSpec;
+            if (scan.GetSpectrum(tmpSpec, indices[ii]))
+            {
+                result.Add(tmpSpec);
+                ++nofAveragedSpectra;
+            }
+        }
+
+        result.Div((double)nofAveragedSpectra);
+
+        return nofAveragedSpectra;
+    }
 }
