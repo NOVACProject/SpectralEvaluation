@@ -2,6 +2,7 @@
 #include <SpectralEvaluation/VectorUtils.h>
 #include <algorithm>
 #include <cstring>
+#include <sstream>
 
 template <class T> double Average(T array[], long nElements) {
     if (nElements <= 0)
@@ -35,7 +36,8 @@ template <class T> T Max(T *pBuffer, long bufLen) {
 /// --------------------------- FINDING THE PLUME IN ONE SCAN ---------------------------
 
 // VERSION 1: FROM NOVACPROGRAM
-bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, long numPoints, CPlumeInScanProperty& plumeProperties) {
+bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, long numPoints, CPlumeInScanProperty& plumeProperties, std::string* message)
+{
 
     // There is a plume iff there is a region, where the column-values are considerably
     //	much higher than in the rest of the scan
@@ -57,6 +59,10 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
         }
     }
     if (nCol <= 5) { // <-- if too few ok points, then there's no plume
+        if (nullptr != message)
+        {
+            *message = "Plume not found, less than five spectra are labelled as good evaluations.";
+        }
         return false;
     }
 
@@ -155,7 +161,14 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
 
         return true;
     }
-    else {
+    else
+    {
+        if (nullptr != message)
+        {
+            std::stringstream msg;
+            msg << "Plume not found, strongest plume-to-background ratio: " << highestDifference << ", average column error: " << avgColError;
+            *message = msg.str();
+        }
         return false;
     }
 }
@@ -163,12 +176,13 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
 /// --------------------------- PLUME COMPLETENESS ---------------------------
 
 // VERSION 1: FROM NOVACPROGRAM
-bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, double offset, long numPoints, CPlumeInScanProperty &plumeProperties) {
+bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, double offset, long numPoints, CPlumeInScanProperty &plumeProperties, std::string* message)
+{
 
     int nDataPointsToAverage = 5;
 
     // Check if there is a plume at all...
-    bool inPlume = FindPlume(scanAngles, phi, columns, columnErrors, badEvaluation, numPoints, plumeProperties);
+    bool inPlume = FindPlume(scanAngles, phi, columns, columnErrors, badEvaluation, numPoints, plumeProperties, message);
     if (!inPlume) {
         plumeProperties.completeness = 0.0; // <-- no plume at all
         return false;
