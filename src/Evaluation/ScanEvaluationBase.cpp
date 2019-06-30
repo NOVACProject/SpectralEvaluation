@@ -185,53 +185,34 @@ namespace Evaluation
         //      without being saturated.
         int indexOfMostSuitableSpectrum = NO_SPECTRUM_INDEX;
         scan.GetSky(sky);
-        double fitSaturation = -1.0;
         double bestSaturation = -1.0;
-        double fitIntensity = sky.MaxValue(fitWindow.fitLow, fitWindow.fitHigh);
-        double maxInt = CSpectrometerDatabase::GetInstance().GetModel(sky.m_info.m_specModelName).maximumIntensity;
+        const double skyFitIntensity = sky.MaxValue(fitWindow.fitLow, fitWindow.fitHigh);
+        const double maxInt = CSpectrometerDatabase::GetInstance().GetModel(sky.m_info.m_specModelName).maximumIntensity;
         
-        if (sky.NumSpectra() > 0)
-        {
-            fitSaturation = fitIntensity / (sky.NumSpectra() * maxInt);
-        }
-        else
-        {
-            fitSaturation = fitIntensity / (maxInt * sky.NumSpectra());
-        }
+        const double skyFitSaturation = (sky.NumSpectra() > 0) ? (skyFitIntensity / (sky.NumSpectra() * maxInt)) : skyFitIntensity / maxInt;
         
-        if (fitSaturation < 0.9 && fitSaturation > 0.1)
+        if (skyFitSaturation < 0.9 && skyFitSaturation > 0.1)
         {
             indexOfMostSuitableSpectrum = INDEX_OF_SKYSPECTRUM;
-            bestSaturation = fitSaturation;
+            bestSaturation = skyFitSaturation;
         }
 
         scan.ResetCounter(); // start from the beginning
 
         CSpectrum spectrum;
         int curIndex = 0;
-        while (scan.GetNextSpectrum(spectrum))
+        while(scan.GetSpectrum(spectrum, curIndex))
         {
-            fitIntensity = spectrum.MaxValue(fitWindow.fitLow, fitWindow.fitHigh);
-            maxInt = CSpectrometerDatabase::GetInstance().GetModel(spectrum.m_info.m_specModelName).maximumIntensity;
+            const double fitIntensity   = spectrum.MaxValue(fitWindow.fitLow, fitWindow.fitHigh);
+            const double numSpectra     = std::max(1.0, (double)spectrum.NumSpectra());
 
-            // Get the saturation-ratio for this spectrum
-            if (spectrum.NumSpectra() > 0)
-            {
-                fitSaturation = fitIntensity / (spectrum.NumSpectra() * maxInt);
-            }
-            else
-            {
-                fitSaturation = fitIntensity / (maxInt * spectrum.NumSpectra());
-            }
+            const double fitSaturation = fitIntensity / (numSpectra * maxInt);
 
             // Check if this spectrum is good...
-            if (fitSaturation < 0.9 && fitSaturation > 0.1)
+            if (fitSaturation < 0.9 && fitSaturation > 0.1 && fitSaturation > bestSaturation)
             {
-                if (fitSaturation > bestSaturation)
-                {
-                    indexOfMostSuitableSpectrum = curIndex;
-                    bestSaturation = fitSaturation;
-                }
+                indexOfMostSuitableSpectrum = curIndex;
+                bestSaturation = fitSaturation;
             }
 
             // Go to the next spectrum
