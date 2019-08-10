@@ -5,6 +5,7 @@ cmake_minimum_required (VERSION 3.6)
 set(SPECTRUM_EVALUATION_HEADERS
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/BasicMath.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/DarkSpectrum.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/EvaluationBase.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/EvaluationResult.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/FitParameter.h
@@ -19,6 +20,7 @@ set(SPECTRUM_EVALUATION_HEADERS
 
 set(SPECTRUM_EVALUATION_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/BasicMath.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/DarkSpectrum.cpp
     ${CMAKE_CURRENT_LIST_DIR}/EvaluationBase.cpp
     ${CMAKE_CURRENT_LIST_DIR}/EvaluationResult.cpp
     ${CMAKE_CURRENT_LIST_DIR}/FitWindow.cpp

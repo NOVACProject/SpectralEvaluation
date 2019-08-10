@@ -212,7 +212,7 @@ int CScanFileHandler::GetNextSpectrum(CSpectrum &spec) {
         this->m_startTime = spec.m_info.m_startTime;
 
     // Extract the spectrometer-model from the serial-number of the spectrometer
-    spec.m_info.m_specModel = CSpectrometerModel::GetModel(spec.m_info.m_device);
+    spec.m_info.m_specModelName = CSpectrometerDatabase::GetInstance().GuessModelFromSerial(spec.m_info.m_device).modelName;
 
     return 1;
 }
@@ -312,7 +312,8 @@ void  CScanFileHandler::ResetCounter() {
         m_specReadSoFarNum += 1;
 }
 
-int CScanFileHandler::GetSpectrumNumInFile() {
+int CScanFileHandler::GetSpectrumNumInFile() const 
+{
     return 	m_specNum;
 }
 /** Returns the interlace steps for the spectra in this scan-file.

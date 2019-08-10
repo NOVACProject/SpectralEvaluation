@@ -56,8 +56,8 @@ public:
         For OceanOptics Spectrometers this is the serial number */
     std::string m_device;
 
-    /** The spectrometer model which was used to collect this spectrum */
-    SPECTROMETER_MODEL  m_specModel;
+    /** The name of the spectrometer model which was used to collect this spectrum */
+    std::string m_specModelName;
 
     /** The name of the spectrum */
     std::string m_name;

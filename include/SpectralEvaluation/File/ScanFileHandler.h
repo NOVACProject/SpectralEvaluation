@@ -63,7 +63,7 @@ namespace FileHandler
             If any file-error occurs the parameter 'm_lastError' will be set.
             @param spec - will on successful return be filled with the newly read spectrum.
             @param specNo - The zero-based index into the scan-file.
-            @return the number of spectra read.*/
+            @return the number of spectra read (1 if successful, otherwise 0) */
         int GetSpectrum(CSpectrum &spec, long specNo);
 
         /** Gets the dark spectrum of the scan
@@ -112,7 +112,7 @@ namespace FileHandler
         void  ResetCounter();
 
         /** Retrieves the total number of spectra in the .pak-file (including sky and dark) */
-        int GetSpectrumNumInFile();
+        int GetSpectrumNumInFile() const;
 
     private:
         // ----------------------------------------------------------------------

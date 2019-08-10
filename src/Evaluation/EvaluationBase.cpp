@@ -189,7 +189,9 @@ namespace Evaluation
         return 0;
     }
 
-    void CEvaluationBase::RemoveOffset(double *spectrum, int sumChn, bool UV) {
+    void CEvaluationBase::RemoveOffset(double *spectrum, int sumChn, bool UV)
+    {
+        // TODO: Read this from the number of optically covered pixels of the SpectrometerModel
         int offsetFrom = (UV) ? 50 : 2;
         int offsetTo = (UV) ? 200 : 20;
 
