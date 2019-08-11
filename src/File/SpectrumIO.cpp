@@ -33,7 +33,7 @@ namespace SpectrumIO
         FILE *f = fopen(fileName.c_str(), "rb");
 
         if (f == NULL) {
-            printf("Could not open spectrum file: %s", fileName.c_str());
+            printf("Could not open spectrum file: %s\n", fileName.c_str());
             m_lastError = ERROR_COULD_NOT_OPEN_FILE;
             return(1);
         }
@@ -85,7 +85,7 @@ namespace SpectrumIO
 
         if (f == nullptr)
         {
-            printf("Could not open spectrum file: %s", fileName.c_str());
+            printf("Could not open spectrum file: %s\n", fileName.c_str());
             m_lastError = ERROR_COULD_NOT_OPEN_FILE;
             return 0;
         }
@@ -167,7 +167,7 @@ namespace SpectrumIO
         FILE *f = fopen(fileName.c_str(), "rb");
 
         if (f == NULL) {
-            printf("Could not open spectrum file: %s", fileName.c_str());
+            printf("Could not open spectrum file: %s\n", fileName.c_str());
             m_lastError = ERROR_COULD_NOT_OPEN_FILE;
             return false;
         }
@@ -221,7 +221,7 @@ namespace SpectrumIO
 
                 if (fread(buffer, 1, MKZY.size, f) < MKZY.size) //read compressed info
                 {
-                    printf("Error EOF! in %s", fileName.c_str());
+                    printf("Error EOF! in %s\n", fileName.c_str());
                     fclose(f);
                     m_lastError = ERROR_EOF;
                     return false;
@@ -368,7 +368,7 @@ namespace SpectrumIO
 
         if (fread(buffer, 1, MKZY.size, f) < MKZY.size) //read compressed info
         {
-            printf("Error EOF! in pak-file");
+            printf("Error EOF! in pak-file\n");
 
             m_lastError = ERROR_EOF;
             return false;
@@ -639,7 +639,7 @@ namespace SpectrumIO
             info->m_coneAngle = MKZY.coneangle;
             info->m_compass = (float)MKZY.compassdir / 10.0f;
             if (info->m_compass > 360.0 || info->m_compass < 0) {
-                printf("Spectrum has compass angle outside of the expected [0, 360] degree range. ");
+                printf("Spectrum has compass angle outside of the expected [0, 360] degree range.\n");
             }
             info->m_batteryVoltage = (float)MKZY.ADC[0] / 100.0f;
             info->m_temperature = MKZY.temperature;
