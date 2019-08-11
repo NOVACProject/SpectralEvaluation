@@ -5,9 +5,14 @@
 #include <SpectralEvaluation/Spectra/Grid.h>
 #include <fstream>
 #include <numeric>
+#include <map>
+#include <mutex>
 
 namespace Evaluation
 {
+
+static std::mutex s_crossSectionDatabase;
+static std::map<std::string, CCrossSectionData> s_readInCrossSections;
 
 CCrossSectionData::CCrossSectionData()
 {
@@ -26,7 +31,6 @@ CCrossSectionData &CCrossSectionData::operator=(const CCrossSectionData &other)
 
     return *this;
 }
-
 
 void SetAtGrow(std::vector<double>& v, int index, double value)
 {
@@ -116,6 +120,14 @@ double CCrossSectionData::GetWavelengthAt(unsigned int index) const
 
 int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
 {
+    // if (s_readInCrossSections.find(fileName) != s_readInCrossSections.end())
+    // {
+    //     // Take the data from the database instead...
+    //     std::lock_guard<std::mutex> lock(s_crossSectionDatabase);
+    //     *this = s_readInCrossSections[fileName];
+    //     return 0;
+    // }
+
     this->m_waveLength.clear();
     this->m_crossSection.clear();
 
@@ -166,6 +178,13 @@ int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
         return 1; // failed to read any lines
     }
     fileRef.close();
+
+    // Save the data to the database
+    // if (s_readInCrossSections.find(fileName) == s_readInCrossSections.end())
+    // {
+    //     std::lock_guard<std::mutex> lock(s_crossSectionDatabase);
+    //     s_readInCrossSections[fileName] = *this;
+    // }
 
     return 0;
 }

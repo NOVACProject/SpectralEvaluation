@@ -14,10 +14,7 @@ namespace FileHandler
     class CScanFileHandler
     {
     public:
-        /** Default constructor */
         CScanFileHandler();
-
-        ~CScanFileHandler();
 
         // ----------------------------------------------------------------------
         // ---------------------- PUBLIC DATA -----------------------------------
@@ -97,7 +94,7 @@ namespace FileHandler
                     datapoint in the spectra (normally 0).
                  @return the start-channel for the spectra in this scan.
                  @return -1 if the function 'CheckScanFile' has not been called */
-        int	GetStartChannel() const;
+        int GetStartChannel() const;
 
         /** Retrieves GPS-information from the spectrum files */
         const CGPSData &GetGPS() const;

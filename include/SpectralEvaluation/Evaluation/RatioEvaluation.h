@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SpectralEvaluation/Evaluation/Ratio.h>
 #include <SpectralEvaluation/Evaluation/ScanEvaluationBase.h>
 #include <SpectralEvaluation/Evaluation/FitWindow.h>
 #include <SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h>
@@ -10,26 +11,17 @@ namespace Evaluation
 {
     class BasicScanEvaluationResult;
 
-    struct Ratio
-    {
-        double ratio; //<- The estimated quotient.
-        double error; //<- An estimation of the error in the quotient.
-
-        double minorResult; //<- The result of the minor evaluation (Bro).
-        double majorResult; //<- The result of the major evaluation (SO2).
-    };
-
     // TODO: Move to Configuration
     struct RatioEvaluationSettings
     {
         // The minimum number of spectra which needs to be selected in the plume for the ratio calculation to be successful.
-        int minNumberOfSpectraInPlume = 10;
+        int minNumberOfSpectraInPlume = 7;
 
         // The minimum (SO2) column for the selected spectra in the plume.
-        double minInPlumeColumn = 1e19;
+        double minInPlumeColumn = 1e17;
 
         // The minimum number of spectra which needs to be averaged outside of the plume for the calculation to be successful.
-        int minNumberOfReferenceSpectra = 10;
+        int minNumberOfReferenceSpectra = 7;
     };
 
     /** The class RatioEvaluation helps with evaluating the ratios of specific elements (e.g. BrO/SO2-ratio)
@@ -46,7 +38,7 @@ namespace Evaluation
     class RatioEvaluation : public ScanEvaluationBase
     {
     public:
-        RatioEvaluation(const RatioEvaluationSettings& settings);
+        RatioEvaluation(const RatioEvaluationSettings& settings, const Configuration::CDarkSettings& darkSettings);
 
         /** Sets up this ratio-evaluation with the fit windows to use for evaluation.
             @param fitWindow Is the fit window for the main specie to evaluate (typically SO2)
@@ -80,6 +72,9 @@ namespace Evaluation
         /** The results from evaluation from the scan using the m_masterFitWindow */
         BasicScanEvaluationResult m_masterResult;
         CPlumeInScanProperty m_masterResultProperties;
+
+        /** Settings for dark-correction */
+        const Configuration::CDarkSettings& m_darkSettings;
 
         /** The fit windows which will be used to estimate the minor specie, typically BrO.
             The name of each fit-window must equal the name of the sub-specie to calculate.

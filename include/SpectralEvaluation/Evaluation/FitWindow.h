@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ReferenceFile.h"
+#include <vector>
 
 // TODO: Remove
 #define MAX_N_REFERENCES 10
@@ -90,6 +91,12 @@ namespace Evaluation
             the shift of all references set to free and the optimum shift value is found.
             The scan is then evaluated again using this shift value. */
 		int findOptimalShift = 0;
+
+        /** This is an optional set of child windows which are to be evaluated in conjunction with the current one.
+            These are typically used for ratio-evaluations, where the spectrum is evaluated in one region
+            for e.g. SO2 and another region for e.g. BrO, but could also in the future be used for 
+            e.g. studying what happens if the spectrum is evaluated in two different regions. */
+        std::vector<CFitWindow> child;
 
         // ------------------ METHODS ----------------------------------
 

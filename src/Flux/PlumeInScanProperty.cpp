@@ -166,7 +166,7 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
         if (nullptr != message)
         {
             std::stringstream msg;
-            msg << "Plume not found, strongest plume-to-background ratio: " << highestDifference << ", average column error: " << avgColError;
+            msg << "Plume not found, strongest plume-to-background difference: " << highestDifference << ", average column error: " << avgColError << ", plume-to-background ratio: " << highestDifference / avgColError;
             *message = msg.str();
         }
         return false;

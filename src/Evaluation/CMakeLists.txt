@@ -11,6 +11,7 @@ set(SPECTRUM_EVALUATION_HEADERS
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/FitParameter.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/FitWindow.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/CrossSectionData.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/Ratio.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/RatioEvaluation.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/ReferenceFile.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/ReferenceFitResult.h

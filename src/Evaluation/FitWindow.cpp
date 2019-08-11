@@ -43,6 +43,7 @@ namespace Evaluation
         }
         this->fraunhoferRef = w2.fraunhoferRef;
         this->findOptimalShift = w2.findOptimalShift;
+        this->child = std::vector<CFitWindow>(begin(w2.child), end(w2.child));
         return *this;
     }
 
@@ -65,6 +66,8 @@ namespace Evaluation
             ref[i].m_path = "";
             ref[i].m_specieName = "";
         }
+
+        child.clear();
 
         fraunhoferRef.m_path = "";
         fraunhoferRef.m_specieName = "SolarSpec";
@@ -93,11 +96,23 @@ namespace Evaluation
             }
         }
 
+        // If children are defined, then read them as well
+        for (CFitWindow& c : window.child)
+        {
+            ReadReferences(c);
+        }
+
         return true;
     }
 
     void HighPassFilterReferences(CFitWindow& window)
     {
+        // If children are defined, then handle them as well
+        for (CFitWindow& c : window.child)
+        {
+            HighPassFilterReferences(c);
+        }
+
         if (window.fitType != Evaluation::FIT_HP_DIV && window.fitType != Evaluation::FIT_HP_SUB)
         {
             return;
@@ -124,6 +139,12 @@ namespace Evaluation
 
     void ScaleReferencesToMolecCm2(CFitWindow& window)
     {
+        // If children are defined, then handle them as well
+        for (CFitWindow& c : window.child)
+        {
+            ScaleReferencesToMolecCm2(c);
+        }
+
         for (int referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
         {
             // Local handle for more convenient syntax.

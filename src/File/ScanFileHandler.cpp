@@ -25,11 +25,6 @@ CScanFileHandler::CScanFileHandler()
     m_fHasDarkCurrent = false;
 }
 
-CScanFileHandler::~CScanFileHandler()
-{
-    m_spectrumBuffer.clear();
-}
-
 bool CScanFileHandler::CheckScanFile(const std::string& fileName)
 {
     CSpectrumIO reader;
