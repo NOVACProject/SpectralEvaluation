@@ -18,6 +18,9 @@ namespace Evaluation
     class CEvaluationBase;
     class CFitWindow;
 
+    /** Reads a spectrum from .std or .txt files. @return true if successful */
+    bool ReadSpectrumFromFile(const std::string& fullFilename, CSpectrum& spec);
+
     /** ScanEvaluationBase is the base class for the ScanEvaluation-classes found in 
         NovacPPP and NovacProgram. This collects the common elements between the two program */
     class ScanEvaluationBase
@@ -62,26 +65,6 @@ namespace Evaluation
 
         /** The last error message, formatted as a string, set by any function which can return true/false to indicate success or failure. */
         std::string m_lastErrorMessage = "";
-
-        /** Models a dark spectrum for the provided measured spectrum from an offset and a dark-current spectrum.
-            @param spec The spectrum which needs dark-correcting. This does not modify that spectrum...
-            @param dark Will on successful return be filled with the dark spectrum.
-            @return true if successful or false if the spectrum could not be modelled. This sets m_lastErrorMessage. */
-        bool ModelDarkSpectrum(FileHandler::CScanFileHandler &scan, const Configuration::CDarkSettings& darkSettings, const CSpectrum &spec, CSpectrum &dark);
-
-        /** Retrieves an offset-spectrum (spectrum with very short exposure time) from the given scan using the options.
-            If the options says to always use the measured then the spectrum is taken from the scan. 
-            If the option says to use an user-supplied offset spectrum then the offset-spectrum is read from disk. */
-        bool GetOffsetSpectrum(FileHandler::CScanFileHandler &scan, const Configuration::CDarkSettings& darkSettings, CSpectrum &offsetSpectrum);
-
-        /** Retrieves a dark-current-spectrum (spectrum with very long exposure time) from the given scan using the options.
-            @param needsOffsetCorrection Will be set to true if the provided spectrum does need to be offset-corrected.
-            If the options says to always use the measured then the spectrum is taken from the scan.
-            If the option says to use an user-supplied offset spectrum then the offset-spectrum is read from disk. */
-        bool GetDarkCurrentSpectrum(FileHandler::CScanFileHandler &scan, const Configuration::CDarkSettings& darkSettings, CSpectrum &darkCurrent, bool& needsOffsetCorrection);
-
-        /** Reads a spectrum from .std or .txt files. @return true if successful */
-        bool ReadSpectrumFromFile(const std::string& fullFilename, CSpectrum& spec);
 
         /** Retrieves the dark spectrum to use for the provided spectrum given the settings from the user.
             @return true on success.
