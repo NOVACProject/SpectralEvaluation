@@ -112,7 +112,7 @@ namespace Evaluation
                 r.majorSpecieName   = masterSpecieName;
 
                 r.ratio             = eval.m_result.m_referenceResult[0].m_column / masterColumn;
-                r.error             = std::sqrt( std::pow(r.minorError / r.minorResult, 2.0) + std::pow(r.majorError / r.majorResult, 2.0) );
+                r.error             = std::abs(r.ratio) * std::sqrt( std::pow(r.minorError / r.minorResult, 2.0) + std::pow(r.majorError / r.majorResult, 2.0) );
 
                 result.push_back(r);
             }
