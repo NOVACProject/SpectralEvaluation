@@ -22,6 +22,7 @@ set(SPECTRUM_EVALUATION_HEADERS
 
 set(SPECTRUM_EVALUATION_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/BasicMath.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/BasicScanEvaluationResult.cpp
     ${CMAKE_CURRENT_LIST_DIR}/DarkSpectrum.cpp
     ${CMAKE_CURRENT_LIST_DIR}/EvaluationBase.cpp
     ${CMAKE_CURRENT_LIST_DIR}/EvaluationResult.cpp

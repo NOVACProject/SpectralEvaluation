@@ -13,6 +13,7 @@ namespace Evaluation
     //  ratio evaluations or detailed spectral analysis of compounds in the plume.
     class PlumeSpectrumSelector
     {
+    public:
         struct PlumeSpectrumSelectionSettings
         {
             // The minimum number of spectra which needs to be selected in the plume for the ratio calculation to be successful.
