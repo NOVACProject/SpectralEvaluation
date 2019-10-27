@@ -39,7 +39,6 @@ void PlumeSpectrumSelector::SelectSpectra(
 
     // Find a proprosal for the in-plume region.
     auto inPlumeProposal = FindSpectraInPlume(scanResult, properties, mainSpecieIndex, settings);
-
     inPlumeProposal = FilterSpectraUsingIntensity(inPlumeProposal, scanFile, settings);
 
     // Step 2, find the reference region (10 adjacent spectra with lowest avg column value)
@@ -58,6 +57,8 @@ void PlumeSpectrumSelector::SelectSpectra(
 
     referenceSpectra = std::vector<size_t>(referenceRegionWidth);
     std::iota(begin(referenceSpectra), end(referenceSpectra), (int)startIdxOfReferenceRegion);
+
+    inPlumeSpectra = std::move(inPlumeProposal);
 
     return;
 }
@@ -126,6 +127,7 @@ std::vector<size_t> PlumeSpectrumSelector::FilterSpectraUsingIntensity(
     {
         if (scanFile.GetSpectrum(spectrum, (long)idx))
         {
+            // TODO: the minimum intensity should be checked in the dark-corrected spectrum to be more accurate.
             if (spectrum.MaxValue(0, spectrum.m_length) <= settings.maxSaturationRatio &&
                 spectrum.MaxValue(0, spectrum.m_length) >= settings.minSaturationRatio)
             {

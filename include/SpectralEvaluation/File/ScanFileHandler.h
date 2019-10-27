@@ -111,6 +111,11 @@ namespace FileHandler
         /** Retrieves the total number of spectra in the .pak-file (including sky and dark) */
         int GetSpectrumNumInFile() const;
 
+        /** Returns a spectrum which is the average of the provided indices.
+            @return the number of spectra co-added (may be less than indices.size()
+            if some spectrum/spectra could not be read). */
+        int AverageSpectra(const std::vector<size_t>& indices, CSpectrum& result);
+
     private:
         // ----------------------------------------------------------------------
         // ---------------------- PRIVATE DATA ----------------------------------
