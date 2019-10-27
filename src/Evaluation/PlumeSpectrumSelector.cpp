@@ -1,4 +1,5 @@
 #include <numeric>
+#include <sstream>
 
 #include <SpectralEvaluation/Evaluation/PlumeSpectrumSelector.h>
 #include <SpectralEvaluation/File/ScanFileHandler.h>
@@ -11,7 +12,8 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     FileHandler::CScanFileHandler& originalScanFile,
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& properties,
-    int mainSpecieIndex)
+    int mainSpecieIndex,
+    const std::string& outputDirectory)
 {
     std::vector<size_t> referenceSpectrumIndices;
     std::vector<size_t> inPlumeSpectrumIndices;
@@ -32,20 +34,20 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
         referenceSpectrum.m_info.m_name = "sky"; // TODO: find a better name for this
 
         CSpectrum inPlumeSpectrum;
-        originalScanFile.AverageSpectra(referenceSpectrumIndices, inPlumeSpectrum);
-        referenceSpectrum.m_info.m_name = "plume"; // TODO: find a better name for this
+        originalScanFile.AverageSpectra(inPlumeSpectrumIndices, inPlumeSpectrum);
+        inPlumeSpectrum.m_info.m_name = "plume"; // TODO: find a better name for this
 
         CSpectrum darkSpectrum;
         originalScanFile.GetDark(darkSpectrum);
 
-        std::string outputFileName;
+        std::string outputFileName = outputDirectory + "/PlumeSpectra_" + originalScanFile.GetFileName();
+
         SpectrumIO::CSpectrumIO spectrumWriter;
         spectrumWriter.AddSpectrumToFile(outputFileName, referenceSpectrum);
         spectrumWriter.AddSpectrumToFile(outputFileName, darkSpectrum);
         spectrumWriter.AddSpectrumToFile(outputFileName, inPlumeSpectrum);
     }
 }
-
 
 void PlumeSpectrumSelector::SelectSpectra(
     FileHandler::CScanFileHandler& scanFile,
@@ -117,6 +119,7 @@ double PlumeSpectrumSelector::AverageColumnValue(
 }
 
 bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
+    FileHandler::CScanFileHandler& scanFile,
     const PlumeSpectrumSelectionSettings& settings,
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& properties)
@@ -125,10 +128,42 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
     {
         return false; // not enough spectra
     }
+
     if (properties.completeness < 0.7)
     {
         return false; // need to see the plume
     }
+
+    CSpectrum skySpectrum;
+    if (scanFile.GetSky(skySpectrum))
+    {
+        return false;
+    }
+
+    auto model = CSpectrometerDatabase::GetInstance().GetModel(skySpectrum.m_info.m_specModelName);
+
+    // Check the saturation ratio of the sky spectrum, making sure that it is not saturated.
+    double maxSaturationRatio = GetMaximumSaturationRatioOfSpectrum(skySpectrum, model);
+
+    if (maxSaturationRatio > settings.maxSaturationRatio)
+    {
+        return false;
+    }
+
+    // dark correct and check for low intensity
+    CSpectrum darkSpectrum;
+    if (scanFile.GetDark(darkSpectrum))
+    {
+        return false;
+    }
+    skySpectrum.Sub(darkSpectrum); // TODO: check if the number of co-adds are identical...
+
+    maxSaturationRatio = GetMaximumSaturationRatioOfSpectrum(skySpectrum, model);
+    if (maxSaturationRatio < settings.minSaturationRatio)
+    {
+        return false;
+    }
+
     return true; // TODO: Add more checks...
 }
 
@@ -161,31 +196,37 @@ std::vector<size_t> PlumeSpectrumSelector::FilterSpectraUsingIntensity(
     std::vector<size_t> result;
     result.reserve(proposedIndices.size());
 
-    CSpectrum spectrum;
-
-    // Get one spectrum from the file such that we can identify the model
-    if (!scanFile.GetSpectrum(spectrum, 0L))
+    // Get the dark-spectrum from the file. This is used to dark-correct the spectra
+    //  _and_ to identify the spectrometer model for judging the maximum intensity.
+    CSpectrum darkSpectrum;
+    if (scanFile.GetDark(darkSpectrum))
     {
         return result; // failure.
     }
-    auto model = CSpectrometerDatabase::GetInstance().GetModel(spectrum.m_info.m_specModelName);
+    auto model = CSpectrometerDatabase::GetInstance().GetModel(darkSpectrum.m_info.m_specModelName);
 
+    CSpectrum spectrum;
     for (size_t idx : proposedIndices)
     {
         if (scanFile.GetSpectrum(spectrum, (long)idx))
         {
-            double maxSaturationRatio = spectrum.MaxValue(0, spectrum.m_length) / model.maximumIntensity;
-            if (spectrum.m_info.m_numSpec > 0)
+            double maxSaturationRatio = GetMaximumSaturationRatioOfSpectrum(spectrum, model);
+
+            if (maxSaturationRatio > settings.maxSaturationRatio)
             {
-                maxSaturationRatio /= spectrum.m_info.m_numSpec;
+                continue; // ignore this spectrum
             }
 
-            // TODO: the minimum intensity should be checked in the dark-corrected spectrum to be more accurate.
-            if (maxSaturationRatio <= settings.maxSaturationRatio &&
-                maxSaturationRatio >= settings.minSaturationRatio)
+            // dark correct and check for low intensity
+            spectrum.Sub(darkSpectrum); // TODO: check if the number of co-adds are identical...
+
+            maxSaturationRatio = GetMaximumSaturationRatioOfSpectrum(spectrum, model);
+            if (maxSaturationRatio < settings.minSaturationRatio)
             {
-                result.push_back(idx);
+                continue; // ignore this spectrum.
             }
+
+            result.push_back(idx);
         }
     }
 

@@ -30,17 +30,18 @@ namespace Evaluation
             double minInPlumeColumn = 1e17;
 
             // The maximum saturation ratio (intensity / maximum intensity of spectrometer)
-            double maxSaturationRatio = 0.8;
+            double maxSaturationRatio = 0.88;
 
             // The maximum saturation ratio (intensity / maximum intensity of spectrometer)
-            double minSaturationRatio = 0.2;
+            double minSaturationRatio = 0.12;
         };
 
         void CreatePlumeSpectrumFile(
             FileHandler::CScanFileHandler& originalScanFile,
             const BasicScanEvaluationResult& scanResult,
             const CPlumeInScanProperty& properties,
-            int mainSpecieIndex);
+            int mainSpecieIndex,
+            const std::string& outputDirectory);
 
         // Checks the provided evaluated scan using default settings 
         //  and returns the indices of the spectra which can 
@@ -60,6 +61,7 @@ namespace Evaluation
     private:
 
         static bool IsSuitableScanForRatioEvaluation(
+            FileHandler::CScanFileHandler& scanFile,
             const PlumeSpectrumSelectionSettings& settings,
             const BasicScanEvaluationResult& scanResult,
             const CPlumeInScanProperty& properties);
