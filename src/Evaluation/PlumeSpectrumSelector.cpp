@@ -18,7 +18,15 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     std::vector<size_t> referenceSpectrumIndices;
     std::vector<size_t> inPlumeSpectrumIndices;
 
+    PlumeSpectrumSelectionSettings defaultSettings;
+
+    if (!IsSuitableScanForRatioEvaluation(originalScanFile, defaultSettings, scanResult, properties))
+    {
+        return;
+    }
+
     SelectSpectra(
+        defaultSettings,
         originalScanFile,
         scanResult,
         properties,
@@ -47,18 +55,6 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
         spectrumWriter.AddSpectrumToFile(outputFileName, darkSpectrum);
         spectrumWriter.AddSpectrumToFile(outputFileName, inPlumeSpectrum);
     }
-}
-
-void PlumeSpectrumSelector::SelectSpectra(
-    FileHandler::CScanFileHandler& scanFile,
-    const BasicScanEvaluationResult& scanResult,
-    const CPlumeInScanProperty& properties,
-    int mainSpecieIndex,
-    std::vector<size_t>& referenceSpectra,
-    std::vector<size_t>& inPlumeSpectra)
-{
-    PlumeSpectrumSelectionSettings defaultSettings;
-    return SelectSpectra(defaultSettings, scanFile, scanResult, properties, mainSpecieIndex, referenceSpectra, inPlumeSpectra);
 }
 
 void PlumeSpectrumSelector::SelectSpectra(

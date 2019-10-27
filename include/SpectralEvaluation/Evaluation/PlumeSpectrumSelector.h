@@ -43,6 +43,13 @@ namespace Evaluation
             int mainSpecieIndex,
             const std::string& outputDirectory);
 
+    private:
+        static bool IsSuitableScanForRatioEvaluation(
+            FileHandler::CScanFileHandler& scanFile,
+            const PlumeSpectrumSelectionSettings& settings,
+            const BasicScanEvaluationResult& scanResult,
+            const CPlumeInScanProperty& properties);
+
         // Checks the provided evaluated scan using default settings 
         //  and returns the indices of the spectra which can 
         //  be saved as in-plume and out-of-plume spectra.
@@ -50,22 +57,6 @@ namespace Evaluation
         //   if the scan sees the plume at all and where the edges of 
         //   the plume are located.
         // If this check fails, then the two vectors are empty.
-        void SelectSpectra(
-            FileHandler::CScanFileHandler& scanFile, 
-            const BasicScanEvaluationResult& scanResult,
-            const CPlumeInScanProperty& properties,
-            int mainSpecieIndex,
-            std::vector<size_t>& referenceSpectra,
-            std::vector<size_t>& inPlumeSpectra);
-
-    private:
-
-        static bool IsSuitableScanForRatioEvaluation(
-            FileHandler::CScanFileHandler& scanFile,
-            const PlumeSpectrumSelectionSettings& settings,
-            const BasicScanEvaluationResult& scanResult,
-            const CPlumeInScanProperty& properties);
-
         static void SelectSpectra(
             const PlumeSpectrumSelectionSettings& settings,
             FileHandler::CScanFileHandler& scanFile,
