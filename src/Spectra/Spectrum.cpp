@@ -12,387 +12,440 @@
 
 CSpectrum::CSpectrum(void)
 {
-  // reset everything 
-  memset(m_data, 0, sizeof(double) * MAX_SPECTRUM_LENGTH);
-  m_length        = 0;
+    // reset everything 
+    memset(m_data, 0, sizeof(double) * MAX_SPECTRUM_LENGTH);
+    m_length = 0;
 }
 
-CSpectrum::CSpectrum(const CSpectrum &spec){
-  this->m_info    = spec.m_info;
-  this->m_length  = spec.m_length;
-  memcpy(this->m_data, &spec.m_data, sizeof(double) * MAX_SPECTRUM_LENGTH);
-}
-
-CSpectrum::~CSpectrum(void)
+CSpectrum::CSpectrum(const CSpectrum &spec)
 {
+    this->m_info = spec.m_info;
+    this->m_length = spec.m_length;
+    memcpy(this->m_data, &spec.m_data, sizeof(double) * MAX_SPECTRUM_LENGTH);
 }
 
+int CSpectrum::AssertRange(long &fromPixel, long &toPixel) const
+{
+    /* Check the input */
+    assert(fromPixel >= 0 && toPixel >= 0);
 
-int CSpectrum::AssertRange(long &fromPixel, long &toPixel) const{
-	/* Check the input */
-	assert(fromPixel >= 0 && toPixel >= 0);
+    toPixel = std::min(toPixel, m_length - 1);
+    fromPixel = std::min(fromPixel, toPixel - 1);
 
-	toPixel	= std::min(toPixel, m_length - 1);
-	fromPixel = std::max(fromPixel, toPixel - 1);
-	  
-	assert(fromPixel <= toPixel);
+    assert(fromPixel <= toPixel);
 
-	return 0;
+    return 0;
 }
 
-double CSpectrum::MaxValue(long fromPixel, long toPixel) const{
-	fromPixel	/= this->m_info.m_interlaceStep;
-	toPixel		/= this->m_info.m_interlaceStep;
+double CSpectrum::MaxValue(long fromPixel, long toPixel) const
+{
+    fromPixel /= this->m_info.m_interlaceStep;
+    toPixel /= this->m_info.m_interlaceStep;
 
-	/* Check the input */
-	AssertRange(fromPixel, toPixel);
+    /* Check the input */
+    AssertRange(fromPixel, toPixel);
 
-	double maxv = m_data[fromPixel];
-	for(long i = fromPixel+1; i <= toPixel; ++i){
-		maxv = std::max(maxv, m_data[i]);
-	}
-	return maxv;
+    double maxv = m_data[fromPixel];
+    for (long i = fromPixel + 1; i <= toPixel; ++i) {
+        maxv = std::max(maxv, m_data[i]);
+    }
+    return maxv;
 }
 
-double CSpectrum::MinValue(long fromPixel, long toPixel) const{
-	fromPixel	/= this->m_info.m_interlaceStep;
-	toPixel		/= this->m_info.m_interlaceStep;
+double CSpectrum::MinValue(long fromPixel, long toPixel) const
+{
+    fromPixel /= this->m_info.m_interlaceStep;
+    toPixel /= this->m_info.m_interlaceStep;
 
-	/* Check the input */
-	AssertRange(fromPixel, toPixel);
-	  
-	double minv = m_data[fromPixel];
-	for(long i = fromPixel+1; i <= toPixel; ++i){
-		minv = std::min(minv, m_data[i]);
-	}
-	return minv;
+    /* Check the input */
+    AssertRange(fromPixel, toPixel);
+
+    double minv = m_data[fromPixel];
+    for (long i = fromPixel + 1; i <= toPixel; ++i)
+    {
+        minv = std::min(minv, m_data[i]);
+    }
+    return minv;
 }
 
-double CSpectrum::AverageValue(long fromPixel, long toPixel) const{
-	fromPixel	/= this->m_info.m_interlaceStep;
-	toPixel		/= this->m_info.m_interlaceStep;
+double CSpectrum::AverageValue(long fromPixel, long toPixel) const
+{
+    fromPixel /= this->m_info.m_interlaceStep;
+    toPixel /= this->m_info.m_interlaceStep;
 
-	/* Check the input */
-	AssertRange(fromPixel, toPixel);
+    /* Check the input */
+    AssertRange(fromPixel, toPixel);
 
-	double avg = m_data[fromPixel];
-	for(long i = fromPixel+1; i <= toPixel; ++i){
-		avg += m_data[i];
-	}
-	return (avg / (double)(toPixel - fromPixel + 1));
+    double avg = m_data[fromPixel];
+    for (long i = fromPixel + 1; i <= toPixel; ++i) {
+        avg += m_data[i];
+    }
+    return (avg / (double)(toPixel - fromPixel + 1));
 }
 
-// Addition
-int CSpectrum::Add(const CSpectrum &spec){
-  if(m_length != spec.m_length)
-    return 1;
-  
-  m_length = spec.m_length;
-  m_info.m_numSpec += spec.m_info.m_numSpec;
+int CSpectrum::Add(const CSpectrum &spec)
+{
+    if (m_length != spec.m_length)
+    {
+        return 1;
+    }
 
-  CDateTime localCopy = spec.m_info.m_startTime;
-  if(localCopy < m_info.m_startTime)
-    m_info.m_startTime = localCopy;
+    m_length = spec.m_length;
+    m_info.m_numSpec += spec.m_info.m_numSpec;
 
-  localCopy = spec.m_info.m_stopTime;
-  if(m_info.m_stopTime < localCopy)
-    m_info.m_stopTime = localCopy;
+    CDateTime localCopy = spec.m_info.m_startTime;
+    if (localCopy < m_info.m_startTime)
+        m_info.m_startTime = localCopy;
 
-  return PixelwiseOperation(spec, &CSpectrum::Plus);
+    localCopy = spec.m_info.m_stopTime;
+    if (m_info.m_stopTime < localCopy)
+    {
+        m_info.m_stopTime = localCopy;
+    }
+
+    return PixelwiseOperation(spec, &CSpectrum::Plus);
 }
-int CSpectrum::Add(const double value){
-  return PixelwiseOperation(value, &CSpectrum::Plus);
-}
-
-// Subtraction
-int CSpectrum::Sub(const CSpectrum &spec){
-  return PixelwiseOperation(spec, &CSpectrum::Minus);
-}
-int CSpectrum::Sub(const double value){
-  return PixelwiseOperation(value, &CSpectrum::Minus);
+int CSpectrum::Add(const double value)
+{
+    return PixelwiseOperation(value, &CSpectrum::Plus);
 }
 
-// Multiplication
-int CSpectrum::Mult(const CSpectrum &spec){
-  return PixelwiseOperation(spec, &CSpectrum::Multiply);
+int CSpectrum::Sub(const CSpectrum &spec)
+{
+    return PixelwiseOperation(spec, &CSpectrum::Minus);
 }
-int CSpectrum::Mult(const double value){
-  return PixelwiseOperation(value, &CSpectrum::Multiply);
-}
-
-// Division
-int CSpectrum::Div(const CSpectrum &spec){
-  return PixelwiseOperation(spec, &CSpectrum::Divide);
-}
-int CSpectrum::Div(const double value){
-  return PixelwiseOperation(value, &CSpectrum::Divide);
+int CSpectrum::Sub(const double value)
+{
+    return PixelwiseOperation(value, &CSpectrum::Minus);
 }
 
-// performe the supplied operation on all pixels in the two spectra
-int CSpectrum::PixelwiseOperation(const CSpectrum &spec, double f(double, double)){
-  if(spec.m_length != m_length)
-    return 1;
+int CSpectrum::Mult(const CSpectrum &spec)
+{
+    return PixelwiseOperation(spec, &CSpectrum::Multiply);
+}
+int CSpectrum::Mult(const double value)
+{
+    return PixelwiseOperation(value, &CSpectrum::Multiply);
+}
 
-  for(long i = 0; i < m_length; ++i){
-    m_data[i] = f(m_data[i], spec.m_data[i]);
-  }
+int CSpectrum::Div(const CSpectrum &spec)
+{
+    return PixelwiseOperation(spec, &CSpectrum::Divide);
+}
+int CSpectrum::Div(const double value)
+{
+    return PixelwiseOperation(value, &CSpectrum::Divide);
+}
 
-  return 0;
+// performes the supplied operation on all pixels in the two spectra
+int CSpectrum::PixelwiseOperation(const CSpectrum &spec, double f(double, double))
+{
+    if (spec.m_length != m_length)
+    {
+        return 1;
+    }
+
+    for (long i = 0; i < m_length; ++i)
+    {
+        m_data[i] = f(m_data[i], spec.m_data[i]);
+    }
+
+    return 0;
 }
 //  Performs the supplied function to every pixel in the current spectrum with the supplied constant 
-int CSpectrum::PixelwiseOperation(const double value, double f(double, double)){
-  for(long i = 0; i < m_length; ++i){
-    m_data[i] = f(m_data[i], value);
-  }
+int CSpectrum::PixelwiseOperation(const double value, double f(double, double))
+{
+    for (long i = 0; i < m_length; ++i)
+    {
+        m_data[i] = f(m_data[i], value);
+    }
 
-  return 0;
+    return 0;
 }
 
-CSpectrum &CSpectrum::operator =(const CSpectrum &s2){
-  this->m_length = std::min(s2.m_length, long(MAX_SPECTRUM_LENGTH));
-  this->m_length = std::max(this->m_length, 0L);
-  this->m_info = s2.m_info;
-  memcpy(m_data, s2.m_data, sizeof(double) * m_length);
-  return *this;
+CSpectrum &CSpectrum::operator =(const CSpectrum &s2)
+{
+    this->m_length = std::min(s2.m_length, long(MAX_SPECTRUM_LENGTH));
+    this->m_length = std::max(this->m_length, 0L);
+    this->m_info = s2.m_info;
+    memcpy(m_data, s2.m_data, sizeof(double) * m_length);
+    return *this;
 }
 
-double CSpectrum::GetOffset() const{
-  double avg;
+double CSpectrum::GetOffset() const
+{
+    double avg;
 
-	if(m_info.m_startChannel > 20){
-		return 0; // no idea...
-	}
+    if (m_info.m_startChannel > 20)
+    {
+        return 0; // no idea...
+    }
 
-	// The covered pixels, where the offset is calculated
-	int from	= 2		/ m_info.m_interlaceStep; 
-	int to		= 20	/ m_info.m_interlaceStep;
+    // The covered pixels, where the offset is calculated
+    int from = 2 / m_info.m_interlaceStep;
+    int to = 20 / m_info.m_interlaceStep;
 
-  // the offset is the average of the eighteen first pixels minus the highest one
-  avg = AverageValue(from, to) * (to - from + 1);
-  avg -= MaxValue(from, to);
-  avg /= (to - from);
+    // the offset is the average of the eighteen first pixels minus the highest one
+    avg = AverageValue(from, to) * (to - from + 1);
+    avg -= MaxValue(from, to);
+    avg /= (to - from);
 
-  return avg;
+    return avg;
 }
 
-bool CSpectrum::IsDark() const{
-	// take the highest part of the (normal) spectrum
-	int low =		1130 / m_info.m_interlaceStep;
-  int high =	1158 / m_info.m_interlaceStep;
+bool CSpectrum::IsDark() const
+{
+    // take the highest part of the (normal) spectrum
+    int low = 1130 / m_info.m_interlaceStep;
+    int high = 1158 / m_info.m_interlaceStep;
 
-	// check the ranges.
-	if(low > m_length){
-		int diff = high - low;
-		high	= m_length - 1;
-		low		= m_length - 1 - diff;
-	}else if(high > m_length){
-		high = m_length;
-	}
+    // check the ranges.
+    if (low > m_length)
+    {
+        int diff = high - low;
+        high = m_length - 1;
+        low = m_length - 1 - diff;
+    }
+    else if (high > m_length)
+    {
+        high = m_length;
+    }
 
-  double average = this->AverageValue(low, high);
-  double offset  = this->GetOffset();
+    double average = this->AverageValue(low, high);
+    double offset = this->GetOffset();
 
-	if(offset > 1e-2){
-		if(fabs(average - offset) < 4){
-			return true;
-		}else{
-			return false;
-		}
-	}else{
-		// offset == 0 means that we could not calculate the offset
-		double maxV = this->MaxValue();
-		double minV = this->MinValue();
-		if(maxV - minV > 20)
-			return false;
-		else
-			return true;
-	}
+    if (offset > 1e-2)
+    {
+        if (fabs(average - offset) < 4)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else
+    {
+        // offset == 0 means that we could not calculate the offset
+        double maxV = this->MaxValue();
+        double minV = this->MinValue();
+        if (maxV - minV > 20)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
 }
 
-void CSpectrum::Clear(){
-  memset(m_data, 0, MAX_SPECTRUM_LENGTH*sizeof(double));
-  m_length = 0;
-  // uchar
-  m_info.m_channel = m_info.m_flag = 0;
-  // ushort
-  m_info.m_startChannel = 0;
-  // float
-	m_info.m_compass = m_info.m_scanAngle = m_info.m_scanAngle2 = m_info.m_peakIntensity = 0;
-  // long
-  m_info.m_exposureTime =  m_info.m_numSpec = 0;
-  // CString
-  m_info.m_device = "";
-  m_info.m_name = "";
-  // short
-  m_info.m_scanIndex = m_info.m_scanSpecNum = 0;
-  // GPS
-  m_info.m_gps.m_altitude = 0;
-  m_info.m_gps.m_latitude = m_info.m_gps.m_longitude = 0;
-  // Time
-  m_info.m_startTime = CDateTime();
-  m_info.m_stopTime = CDateTime();
+void CSpectrum::Clear()
+{
+    memset(m_data, 0, MAX_SPECTRUM_LENGTH * sizeof(double));
+    m_length = 0;
+    // uchar
+    m_info.m_channel = m_info.m_flag = 0;
+    // ushort
+    m_info.m_startChannel = 0;
+    // float
+    m_info.m_compass = m_info.m_scanAngle = m_info.m_scanAngle2 = m_info.m_peakIntensity = 0;
+    // long
+    m_info.m_exposureTime = m_info.m_numSpec = 0;
+    // CString
+    m_info.m_device = "";
+    m_info.m_name = "";
+    // short
+    m_info.m_scanIndex = m_info.m_scanSpecNum = 0;
+    // GPS
+    m_info.m_gps.m_altitude = 0;
+    m_info.m_gps.m_latitude = m_info.m_gps.m_longitude = 0;
+    // Time
+    m_info.m_startTime = CDateTime();
+    m_info.m_stopTime = CDateTime();
 }
 
-int	CSpectrum::Split(CSpectrum *spec[MAX_CHANNEL_NUM]) const{
-	int i;
+int	CSpectrum::Split(CSpectrum *spec[MAX_CHANNEL_NUM]) const
+{
+    int i;
 
-	// If the spectrum is collected using a single channel, do nothing....
-	if(Channel() < 128)
-		return 0;
+    // If the spectrum is collected using a single channel, do nothing....
+    if (Channel() < 128)
+    {
+        return 0;
+    }
 
-	// The number of spectra that this spectrum can be separated into
-	int NSpectra = (Channel() - 127);
+    // The number of spectra that this spectrum can be separated into
+    int NSpectra = (Channel() - 127);
 
-	// Check for illegal numbers
-	if(NSpectra <= 0 || NSpectra > MAX_CHANNEL_NUM)
-		return 0;
+    // Check for illegal numbers
+    if (NSpectra <= 0 || NSpectra > MAX_CHANNEL_NUM)
+    {
+        return 0;
+    }
 
-	// Copy the spectrum information
-	for(i = 0; i < NSpectra; ++i){
-		spec[i]->m_info                 = m_info;
-		spec[i]->m_info.m_interlaceStep = NSpectra;
-		spec[i]->m_info.m_channel       = (unsigned char)(i + 16 * (spec[i]->m_info.m_interlaceStep - 1));
-		spec[i]->m_length               = 0;
-	}
-		
-	// Which spectrum to start with, the master or the slave channel
-	//	This depends on the start-channel if a partial spectrum has been
-	//	read out. By default, the odd data-points belong to the master
-	//	channel and the even to the 1:st slave channel. This since the first
-	//	data-point in the spectrum always is 0, and then follows a data-point
-	//	from the master, one from the slave, one from the master etc....
-	// TODO!!! Test this with the tripple spectormeter
+    // Copy the spectrum information
+    for (i = 0; i < NSpectra; ++i)
+    {
+        spec[i]->m_info = m_info;
+        spec[i]->m_info.m_interlaceStep = NSpectra;
+        spec[i]->m_info.m_channel = (unsigned char)(i + 16 * (spec[i]->m_info.m_interlaceStep - 1));
+        spec[i]->m_length = 0;
+    }
 
-	int specIndex = m_info.m_startChannel % NSpectra;
+    // Which spectrum to start with, the master or the slave channel
+    //	This depends on the start-channel if a partial spectrum has been
+    //	read out. By default, the odd data-points belong to the master
+    //	channel and the even to the 1:st slave channel. This since the first
+    //	data-point in the spectrum always is 0, and then follows a data-point
+    //	from the master, one from the slave, one from the master etc....
+    // TODO!!! Test this with the tripple spectormeter
 
-	for(i = 1; i < m_length; ++i){
-		if(specIndex >= 0 && specIndex < MAX_CHANNEL_NUM){
-			// Set the pixel data of the correct spectrum
-			spec[specIndex]->m_data[spec[specIndex]->m_length] = m_data[i];
+    int specIndex = m_info.m_startChannel % NSpectra;
 
-			// Change the length of the spectrum
-			spec[specIndex]->m_length++;
-		}else{
-			// ShowMessage("CSpectrum::Split was called with an illegal start-channel");
-		}
+    for (i = 1; i < m_length; ++i)
+    {
+        if (specIndex >= 0 && specIndex < MAX_CHANNEL_NUM)
+        {
+            // Set the pixel data of the correct spectrum
+            spec[specIndex]->m_data[spec[specIndex]->m_length] = m_data[i];
 
-		// Take the next spectrum to update
-		specIndex += 1;
-		specIndex %= NSpectra;
-	}
+            // Change the length of the spectrum
+            spec[specIndex]->m_length++;
+        }
+        else
+        {
+            // ShowMessage("CSpectrum::Split was called with an illegal start-channel");
+        }
 
-	return NSpectra;
+        // Take the next spectrum to update
+        specIndex += 1;
+        specIndex %= NSpectra;
+    }
+
+    return NSpectra;
 }
 
-int CSpectrum::GetInterlaceSteps(int channel, int &interlaceSteps) {
-	// if the spectrum is a mix of several spectra
-	if (channel >= 129) {
-		interlaceSteps = channel - 127;
-		return -1;
-	}
+int CSpectrum::GetInterlaceSteps(int channel, int &interlaceSteps)
+{
+    // if the spectrum is a mix of several spectra
+    if (channel >= 129)
+    {
+        interlaceSteps = channel - 127;
+        return -1;
+    }
 
-	// special case, channel = 128 is same as channel = 0
-	if (channel == 128)
-		channel = 0;
+    // special case, channel = 128 is same as channel = 0
+    if (channel == 128)
+    {
+        channel = 0;
+    }
 
-	// If the spectrum is a single spectrum
-	interlaceSteps = (channel / 16) + 1; // 16->31 means interlace=2, 32->47 means interlace=3 etc.
-	return (channel % 16); // the remainder tells the channel number
+    // If the spectrum is a single spectrum
+    interlaceSteps = (channel / 16) + 1; // 16->31 means interlace=2, 32->47 means interlace=3 etc.
+    return (channel % 16); // the remainder tells the channel number
 }
 
 /** Interpolate the spectrum originating from the channel number 'channel' */
-bool CSpectrum::InterpolateSpectrum(){
+bool CSpectrum::InterpolateSpectrum()
+{
     double	data[MAX_SPECTRUM_LENGTH];
-	memset(data, 0, MAX_SPECTRUM_LENGTH * sizeof(double));
-	int step = 2, start = 0;	// start is the first data-point we know in the spectrum
+    memset(data, 0, MAX_SPECTRUM_LENGTH * sizeof(double));
+    int step = 2, start = 0;	// start is the first data-point we know in the spectrum
 
-	// If this is not an partial spectrum, then return false
-	if(m_info.m_channel < MAX_CHANNEL_NUM)
-		return false;
+    // If this is not an partial spectrum, then return false
+    if (m_info.m_channel < MAX_CHANNEL_NUM)
+    {
+        return false;
+    }
 
-	// Get the channel number of this spectrum
-	switch(m_info.m_channel){
-		case 16:	start = 0; step = 2; break;
-		case 17:	start = 1; step = 2; break;
-		default:	return false;
-	}
+    // Get the channel number of this spectrum
+    switch (m_info.m_channel)
+    {
+    case 16:	start = 0; step = 2; break;
+    case 17:	start = 1; step = 2; break;
+    default:	return false;
+    }
 
-	// Get the length of this spectrum
-	int newLength = m_length * step;
+    // Get the length of this spectrum
+    int newLength = m_length * step;
 
-	// Copy the data we have
-	for(int k = 0; k < m_length; ++k){
-		data[step*k + start] = m_data[k];
-	}
+    // Copy the data we have
+    for (int k = 0; k < m_length; ++k)
+    {
+        data[step*k + start] = m_data[k];
+    }
 
-	// Interpolate the data we don't have
-	if(start == 1)
-		data[0] = data[1];
-	for(int k = start + 1; k < (newLength - 1); k += step){
-		data[k] = (data[k-1] + data[k+1]) * 0.5;
-	}
-	if(start == 0)
-		data[newLength-1] = data[newLength-2];
+    // Interpolate the data we don't have
+    if (start == 1)
+        data[0] = data[1];
+    for (int k = start + 1; k < (newLength - 1); k += step) {
+        data[k] = (data[k - 1] + data[k + 1]) * 0.5;
+    }
+    if (start == 0)
+        data[newLength - 1] = data[newLength - 2];
 
-	// Get the data back
-	memcpy(m_data, data, newLength*sizeof(double));
-	m_length = m_length * step;
+    // Get the data back
+    memcpy(m_data, data, newLength * sizeof(double));
+    m_length = m_length * step;
 
-	// Correct the channel number
-	switch(m_info.m_channel){
-		case 16:	m_info.m_channel = 0; break;
-		case 17:	m_info.m_channel = 1; break;
-		case 18:	m_info.m_channel = 2; break;
-	}
+    // Correct the channel number
+    switch (m_info.m_channel) {
+    case 16:	m_info.m_channel = 0; break;
+    case 17:	m_info.m_channel = 1; break;
+    case 18:	m_info.m_channel = 2; break;
+    }
 
-	return true;
+    return true;
 }
 
 /** Interpolate the spectrum originating from the channel number 'channel' */
-bool CSpectrum::InterpolateSpectrum(CSpectrum &spec) const{
-	double	data[MAX_SPECTRUM_LENGTH];
-	memset(data, 0, MAX_SPECTRUM_LENGTH * sizeof(double));
-	int step = 2, start = 0;	// start is the first data-point we know in the spectrum
+bool CSpectrum::InterpolateSpectrum(CSpectrum &spec) const
+{
+    double	data[MAX_SPECTRUM_LENGTH];
+    memset(data, 0, MAX_SPECTRUM_LENGTH * sizeof(double));
+    int step = 2, start = 0;	// start is the first data-point we know in the spectrum
 
-	// If this is not an partial spectrum, then return false
-	if(m_info.m_channel < MAX_CHANNEL_NUM)
-		return false;
+    // If this is not an partial spectrum, then return false
+    if (m_info.m_channel < MAX_CHANNEL_NUM)
+        return false;
 
-	// Get the channel number of this spectrum
-	switch(m_info.m_channel){
-		case 16:	start = 0; step = 2; break;
-		case 17:	start = 1; step = 2; break;
-		default:	return false;
-	}
+    // Get the channel number of this spectrum
+    switch (m_info.m_channel) {
+    case 16:	start = 0; step = 2; break;
+    case 17:	start = 1; step = 2; break;
+    default:	return false;
+    }
 
-	// Get the 'new' length of this spectrum
-	int newLength = m_length * step;
+    // Get the 'new' length of this spectrum
+    int newLength = m_length * step;
 
-	// Copy the data we have
-	for(int k = 0; k < m_length; ++k){
-		data[step*k + start] = m_data[k];
-	}
+    // Copy the data we have
+    for (int k = 0; k < m_length; ++k) {
+        data[step*k + start] = m_data[k];
+    }
 
-	// Interpolate the data we don't have
-	if(start == 1)
-		data[0] = data[1];
-	for(int k = start + 1; k < (newLength - 1); k += step){
-		data[k] = (data[k-1] + data[k+1]) * 0.5;
-	}
-	if(start == 0)
-		data[newLength-1] = data[newLength-2];
+    // Interpolate the data we don't have
+    if (start == 1)
+        data[0] = data[1];
+    for (int k = start + 1; k < (newLength - 1); k += step) {
+        data[k] = (data[k - 1] + data[k + 1]) * 0.5;
+    }
+    if (start == 0)
+        data[newLength - 1] = data[newLength - 2];
 
-	// Get the data back
-	spec						= *this;
-	spec.m_length		= m_length * step;
-	memcpy(spec.m_data, data, newLength*sizeof(double));
+    // Get the data back
+    spec = *this;
+    spec.m_length = m_length * step;
+    memcpy(spec.m_data, data, newLength * sizeof(double));
 
-	// Correct the channel number
-	switch(m_info.m_channel){
-		case 16:	spec.m_info.m_channel = 0; break;
-		case 17:	spec.m_info.m_channel = 1; break;
-		case 18:	spec.m_info.m_channel = 2; break;
-	}
+    // Correct the channel number
+    switch (m_info.m_channel) {
+    case 16:	spec.m_info.m_channel = 0; break;
+    case 17:	spec.m_info.m_channel = 1; break;
+    case 18:	spec.m_info.m_channel = 2; break;
+    }
 
-	return true;
+    return true;
 }

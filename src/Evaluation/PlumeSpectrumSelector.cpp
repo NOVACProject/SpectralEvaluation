@@ -15,7 +15,7 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
 {
     std::vector<size_t> referenceSpectrumIndices;
     std::vector<size_t> inPlumeSpectrumIndices;
-    
+
     SelectSpectra(
         originalScanFile,
         scanResult,
@@ -29,9 +29,11 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
         // Create and save the spectra
         CSpectrum referenceSpectrum;
         originalScanFile.AverageSpectra(referenceSpectrumIndices, referenceSpectrum);
+        referenceSpectrum.m_info.m_name = "sky"; // TODO: find a better name for this
 
         CSpectrum inPlumeSpectrum;
         originalScanFile.AverageSpectra(referenceSpectrumIndices, inPlumeSpectrum);
+        referenceSpectrum.m_info.m_name = "plume"; // TODO: find a better name for this
 
         CSpectrum darkSpectrum;
         originalScanFile.GetDark(darkSpectrum);
@@ -160,13 +162,27 @@ std::vector<size_t> PlumeSpectrumSelector::FilterSpectraUsingIntensity(
     result.reserve(proposedIndices.size());
 
     CSpectrum spectrum;
+
+    // Get one spectrum from the file such that we can identify the model
+    if (!scanFile.GetSpectrum(spectrum, 0L))
+    {
+        return result; // failure.
+    }
+    auto model = CSpectrometerDatabase::GetInstance().GetModel(spectrum.m_info.m_specModelName);
+
     for (size_t idx : proposedIndices)
     {
         if (scanFile.GetSpectrum(spectrum, (long)idx))
         {
+            double maxSaturationRatio = spectrum.MaxValue(0, spectrum.m_length) / model.maximumIntensity;
+            if (spectrum.m_info.m_numSpec > 0)
+            {
+                maxSaturationRatio /= spectrum.m_info.m_numSpec;
+            }
+
             // TODO: the minimum intensity should be checked in the dark-corrected spectrum to be more accurate.
-            if (spectrum.MaxValue(0, spectrum.m_length) <= settings.maxSaturationRatio &&
-                spectrum.MaxValue(0, spectrum.m_length) >= settings.minSaturationRatio)
+            if (maxSaturationRatio <= settings.maxSaturationRatio &&
+                maxSaturationRatio >= settings.minSaturationRatio)
             {
                 result.push_back(idx);
             }
