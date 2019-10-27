@@ -449,3 +449,23 @@ bool CSpectrum::InterpolateSpectrum(CSpectrum &spec) const
 
     return true;
 }
+
+double GetMaximumSaturationRatioOfSpectrum(
+    const CSpectrum& spectrum,
+    const SpectrometerModel& model)
+{
+    if (spectrum.m_info.m_numSpec > 0)
+    {
+        return spectrum.MaxValue(0, spectrum.m_length) / (model.maximumIntensity * spectrum.m_info.m_numSpec);
+    }
+    else
+    {
+        return spectrum.MaxValue(0, spectrum.m_length) / model.maximumIntensity;
+    }
+}
+
+double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum)
+{
+    auto model = CSpectrometerDatabase::GetInstance().GetModel(spectrum.m_info.m_specModelName);
+    return GetMaximumSaturationRatioOfSpectrum(spectrum, model);
+}

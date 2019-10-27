@@ -8,6 +8,8 @@
 
 #include "SpectrumInfo.h"
 
+struct SpectrometerModel;
+
 /**
 <b>CSpectrum</b> is an implementation of a spectrum.
   The class contains the spectral data and a CSpectrumInfo object that contains
@@ -186,5 +188,14 @@ private:
     static double Minus(double a, double b) { return a - b; }
     static double Divide(double a, double b) { return a / b; }
     static double Multiply(double a, double b) { return a*b; }
-
 };
+
+/** @return the maximum saturation ratio of the provided spectrum, in the entire spectrum length.
+    This uses the device information in the spectrum header to create a spectrometer model 
+    information in order to retrieve the maximum possible intensity. */
+double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum);
+
+/** @return the maximum saturation ratio of the provided spectrum, in the entire spectrum length.
+    This uses the provided spectrometer model information to retrieve the maximum possible intensity. */
+double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum, const SpectrometerModel& model);
+
