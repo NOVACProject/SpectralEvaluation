@@ -68,27 +68,35 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
 
     // Try different divisions of the scan to see if there is a region of at least
     //	'minWidth' values where the column-value is considerably higher than the rest
-    double highestDifference = -1e16;
+    double highestDifference = -1e16; // maximum difference between in-plume and out-of-plume regions
     long minWidth = 5;
-    int regionLow = 0, regionHigh = 0;
-    for (int low = 0; low < nCol; ++low) {
-        for (int high = low + minWidth; high < nCol; ++high) {
+    int foundRegionLowIdx = 0;
+    int foundRegionHighIdx = 0;
+    for (int testedLowIdx = 0; testedLowIdx < nCol; ++testedLowIdx)
+    {
+        for (int testedHighIdx = testedLowIdx + minWidth; testedHighIdx < nCol; ++testedHighIdx)
+        {
+            const int testedRegionSize = testedHighIdx - testedLowIdx;
+
             // The width of the region has to be at least 'minWidth' values, otherwise there's no idea to search
             //  There must also be at least 'minWidth' values outside of the region...
-            if ((high - low < minWidth) || (nCol - high + low < minWidth))
+            if ((testedRegionSize < minWidth) || (nCol - testedRegionSize < minWidth))
+            {
                 continue;
+            }
 
             // the average column value in the region we're testing
-            const double avgInRegion = Average(col.data() + low, high - low);
+            const double avgInRegion = Average(col.data() + testedLowIdx, testedRegionSize);
 
             // the average column value outside of the region we're testing
             // TODO: These are actually 'sum'
-            const double avgOutRegion = (Average(col.data(), low)*low + Average(col.data() + high, nCol - high)*(nCol - high)) / (low + nCol - high);
+            const double avgOutRegion = (Average(col.data(), testedLowIdx)*testedLowIdx + Average(col.data() + testedHighIdx, nCol - testedHighIdx)*(nCol - testedHighIdx)) / (testedLowIdx + nCol - testedHighIdx);
 
-            if (avgInRegion - avgOutRegion > highestDifference) {
+            if (avgInRegion - avgOutRegion > highestDifference)
+            {
                 highestDifference = avgInRegion - avgOutRegion;
-                regionLow = low;
-                regionHigh = high;
+                foundRegionLowIdx = testedLowIdx;
+                foundRegionHighIdx = testedHighIdx;
             }
         }
     }
@@ -96,11 +104,13 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
     // Calculate the average column error, for the good measurement points
     double avgColError = Average(colE.data(), nCol);
 
-    if (highestDifference > 5 * avgColError) {
+    if (highestDifference > 5 * avgColError)
+    {
         // the plume centre is the average of the scan-angles in the 'plume-region'
         //	weighted with the column values
         double sumAngle_alpha = 0, sumAngle_phi = 0, sumWeight = 0;
-        for (int k = regionLow; k < regionHigh; ++k) {
+        for (int k = foundRegionLowIdx; k < foundRegionHighIdx; ++k)
+        {
             sumAngle_alpha += angle[k] * col[k];
             sumAngle_phi += p[k] * col[k];
             sumWeight += col[k];
