@@ -34,8 +34,13 @@ namespace Evaluation
 
             // The maximum saturation ratio (intensity / maximum intensity of spectrometer)
             double minSaturationRatio = 0.2;
-
         };
+
+        void CreatePlumeSpectrumFile(
+            FileHandler::CScanFileHandler& originalScanFile,
+            const BasicScanEvaluationResult& scanResult,
+            const CPlumeInScanProperty& properties,
+            int mainSpecieIndex);
 
         // Checks the provided evaluated scan using default settings 
         //  and returns the indices of the spectra which can 

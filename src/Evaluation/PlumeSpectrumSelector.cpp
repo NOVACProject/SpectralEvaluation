@@ -7,6 +7,44 @@
 
 using namespace Evaluation;
 
+void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
+    FileHandler::CScanFileHandler& originalScanFile,
+    const BasicScanEvaluationResult& scanResult,
+    const CPlumeInScanProperty& properties,
+    int mainSpecieIndex)
+{
+    std::vector<size_t> referenceSpectrumIndices;
+    std::vector<size_t> inPlumeSpectrumIndices;
+    
+    SelectSpectra(
+        originalScanFile,
+        scanResult,
+        properties,
+        mainSpecieIndex,
+        referenceSpectrumIndices,
+        inPlumeSpectrumIndices);
+
+    if (referenceSpectrumIndices.size() > 0 && inPlumeSpectrumIndices.size() > 0)
+    {
+        // Create and save the spectra
+        CSpectrum referenceSpectrum;
+        originalScanFile.AverageSpectra(referenceSpectrumIndices, referenceSpectrum);
+
+        CSpectrum inPlumeSpectrum;
+        originalScanFile.AverageSpectra(referenceSpectrumIndices, inPlumeSpectrum);
+
+        CSpectrum darkSpectrum;
+        originalScanFile.GetDark(darkSpectrum);
+
+        std::string outputFileName;
+        SpectrumIO::CSpectrumIO spectrumWriter;
+        spectrumWriter.AddSpectrumToFile(outputFileName, referenceSpectrum);
+        spectrumWriter.AddSpectrumToFile(outputFileName, darkSpectrum);
+        spectrumWriter.AddSpectrumToFile(outputFileName, inPlumeSpectrum);
+    }
+}
+
+
 void PlumeSpectrumSelector::SelectSpectra(
     FileHandler::CScanFileHandler& scanFile,
     const BasicScanEvaluationResult& scanResult,
@@ -18,7 +56,6 @@ void PlumeSpectrumSelector::SelectSpectra(
     PlumeSpectrumSelectionSettings defaultSettings;
     return SelectSpectra(defaultSettings, scanFile, scanResult, properties, mainSpecieIndex, referenceSpectra, inPlumeSpectra);
 }
-
 
 void PlumeSpectrumSelector::SelectSpectra(
     const PlumeSpectrumSelectionSettings& settings,
