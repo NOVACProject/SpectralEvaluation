@@ -3,6 +3,11 @@
 
 class CPlumeInScanProperty;
 
+namespace FileHandler
+{
+    class CScanFileHandler;
+}
+
 namespace Evaluation
 {
     class BasicScanEvaluationResult;
@@ -14,33 +19,72 @@ namespace Evaluation
     class PlumeSpectrumSelector
     {
     public:
+        // TODO: setup a proper set of values here!
         struct PlumeSpectrumSelectionSettings
         {
-            // The minimum number of spectra which needs to be selected in the plume for the ratio calculation to be successful.
             int minNumberOfSpectraInPlume = 7;
+
+            int minNumberOfSpectraOutsideOfPlume = 10;
 
             // The minimum (SO2) column for the selected spectra in the plume.
             double minInPlumeColumn = 1e17;
 
-            // The minimum number of spectra which needs to be averaged outside of the plume for the calculation to be successful.
-            int minNumberOfReferenceSpectra = 7;
+            // The maximum saturation ratio (intensity / maximum intensity of spectrometer)
+            double maxSaturationRatio = 0.8;
+
+            // The maximum saturation ratio (intensity / maximum intensity of spectrometer)
+            double minSaturationRatio = 0.2;
+
         };
 
         // Checks the provided evaluated scan using default settings 
         //  and returns the indices of the spectra which can 
         //  be saved as in-plume and out-of-plume spectra.
+        // This will use the provided CPlumeInScanProperty to find out
+        //   if the scan sees the plume at all and where the edges of 
+        //   the plume are located.
         // If this check fails, then the two vectors are empty.
-        // TODO: This also needs a reference to the ScanFile such that it can check the intensity of the spectra in various regions!
-        void SelectSpectra(const BasicScanEvaluationResult& scanResult, const CPlumeInScanProperty& properties, int mainSpecieIndex, std::vector<int>& referenceSpectra, std::vector<int>& inPlumeSpectra);
+        void SelectSpectra(
+            FileHandler::CScanFileHandler& scanFile, 
+            const BasicScanEvaluationResult& scanResult,
+            const CPlumeInScanProperty& properties,
+            int mainSpecieIndex,
+            std::vector<size_t>& referenceSpectra,
+            std::vector<size_t>& inPlumeSpectra);
 
     private:
 
-        static bool IsSuitableScanForRatioEvaluation(const PlumeSpectrumSelectionSettings& settings, const BasicScanEvaluationResult& scanResult, const CPlumeInScanProperty& properties);
+        static bool IsSuitableScanForRatioEvaluation(
+            const PlumeSpectrumSelectionSettings& settings,
+            const BasicScanEvaluationResult& scanResult,
+            const CPlumeInScanProperty& properties);
 
-        static void SelectSpectra(const PlumeSpectrumSelectionSettings& settings, const BasicScanEvaluationResult& scanResult, const CPlumeInScanProperty& properties, int mainSpecieIndex, std::vector<int>& referenceSpectra, std::vector<int>& inPlumeSpectra);
+        static void SelectSpectra(
+            const PlumeSpectrumSelectionSettings& settings,
+            FileHandler::CScanFileHandler& scanFile,
+            const BasicScanEvaluationResult& scanResult,
+            const CPlumeInScanProperty& properties,
+            int mainSpecieIndex,
+            std::vector<size_t>& referenceSpectra,
+            std::vector<size_t>& inPlumeSpectra);
 
         // Calculates the average column value of the given specie in the index [startIdx, endIdx[
-        static double AverageColumnValue(const BasicScanEvaluationResult& scanResult, int specieIndex, size_t startIdx, size_t endIdx);
+        static double AverageColumnValue(
+            const BasicScanEvaluationResult& scanResult,
+            int specieIndex,
+            size_t startIdx,
+            size_t endIdx);
+
+        static std::vector<size_t> FindSpectraInPlume(
+            const BasicScanEvaluationResult& scanResult, 
+            const CPlumeInScanProperty& properties,
+            int mainSpecieIndex,
+            const PlumeSpectrumSelectionSettings& settings);
+
+        static std::vector<size_t> FilterSpectraUsingIntensity(
+            const std::vector<size_t>& proposedIndices,
+            FileHandler::CScanFileHandler& scanFile,
+            const PlumeSpectrumSelectionSettings& settings);
 
     };
 }
