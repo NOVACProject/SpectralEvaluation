@@ -89,7 +89,6 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
             const double avgInRegion = Average(col.data() + testedLowIdx, testedRegionSize);
 
             // the average column value outside of the region we're testing
-            // TODO: These are actually 'sum'
             const double avgOutRegion = (Average(col.data(), testedLowIdx)*testedLowIdx + Average(col.data() + testedHighIdx, nCol - testedHighIdx)*(nCol - testedHighIdx)) / (testedLowIdx + nCol - testedHighIdx);
 
             if (avgInRegion - avgOutRegion > highestDifference)
@@ -124,10 +123,12 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
         plumeProperties.plumeEdgeHigh = angle[nCol - 1];
         double peakLow = angle[0];
         double peakHigh = angle[nCol - 1];
-        double minCol = Min(col.data(), nCol);
-        double maxCol_div_e = (Max(col.data(), nCol) - minCol) * 0.3679;
-        double maxCol_90 = (Max(col.data(), nCol) - minCol) * 0.90;
-        double maxCol_half = (Max(col.data(), nCol) - minCol) * 0.5;
+        const double minCol = Min(col.data(), nCol);
+        const double maxCol = Max(col.data(), nCol) - minCol;
+        const double maxCol_div_e = maxCol * 0.3679;
+        const double maxCol_90 = maxCol * 0.90;
+        const double maxCol_half = maxCol * 0.5;
+
         for (int k = 0; k < nCol; ++k)
         {
             if (angle[k] > plumeProperties.plumeCenter)
