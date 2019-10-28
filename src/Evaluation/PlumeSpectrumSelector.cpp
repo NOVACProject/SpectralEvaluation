@@ -141,10 +141,6 @@ void PlumeSpectrumSelector::SelectSpectra(
     // Find a proprosal for the in-plume region.
     auto inPlumeProposal = FindSpectraInPlume(scanResult, properties);
     inPlumeProposal = FilterSpectraUsingIntensity(inPlumeProposal, scanFile, darkSpectrum);
-    if (inPlumeProposal.size() > m_settings.maxNumberOfSpectraInPlume)
-    {
-        inPlumeProposal = RemoveLowerColumnSpectraFromPlumeRegion(scanResult, inPlumeProposal);
-    }
     if (inPlumeProposal.size() < m_settings.minNumberOfSpectraInPlume)
     {
         return;
@@ -208,6 +204,23 @@ std::vector<size_t> PlumeSpectrumSelector::FindSpectraInPlume(
             scanResult.m_specInfo[idx].m_scanAngle < maximumScanAngle - 0.1)
         {
             indices.push_back(idx);
+        }
+    }
+
+    // limit the number of spectra
+    while (indices.size() > m_settings.maxNumberOfSpectraInPlume)
+    {
+        auto first = begin(indices);
+        auto last = begin(indices) + indices.size() - 1;
+
+        if (scanResult.m_spec[*first].m_referenceResult[m_mainSpecieIndex].m_column >
+            scanResult.m_spec[*last].m_referenceResult[m_mainSpecieIndex].m_column)
+        {
+            indices.erase(last);
+        }
+        else
+        {
+            indices.erase(first);
         }
     }
 
@@ -297,29 +310,4 @@ std::vector<size_t> PlumeSpectrumSelector::FilterSpectraUsingIntensity(
     }
 
     return result;
-}
-
-std::vector<size_t> PlumeSpectrumSelector::RemoveLowerColumnSpectraFromPlumeRegion(
-    const BasicScanEvaluationResult& scanResult,
-    const std::vector<size_t>& inPlumeProposal)
-{
-    std::vector<size_t> indices{begin(inPlumeProposal), end(inPlumeProposal)};
-
-    while (indices.size() > m_settings.maxNumberOfSpectraInPlume)
-    {
-        auto first = begin(indices);
-        auto last = begin(indices) + indices.size() - 1;
-
-        if (scanResult.m_spec[*first].m_referenceResult[m_mainSpecieIndex].m_column >
-            scanResult.m_spec[*last].m_referenceResult[m_mainSpecieIndex].m_column)
-        {
-            indices.erase(last);
-        }
-        else
-        {
-            indices.erase(first);
-        }
-    }
-
-    return indices;
 }
