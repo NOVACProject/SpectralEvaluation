@@ -89,6 +89,10 @@ namespace Evaluation
             FileHandler::CScanFileHandler& scanFile,
             const CSpectrum& darkSpectrum);
 
+        std::vector<size_t> RemoveLowerColumnSpectraFromPlumeRegion(
+            const BasicScanEvaluationResult& scanResult,
+            const std::vector<size_t>& inPlumeProposal);
+
         bool SpectrumFulfillsIntensityRequirement(
             const CSpectrum& spectrum,
             const CSpectrum& darkSpectrum);
