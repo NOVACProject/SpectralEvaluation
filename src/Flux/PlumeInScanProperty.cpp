@@ -148,7 +148,7 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
                 peakLow = angle[k];
             }
         }
-        for (int k = nCol - 1; k >= 0; --k)
+        for (int k = nCol - 1; k > 0; --k)
         {
             if (angle[k] <= plumeProperties.plumeCenter)
             {
