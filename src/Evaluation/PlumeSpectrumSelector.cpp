@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <numeric>
 #include <sstream>
 
@@ -48,12 +49,20 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
         CSpectrum darkSpectrum;
         originalScanFile.GetDark(darkSpectrum);
 
-        std::string outputFileName = outputDirectory + "/PlumeSpectra_" + originalScanFile.GetFileName();
+        CSpectrum skySpectrum;
+        originalScanFile.GetSky(skySpectrum);
+
+        std::stringstream outputFileName;
+        outputFileName << std::setfill('0') << std::setw(2);
+        outputFileName << outputDirectory << "/PlumeSpectra_" << darkSpectrum.m_info.m_device;
+        outputFileName << "_" << (int)(skySpectrum.m_info.m_startTime.year % 1000) << (int)(skySpectrum.m_info.m_startTime.month) << (int)(skySpectrum.m_info.m_startTime.day);
+        outputFileName << "_" << (int)skySpectrum.m_info.m_startTime.hour << (int)(skySpectrum.m_info.m_startTime.minute) << (int)(skySpectrum.m_info.m_startTime.second);
+        outputFileName << "_0.pak";
 
         SpectrumIO::CSpectrumIO spectrumWriter;
-        spectrumWriter.AddSpectrumToFile(outputFileName, referenceSpectrum);
-        spectrumWriter.AddSpectrumToFile(outputFileName, darkSpectrum);
-        spectrumWriter.AddSpectrumToFile(outputFileName, inPlumeSpectrum);
+        spectrumWriter.AddSpectrumToFile(outputFileName.str(), referenceSpectrum);
+        spectrumWriter.AddSpectrumToFile(outputFileName.str(), darkSpectrum);
+        spectrumWriter.AddSpectrumToFile(outputFileName.str(), inPlumeSpectrum);
     }
 }
 
