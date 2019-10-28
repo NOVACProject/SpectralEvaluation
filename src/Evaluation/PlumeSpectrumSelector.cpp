@@ -39,11 +39,11 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     {
         // Create and save the spectra
         CSpectrum referenceSpectrum;
-        originalScanFile.AverageSpectra(referenceSpectrumIndices, referenceSpectrum);
+        originalScanFile.AddSpectra(referenceSpectrumIndices, referenceSpectrum);
         referenceSpectrum.m_info.m_name = "sky"; // TODO: find a better name for this
 
         CSpectrum inPlumeSpectrum;
-        originalScanFile.AverageSpectra(inPlumeSpectrumIndices, inPlumeSpectrum);
+        originalScanFile.AddSpectra(inPlumeSpectrumIndices, inPlumeSpectrum);
         inPlumeSpectrum.m_info.m_name = "plume"; // TODO: find a better name for this
 
         CSpectrum darkSpectrum;
@@ -184,7 +184,7 @@ std::vector<size_t> PlumeSpectrumSelector::FindSpectraInPlume(
     {
         if (scanResult.m_specInfo[idx].m_scanAngle >= properties.plumeEdgeLow &&
             scanResult.m_specInfo[idx].m_scanAngle <= properties.plumeEdgeHigh &&
-            scanResult.m_spec[idx].m_referenceResult[mainSpecieIndex].m_column >= settings.minInPlumeColumn)
+            scanResult.m_spec[idx].m_referenceResult[mainSpecieIndex].m_column - properties.offset >= settings.minInPlumeColumn)
         {
             indices.push_back(idx);
         }

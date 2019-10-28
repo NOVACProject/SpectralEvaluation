@@ -27,7 +27,8 @@ namespace Evaluation
             int minNumberOfSpectraOutsideOfPlume = 10;
 
             // The minimum (SO2) column for the selected spectra in the plume.
-            double minInPlumeColumn = 1e17;
+            // double minInPlumeColumn = 1e17;
+            double minInPlumeColumn = 40;
 
             // The maximum saturation ratio (intensity / maximum intensity of spectrometer)
             double maxSaturationRatio = 0.88;

@@ -114,7 +114,7 @@ namespace FileHandler
         /** Returns a spectrum which is the average of the provided indices.
             @return the number of spectra co-added (may be less than indices.size()
             if some spectrum/spectra could not be read). */
-        int AverageSpectra(const std::vector<size_t>& indices, CSpectrum& result);
+        int AddSpectra(const std::vector<size_t>& indices, CSpectrum& result);
 
     private:
         // ----------------------------------------------------------------------

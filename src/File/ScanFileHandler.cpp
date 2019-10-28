@@ -339,7 +339,7 @@ namespace FileHandler
         return this->m_sky.m_info.m_startChannel;
     }
 
-    int CScanFileHandler::AverageSpectra(const std::vector<size_t>& indices, CSpectrum& result)
+    int CScanFileHandler::AddSpectra(const std::vector<size_t>& indices, CSpectrum& result)
     {
         if (indices.size() == 0)
         {
