@@ -1,5 +1,6 @@
 #include <iomanip>
 #include <numeric>
+#include <fstream>
 #include <sstream>
 
 #include <SpectralEvaluation/Evaluation/PlumeSpectrumSelector.h>
@@ -8,6 +9,22 @@
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 
 using namespace Evaluation;
+
+std::string FormatDate(const CSpectrumInfo& spectrumInfo)
+{
+    std::stringstream str;
+    str << std::setw(2) << std::setfill('0');
+    str << (int)(spectrumInfo.m_startTime.year % 1000) << (int)(spectrumInfo.m_startTime.month) << (int)(spectrumInfo.m_startTime.day);
+    return str.str();
+}
+
+std::string FormatTimestamp(const CDateTime& time)
+{
+    std::stringstream str;
+    str << std::setw(2) << std::setfill('0');
+    str << (int)time.hour << (int)(time.minute) << (int)(time.second);
+    return str.str();
+}
 
 void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     FileHandler::CScanFileHandler& originalScanFile,
@@ -52,17 +69,42 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
         CSpectrum skySpectrum;
         originalScanFile.GetSky(skySpectrum);
 
-        std::stringstream outputFileName;
-        outputFileName << std::setfill('0') << std::setw(2);
-        outputFileName << outputDirectory << "/PlumeSpectra_" << darkSpectrum.m_info.m_device;
-        outputFileName << "_" << (int)(skySpectrum.m_info.m_startTime.year % 1000) << (int)(skySpectrum.m_info.m_startTime.month) << (int)(skySpectrum.m_info.m_startTime.day);
-        outputFileName << "_" << (int)skySpectrum.m_info.m_startTime.hour << (int)(skySpectrum.m_info.m_startTime.minute) << (int)(skySpectrum.m_info.m_startTime.second);
-        outputFileName << "_0.pak";
+        std::stringstream spectrumOutputFileName;
+        spectrumOutputFileName << std::setw(2) << std::setfill('0');
+        spectrumOutputFileName << outputDirectory << "/PlumeSpectra_" << darkSpectrum.m_info.m_device;
+        spectrumOutputFileName << "_" << FormatDate(skySpectrum.m_info);
+        spectrumOutputFileName << "_" << FormatTimestamp(skySpectrum.m_info.m_startTime);
+        spectrumOutputFileName << "_0.pak";
 
         SpectrumIO::CSpectrumIO spectrumWriter;
-        spectrumWriter.AddSpectrumToFile(outputFileName.str(), referenceSpectrum);
-        spectrumWriter.AddSpectrumToFile(outputFileName.str(), darkSpectrum);
-        spectrumWriter.AddSpectrumToFile(outputFileName.str(), inPlumeSpectrum);
+        spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), inPlumeSpectrum);
+        spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), referenceSpectrum);
+        spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), darkSpectrum);
+
+        std::stringstream textOutputFileName;
+        textOutputFileName << std::setw(2) << std::setfill('0');
+        textOutputFileName << outputDirectory << "/PlumeSpectra_" << darkSpectrum.m_info.m_device;
+        textOutputFileName << "_" << FormatDate(skySpectrum.m_info);
+        textOutputFileName << "_" << FormatTimestamp(skySpectrum.m_info.m_startTime);
+        textOutputFileName << "_0.txt";
+
+        std::ofstream textOutput(textOutputFileName.str());
+        textOutput << "InPlume: " << std::endl;
+        for (size_t idx : inPlumeSpectrumIndices)
+        {
+            CSpectrum spectrum;
+            originalScanFile.GetSpectrum(spectrum, (long)idx);
+            textOutput << idx << "\t" << spectrum.m_info.m_scanAngle << "\t" << FormatTimestamp(spectrum.m_info.m_startTime) << std::endl;
+        }
+
+        textOutput << "Reference: " << std::endl;
+        for (size_t idx : referenceSpectrumIndices)
+        {
+            CSpectrum spectrum;
+            originalScanFile.GetSpectrum(spectrum, (long)idx);
+            textOutput << idx << "\t" << spectrum.m_info.m_scanAngle << "\t" << FormatTimestamp(spectrum.m_info.m_startTime) << std::endl;
+        }
+        textOutput << std::endl;
     }
 }
 
