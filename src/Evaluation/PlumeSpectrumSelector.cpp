@@ -12,18 +12,16 @@ using namespace Evaluation;
 
 std::string FormatDate(const CSpectrumInfo& spectrumInfo)
 {
-    std::stringstream str;
-    str << std::setw(2) << std::setfill('0');
-    str << (int)(spectrumInfo.m_startTime.year % 1000) << (int)(spectrumInfo.m_startTime.month) << (int)(spectrumInfo.m_startTime.day);
-    return str.str();
+    char buffer[64];
+    sprintf_s(buffer, 64, "%04d%02d%02d", spectrumInfo.m_startTime.year, spectrumInfo.m_startTime.month, spectrumInfo.m_startTime.day);
+    return std::string(buffer);
 }
 
 std::string FormatTimestamp(const CDateTime& time)
 {
-    std::stringstream str;
-    str << std::setw(2) << std::setfill('0');
-    str << (int)time.hour << (int)(time.minute) << (int)(time.second);
-    return str.str();
+    char buffer[64];
+    sprintf_s(buffer, 64, "%02d%02d%02d", (int)time.hour, (int)time.minute, (int)time.second);
+    return std::string(buffer);
 }
 
 void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
@@ -105,6 +103,16 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
             textOutput << idx << "\t" << spectrum.m_info.m_scanAngle << "\t" << FormatTimestamp(spectrum.m_info.m_startTime) << std::endl;
         }
         textOutput << std::endl;
+
+        textOutput << "Plume Properties: " << std::endl;
+        textOutput << "  Completeness: " << properties.completeness << std::endl;
+        textOutput << "  Center: " << properties.plumeCenter << std::endl;
+        textOutput << "  Offset: " << properties.offset << std::endl;
+        textOutput << "  Low Edge: " << properties.plumeEdgeLow << std::endl;
+        textOutput << "  High Edge: " << properties.plumeEdgeHigh << std::endl;
+        textOutput << "  HWHM Low: " << properties.plumeHalfLow << std::endl;
+        textOutput << "  HWHM High: " << properties.plumeHalfHigh << std::endl;
+
     }
 }
 
@@ -180,6 +188,10 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
     {
         return false; // need to see the plume
     }
+    else if (std::abs(properties.plumeHalfLow - NOT_A_NUMBER) < 1.0 || std::abs(properties.plumeHalfHigh - NOT_A_NUMBER) < 1.0)
+    {
+        return false; // need to fall down to 50% of the peak-value on both sides
+    }
 
     CSpectrum skySpectrum;
     if (scanFile.GetSky(skySpectrum))
@@ -211,7 +223,7 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
         return false;
     }
 
-    return true; // TODO: Add more checks...
+    return true;
 }
 
 std::vector<size_t> PlumeSpectrumSelector::FindSpectraInPlume(
@@ -224,11 +236,28 @@ std::vector<size_t> PlumeSpectrumSelector::FindSpectraInPlume(
 
     for (size_t idx = 0; idx < scanResult.m_spec.size(); ++idx)
     {
-        if (scanResult.m_specInfo[idx].m_scanAngle >= properties.plumeEdgeLow &&
-            scanResult.m_specInfo[idx].m_scanAngle <= properties.plumeEdgeHigh &&
+        if (scanResult.m_specInfo[idx].m_scanAngle > properties.plumeHalfLow + 0.1 &&
+            scanResult.m_specInfo[idx].m_scanAngle < properties.plumeHalfHigh - 0.1 &&
             scanResult.m_spec[idx].m_referenceResult[mainSpecieIndex].m_column - properties.offset >= settings.minInPlumeColumn)
         {
             indices.push_back(idx);
+        }
+    }
+
+    // limit the number of spectra to 10
+    while (indices.size() > 10)
+    {
+        auto first = begin(indices);
+        auto last = begin(indices) + indices.size() - 1;
+
+        if (scanResult.m_spec[*first].m_referenceResult[mainSpecieIndex].m_column - properties.offset >
+            scanResult.m_spec[*last].m_referenceResult[mainSpecieIndex].m_column - properties.offset)
+        {
+            indices.erase(last);
+        }
+        else
+        {
+            indices.erase(first);
         }
     }
 
