@@ -20,7 +20,6 @@ namespace Evaluation
     class PlumeSpectrumSelector
     {
     public:
-        // TODO: setup a proper set of values here!
         struct PlumeSpectrumSelectionSettings
         {
             int minNumberOfSpectraInPlume = 4;
@@ -29,9 +28,9 @@ namespace Evaluation
 
             int numberOfSpectraOutsideOfPlume = 10;
 
-            // The minimum (SO2) column for the selected spectra in the plume.
-            // double minInPlumeColumn = 1e17;
-            double minInPlumeColumn = 40;
+            double minimumScanAngle = -75.0;
+
+            double maximumScanAngle = +75.0;
 
             // The maximum saturation ratio (intensity / maximum intensity of spectrometer)
             double maxSaturationRatio = 0.88;
@@ -74,13 +73,6 @@ namespace Evaluation
             const CPlumeInScanProperty& properties,
             std::vector<size_t>& referenceSpectra,
             std::vector<size_t>& inPlumeSpectra);
-
-        // Calculates the average column value of the given specie in the index [startIdx, endIdx[
-        static double AverageColumnValue(
-            const BasicScanEvaluationResult& scanResult,
-            int specieIndex,
-            size_t startIdx,
-            size_t endIdx);
 
         std::vector<size_t> FindSpectraInPlume(
             const BasicScanEvaluationResult& scanResult, 

@@ -190,20 +190,6 @@ void PlumeSpectrumSelector::SelectSpectra(
     return;
 }
 
-double PlumeSpectrumSelector::AverageColumnValue(
-    const BasicScanEvaluationResult& scanResult,
-    int specieIndex,
-    size_t startIdx,
-    size_t endIdx)
-{
-    double sum = 0.0;
-    for (size_t ii = startIdx; ii < endIdx; ++ii)
-    {
-        sum += scanResult.m_spec[ii].m_referenceResult[specieIndex].m_column;
-    }
-    return sum / (double)(endIdx - startIdx);
-}
-
 bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
     const CSpectrum& skySpectrum,
     const CSpectrum& darkSpectrum,
@@ -238,25 +224,25 @@ std::vector<size_t> PlumeSpectrumSelector::FindSpectraInPlume(
     std::vector<size_t> indices;
 
     // add all spectra in the scan-angle range [plumeHalfLow, plumeHalfHigh]
-    //  which have column >= minInPlumeColumn
+    const double minimumScanAngle = std::max(m_settings.minimumScanAngle, properties.plumeHalfLow);
+    const double maximumScanAngle = std::min(m_settings.maximumScanAngle, properties.plumeHalfHigh);
     for (size_t idx = 0; idx < scanResult.m_spec.size(); ++idx)
     {
-        if (scanResult.m_specInfo[idx].m_scanAngle > properties.plumeHalfLow + 0.1 &&
-            scanResult.m_specInfo[idx].m_scanAngle < properties.plumeHalfHigh - 0.1 &&
-            scanResult.m_spec[idx].m_referenceResult[m_mainSpecieIndex].m_column - properties.offset >= m_settings.minInPlumeColumn)
+        if (scanResult.m_specInfo[idx].m_scanAngle > minimumScanAngle + 0.1 &&
+            scanResult.m_specInfo[idx].m_scanAngle < maximumScanAngle - 0.1)
         {
             indices.push_back(idx);
         }
     }
 
-    // limit the number of spectra to 10
+    // limit the number of spectra
     while (indices.size() > m_settings.maxNumberOfSpectraInPlume)
     {
         auto first = begin(indices);
         auto last = begin(indices) + indices.size() - 1;
 
-        if (scanResult.m_spec[*first].m_referenceResult[m_mainSpecieIndex].m_column - properties.offset >
-            scanResult.m_spec[*last].m_referenceResult[m_mainSpecieIndex].m_column - properties.offset)
+        if (scanResult.m_spec[*first].m_referenceResult[m_mainSpecieIndex].m_column >
+            scanResult.m_spec[*last].m_referenceResult[m_mainSpecieIndex].m_column)
         {
             indices.erase(last);
         }
