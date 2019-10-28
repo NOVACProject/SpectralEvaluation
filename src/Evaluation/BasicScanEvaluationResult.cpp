@@ -27,3 +27,21 @@ int BasicScanEvaluationResult::GetSpecieIndex(const char* specieName) const
 
     return -1;
 }
+
+std::vector<double> GetColumns(const BasicScanEvaluationResult& result, int specieIndex)
+{
+    std::vector<double> columns;
+    if (specieIndex < 0 || result.m_spec.size() == 0 || result.m_spec[0].m_referenceResult.size() <= specieIndex)
+    {
+        return columns;
+    }
+
+    columns.reserve(result.m_spec.size());
+
+    for (size_t ii = 0; ii < result.m_spec.size(); ++ii)
+    {
+        columns.push_back(result.m_spec[ii].m_referenceResult[specieIndex].m_column);
+    }
+
+    return columns;
+}

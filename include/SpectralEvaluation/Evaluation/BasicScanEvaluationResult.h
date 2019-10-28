@@ -49,4 +49,9 @@ namespace Evaluation
             @return -1 if the specie could not be found */
         int GetSpecieIndex(const char* specieName) const;
     };
+
+    /** @return all the evaluated columns for the specie with the provided index.
+        @return an empty vector if result is empty specieIndex is invalid. */
+    std::vector<double> GetColumns(const BasicScanEvaluationResult& result, int specieIndex);
+
 }
