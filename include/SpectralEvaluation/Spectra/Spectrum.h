@@ -199,3 +199,7 @@ double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum);
     This uses the provided spectrometer model information to retrieve the maximum possible intensity. */
 double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum, const SpectrometerModel& model);
 
+/** @return the maximum saturation ratio of the provided spectrum, in the entire spectrum length.
+    This uses the provided maximum possible intensity for one spectrum. */
+double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum, double maximumIntensity);
+
