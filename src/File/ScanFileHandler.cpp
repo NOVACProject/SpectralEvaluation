@@ -359,11 +359,8 @@ namespace FileHandler
             }
         }
 
-        result.Div((double)nofAveragedSpectra);
-
         return nofAveragedSpectra;
     }
-
 }
 
 #ifdef _MSC_VER
