@@ -100,6 +100,7 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
             originalScanFile.GetSpectrum(spectrum, (long)idx);
             textOutput << idx << "\t" << spectrum.m_info.m_scanAngle << "\t" << FormatTimestamp(spectrum.m_info.m_startTime) << std::endl;
         }
+        textOutput << std::endl;
 
         textOutput << "Reference: " << std::endl;
         for (size_t idx : referenceSpectrumIndices)
@@ -145,47 +146,18 @@ void PlumeSpectrumSelector::SelectSpectra(
         return;
     }
 
-    // Find the reference spectra as the spectra with lowest column value (ignore the sky and the dark spectra here..)  
-    std::vector<std::pair<size_t, double>> spectrumColumnVsIndex;
-    for (size_t idx = 2U; idx < scanResult.m_spec.size(); ++idx)
-    {
-        if (std::find(begin(inPlumeProposal), end(inPlumeProposal), idx) == end(inPlumeProposal))
-        {
-            spectrumColumnVsIndex.push_back(std::pair<size_t, double>(idx, scanResult.m_spec[idx].m_referenceResult[m_mainSpecieIndex].m_column));
-        }
-    }
-    std::sort(begin(spectrumColumnVsIndex), end(spectrumColumnVsIndex), [&](const std::pair<size_t, double>& p1, const std::pair<size_t, double>& p2)
-    {
-        return p1.second < p2.second;
-    });
-
-    std::vector<size_t> referenceSpectraProposal;
-    CSpectrum spectrum;
-    for (auto item : spectrumColumnVsIndex)
-    {
-        size_t idx = item.first;
-
-        if (scanFile.GetSpectrum(spectrum, (long)idx) && SpectrumFulfillsIntensityRequirement(spectrum, darkSpectrum))
-        {
-            referenceSpectraProposal.push_back(idx);
-
-            if (referenceSpectraProposal.size() == m_settings.numberOfSpectraOutsideOfPlume)
-            {
-                break;
-            }
-        }
-    }
-
-    if (referenceSpectraProposal.size() < m_settings.numberOfSpectraOutsideOfPlume)
+    // Find the reference spectra as the spectra with lowest column value (ignore the sky and the dark spectra here..) 
+    auto referenceProposal = FindSpectraOutOfPlume(scanFile, darkSpectrum, scanResult, inPlumeProposal);
+    if (referenceProposal.size() < m_settings.numberOfSpectraOutsideOfPlume)
     {
         return;
     }
 
     std::sort(begin(inPlumeProposal), end(inPlumeProposal));
-    std::sort(begin(referenceSpectraProposal), end(referenceSpectraProposal));
+    std::sort(begin(referenceProposal), end(referenceProposal));
 
     inPlumeSpectra = std::move(inPlumeProposal);
-    referenceSpectra = std::move(referenceSpectraProposal);
+    referenceSpectra = std::move(referenceProposal);
 
     return;
 }
@@ -253,6 +225,47 @@ std::vector<size_t> PlumeSpectrumSelector::FindSpectraInPlume(
     }
 
     return indices;
+}
+
+std::vector<size_t> PlumeSpectrumSelector::FindSpectraOutOfPlume(
+    FileHandler::CScanFileHandler& scanFile,
+    const CSpectrum& darkSpectrum,
+    const BasicScanEvaluationResult& scanResult,
+    const std::vector<size_t>& inPlumeProposal)
+{
+    std::vector<size_t> indices;
+
+    std::vector<std::pair<size_t, double>> spectrumColumnVsIndex;
+    for (size_t idx = 2U; idx < scanResult.m_spec.size(); ++idx)
+    {
+        if (std::find(begin(inPlumeProposal), end(inPlumeProposal), idx) == end(inPlumeProposal))
+        {
+            spectrumColumnVsIndex.push_back(std::pair<size_t, double>(idx, scanResult.m_spec[idx].m_referenceResult[m_mainSpecieIndex].m_column));
+        }
+    }
+    std::sort(begin(spectrumColumnVsIndex), end(spectrumColumnVsIndex), [&](const std::pair<size_t, double>& p1, const std::pair<size_t, double>& p2)
+    {
+        return p1.second < p2.second;
+    });
+
+    std::vector<size_t> referenceSpectraProposal;
+    CSpectrum spectrum;
+    for (auto item : spectrumColumnVsIndex)
+    {
+        size_t idx = item.first;
+
+        if (scanFile.GetSpectrum(spectrum, (long)idx) && SpectrumFulfillsIntensityRequirement(spectrum, darkSpectrum))
+        {
+            referenceSpectraProposal.push_back(idx);
+
+            if (referenceSpectraProposal.size() == m_settings.numberOfSpectraOutsideOfPlume)
+            {
+                return referenceSpectraProposal;
+            }
+        }
+    }
+
+    return referenceSpectraProposal;
 }
 
 bool PlumeSpectrumSelector::SpectrumFulfillsIntensityRequirement(

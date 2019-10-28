@@ -78,6 +78,12 @@ namespace Evaluation
             const BasicScanEvaluationResult& scanResult, 
             const CPlumeInScanProperty& properties);
 
+        std::vector<size_t> FindSpectraOutOfPlume(
+            FileHandler::CScanFileHandler& scanFile,
+            const CSpectrum& darkSpectrum,
+            const BasicScanEvaluationResult& scanResult,
+            const std::vector<size_t>& inPlumeProposal);
+
         std::vector<size_t> FilterSpectraUsingIntensity(
             const std::vector<size_t>& proposedIndices,
             FileHandler::CScanFileHandler& scanFile,
