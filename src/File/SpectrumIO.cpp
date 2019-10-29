@@ -101,7 +101,7 @@ namespace SpectrumIO
 
             /** Look in the buffer */
             // 1. Clean the spectrum name from special characters...
-            std::string specName{MKZY.name};
+            std::string specName{ MKZY.name };
             CleanString(specName);
             Trim(specName, " \t");
             const size_t size1 = specName.size();
@@ -459,8 +459,8 @@ namespace SpectrumIO
             d = day.day * 10000 + day.month * 100 + day.year - (day.year / 100) * 100;
     }
 
-    int CSpectrumIO::AddSpectrumToFile(const std::string &fileName, const CSpectrum &spectrum, const char *headerBuffer, int headerSize) {
-
+    int CSpectrumIO::AddSpectrumToFile(const std::string &fileName, const CSpectrum &spectrum, const char *headerBuffer, int headerSize, bool overwrite)
+    {
         long last, tmp;
         int i;
         std::uint16_t outsiz;
@@ -470,11 +470,14 @@ namespace SpectrumIO
 
         // Test the input-data
         if (spectrum.m_length <= 0)
+        {
             return 1;
+        }
 
         // ---- start by converting the spectrum into 'long'
         std::vector<long> spec(spectrum.m_length);
-        for (i = 0; i < spectrum.m_length; ++i) {
+        for (i = 0; i < spectrum.m_length; ++i)
+        {
             spec[i] = (long)spectrum.m_data[i];
         }
 
@@ -483,13 +486,15 @@ namespace SpectrumIO
         // calculate checksum
         checksum = 0;
         for (i = 0; i < spectrum.m_length; ++i)
+        {
             checksum += spec[i];
+        }
         p = (std::uint16_t *)&checksum;
         MKZY.checksum = p[0] + p[1];
 
         // the spectrum should be stored as just the difference
-        //	between each two pixels (delta compression)
-        //	except for the first pixel (of course)
+        //  between each two pixels (delta compression)
+        //  except for the first pixel (of course)
         last = spec[0];
         for (i = 1; i < spectrum.m_length; i++)
         {
@@ -539,10 +544,22 @@ namespace SpectrumIO
         MKZY.viewangle = (std::uint16_t)info.m_scanAngle;
         MKZY.viewangle2 = (std::uint16_t)info.m_scanAngle2;
 
-        FILE *f = fopen(fileName.c_str(), "r+b");
-        if (f == NULL) // this will happen if the file does not exist...
-            f = fopen(fileName.c_str(), "w+b");
-        if (f == NULL) {
+        FILE *f = nullptr;
+
+        if (overwrite)
+        {
+            f = fopen(fileName.c_str(), "wb");
+        }
+        else
+        {
+            f = fopen(fileName.c_str(), "r+b");
+            if (f == nullptr) // this will happen if the file does not exist...
+            {
+                f = fopen(fileName.c_str(), "w+b");
+            }
+        }
+        if (f == nullptr)
+        {
             return 1;
         }
 

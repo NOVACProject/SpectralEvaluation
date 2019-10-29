@@ -69,7 +69,7 @@ namespace SpectrumIO
                 program can handle. Copying the header directly ensures that no data is lost.
             @param headersize - The size of the headerBuffer. only useful if headerBuffer is not null.
             */
-        int AddSpectrumToFile(const std::string &fileName, const CSpectrum &spec, const char *headerBuffer = nullptr, int headerSize = 0);
+        int AddSpectrumToFile(const std::string &fileName, const CSpectrum &spec, const char *headerBuffer = nullptr, int headerSize = 0, bool overwrite = false);
 
         /** Opens The spectrum file and counts how many spectra there are in the file.
                 @param fileName - the name and path of the .pak-file to open

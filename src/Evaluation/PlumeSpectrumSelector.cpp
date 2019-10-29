@@ -70,10 +70,14 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
         CSpectrum referenceSpectrum;
         originalScanFile.AddSpectra(referenceSpectrumIndices, referenceSpectrum);
         referenceSpectrum.m_info.m_name = "sky";
+        referenceSpectrum.m_info.m_scanIndex = 0;
+
+        darkSpectrum.m_info.m_scanIndex = 1;
 
         CSpectrum inPlumeSpectrum;
         originalScanFile.AddSpectra(inPlumeSpectrumIndices, inPlumeSpectrum);
         inPlumeSpectrum.m_info.m_name = "plume";
+        referenceSpectrum.m_info.m_scanIndex = 2;
 
         std::stringstream spectrumOutputFileName;
         spectrumOutputFileName << outputDirectory << "/PlumeSpectra_" << darkSpectrum.m_info.m_device;
@@ -82,9 +86,9 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
         spectrumOutputFileName << "_0.pak";
 
         SpectrumIO::CSpectrumIO spectrumWriter;
-        spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), inPlumeSpectrum);
-        spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), referenceSpectrum);
+        spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), referenceSpectrum, nullptr, 0, true);
         spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), darkSpectrum);
+        spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), inPlumeSpectrum);
 
         std::stringstream textOutputFileName;
         textOutputFileName << outputDirectory << "/PlumeSpectra_" << darkSpectrum.m_info.m_device;
