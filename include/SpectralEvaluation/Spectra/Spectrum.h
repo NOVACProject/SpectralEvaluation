@@ -18,17 +18,19 @@ struct SpectrometerModel;
 class CSpectrum
 {
 public:
-    /** Default constructor. */
-    CSpectrum(void);
+    CSpectrum();
 
     /** Copies the contents of 'spec' into this (new) spectrum. */
     CSpectrum(const CSpectrum &spec);
+
+    // TODO: Move operators
 
     // ----------------------------------------------------------------------
     // ------------------------ PUBLIC DATA ---------------------------------
     // ----------------------------------------------------------------------
 
     /** The spectral data */
+    // TODO: Make this a std::vector
     double  m_data[MAX_SPECTRUM_LENGTH];
 
     /** The length of the spectrum */
@@ -37,6 +39,14 @@ public:
     /** The auxilliary information about the spectrum */
     CSpectrumInfo m_info;
 
+    /** The wavelength data (optional and may be null) */
+    std::vector<double> m_wavelength;
+
+    // ----------------------------------------------------------------------
+    // -------------------------- PROPERTIES --------------------------------
+    // ----------------------------------------------------------------------
+
+    bool IsWavelengthValid() const { return m_wavelength.size() == m_length; }
 
     // ----------------------------------------------------------------------
     // ----------------------- PUBLIC METHODS -------------------------------

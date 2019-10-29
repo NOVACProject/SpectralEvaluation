@@ -62,7 +62,7 @@ namespace Evaluation
 
         /** Sets the sky-spectrum to use. This will be used in the upcoming evaluations. 
             The provided spectrum must have been corrected for dark. */
-        int SetSkySpectrum(const CSpectrum &spec);
+        int SetSkySpectrum(const CSpectrum& spec);
 
         /** Evaluate using the parameters set in the local parameter 'm_window'
                 and using the sky-spectrum which has been set by a previous call to 'SetSkySpectrum'

@@ -290,6 +290,7 @@ namespace Evaluation
         {
             sky.Div(sky.NumSpectra());
         }
+        sky.Sub(dark);
 
         // 3. Do the evaluation.
         CFitWindow copyOfFitWindow = fitWindow;
@@ -320,6 +321,7 @@ namespace Evaluation
             }
 
             std::stringstream msg;
+            msg << "Determining shift and squeeze from spectrum " << indexOfMostSuitableSpectrum << std::endl;
             msg << "  Shift: " << shift << " +- " << shiftError << "; Squeeze: " << squeeze << " +- " << squeezeError;
             m_lastErrorMessage = msg.str();
             return new CEvaluationBase(improvedFitWindow);

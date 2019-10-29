@@ -95,14 +95,14 @@ namespace SpectrumIO
             }
         }
         if (tmpInt > 31) {
-            spec.m_info.m_startTime.year  = (unsigned short)((tmpInt < 1900) ? tmpInt + 2000 : tmpInt);
+            spec.m_info.m_startTime.year = (unsigned short)((tmpInt < 1900) ? tmpInt + 2000 : tmpInt);
             spec.m_info.m_startTime.month = (unsigned char)tmpInt2;
-            spec.m_info.m_startTime.day   = (unsigned char)tmpInt3;
+            spec.m_info.m_startTime.day = (unsigned char)tmpInt3;
         }
         else {
-            spec.m_info.m_startTime.year  = (unsigned short)((tmpInt3 < 1900) ? tmpInt3 + 2000 : tmpInt3);
+            spec.m_info.m_startTime.year = (unsigned short)((tmpInt3 < 1900) ? tmpInt3 + 2000 : tmpInt3);
             spec.m_info.m_startTime.month = (unsigned char)tmpInt2;
-            spec.m_info.m_startTime.day   = (unsigned char)tmpInt;
+            spec.m_info.m_startTime.day = (unsigned char)tmpInt;
         }
 
         // 9. The starttime
@@ -112,7 +112,7 @@ namespace SpectrumIO
         if (3 > sscanf(buffer, "%d:%d:%d", &tmpInt, &tmpInt2, &tmpInt3)) {
         }
         else {
-            spec.m_info.m_startTime.hour   = (unsigned char)tmpInt;
+            spec.m_info.m_startTime.hour = (unsigned char)tmpInt;
             spec.m_info.m_startTime.minute = (unsigned char)tmpInt2;
             spec.m_info.m_startTime.second = (unsigned char)tmpInt3;
         }
@@ -124,7 +124,7 @@ namespace SpectrumIO
         if (3 > sscanf(buffer, "%d:%d:%d", &tmpInt, &tmpInt2, &tmpInt3)) {
             fclose(f); return false;
         }
-        spec.m_info.m_stopTime.hour   = (unsigned char)tmpInt;
+        spec.m_info.m_stopTime.hour = (unsigned char)tmpInt;
         spec.m_info.m_stopTime.minute = (unsigned char)tmpInt2;
         spec.m_info.m_stopTime.second = (unsigned char)tmpInt3;
 
@@ -249,9 +249,17 @@ namespace SpectrumIO
         fprintf(f, "%ld\n", spec.m_length);
         for (i = 0; i < spec.m_length; ++i) {
             if (fabs(spec.m_data[i] - floor(spec.m_data[i])) > 1e-9)
+            {
                 fprintf(f, "%.9lf\n", spec.m_data[i]);
+            }
+            else if (std::abs(spec.m_data[i] < 1e-5))
+            {
+                fprintf(f, "%.9e\n", spec.m_data[i]);
+            }
             else
+            {
                 fprintf(f, "%.0lf\n", spec.m_data[i]);
+            }
         }
 
         int index = ReverseFind(fileName, '\\');

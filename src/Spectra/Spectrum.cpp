@@ -17,11 +17,16 @@ CSpectrum::CSpectrum(void)
     m_length = 0;
 }
 
-CSpectrum::CSpectrum(const CSpectrum &spec)
+CSpectrum::CSpectrum(const CSpectrum& other)
 {
-    this->m_info = spec.m_info;
-    this->m_length = spec.m_length;
-    memcpy(this->m_data, &spec.m_data, sizeof(double) * MAX_SPECTRUM_LENGTH);
+    this->m_info = other.m_info;
+    this->m_length = other.m_length;
+    memcpy(this->m_data, &other.m_data, sizeof(double) * MAX_SPECTRUM_LENGTH);
+
+    if (other.m_wavelength.size() > 0)
+    {
+        this->m_wavelength = std::vector<double>(begin(other.m_wavelength), end(other.m_wavelength));
+    }
 }
 
 int CSpectrum::AssertRange(long &fromPixel, long &toPixel) const
