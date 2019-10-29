@@ -57,7 +57,7 @@ namespace Evaluation
         std::string m_lastError = "";
 
         /** Removes the offset from the supplied spectrum */
-        // TODO: Change the last parameter from begin a boolean to instead begin the pixel-range which should be used!!
+        // TODO: Change the last parameter from a boolean to the pixel-range which should be used!!
         void RemoveOffset(double *spectrum, int sumChn, bool UV = true);
 
         /** Sets the sky-spectrum to use. This will be used in the upcoming evaluations. 
@@ -86,10 +86,12 @@ namespace Evaluation
         const CEvaluationResult& GetEvaluationResult() const { return m_result; }
 
         /** Returns the polynomial that was fitted in the last evaluation */
+        // TODO: Change to std::vector<double>
         const double *GetPolynomial() const { return m_result.m_polynomial; }
 
         /** @return the number of references included in the fit. 
-            This may be higher than the number of referene from the fit window if e.g. the sky-spectrum is included in the fit */
+            This may be higher than the number of referene from the fit window if 
+            the sky-spectrum is included in the fit or an offset polynomial is included */
         size_t NumberOfReferencesFitted() const { return m_ref.size(); }
 
     protected:
@@ -99,7 +101,16 @@ namespace Evaluation
         //  The vector must hold pointers to the references, as these cannot be copied...
         std::vector<CReferenceSpectrumFunction*> m_ref;
 
-        /** The sky spectrum to use in the evaluations. This is set by calling 'SetSkySpectrum' which must be called prior to calling 'Evaluate' */
+        // If the sky-spectrum is to be fitted in the evaluation, then this represents
+        //  the reference-spectrum function of the sky spectrum.
+        CReferenceSpectrumFunction* m_skyReference = nullptr;
+
+        // If an polynomial is to be included in the evaluation in intensity-space 
+        //  then this represents the reference-spectrum function of the polynomial.
+        CReferenceSpectrumFunction* m_intensitySpacePolynomial = nullptr;
+
+        /** The sky spectrum to use in the evaluations.
+            This is set by calling 'SetSkySpectrum' which must be called prior to calling 'Evaluate' */
         std::vector<double> m_sky;
 
         /** The fit window, defines the parameters for the fit */
@@ -132,5 +143,11 @@ namespace Evaluation
 
         /** Updates the m_residual and m_result.delta */
         void SaveResidual(MathFit::CStandardFit& firstFit);
+
+        // This sets up the member 'm_intensitySpacePolynomial'
+        void CreateReferenceForIntensitySpacePolynomial(const std::vector<double>& I0);
+
+        // This sets up the mmeber 'm_skyReference'
+        void CreateReferenceForSkySpectrum();
     };
 }

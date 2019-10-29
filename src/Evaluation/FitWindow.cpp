@@ -12,15 +12,10 @@ namespace Evaluation
         Clear();
     }
 
-    CFitWindow::~CFitWindow()
-    {
-    }
-
     CFitWindow::CFitWindow(const CFitWindow &wnd)
     {
         *this = wnd;
     }
-
 
     CFitWindow &CFitWindow::operator =(const CFitWindow &w2)
     {
@@ -33,6 +28,7 @@ namespace Evaluation
         this->name = std::string(w2.name);
         this->nRef = w2.nRef;
         this->polyOrder = w2.polyOrder;
+        this->includeIntensitySpacePolyominal = w2.includeIntensitySpacePolyominal;
         this->UV = w2.UV;
         this->specLength = w2.specLength;
         this->startChannel = w2.startChannel;
@@ -60,6 +56,7 @@ namespace Evaluation
         name = "SO2";
         nRef = 0;
         polyOrder = 5;
+        includeIntensitySpacePolyominal = false;
         UV = true;
         for (int i = 0; i < MAX_N_REFERENCES; ++i)
         {

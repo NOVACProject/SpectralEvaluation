@@ -63,6 +63,21 @@ namespace Evaluation
         m_ref.clear();
     }
 
+    CReferenceSpectrumFunction* DefaultReferenceSpectrumFunction()
+    {
+        auto newRef = new CReferenceSpectrumFunction();
+
+        // reset all reference's parameters
+        newRef->ResetLinearParameter();
+        newRef->ResetNonlinearParameter();
+
+        // enable amplitude normalization. This should normally be done in order to avoid numerical
+        // problems during fitting.
+        newRef->SetNormalize(true);
+
+        return newRef;
+    }
+
     int CEvaluationBase::CreateReferenceSpectra()
     {
         CVector yValues;
@@ -72,15 +87,7 @@ namespace Evaluation
         // 1) Create the references
         for (int i = 0; i < m_window.nRef; i++)
         {
-            CReferenceSpectrumFunction* newRef = new CReferenceSpectrumFunction();
-
-            // reset all reference's parameters
-            newRef->ResetLinearParameter();
-            newRef->ResetNonlinearParameter();
-
-            // enable amplitude normalization. This should normally be done in order to avoid numerical
-            // problems during fitting.
-            newRef->SetNormalize(true);
+            auto newRef = DefaultReferenceSpectrumFunction();
 
             // set the spectral data of the reference spectrum to the object. This also causes an internal
             // transformation of the spectral data into a B-Spline that will be used to interpolate the 
@@ -105,7 +112,6 @@ namespace Evaluation
             this->m_ref.push_back(newRef);
         }
 
-
         // 2) Couple the references
         for (int i = 0; i < m_window.nRef; i++)
         {
@@ -121,7 +127,7 @@ namespace Evaluation
             case SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_shiftValue]->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_ref[i], CReferenceSpectrumFunction::SHIFT); break;
             case SHIFT_LIMIT:   m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)m_window.ref[i].m_shiftValue, (TFitData)m_window.ref[i].m_shiftMaxValue, 1); break;
             default:            m_ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SHIFT, (TFitData)0.0);
-                                m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)-10.0, (TFitData)10.0, (TFitData)1e0); break; // TODO: Get these limits as parameters!
+                m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)-10.0, (TFitData)10.0, (TFitData)1e0); break; // TODO: Get these limits as parameters!
             }
 
             // Check the options for the squeeze
@@ -130,60 +136,20 @@ namespace Evaluation
             case SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_squeezeValue]->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_ref[i], CReferenceSpectrumFunction::SQUEEZE); break;
             case SHIFT_LIMIT:   m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)m_window.ref[i].m_squeezeValue, (TFitData)m_window.ref[i].m_squeezeMaxValue, 1e7); break;
             default:            m_ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SQUEEZE, (TFitData)1.0);
-                                m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)0.98, (TFitData)1.02, (TFitData)1e0); break; // TODO: Get these limits as parameters!
+                m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)0.98, (TFitData)1.02, (TFitData)1e0); break; // TODO: Get these limits as parameters!
             }
         }
 
-        // THIS FOLLOWING CODE COMES FROM THE NOVACPPP. IMPLEMENT HERE ALSO!!
         // If we should also include the sky-spectrum in the fit
-        if (m_sky.size() > 0 && (m_window.fitType == FIT_HP_SUB || m_window.fitType == FIT_POLY))
+        if (m_skyReference != nullptr)
         {
-            CReferenceSpectrumFunction* newRef = new CReferenceSpectrumFunction();
+            this->m_ref.push_back(m_skyReference);
+        }
 
-            // reset all reference's parameters
-            newRef->ResetLinearParameter();
-            newRef->ResetNonlinearParameter();
-
-            // enable amplitude normalization. This should normally be done in order to avoid numerical
-            // problems during fitting.
-            newRef->SetNormalize(true);
-
-            // set the spectral data of the reference spectrum to the object. This also causes an internal
-            // transformation of the spectral data into a B-Spline that will be used to interpolate the
-            // reference spectrum during shift and squeeze operations
-            //if(!ref[i]->SetData(vXData.SubVector(0, m_referenceData[i].GetSize()), m_referenceData[i]))
-            yValues.SetSize((int)m_sky.size());
-            for (int k = 0; k < (int)m_sky.size(); ++k) {
-                yValues.SetAt(k, m_sky[k]);
-            }
-
-            {
-                auto tempXVec = vXData.SubVector(0, (int)m_sky.size());
-                if (!newRef->SetData(tempXVec, yValues))
-                {
-                    Error0("Error initializing spline object!");
-                    return(1);
-                }
-            }
-
-            // Chech the options for the column value
-            if (m_window.fitType == FIT_POLY)
-                newRef->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, -1.0 * newRef->GetAmplitudeScale());
-            else
-                newRef->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, 1.0 * newRef->GetAmplitudeScale());
-
-            // Check the options for the shift & squeeze
-            if (m_window.shiftSky) {
-                newRef->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)-3.0, (TFitData)3.0, 1);
-                newRef->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)0.95, (TFitData)1.05, 1e7);
-            }
-            else {
-                newRef->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
-                newRef->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
-            }
-
-            // Finally add this reference to the vector
-            this->m_ref.push_back(newRef);
+        // If we should add an additional stray light correction polynomial in intensity space then do this here
+        if (m_intensitySpacePolynomial != nullptr)
+        {
+            this->m_ref.push_back(m_intensitySpacePolynomial);
         }
 
         return 0;
@@ -282,19 +248,108 @@ namespace Evaluation
             HighPassBinomial(m_sky.data(), (int)m_sky.size(), 500);
         }
 
+        if (m_window.fitType == FIT_POLY && m_window.includeIntensitySpacePolyominal)
+        {
+            CreateReferenceForIntensitySpacePolynomial(m_sky);
+        }
+
         // Logaritmate the sky-spectrum
         if (m_window.fitType != FIT_HP_DIV)
         {
             Log(m_sky.data(), (int)m_sky.size());
         }
 
-        if(m_window.fitType != FIT_HP_DIV)
+        // Include the sky-spectrum in the fit
+        if (m_window.fitType != FIT_HP_DIV)
         {
-            // Include the sky-spectrum as a reference into the fit
+            CreateReferenceForSkySpectrum();
+        }
+
+        if (m_window.fitType != FIT_HP_DIV)
+        {
             CreateReferenceSpectra();
         }
 
         return 0;
+    }
+
+    void CEvaluationBase::CreateReferenceForIntensitySpacePolynomial(const std::vector<double>& I0)
+    {
+        if (m_intensitySpacePolynomial != nullptr)
+        {
+            delete m_intensitySpacePolynomial;
+        }
+
+        m_intensitySpacePolynomial = DefaultReferenceSpectrumFunction();
+
+        // set the spectral data of the reference spectrum to the object. This also causes an internal
+        // transformation of the spectral data into a B-Spline that will be used to interpolate the
+        // reference spectrum during shift and squeeze operations
+        CVector yValues;
+        yValues.SetSize((int)I0.size());
+        for (int k = 0; k < (int)I0.size(); ++k)
+        {
+            yValues.SetAt(k, 1.0 / I0[k]);
+        }
+
+        {
+            auto tempXVec = vXData.SubVector(0, (int)I0.size());
+            if (!m_intensitySpacePolynomial->SetData(tempXVec, yValues))
+            {
+                Error0("Error initializing spline object!");
+                return;
+            }
+        }
+
+        // Don't shift / squeeze this reference...
+        m_intensitySpacePolynomial->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
+        m_intensitySpacePolynomial->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
+    }
+
+    void CEvaluationBase::CreateReferenceForSkySpectrum()
+    {
+        if (m_skyReference != nullptr)
+        {
+            delete m_skyReference;
+        }
+
+        m_skyReference = DefaultReferenceSpectrumFunction();
+
+        // set the spectral data of the reference spectrum to the object. This also causes an internal
+        // transformation of the spectral data into a B-Spline that will be used to interpolate the
+        // reference spectrum during shift and squeeze operations
+        //if(!ref[i]->SetData(vXData.SubVector(0, m_referenceData[i].GetSize()), m_referenceData[i]))
+        CVector yValues;
+        yValues.SetSize((int)m_sky.size());
+        for (int k = 0; k < (int)m_sky.size(); ++k)
+        {
+            yValues.SetAt(k, m_sky[k]);
+        }
+
+        {
+            auto tempXVec = vXData.SubVector(0, (int)m_sky.size());
+            if (!m_skyReference->SetData(tempXVec, yValues))
+            {
+                Error0("Error initializing spline object!");
+                return;
+            }
+        }
+
+        // Check the options for the column value
+        const double concentrationMultiplier = (m_window.fitType == FIT_POLY) ? -1.0 : 1.0;
+        m_skyReference->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, concentrationMultiplier * m_skyReference->GetAmplitudeScale());
+
+        // Check the options for the shift & squeeze
+        if (m_window.shiftSky)
+        {
+            m_skyReference->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)-3.0, (TFitData)3.0, 1);
+            m_skyReference->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)0.95, (TFitData)1.05, 1e7);
+        }
+        else
+        {
+            m_skyReference->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
+            m_skyReference->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
+        }
     }
 
     void CEvaluationBase::SaveResidual(CStandardFit& cFirstFit)
@@ -347,7 +402,7 @@ namespace Evaluation
         CVector vMeas, vSky;
 
         // Make a local copy of the data (since we're going to change the contents)
-        std::vector<double> measArray(measured.m_data, measured.m_data + measured.m_length );
+        std::vector<double> measArray(measured.m_data, measured.m_data + measured.m_length);
 
         //----------------------------------------------------------------
         // --------- prepare the spectrum for evaluation -----------------
@@ -433,7 +488,7 @@ namespace Evaluation
             cFirstFit.FinishMinimize();
 
             // get the basic fit results
-            m_result.m_stepNum   = (long)cFirstFit.GetFitSteps();
+            m_result.m_stepNum = (long)cFirstFit.GetFitSteps();
             m_result.m_chiSquare = (double)cFirstFit.GetChiSquare();
             m_result.m_referenceResult.resize(this->m_ref.size());
 
@@ -454,13 +509,13 @@ namespace Evaluation
             // finally display the fit results for each reference spectrum including their appropriate error
             for (size_t ii = 0; ii < this->m_ref.size(); ii++)
             {
-                m_result.m_referenceResult[ii].m_specieName      = (ii < (size_t)m_window.nRef) ? std::string(m_window.ref[ii].m_specieName) : "Sky";
-                m_result.m_referenceResult[ii].m_column          = (double)m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::CONCENTRATION);
-                m_result.m_referenceResult[ii].m_columnError     = (double)m_ref[ii]->GetModelParameterError(CReferenceSpectrumFunction::CONCENTRATION);
-                m_result.m_referenceResult[ii].m_shift           = (double)m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::SHIFT);
-                m_result.m_referenceResult[ii].m_shiftError      = (double)m_ref[ii]->GetModelParameterError(CReferenceSpectrumFunction::SHIFT);
-                m_result.m_referenceResult[ii].m_squeeze         = (double)m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::SQUEEZE);
-                m_result.m_referenceResult[ii].m_squeezeError    = (double)m_ref[ii]->GetModelParameterError(CReferenceSpectrumFunction::SQUEEZE);
+                m_result.m_referenceResult[ii].m_specieName = (ii < (size_t)m_window.nRef) ? m_window.ref[ii].m_specieName : "Sky";
+                m_result.m_referenceResult[ii].m_column = (double)m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::CONCENTRATION);
+                m_result.m_referenceResult[ii].m_columnError = (double)m_ref[ii]->GetModelParameterError(CReferenceSpectrumFunction::CONCENTRATION);
+                m_result.m_referenceResult[ii].m_shift = (double)m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::SHIFT);
+                m_result.m_referenceResult[ii].m_shiftError = (double)m_ref[ii]->GetModelParameterError(CReferenceSpectrumFunction::SHIFT);
+                m_result.m_referenceResult[ii].m_squeeze = (double)m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::SQUEEZE);
+                m_result.m_referenceResult[ii].m_squeezeError = (double)m_ref[ii]->GetModelParameterError(CReferenceSpectrumFunction::SQUEEZE);
 
                 //// get the final fit result
                 m_ref[ii]->GetValues(tempXVec, tmpVector);
@@ -489,7 +544,7 @@ namespace Evaluation
             m_lastError = "Failed to evaluate: a fit exception occurred.";
             if (nullptr != e.mMessage && strlen(e.mMessage) > 0)
             {
-                m_lastError = m_lastError + " Message: '" + std::string{e.mMessage} + "'";
+                m_lastError = m_lastError + " Message: '" + std::string{ e.mMessage } +"'";
             }
 
             return (1);

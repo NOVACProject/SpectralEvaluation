@@ -25,10 +25,10 @@ namespace Evaluation
     public:
         CFitWindow();
 
-        ~CFitWindow();
-
         CFitWindow &operator=(const CFitWindow &w2);
         CFitWindow(const CFitWindow &wnd);
+
+        // TODO: Move operators
 
         /** The lower edge of the fit window (in pixels) */
         int fitLow = 320;
@@ -56,8 +56,13 @@ namespace Evaluation
             is same as the wavelength calibration of each reference file. */
         CReferenceFile fraunhoferRef;
 
-        /** The order of the polynomial that will also be fitted */
+        /** The order of the polynomial that is fitted in optical depth space. */
         int polyOrder = 5;
+
+        /** Set to true to include a polynomial (currently only 0th degree)
+            fitted in intensity space. Used to correct for stray light in spectrometer. */
+        // NOTICE: This can only be included when fitType is FIT_POLY !!
+        bool includeIntensitySpacePolyominal = false;
 
         /** The length of the spectra */
         int specLength = 2048;
@@ -76,7 +81,7 @@ namespace Evaluation
 
         /** true if the sky-spectrum should be allowed to shift.
                 only useful if fitType is FIT_HP_SUB or FIT_POLY */
-		int shiftSky;
+        int shiftSky;
 
         /** Larger than 1 if the spectra are read out in an interlaced way.
             This parameter works in the same way as the CSpectrumInfo::m_interlaceStep */
@@ -84,13 +89,13 @@ namespace Evaluation
 
         /** 'UV' is true if the start wavelength of the spectrum is 290 nm or shorter */
         // TODO: replace this with the pixel-range which should be used for the offset-correction (which this variable is used for)
-		int UV = 1;
+        int UV = 1;
 
         /** True if the scan should be twice, once for finding the highest column value.
             The spectrum with the highest column value is then evluated again with
             the shift of all references set to free and the optimum shift value is found.
             The scan is then evaluated again using this shift value. */
-		int findOptimalShift = 0;
+        int findOptimalShift = 0;
 
         /** This is an optional set of child windows which are to be evaluated in conjunction with the current one.
             These are typically used for ratio-evaluations, where the spectrum is evaluated in one region
