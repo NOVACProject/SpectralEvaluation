@@ -60,8 +60,8 @@ namespace Evaluation
         int polyOrder = 5;
 
         /** Set to true to include a polynomial (currently only 0th degree)
-            fitted in intensity space. Used to correct for stray light in spectrometer. */
-        // NOTICE: This can only be included when fitType is FIT_POLY !!
+            fitted in intensity space. Used to correct for stray light in spectrometer. 
+            Notice: This can only be included when fitType is FIT_POLY  */
         bool includeIntensitySpacePolyominal = false;
 
         /** The length of the spectra */

@@ -557,9 +557,6 @@ namespace Evaluation
 
         m_lastError = "";
 
-        int i;
-        CVector vMeas;
-        CVector yValues;
         int fitLow = m_window.fitLow;
         int fitHigh = m_window.fitHigh;
 
@@ -587,7 +584,8 @@ namespace Evaluation
                 return 1;
             }
         }
-        else {
+        else
+        {
             fitLow = m_window.fitLow;
             fitHigh = m_window.fitHigh;
         }
@@ -604,26 +602,32 @@ namespace Evaluation
         //----------------------------------------------------------------
 
         RemoveOffset(measArray, m_window.specLength, m_window.UV);
-        if (m_window.fitType == FIT_HP_DIV || m_window.fitType == FIT_HP_SUB) {
+        if (m_window.fitType == FIT_HP_DIV || m_window.fitType == FIT_HP_SUB)
+        {
             HighPassBinomial(measArray, m_window.specLength, 500);
         }
         Log(measArray, m_window.specLength);
 
-        if (m_window.fitType == FIT_POLY) {
+        if (m_window.fitType == FIT_POLY)
+        {
             for (int j = 0; j < m_window.specLength; ++j)
+            {
                 measArray[j] *= -1.0;
+            }
         }
 
         // --------- also prepare the solar-spectrum for evaluation -----------------
         CVector localSolarSpectrumData;
         localSolarSpectrumData.SetSize(m_window.fraunhoferRef.m_data->GetSize());
-        for (int j = 0; j < m_window.specLength; ++j) {
+        for (int j = 0; j < m_window.specLength; ++j)
+        {
             localSolarSpectrumData.SetAt(j, m_window.fraunhoferRef.m_data->GetAt(j));
         }
 
         //----------------------------------------------------------------
 
         // Copy the measured spectrum to vMeas
+        CVector vMeas;
         vMeas.Copy(measArray, m_window.specLength, 1);
 
         // To perform the fit we need to extract the wavelength (or pixel)
@@ -669,14 +673,8 @@ namespace Evaluation
         }
 
         // Chech the options for the column value
-        if (m_window.fitType == FIT_POLY)
-            solarSpec->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, -1.0 * solarSpec->GetAmplitudeScale());
-        else
-            solarSpec->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, 1.0 * solarSpec->GetAmplitudeScale());
-
-        // Free the shift
-        //solarSpec->SetParameterLimits(CReferenceSpectrumFunction::SHIFT,	(TFitData)-6.0, (TFitData)6.0, (TFitData)1e25);
-        //solarSpec->FixParameter(CReferenceSpectrumFunction::SHIFT,	(TFitData)1.4);
+        const double concentrationMultiplier = (m_window.fitType == FIT_POLY) ? -1.0 : 1.0;
+        solarSpec->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, concentrationMultiplier * solarSpec->GetAmplitudeScale());
 
         // Fix the squeeze
         solarSpec->FixParameter(CReferenceSpectrumFunction::SQUEEZE, (TFitData)1.0);
@@ -685,12 +683,13 @@ namespace Evaluation
         cRefSum.AddReference(*solarSpec); // <-- at last add the reference to the summation object
 
         // Link the shifts of the 'normal' cross sections to the shift of the solar spectrum
-        for (i = 0; i < m_window.nRef; ++i) {
+        for (int ii = 0; ii < m_window.nRef; ++ii)
+        {
             // Link the shift and squeeze to the solar-reference
-            solarSpec->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_ref[i], CReferenceSpectrumFunction::SHIFT);
-            solarSpec->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_ref[i], CReferenceSpectrumFunction::SQUEEZE);
+            solarSpec->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_ref[ii], CReferenceSpectrumFunction::SHIFT);
+            solarSpec->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_ref[ii], CReferenceSpectrumFunction::SQUEEZE);
 
-            cRefSum.AddReference(*m_ref[i]); // <-- at last add the reference to the summation object
+            cRefSum.AddReference(*m_ref[ii]); // <-- at last add the reference to the summation object
         }
 
         // create the additional polynomial with the correct order
@@ -786,5 +785,4 @@ namespace Evaluation
             return (1);
         }
     }
-
 }
