@@ -3,6 +3,31 @@
 #include <SpectralEvaluation/Fit/CubicSplineFunction.h>
 #include <SpectralEvaluation/Fit/Vector.h>
 
+/*******************************************************************************
+* DOASIS - DOAS Intelligent System
+* ---------------------------------
+* Copyright (c) 2004 Stefan Kraus
+*                    Institute of Environmental Physics
+*                    University of Heidelberg
+*
+* Any unauthorized use of this software is prohibited!
+*
+* The application, its components and the source codes are NOT for public use!
+* Only non-commerical use is allowed without a written permission of the authors
+* or the Institute of Environmental Physics.
+* Do not make this source code public available!
+*
+* A detailed license agreement is given in the
+*
+* InstallerDOASIS\Setup Files\license.rtf
+*
+* file. If you want to use this application or its source codes, contact the
+* author
+*	mailto:stefan.kraus@iup.uni-heidelberg.de
+* or the Institute of Environmental Physics
+*  mailto:sekretariat@iup.uni-heidelberg.de
+*/
+
 using namespace MathFit;
 
 static const double RAD_DEG = (M_PI / 180.0);
