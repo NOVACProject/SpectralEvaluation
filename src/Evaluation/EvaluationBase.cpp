@@ -158,6 +158,10 @@ namespace Evaluation
         {
             this->m_ref.push_back(m_ringSpectrum);
         }
+        if (m_ringSpectrumLambda4 != nullptr)
+        {
+            this->m_ref.push_back(m_ringSpectrumLambda4);
+        }
 
         return 0;
     }
@@ -260,7 +264,8 @@ namespace Evaluation
             CreateReferenceForIntensitySpacePolynomial(m_sky);
         }
 
-        if (m_window.ringCalculation == RING_CALCULATION_OPTION::CALCULATE_RING)
+        if (m_window.ringCalculation == RING_CALCULATION_OPTION::CALCULATE_RING ||
+            m_window.ringCalculation == RING_CALCULATION_OPTION::CALCULATE_RING_X2)
         {
             CSpectrum skySpectrum;
             for (size_t ii = 0; ii < m_sky.size(); ++ii)
@@ -271,6 +276,11 @@ namespace Evaluation
             skySpectrum.m_wavelength = std::vector<double>(begin(m_window.fraunhoferRef.m_data->m_waveLength), end(m_window.fraunhoferRef.m_data->m_waveLength));
             auto ringSpectrum = Doasis::Scattering::CalcRingSpectrum(skySpectrum);
             CreateReferenceForRingSpectrum(ringSpectrum);
+
+            if (m_window.ringCalculation == RING_CALCULATION_OPTION::CALCULATE_RING_X2)
+            {
+                CreateReferenceForRingSpectrumLambda4(ringSpectrum);
+            }
         }
 
         // Take the log of the sky-spectrum
@@ -371,12 +381,11 @@ namespace Evaluation
             m_skyReference->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
         }
 
-        if (m_ringSpectrum != nullptr)
+        if (m_ringSpectrumLambda4 != nullptr)
         {
-            m_ringSpectrum->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
-            m_ringSpectrum->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
-            // m_ringSpectrum->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_skyReference, CReferenceSpectrumFunction::SHIFT);
-            // m_ringSpectrum->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_skyReference, CReferenceSpectrumFunction::SQUEEZE);
+            // TODO: Is this a good option ?
+            m_ringSpectrumLambda4->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
+            m_ringSpectrumLambda4->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
         }
     }
 
@@ -408,7 +417,43 @@ namespace Evaluation
             }
         }
 
-        // The options for shifting / squeezing are set when creating the sky-spectrum reference
+        // TODO: Is this a good option ?
+        m_ringSpectrum->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
+        m_ringSpectrum->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
+    }
+
+    void CEvaluationBase::CreateReferenceForRingSpectrumLambda4(const CSpectrum& ring)
+    {
+        if (m_ringSpectrumLambda4 != nullptr)
+        {
+            delete m_ringSpectrumLambda4;
+        }
+
+        m_ringSpectrumLambda4 = DefaultReferenceSpectrumFunction();
+
+        // set the spectral data of the reference spectrum to the object. This also causes an internal
+        // transformation of the spectral data into a B-Spline that will be used to interpolate the
+        // reference spectrum during shift and squeeze operations
+        CVector yValues;
+        yValues.SetSize((int)ring.m_length);
+        for (size_t ii = 0; ii < (size_t)ring.m_length; ++ii)
+        {
+            double lambda = ring.m_wavelength[ii];
+            yValues.SetAt((int)ii, ring.m_data[ii] * std::pow(lambda, 4.0));
+        }
+
+        {
+            auto tempXVec = vXData.SubVector(0, (int)ring.m_length);
+            if (!m_ringSpectrumLambda4->SetData(tempXVec, yValues))
+            {
+                Error0("Error initializing spline object!");
+                return;
+            }
+        }
+
+        // TODO: Is this a good option ?
+        m_ringSpectrumLambda4->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
+        m_ringSpectrumLambda4->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
     }
 
     void CEvaluationBase::SaveResidual(CStandardFit& cFirstFit)
@@ -866,6 +911,10 @@ namespace Evaluation
         else if (m_ref[referenceIndex] == this->m_ringSpectrum)
         {
             return "Ring";
+        }
+        else if (m_ref[referenceIndex] == this->m_ringSpectrumLambda4)
+        {
+            return "Ring * lambda^4";
         }
 
         return "N/A"; // unknown.
