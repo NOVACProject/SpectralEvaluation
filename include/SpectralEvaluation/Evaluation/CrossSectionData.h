@@ -95,4 +95,10 @@ namespace Evaluation {
     /** Shifts the provided data the given number of pixels (positive values corresponds to shifting towards 
         higher indices). This will approximate the data using a cubic spline and then shift the spline. */
     void Shift(std::vector<double>& data, double pixelCount);
+
+    /** Creates a simple gaussian function centered in the middle of the resulting CCrossSectionData 
+        @param gaussianSigma The sigma parameter of the Gaussian to generate
+        @param deltaLambda The difference wavelength between two neighbouring points in the generated
+            gaussian.m_waveLength array */
+    void CreateGaussian(double gaussianSigma, double deltaLambda, CCrossSectionData& gaussian);
 }

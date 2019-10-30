@@ -69,3 +69,6 @@ double FindValue(const std::vector<double>& values, double valueToFind, size_t s
     @return 0.0 if idx < 0.0 or idx > values.size() - 1 */
 double GetAt(const std::vector<double>& values, double idx);
 
+/** @return the average resolution of the provided wavelength grid.
+    This is the average delta lambda between two neigboring pixels. */
+double Resolution(const std::vector<double>& wavelGrid);
