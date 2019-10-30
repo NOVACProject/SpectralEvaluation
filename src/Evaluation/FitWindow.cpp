@@ -29,6 +29,7 @@ namespace Evaluation
         this->nRef = w2.nRef;
         this->polyOrder = w2.polyOrder;
         this->includeIntensitySpacePolyominal = w2.includeIntensitySpacePolyominal;
+        this->ringCalculation = w2.ringCalculation;
         this->UV = w2.UV;
         this->specLength = w2.specLength;
         this->startChannel = w2.startChannel;
@@ -56,6 +57,7 @@ namespace Evaluation
         name = "SO2";
         nRef = 0;
         polyOrder = 5;
+        ringCalculation = RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING;
         includeIntensitySpacePolyominal = false;
         UV = true;
         for (int i = 0; i < MAX_N_REFERENCES; ++i)

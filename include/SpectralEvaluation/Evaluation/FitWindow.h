@@ -8,10 +8,18 @@
 
 namespace Evaluation
 {
-    enum FIT_TYPE {
+    enum FIT_TYPE
+    {
         FIT_HP_DIV,
         FIT_HP_SUB,
         FIT_POLY
+    };
+
+    enum class RING_CALCULATION_OPTION
+    {
+        DO_NOT_CALCULATE_RING,  // the user supplies a ring spectrum, don't calculate any
+        CALCULATE_RING,         // calculate a ring spectrum and include in the fit
+        CALCULATE_RING_X2       // calculate 2 ring spectra and include in the fit (regular ring and ring * lambda^4)
     };
 
     /** CFitWindow is a class for describing the settings
@@ -63,6 +71,13 @@ namespace Evaluation
             fitted in intensity space. Used to correct for stray light in spectrometer. 
             Notice: This can only be included when fitType is FIT_POLY  */
         bool includeIntensitySpacePolyominal = false;
+
+        /** The option for if a ring spectrum should be calculated and included in the fit.
+            Possible options are 
+                1) don't calculate a ring
+                2) calculate a ring from the sky spectrum and include this in the fit
+                3) calculate a ring from the sky spectrum and include this and ring * lambda^4 into the fit. */
+        RING_CALCULATION_OPTION ringCalculation = RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING;
 
         /** The length of the spectra */
         int specLength = 2048;
