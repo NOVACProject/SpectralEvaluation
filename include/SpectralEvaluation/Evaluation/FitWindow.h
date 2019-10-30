@@ -77,6 +77,7 @@ namespace Evaluation
                 1) don't calculate a ring
                 2) calculate a ring from the sky spectrum and include this in the fit
                 3) calculate a ring from the sky spectrum and include this and ring * lambda^4 into the fit. */
+        // TODO: Resolve how this should be able to get a correct wavelength calibration for the sky spectrum !
         RING_CALCULATION_OPTION ringCalculation = RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING;
 
         /** The length of the spectra */

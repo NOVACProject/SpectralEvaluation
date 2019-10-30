@@ -109,6 +109,11 @@ namespace Evaluation
         //  then this represents the reference-spectrum function of the polynomial.
         CReferenceSpectrumFunction* m_intensitySpacePolynomial = nullptr;
 
+        // TODO: Combine these loose CReferenceSpectrumFunction into a structure!
+        // If a calculated ring spectrum is to be included in the evaluation 
+        //  then this represents the reference-spectrum of that ring.
+        CReferenceSpectrumFunction* m_ringSpectrum = nullptr;
+
         /** The sky spectrum to use in the evaluations.
             This is set by calling 'SetSkySpectrum' which must be called prior to calling 'Evaluate' */
         std::vector<double> m_sky;
@@ -147,7 +152,13 @@ namespace Evaluation
         // This sets up the member 'm_intensitySpacePolynomial'
         void CreateReferenceForIntensitySpacePolynomial(const std::vector<double>& I0);
 
-        // This sets up the mmeber 'm_skyReference'
+        // This sets up the member 'm_skyReference'
         void CreateReferenceForSkySpectrum();
+
+        // This sets up the member 'm_ringSpectrum'
+        void CreateReferenceForRingSpectrum(const CSpectrum& ring);
+
+        // @return the name of the reference with the given index into m_ref
+        std::string GetReferenceName(size_t referenceIndex) const;
     };
 }

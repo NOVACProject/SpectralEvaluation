@@ -1,6 +1,7 @@
 #include <SpectralEvaluation/Evaluation/EvaluationBase.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/Spectra/Scattering.h>
 
 // include all required fit objects
 #include <SpectralEvaluation/Fit/ReferenceSpectrumFunction.h>
@@ -152,6 +153,12 @@ namespace Evaluation
             this->m_ref.push_back(m_intensitySpacePolynomial);
         }
 
+        // Calculated ring spectra.
+        if (m_ringSpectrum != nullptr)
+        {
+            this->m_ref.push_back(m_ringSpectrum);
+        }
+
         return 0;
     }
 
@@ -253,7 +260,20 @@ namespace Evaluation
             CreateReferenceForIntensitySpacePolynomial(m_sky);
         }
 
-        // Logaritmate the sky-spectrum
+        if (m_window.ringCalculation == RING_CALCULATION_OPTION::CALCULATE_RING)
+        {
+            CSpectrum skySpectrum;
+            for (size_t ii = 0; ii < m_sky.size(); ++ii)
+            {
+                skySpectrum.m_data[ii] = m_sky[ii];
+            }
+            skySpectrum.m_length = (long)m_sky.size();
+            skySpectrum.m_wavelength = std::vector<double>(begin(m_window.fraunhoferRef.m_data->m_waveLength), end(m_window.fraunhoferRef.m_data->m_waveLength));
+            auto ringSpectrum = Doasis::Scattering::CalcRingSpectrum(skySpectrum);
+            CreateReferenceForRingSpectrum(ringSpectrum);
+        }
+
+        // Take the log of the sky-spectrum
         if (m_window.fitType != FIT_HP_DIV)
         {
             Log(m_sky.data(), (int)m_sky.size());
@@ -350,6 +370,45 @@ namespace Evaluation
             m_skyReference->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
             m_skyReference->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
         }
+
+        if (m_ringSpectrum != nullptr)
+        {
+            m_ringSpectrum->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
+            m_ringSpectrum->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
+            // m_ringSpectrum->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_skyReference, CReferenceSpectrumFunction::SHIFT);
+            // m_ringSpectrum->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_skyReference, CReferenceSpectrumFunction::SQUEEZE);
+        }
+    }
+
+    void CEvaluationBase::CreateReferenceForRingSpectrum(const CSpectrum& ring)
+    {
+        if (m_ringSpectrum != nullptr)
+        {
+            delete m_ringSpectrum;
+        }
+
+        m_ringSpectrum = DefaultReferenceSpectrumFunction();
+
+        // set the spectral data of the reference spectrum to the object. This also causes an internal
+        // transformation of the spectral data into a B-Spline that will be used to interpolate the
+        // reference spectrum during shift and squeeze operations
+        CVector yValues;
+        yValues.SetSize((int)ring.m_length);
+        for (size_t ii = 0; ii < (size_t)ring.m_length; ++ii)
+        {
+            yValues.SetAt((int)ii, ring.m_data[ii]);
+        }
+
+        {
+            auto tempXVec = vXData.SubVector(0, (int)ring.m_length);
+            if (!m_ringSpectrum->SetData(tempXVec, yValues))
+            {
+                Error0("Error initializing spline object!");
+                return;
+            }
+        }
+
+        // The options for shifting / squeezing are set when creating the sky-spectrum reference
     }
 
     void CEvaluationBase::SaveResidual(CStandardFit& cFirstFit)
@@ -509,7 +568,7 @@ namespace Evaluation
             // finally display the fit results for each reference spectrum including their appropriate error
             for (size_t ii = 0; ii < this->m_ref.size(); ii++)
             {
-                m_result.m_referenceResult[ii].m_specieName = (ii < (size_t)m_window.nRef) ? m_window.ref[ii].m_specieName : "Sky";
+                m_result.m_referenceResult[ii].m_specieName = GetReferenceName(ii);
                 m_result.m_referenceResult[ii].m_column = (double)m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::CONCENTRATION);
                 m_result.m_referenceResult[ii].m_columnError = (double)m_ref[ii]->GetModelParameterError(CReferenceSpectrumFunction::CONCENTRATION);
                 m_result.m_referenceResult[ii].m_shift = (double)m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::SHIFT);
@@ -517,7 +576,7 @@ namespace Evaluation
                 m_result.m_referenceResult[ii].m_squeeze = (double)m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::SQUEEZE);
                 m_result.m_referenceResult[ii].m_squeezeError = (double)m_ref[ii]->GetModelParameterError(CReferenceSpectrumFunction::SQUEEZE);
 
-                //// get the final fit result
+                // get the final fit result
                 m_ref[ii]->GetValues(tempXVec, tmpVector);
                 m_fitResult[ii + 1].Set(tmpVector, fitHigh - fitLow);
             }
@@ -784,5 +843,31 @@ namespace Evaluation
 
             return (1);
         }
+    }
+
+    std::string CEvaluationBase::GetReferenceName(size_t referenceIndex) const
+    {
+        if (referenceIndex < (size_t)m_window.nRef)
+        {
+            return m_window.ref[referenceIndex].m_specieName; // user supplied reference
+        }
+        else if (referenceIndex >= this->m_ref.size())
+        {
+            return "N/A";
+        }
+        else if (m_ref[referenceIndex] == this->m_skyReference)
+        {
+            return "Sky";
+        }
+        else if (m_ref[referenceIndex] == this->m_intensitySpacePolynomial)
+        {
+            return "IntensitySpacePolynomial";
+        }
+        else if (m_ref[referenceIndex] == this->m_ringSpectrum)
+        {
+            return "Ring";
+        }
+
+        return "N/A"; // unknown.
     }
 }
