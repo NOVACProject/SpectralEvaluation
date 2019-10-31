@@ -13,7 +13,7 @@ public:
 
     bool operator==(const CGPSData &gps2) const;
 
-    ~CGPSData();
+    ~CGPSData() = default;
 
     /** The altitude from the GPS data, in meters above sea-level */
     double  m_altitude = 0.0;

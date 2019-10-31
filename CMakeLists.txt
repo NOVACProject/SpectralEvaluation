@@ -35,9 +35,9 @@ add_library(NovacSpectralEvaluation
     ${SPECTRUM_FILE_SOURCES}
     ${SPECTRUM_CONFIGURATION_HEADERS}
     ${SPECTRUM_CONFIGURATION_SOURCES}
-    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Utils.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/StringUtils.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/VectorUtils.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/StringUtils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/VectorUtils.cpp
 )
 

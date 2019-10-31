@@ -1,5 +1,5 @@
 #include <SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h>
-#include <SpectralEvaluation/Utils.h>
+#include <SpectralEvaluation/StringUtils.h>
 
 using namespace Evaluation;
 

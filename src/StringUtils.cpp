@@ -1,4 +1,4 @@
-#include <SpectralEvaluation/Utils.h>
+#include <SpectralEvaluation/StringUtils.h>
 #include <algorithm>
 #include <vector>
 #include <cstring>

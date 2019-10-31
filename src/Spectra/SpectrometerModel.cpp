@@ -1,5 +1,5 @@
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
-#include <SpectralEvaluation/Utils.h>
+#include <SpectralEvaluation/StringUtils.h>
 #include <algorithm>
 
 SpectrometerModel::PixelRange::PixelRange()

@@ -1,5 +1,5 @@
 #include <SpectralEvaluation/Evaluation/FitWindow.h>
-#include <SpectralEvaluation/Utils.h>
+#include <SpectralEvaluation/StringUtils.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 
 #include <iostream>

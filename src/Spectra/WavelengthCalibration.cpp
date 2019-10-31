@@ -38,7 +38,7 @@ namespace Evaluation
         return EstimateWavelengthToPixelMapping(measuredSpectrum, pixelToWavelengthMapping, solarAtlas, result);
     }
 
-    bool EstimateWavelengthToPixelMapping(const CCrossSectionData& measuredspectrum, const CCrossSectionData& initialWavelengthToPixelMapping, const CCrossSectionData& solarAtlas, SpectrometerCalibration& result)
+    bool EstimateWavelengthToPixelMapping(const CCrossSectionData& /*measuredspectrum*/, const CCrossSectionData& initialWavelengthToPixelMapping, const CCrossSectionData& solarAtlas, SpectrometerCalibration& result)
     {
         CCrossSectionData convolvedReference;
         CCrossSectionData pixelToWavelengthMapping{ initialWavelengthToPixelMapping };

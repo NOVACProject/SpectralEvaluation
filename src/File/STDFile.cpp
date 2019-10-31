@@ -1,6 +1,6 @@
 #include <SpectralEvaluation/File/STDFile.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
-#include <SpectralEvaluation/Utils.h>
+#include <SpectralEvaluation/StringUtils.h>
 #include <algorithm>
 #include <cstring>
 #include <cmath>

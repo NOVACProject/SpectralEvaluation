@@ -6,7 +6,7 @@
 #include <SpectralEvaluation/File/ScanFileHandler.h>
 #include <SpectralEvaluation/File/STDFile.h>
 #include <SpectralEvaluation/File/TXTFile.h>
-#include <SpectralEvaluation/Utils.h>
+#include <SpectralEvaluation/StringUtils.h>
 #include <SpectralEvaluation/Configuration/DarkSettings.h>
 #include <SpectralEvaluation/Configuration/SkySettings.h>
 

@@ -1,7 +1,7 @@
 #include <SpectralEvaluation/File/SpectrumIO.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
-#include <SpectralEvaluation/Utils.h>
+#include <SpectralEvaluation/StringUtils.h>
 
 #include <algorithm>
 #include <cstring>

@@ -21,10 +21,6 @@ CGPSData::CGPSData(double lat, double lon, double alt)
     this->m_longitude = lon;
 }
 
-CGPSData::~CGPSData()
-{
-}
-
 CGPSData &CGPSData::operator =(const CGPSData &gps2)
 {
     this->m_altitude = gps2.m_altitude;
