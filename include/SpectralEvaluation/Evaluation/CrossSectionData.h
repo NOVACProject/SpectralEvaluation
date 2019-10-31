@@ -18,7 +18,12 @@ namespace Evaluation {
     {
     public:
         CCrossSectionData();
+
+        /** Creates a fully copy of another cross section */
         CCrossSectionData(const CCrossSectionData& other);
+
+        /** Creates a copy of a range of another cross section */
+        CCrossSectionData(const CCrossSectionData& other, double startWavelength, double endWavelength);
 
         CCrossSectionData &operator=(const CCrossSectionData &other);
 
@@ -55,6 +60,10 @@ namespace Evaluation {
 
         /** Gets the wavelength at the given pixel */
         double GetWavelengthAt(unsigned int index) const;
+
+        /** Locates and returns the index which corresponds to the provided wavelength.
+            Returns -1 if no such index could be found. */
+        double FindWavelength(double wavelength) const;
 
         /** Reads the cross section from a file
             @return 0 on success

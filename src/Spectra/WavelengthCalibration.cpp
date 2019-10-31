@@ -2,15 +2,20 @@
 #include <SpectralEvaluation/Spectra/WavelengthCalibration.h>
 #include <SpectralEvaluation/Spectra/ReferenceSpectrumConvolution.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
+#include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/VectorUtils.h>
 #include <SpectralEvaluation/File/File.h>
 
 namespace Evaluation
 {
-    bool EstimateWavelengthToPixelMapping(const std::string& measuredSpectrumFile, const std::string& initialWavelengthToPixelMappingFile, const std::string& solarAtlasFile, SpectrometerCalibration& result)
+    bool EstimateWavelengthToPixelMapping(
+        const std::string& measuredSpectrumFile,
+        const std::string& initialWavelengthToPixelMappingFile,
+        const std::string& solarAtlasFile,
+        SpectrometerCalibration& result)
     {
-        CCrossSectionData measuredSpectrum;
-        if (!FileIo::ReadCrossSectionFile(measuredSpectrumFile, measuredSpectrum))
+        CSpectrum measuredSpectrum;
+        if (!FileIo::ReadSpectrum(measuredSpectrumFile, measuredSpectrum))
         {
             return false;
         }
@@ -20,7 +25,7 @@ namespace Evaluation
         {
             return false;
         }
-        if (pixelToWavelengthMapping.m_waveLength.size() != measuredSpectrum.m_crossSection.size())
+        if (pixelToWavelengthMapping.m_waveLength.size() != (size_t)measuredSpectrum.m_length)
         {
             return false; // not same length
         }
@@ -38,19 +43,25 @@ namespace Evaluation
         return EstimateWavelengthToPixelMapping(measuredSpectrum, pixelToWavelengthMapping, solarAtlas, result);
     }
 
-    bool EstimateWavelengthToPixelMapping(const CCrossSectionData& /*measuredspectrum*/, const CCrossSectionData& initialWavelengthToPixelMapping, const CCrossSectionData& solarAtlas, SpectrometerCalibration& result)
+    bool EstimateWavelengthToPixelMapping(const CSpectrum& /*measuredspectrum*/, const CCrossSectionData& initialWavelengthToPixelMapping, const CCrossSectionData& solarAtlas, SpectrometerCalibration& result)
     {
         CCrossSectionData convolvedReference;
         CCrossSectionData pixelToWavelengthMapping{ initialWavelengthToPixelMapping };
 
         double gaussianSigma = 0.7; // [nm] good initial guess for Novac Instruments.
 
+        // TODO: we need a way to pass in the wavelength range as parameter here
+        double lambdaLow = 310.0;
+        double lambdaHigh = 320.0;
+        CCrossSectionData localSolarAtlas{solarAtlas, lambdaLow, lambdaHigh};
+        CCrossSectionData localPixelToWavelenthMap{pixelToWavelengthMapping, lambdaLow, lambdaHigh};
+
         // Generate a gaussian with high enough resolution
         CCrossSectionData slf;
-        const double slfDeltaLambda = std::min(0.25 * Resolution(solarAtlas.m_waveLength), gaussianSigma * 0.125);
+        const double slfDeltaLambda = std::min(0.25 * Resolution(localSolarAtlas.m_waveLength), gaussianSigma * 0.125);
         CreateGaussian(gaussianSigma, slfDeltaLambda, slf);
 
-        if (!ConvolveReference(pixelToWavelengthMapping.m_waveLength, slf, solarAtlas, result.wavelengthToPixelMapping))
+        if (!ConvolveReference(localPixelToWavelenthMap.m_waveLength, slf, localSolarAtlas, result.wavelengthToPixelMapping))
         {
             return false;
         }
