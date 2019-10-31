@@ -20,14 +20,32 @@ CCrossSectionData::CCrossSectionData()
 
 CCrossSectionData::CCrossSectionData(const CCrossSectionData& other)
     : m_crossSection(begin(other.m_crossSection), end(other.m_crossSection)),
-      m_waveLength(begin(other.m_waveLength), end(other.m_waveLength))
+    m_waveLength(begin(other.m_waveLength), end(other.m_waveLength))
 {
+}
+
+CCrossSectionData::CCrossSectionData(const CCrossSectionData& other, double startWavelength, double endWavelength)
+{
+    const double startIndex = other.FindWavelength(startWavelength);
+    const double stopIndex = other.FindWavelength(endWavelength);
+
+    if (startIndex > -0.5 && stopIndex > -0.5)
+    {
+        const size_t start = (size_t)std::max(0, (int)startIndex);
+        const size_t stop = std::min((size_t)std::max(0, (int)(stopIndex + 1)), other.m_waveLength.size());
+
+        if (other.m_crossSection.size() > 0)
+        {
+            this->m_crossSection = std::vector<double>(begin(other.m_crossSection) + start, begin(other.m_crossSection) + stop);
+        }
+        this->m_waveLength = std::vector<double>(begin(other.m_waveLength) + start, begin(other.m_waveLength) + stop);
+    }
 }
 
 CCrossSectionData &CCrossSectionData::operator=(const CCrossSectionData &other)
 {
     this->m_crossSection = std::vector<double>(begin(other.m_crossSection), end(other.m_crossSection));
-    this->m_waveLength   = std::vector<double>(begin(other.m_waveLength), end(other.m_waveLength));
+    this->m_waveLength = std::vector<double>(begin(other.m_waveLength), end(other.m_waveLength));
 
     return *this;
 }
@@ -50,15 +68,15 @@ void CCrossSectionData::SetAt(int index, double wavel, double value)
 
 void CCrossSectionData::Set(double *wavelength, double *crossSection, unsigned long pointNum)
 {
-    if(nullptr == wavelength) throw std::invalid_argument("Cannot set the cross section data using a null wavelength data pointer.");
+    if (nullptr == wavelength) throw std::invalid_argument("Cannot set the cross section data using a null wavelength data pointer.");
     if (nullptr == crossSection) throw std::invalid_argument("Cannot set the cross section data using a null data pointer.");
 
     m_waveLength.resize(pointNum);
     m_crossSection.resize(pointNum);
 
-    for(unsigned int k = 0; k < pointNum; ++k)
+    for (unsigned int k = 0; k < pointNum; ++k)
     {
-        this->m_waveLength[k]   = wavelength[k];
+        this->m_waveLength[k] = wavelength[k];
         this->m_crossSection[k] = crossSection[k];
     }
 }
@@ -68,11 +86,11 @@ void CCrossSectionData::Set(double *crossSection, unsigned long pointNum)
     m_waveLength.resize(pointNum);
     m_crossSection.resize(pointNum);
 
-    for(unsigned int k = 0; k < pointNum; ++k)
+    for (unsigned int k = 0; k < pointNum; ++k)
     {
         double lambda = (double)k;
 
-        this->m_waveLength[k]   = lambda;
+        this->m_waveLength[k] = lambda;
         this->m_crossSection[k] = crossSection[k];
     }
 }
@@ -82,16 +100,16 @@ void CCrossSectionData::Set(MathFit::CVector &crossSection, unsigned long pointN
     m_waveLength.resize(pointNum);
     m_crossSection.resize(pointNum);
 
-    for(unsigned int k = 0; k < pointNum; ++k)
+    for (unsigned int k = 0; k < pointNum; ++k)
     {
-        const double value       = crossSection.GetAt(k);
-        this->m_crossSection[k]  = value;
+        const double value = crossSection.GetAt(k);
+        this->m_crossSection[k] = value;
     }
 }
 
 double CCrossSectionData::GetAt(unsigned int index) const
 {
-    if(index >= m_crossSection.size())
+    if (index >= m_crossSection.size())
     {
         return 0.0;
     }
@@ -108,7 +126,7 @@ unsigned long CCrossSectionData::GetSize() const
 
 double CCrossSectionData::GetWavelengthAt(unsigned int index) const
 {
-    if(index >= m_waveLength.size())
+    if (index >= m_waveLength.size())
     {
         return 0.0;
     }
@@ -116,6 +134,25 @@ double CCrossSectionData::GetWavelengthAt(unsigned int index) const
     {
         return m_waveLength.at(index);
     }
+}
+
+double CCrossSectionData::FindWavelength(double wavelength) const
+{
+    if (this->m_waveLength.size() <= 1)
+    {
+        return -1.0;
+    }
+
+    for (size_t ii = 0; ii < this->m_waveLength.size() - 1; ++ii)
+    {
+        if (m_waveLength[ii] <= wavelength && m_waveLength[ii + 1] > wavelength)
+        {
+            double alpha = (wavelength - m_waveLength[ii]) / (m_waveLength[ii + 1] - m_waveLength[ii]);
+            return ii + alpha;
+        }
+    }
+
+    return -1.0; // nothing found
 }
 
 int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
@@ -134,7 +171,7 @@ int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
     std::ifstream fileRef;
 
     fileRef.open(fileName, std::ios_base::in);
-    if(!fileRef.is_open())
+    if (!fileRef.is_open())
     {
         std::cout << "ERROR: Cannot open reference file: %s", fileName.c_str();
         return 1;
@@ -145,17 +182,17 @@ int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
     // read reference spectrum into the 'fValue's array
     const int maxSize = 65536;
     std::vector<char> tmpBuffer(maxSize);
-    while(!fileRef.eof())
+    while (!fileRef.eof())
     {
         fileRef.getline(tmpBuffer.data(), maxSize);
 
         // this construction enables us to read files with both one or two columns
         double fValue1 = 0.0;
         double fValue2 = 0.0;
-        int nColumns   = sscanf(tmpBuffer.data(), "%lf\t%lf", &fValue1, &fValue2);
+        int nColumns = sscanf(tmpBuffer.data(), "%lf\t%lf", &fValue1, &fValue2);
 
         // check so that we actually could read the data
-        if(nColumns < 1 || nColumns > 2)
+        if (nColumns < 1 || nColumns > 2)
         {
             break;
         }
@@ -201,7 +238,7 @@ int HighPassFilter(CCrossSectionData& crossSection, bool scaleToPpmm)
     mathObject.HighPassBinomial(crossSection.m_crossSection.data(), length, 500);
     mathObject.Log(crossSection.m_crossSection.data(), length);
 
-    if(!scaleToPpmm)
+    if (!scaleToPpmm)
     {
         mathObject.Div(crossSection.m_crossSection.data(), length, 2.5e15);
     }
@@ -260,7 +297,7 @@ void Resample(const CCrossSectionData& slf, double resolution, std::vector<doubl
     UniformGrid newGridForSlf;
     newGridForSlf.minValue = slf.m_waveLength.front();
     newGridForSlf.maxValue = slf.m_waveLength.back();
-    newGridForSlf.length   = 1 + (size_t)(std::round((newGridForSlf.maxValue - newGridForSlf.minValue) / resolution));
+    newGridForSlf.length = 1 + (size_t)(std::round((newGridForSlf.maxValue - newGridForSlf.minValue) / resolution));
 
     // do the resampling...
     resampledSlf.resize(newGridForSlf.length);

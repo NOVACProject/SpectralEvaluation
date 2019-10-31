@@ -11,9 +11,6 @@ namespace SpectrumIO
     class CSTDFile
     {
     public:
-        CSTDFile(void);
-        ~CSTDFile(void);
-
         /** Reads a spectrum from a STD-file. @return true if the reading succeeds. */
         static bool ReadSpectrum(CSpectrum &spec, const std::string &fileName);
 
