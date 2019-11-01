@@ -5,15 +5,6 @@
 namespace Evaluation
 {
 
-CReferenceFile::CReferenceFile()
-{
-}
-  
-CReferenceFile::~CReferenceFile()
-{
-}
-
-/** assignment operator */
 CReferenceFile &CReferenceFile::operator=(const CReferenceFile &other)
 {
     this->m_path                        = std::string(other.m_path);
@@ -66,8 +57,11 @@ CReferenceFile::CReferenceFile(const CReferenceFile& other)
     }
 }
 
+CReferenceFile::CReferenceFile(const CCrossSectionData& contents)
+{
+    this->m_data.reset(new CCrossSectionData(contents));
+}
 
-/** Setting the column */
 void CReferenceFile::SetColumn(SHIFT_TYPE option, double value, double value2)
 {
     this->m_columnOption = option;
@@ -79,7 +73,6 @@ void CReferenceFile::SetColumn(SHIFT_TYPE option, double value, double value2)
     }
 }
 
-/** Setting the shift */
 void CReferenceFile::SetShift(SHIFT_TYPE option, double value, double value2)
 {
     this->m_shiftOption = option;
@@ -91,7 +84,6 @@ void CReferenceFile::SetShift(SHIFT_TYPE option, double value, double value2)
     }
 }
 
-/** Setting the squeeze */
 void CReferenceFile::SetSqueeze(SHIFT_TYPE option, double value, double value2)
 {
     this->m_squeezeOption = option;

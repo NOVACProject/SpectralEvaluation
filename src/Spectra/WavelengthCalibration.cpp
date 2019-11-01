@@ -2,71 +2,75 @@
 #include <SpectralEvaluation/Spectra/WavelengthCalibration.h>
 #include <SpectralEvaluation/Spectra/ReferenceSpectrumConvolution.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
+#include <SpectralEvaluation/Evaluation/EvaluationBase.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/VectorUtils.h>
 #include <SpectralEvaluation/File/File.h>
 
 namespace Evaluation
 {
-    bool EstimateWavelengthToPixelMapping(
-        const std::string& measuredSpectrumFile,
-        const std::string& initialWavelengthToPixelMappingFile,
-        const std::string& solarAtlasFile,
-        SpectrometerCalibration& result)
+
+bool EstimateWavelengthToPixelMapping(
+    const WavelengthCalibrationSetup& calibrationSetup,
+    const SpectrometerCalibration& initialCalibration,
+    const CSpectrum& measuredspectrum,
+    SpectrometerCalibration& /*result*/)
+{
+    CCrossSectionData measuredCopy;
+    measuredCopy.m_waveLength = initialCalibration.wavelengthToPixelMapping;
+    measuredCopy.m_crossSection = std::vector<double>(measuredspectrum.m_data, measuredspectrum.m_data + measuredspectrum.m_length);
+
+    // TODO: we need a way to pass in the wavelength range as parameter here
+    double lambdaLow = 310.0;
+    double lambdaHigh = 320.0;
+    CCrossSectionData localSolarAtlas{ calibrationSetup.solarAtlas, lambdaLow, lambdaHigh };
+
+    // Extract the measured spectrum in this local region, saves processing time...
+    CCrossSectionData localMeasured{ measuredCopy, lambdaLow, lambdaHigh };
+
+    // Convolve the solar atlas and the references
+    CCrossSectionData convolvedSolarAtlas;
+    if (!ConvolveReference(localMeasured.m_waveLength, initialCalibration.slf, localSolarAtlas, convolvedSolarAtlas.m_crossSection))
     {
-        CSpectrum measuredSpectrum;
-        if (!FileIo::ReadSpectrum(measuredSpectrumFile, measuredSpectrum))
-        {
-            return false;
-        }
+        return false;
+    }
+    convolvedSolarAtlas.m_waveLength = initialCalibration.wavelengthToPixelMapping;
 
-        CCrossSectionData pixelToWavelengthMapping;
-        if (!FileIo::ReadCrossSectionFile(initialWavelengthToPixelMappingFile, pixelToWavelengthMapping, true))
+    std::vector<CCrossSectionData> convolvedReference;
+    convolvedReference.reserve(calibrationSetup.crossSections.size());
+    for (size_t refIdx = 0; refIdx < calibrationSetup.crossSections.size(); ++refIdx)
+    {
+        CCrossSectionData reference;
+        if (!ConvolveReference(localMeasured.m_waveLength, initialCalibration.slf, calibrationSetup.crossSections[refIdx], reference.m_crossSection))
         {
             return false;
         }
-        if (pixelToWavelengthMapping.m_waveLength.size() != (size_t)measuredSpectrum.m_length)
-        {
-            return false; // not same length
-        }
+        reference.m_waveLength = initialCalibration.wavelengthToPixelMapping;
 
-        CCrossSectionData solarAtlas;
-        if (!FileIo::ReadCrossSectionFile(solarAtlasFile, solarAtlas))
-        {
-            return false;
-        }
-        if (solarAtlas.m_waveLength.size() == 0 || solarAtlas.m_crossSection.size() == 0)
-        {
-            return false;
-        }
-
-        return EstimateWavelengthToPixelMapping(measuredSpectrum, pixelToWavelengthMapping, solarAtlas, result);
+        convolvedReference.push_back(reference);
     }
 
-    bool EstimateWavelengthToPixelMapping(const CSpectrum& /*measuredspectrum*/, const CCrossSectionData& initialWavelengthToPixelMapping, const CCrossSectionData& solarAtlas, SpectrometerCalibration& result)
+    // Setup a DOAS fit here where we fit the kurucz + high-res references against the measured spectrum.
+    CFitWindow doasFitWindow;
+    doasFitWindow.fitLow = 0; // TODO: setup properly
+    doasFitWindow.fitHigh = localMeasured.GetSize(); // TODO: setup properly
+    doasFitWindow.fitType = FIT_POLY;
+    doasFitWindow.polyOrder = 2;
+    doasFitWindow.includeIntensitySpacePolyominal = true;
+    doasFitWindow.ringCalculation = RING_CALCULATION_OPTION::CALCULATE_RING_X2;
+    doasFitWindow.specLength = (int)localMeasured.m_crossSection.size();
+    doasFitWindow.shiftSky = true;
+    doasFitWindow.ref[0] = CReferenceFile(convolvedSolarAtlas);
+    for (const CCrossSectionData xs : convolvedReference)
     {
-        CCrossSectionData convolvedReference;
-        CCrossSectionData pixelToWavelengthMapping{ initialWavelengthToPixelMapping };
-
-        double gaussianSigma = 0.7; // [nm] good initial guess for Novac Instruments.
-
-        // TODO: we need a way to pass in the wavelength range as parameter here
-        double lambdaLow = 310.0;
-        double lambdaHigh = 320.0;
-        CCrossSectionData localSolarAtlas{solarAtlas, lambdaLow, lambdaHigh};
-        CCrossSectionData localPixelToWavelenthMap{pixelToWavelengthMapping, lambdaLow, lambdaHigh};
-
-        // Generate a gaussian with high enough resolution
-        CCrossSectionData slf;
-        const double slfDeltaLambda = std::min(0.25 * Resolution(localSolarAtlas.m_waveLength), gaussianSigma * 0.125);
-        CreateGaussian(gaussianSigma, slfDeltaLambda, slf);
-
-        if (!ConvolveReference(localPixelToWavelenthMap.m_waveLength, slf, localSolarAtlas, result.wavelengthToPixelMapping))
-        {
-            return false;
-        }
-
-
-        return true;
+        doasFitWindow.ref[1] = CReferenceFile(xs);
     }
+    doasFitWindow.nRef = (int)(1 + convolvedReference.size());
+
+    CEvaluationBase doasFit{ doasFitWindow };
+    doasFit.Evaluate(localMeasured.m_crossSection.data(), localMeasured.m_crossSection.size());
+
+
+    return true;
+}
 }
