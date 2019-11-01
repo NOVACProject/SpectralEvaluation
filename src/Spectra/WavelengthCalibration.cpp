@@ -34,7 +34,7 @@ bool EstimateWavelengthToPixelMapping(
     {
         return false;
     }
-    convolvedSolarAtlas.m_waveLength = initialCalibration.wavelengthToPixelMapping;
+    convolvedSolarAtlas.m_waveLength = localMeasured.m_waveLength;
 
     std::vector<CCrossSectionData> convolvedReference;
     convolvedReference.reserve(calibrationSetup.crossSections.size());
@@ -45,7 +45,7 @@ bool EstimateWavelengthToPixelMapping(
         {
             return false;
         }
-        reference.m_waveLength = initialCalibration.wavelengthToPixelMapping;
+        reference.m_waveLength = localMeasured.m_waveLength;
 
         convolvedReference.push_back(reference);
     }
@@ -60,14 +60,14 @@ bool EstimateWavelengthToPixelMapping(
     doasFitWindow.ringCalculation = RING_CALCULATION_OPTION::CALCULATE_RING_X2;
     doasFitWindow.specLength = (int)localMeasured.m_crossSection.size();
     doasFitWindow.shiftSky = true;
-    doasFitWindow.ref[0] = CReferenceFile(convolvedSolarAtlas);
-    for (const CCrossSectionData xs : convolvedReference)
+    for (size_t ii = 0; ii < convolvedReference.size(); ++ii)
     {
-        doasFitWindow.ref[1] = CReferenceFile(xs);
+        doasFitWindow.ref[ii] = CReferenceFile(convolvedReference[ii]);
     }
-    doasFitWindow.nRef = (int)(1 + convolvedReference.size());
+    doasFitWindow.nRef = (int)convolvedReference.size();
 
     CEvaluationBase doasFit{ doasFitWindow };
+    doasFit.SetSkySpectrum(convolvedSolarAtlas);
     doasFit.Evaluate(localMeasured.m_crossSection.data(), localMeasured.m_crossSection.size());
 
 

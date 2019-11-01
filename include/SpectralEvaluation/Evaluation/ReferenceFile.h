@@ -2,11 +2,10 @@
 
 #include <memory>
 #include <string>
+#include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 
 namespace Evaluation
 {
-    class CCrossSectionData;
-
     /* the options for the shift and squeeze */
     enum SHIFT_TYPE{
         SHIFT_FREE,     /* Include the shift and squeeze in the fit */
@@ -27,15 +26,23 @@ namespace Evaluation
     class CReferenceFile
     {
     public:
-        CReferenceFile();
-        ~CReferenceFile();
+        CReferenceFile() = default;
+        ~CReferenceFile() = default;
+
+        /** Creates this reference file as an in-memory copy of the 
+            provided cross section */
+        CReferenceFile(const CCrossSectionData& contents);
 
         /** Copying this object */
-        CReferenceFile &operator=(const CReferenceFile& other);
+        CReferenceFile& operator=(const CReferenceFile& other);
         CReferenceFile(const CReferenceFile& other);
 
+        /** Moving this object */
+        CReferenceFile& operator=(CReferenceFile&& other);
+        CReferenceFile(CReferenceFile&& other);
+
         /** The name of the specie */
-        std::string   m_specieName = "";
+        std::string  m_specieName = "";
 
         /** The path to the reference file.
             This is a ready-to-use cross section on the correct wavelength grid convolved 

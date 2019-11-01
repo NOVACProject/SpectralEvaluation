@@ -20,10 +20,21 @@ class CSpectrum
 public:
     CSpectrum();
 
-    /** Copies the contents of 'spec' into this (new) spectrum. */
-    CSpectrum(const CSpectrum &spec);
+    /** Copies the contents of the spectral data into this new spectrum.
+        This will leave the m_info at default values */
+    CSpectrum(const std::vector<double>& spectralData);
 
-    // TODO: Move operators
+    /** Copies the contents of the spectral data into this new spectrum.
+        This will leave the m_info at default values */
+    CSpectrum(const std::vector<double>& wavelength, const std::vector<double>& spectralData);
+
+    // Copy operators
+    CSpectrum(const CSpectrum &other);
+    CSpectrum& operator=(const CSpectrum& other);
+
+    // Move operators
+    CSpectrum(CSpectrum&& other);
+    CSpectrum& operator=(CSpectrum&& other);
 
     // ----------------------------------------------------------------------
     // ------------------------ PUBLIC DATA ---------------------------------
@@ -177,9 +188,6 @@ public:
 
     /** Short-cut to getting the total number of spectra in this scan */
     short SpectraPerScan() const { return this->m_info.m_scanSpecNum; }
-
-    /** Assignment operator */
-    CSpectrum &operator=(const CSpectrum &s2);
 
     /** Returns true if this spectrum is dark */
     bool  IsDark() const;

@@ -7,154 +7,222 @@
 namespace Evaluation
 {
 
-    CFitWindow::CFitWindow()
+CFitWindow::CFitWindow(const CFitWindow &other)
+    : channel(other.channel),
+    fitHigh(other.fitHigh),
+    fitLow(other.fitLow),
+    fitType(other.fitType),
+    shiftSky(other.shiftSky),
+    interlaceStep(other.interlaceStep),
+    name(other.name),
+    nRef(other.nRef),
+    polyOrder(other.polyOrder),
+    includeIntensitySpacePolyominal(other.includeIntensitySpacePolyominal),
+    ringCalculation(other.ringCalculation),
+    UV(other.UV),
+    specLength(other.specLength),
+    startChannel(other.startChannel),
+    fraunhoferRef(other.fraunhoferRef),
+    findOptimalShift(other.findOptimalShift),
+    child(begin(other.child), end(other.child))
+{
+    for (int i = 0; i < other.nRef; ++i)
     {
-        Clear();
+        this->ref[i] = other.ref[i];
+    }
+}
+
+CFitWindow::CFitWindow(CFitWindow&& other)
+    : channel(other.channel),
+    fitHigh(other.fitHigh),
+    fitLow(other.fitLow),
+    fitType(other.fitType),
+    shiftSky(other.shiftSky),
+    interlaceStep(other.interlaceStep),
+    name(other.name),
+    nRef(other.nRef),
+    polyOrder(other.polyOrder),
+    includeIntensitySpacePolyominal(other.includeIntensitySpacePolyominal),
+    ringCalculation(other.ringCalculation),
+    UV(other.UV),
+    specLength(other.specLength),
+    startChannel(other.startChannel),
+    fraunhoferRef(other.fraunhoferRef),
+    findOptimalShift(other.findOptimalShift),
+    child(begin(other.child), end(other.child))
+{
+    for (int i = 0; i < other.nRef; ++i)
+    {
+        this->ref[i] = std::move(other.ref[i]);
+    }
+}
+
+CFitWindow &CFitWindow::operator=(const CFitWindow &other)
+{
+    this->channel = other.channel;
+    this->fitHigh = other.fitHigh;
+    this->fitLow = other.fitLow;
+    this->fitType = other.fitType;
+    this->shiftSky = other.shiftSky;
+    this->interlaceStep = other.interlaceStep;
+    this->name = other.name;
+    this->nRef = other.nRef;
+    this->polyOrder = other.polyOrder;
+    this->includeIntensitySpacePolyominal = other.includeIntensitySpacePolyominal;
+    this->ringCalculation = other.ringCalculation;
+    this->UV = other.UV;
+    this->specLength = other.specLength;
+    this->startChannel = other.startChannel;
+
+    for (int i = 0; i < other.nRef; ++i)
+    {
+        this->ref[i] = other.ref[i];
+    }
+    this->fraunhoferRef = other.fraunhoferRef;
+    this->findOptimalShift = other.findOptimalShift;
+    this->child = std::vector<CFitWindow>(begin(other.child), end(other.child));
+    return *this;
+}
+
+CFitWindow &CFitWindow::operator=(CFitWindow&& other)
+{
+    this->channel = other.channel;
+    this->fitHigh = other.fitHigh;
+    this->fitLow = other.fitLow;
+    this->fitType = other.fitType;
+    this->shiftSky = other.shiftSky;
+    this->interlaceStep = other.interlaceStep;
+    this->name = std::move(other.name);
+    this->nRef = other.nRef;
+    this->polyOrder = other.polyOrder;
+    this->includeIntensitySpacePolyominal = other.includeIntensitySpacePolyominal;
+    this->ringCalculation = other.ringCalculation;
+    this->UV = other.UV;
+    this->specLength = other.specLength;
+    this->startChannel = other.startChannel;
+
+    for (int i = 0; i < other.nRef; ++i)
+    {
+        this->ref[i] = std::move(other.ref[i]);
+    }
+    this->fraunhoferRef = other.fraunhoferRef;
+    this->findOptimalShift = other.findOptimalShift;
+    this->child = std::move(other.child);
+
+    return *this;
+}
+
+void CFitWindow::Clear()
+{
+    fitHigh = 460;
+    fitLow = 320;
+    channel = 0;
+    specLength = 2048;
+    startChannel = 0;
+    fitType = FIT_HP_DIV;
+    shiftSky = true;
+    interlaceStep = 1;
+    name = "SO2";
+    nRef = 0;
+    polyOrder = 5;
+    ringCalculation = RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING;
+    includeIntensitySpacePolyominal = false;
+    UV = true;
+    for (int i = 0; i < MAX_N_REFERENCES; ++i)
+    {
+        ref[i].m_path = "";
+        ref[i].m_specieName = "";
     }
 
-    CFitWindow::CFitWindow(const CFitWindow &wnd)
-    {
-        *this = wnd;
-    }
+    child.clear();
 
-    CFitWindow &CFitWindow::operator =(const CFitWindow &w2)
-    {
-        this->channel = w2.channel;
-        this->fitHigh = w2.fitHigh;
-        this->fitLow = w2.fitLow;
-        this->fitType = w2.fitType;
-        this->shiftSky = w2.shiftSky;
-        this->interlaceStep = w2.interlaceStep;
-        this->name = std::string(w2.name);
-        this->nRef = w2.nRef;
-        this->polyOrder = w2.polyOrder;
-        this->includeIntensitySpacePolyominal = w2.includeIntensitySpacePolyominal;
-        this->ringCalculation = w2.ringCalculation;
-        this->UV = w2.UV;
-        this->specLength = w2.specLength;
-        this->startChannel = w2.startChannel;
+    fraunhoferRef.m_path = "";
+    fraunhoferRef.m_specieName = "SolarSpec";
+    findOptimalShift = false;
+}
 
-        for (int i = 0; i < w2.nRef; ++i)
+bool ReadReferences(CFitWindow& window)
+{
+    // For each reference in the fit-window, read it in and make sure that it exists...
+    for (int referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
+    {
+        // Read in the cross section
+        if (window.ref[referenceIndex].ReadCrossSectionDataFromFile())
         {
-            this->ref[i] = w2.ref[i];
+            std::cout << "Failed to read cross section file: " << window.ref[referenceIndex].m_path.c_str() << std::endl;
+            return false;
         }
-        this->fraunhoferRef = w2.fraunhoferRef;
-        this->findOptimalShift = w2.findOptimalShift;
-        this->child = std::vector<CFitWindow>(begin(w2.child), end(w2.child));
-        return *this;
     }
 
-    void CFitWindow::Clear()
+    if (window.fraunhoferRef.m_path.size() > 4)
     {
-        fitHigh = 460;
-        fitLow = 320;
-        channel = 0;
-        specLength = 2048;
-        startChannel = 0;
-        fitType = FIT_HP_DIV;
-        shiftSky = true;
-        interlaceStep = 1;
-        name = "SO2";
-        nRef = 0;
-        polyOrder = 5;
-        ringCalculation = RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING;
-        includeIntensitySpacePolyominal = false;
-        UV = true;
-        for (int i = 0; i < MAX_N_REFERENCES; ++i)
+        if (window.fraunhoferRef.ReadCrossSectionDataFromFile())
         {
-            ref[i].m_path = "";
-            ref[i].m_specieName = "";
+            std::cout << "Failed to read Fraunhofer reference file: " << window.fraunhoferRef.m_path.c_str() << std::endl;
+            return false;
         }
-
-        child.clear();
-
-        fraunhoferRef.m_path = "";
-        fraunhoferRef.m_specieName = "SolarSpec";
-        findOptimalShift = false;
     }
 
-    bool ReadReferences(CFitWindow& window)
+    // If children are defined, then read them as well
+    for (CFitWindow& c : window.child)
     {
-        // For each reference in the fit-window, read it in and make sure that it exists...
-        for (int referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
+        ReadReferences(c);
+    }
+
+    return true;
+}
+
+void HighPassFilterReferences(CFitWindow& window)
+{
+    // If children are defined, then handle them as well
+    for (CFitWindow& c : window.child)
+    {
+        HighPassFilterReferences(c);
+    }
+
+    if (window.fitType != Evaluation::FIT_HP_DIV && window.fitType != Evaluation::FIT_HP_SUB)
+    {
+        return;
+    }
+
+    for (int referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
+    {
+        // Local handle for more convenient syntax.
+        CReferenceFile& thisReference = window.ref[referenceIndex];
+
+        if (!thisReference.m_isFiltered)
         {
-            // Read in the cross section
-            if (window.ref[referenceIndex].ReadCrossSectionDataFromFile())
+            if (EqualsIgnoringCase(thisReference.m_specieName, "ring"))
             {
-                std::cout << "Failed to read cross section file: " << window.ref[referenceIndex].m_path.c_str() << std::endl;
-                return false;
+                HighPassFilter_Ring(*thisReference.m_data);
+            }
+            else
+            {
+                HighPassFilter(*thisReference.m_data);
             }
         }
-
-        if (window.fraunhoferRef.m_path.size() > 4)
-        {
-            if (window.fraunhoferRef.ReadCrossSectionDataFromFile())
-            {
-                std::cout << "Failed to read Fraunhofer reference file: " << window.fraunhoferRef.m_path.c_str() << std::endl;
-                return false;
-            }
-        }
-
-        // If children are defined, then read them as well
-        for (CFitWindow& c : window.child)
-        {
-            ReadReferences(c);
-        }
-
-        return true;
     }
+}
 
-    void HighPassFilterReferences(CFitWindow& window)
+void ScaleReferencesToMolecCm2(CFitWindow& window)
+{
+    // If children are defined, then handle them as well
+    for (CFitWindow& c : window.child)
     {
-        // If children are defined, then handle them as well
-        for (CFitWindow& c : window.child)
-        {
-            HighPassFilterReferences(c);
-        }
-
-        if (window.fitType != Evaluation::FIT_HP_DIV && window.fitType != Evaluation::FIT_HP_SUB)
-        {
-            return;
-        }
-
-        for (int referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
-        {
-            // Local handle for more convenient syntax.
-            CReferenceFile& thisReference = window.ref[referenceIndex];
-
-            if (!thisReference.m_isFiltered)
-            {
-                if (EqualsIgnoringCase(thisReference.m_specieName, "ring"))
-                {
-                    HighPassFilter_Ring(*thisReference.m_data);
-                }
-                else
-                {
-                    HighPassFilter(*thisReference.m_data);
-                }
-            }
-        }
+        ScaleReferencesToMolecCm2(c);
     }
 
-    void ScaleReferencesToMolecCm2(CFitWindow& window)
+    for (int referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
     {
-        // If children are defined, then handle them as well
-        for (CFitWindow& c : window.child)
-        {
-            ScaleReferencesToMolecCm2(c);
-        }
+        // Local handle for more convenient syntax.
+        CReferenceFile& thisReference = window.ref[referenceIndex];
 
-        for (int referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
+        if (thisReference.m_isFiltered)
         {
-            // Local handle for more convenient syntax.
-            CReferenceFile& thisReference = window.ref[referenceIndex];
-
-            if (thisReference.m_isFiltered)
-            {
-                // Convert from ppmm to moleculues / cm2
-                Multiply(*thisReference.m_data, (1.0 / 2.5e15));
-            }
+            // Convert from ppmm to moleculues / cm2
+            Multiply(*thisReference.m_data, (1.0 / 2.5e15));
         }
     }
+}
 
 }

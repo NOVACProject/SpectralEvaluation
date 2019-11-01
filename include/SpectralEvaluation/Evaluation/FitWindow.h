@@ -31,12 +31,14 @@ namespace Evaluation
     class CFitWindow
     {
     public:
-        CFitWindow();
+        CFitWindow() = default;
+        ~CFitWindow() = default;
 
-        CFitWindow &operator=(const CFitWindow &w2);
-        CFitWindow(const CFitWindow &wnd);
+        CFitWindow& operator=(const CFitWindow& other);
+        CFitWindow(const CFitWindow& other);
 
-        // TODO: Move operators
+        CFitWindow& operator=(CFitWindow&& other);
+        CFitWindow(CFitWindow&& other);
 
         /** The lower edge of the fit window (in pixels) */
         int fitLow = 320;
@@ -97,7 +99,7 @@ namespace Evaluation
 
         /** true if the sky-spectrum should be allowed to shift.
                 only useful if fitType is FIT_HP_SUB or FIT_POLY */
-        int shiftSky;
+        int shiftSky = 0;
 
         /** Larger than 1 if the spectra are read out in an interlaced way.
             This parameter works in the same way as the CSpectrumInfo::m_interlaceStep */

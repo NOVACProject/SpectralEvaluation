@@ -10,14 +10,51 @@
 #undef min
 #undef max
 
-CSpectrum::CSpectrum(void)
+CSpectrum::CSpectrum()
+    : m_length(0)
 {
-    // reset everything 
     memset(m_data, 0, sizeof(double) * MAX_SPECTRUM_LENGTH);
-    m_length = 0;
+}
+
+CSpectrum::CSpectrum(const std::vector<double>& spectralData)
+    : m_length((long)spectralData.size())
+{
+    memcpy(this->m_data, spectralData.data(), sizeof(double) * std::min(spectralData.size(), (size_t)MAX_SPECTRUM_LENGTH));
+}
+
+CSpectrum::CSpectrum(const std::vector<double>& wavelength, const std::vector<double>& spectralData)
+    : m_length((long)spectralData.size()),
+    m_wavelength{ begin(wavelength), end(wavelength) }
+{
+    memcpy(this->m_data, spectralData.data(), sizeof(double) * std::min(spectralData.size(), (size_t)MAX_SPECTRUM_LENGTH));
 }
 
 CSpectrum::CSpectrum(const CSpectrum& other)
+    : m_info(other.m_info),
+    m_length(other.m_length)
+{
+    memcpy(this->m_data, &other.m_data, sizeof(double) * MAX_SPECTRUM_LENGTH);
+
+    if (other.m_wavelength.size() > 0)
+    {
+        this->m_wavelength = std::vector<double>(begin(other.m_wavelength), end(other.m_wavelength));
+    }
+}
+
+CSpectrum::CSpectrum(CSpectrum&& other)
+    : m_info(std::move(other.m_info)),
+    m_length(other.m_length)
+{
+    // this still has to be copied
+    memcpy(this->m_data, &other.m_data, sizeof(double) * MAX_SPECTRUM_LENGTH);
+
+    if (other.m_wavelength.size() > 0)
+    {
+        this->m_wavelength = std::move(other.m_wavelength);
+    }
+}
+
+CSpectrum& CSpectrum::operator=(const CSpectrum& other)
 {
     this->m_info = other.m_info;
     this->m_length = other.m_length;
@@ -27,6 +64,24 @@ CSpectrum::CSpectrum(const CSpectrum& other)
     {
         this->m_wavelength = std::vector<double>(begin(other.m_wavelength), end(other.m_wavelength));
     }
+
+    return *this;
+}
+
+CSpectrum& CSpectrum::operator=(CSpectrum&& other)
+{
+    this->m_info = std::move(other.m_info);
+    this->m_length = other.m_length;
+
+    // This still has to be copied..
+    memcpy(this->m_data, &other.m_data, sizeof(double) * MAX_SPECTRUM_LENGTH);
+
+    if (other.m_wavelength.size() > 0)
+    {
+        this->m_wavelength = std::move(other.m_wavelength);
+    }
+
+    return *this;
 }
 
 int CSpectrum::AssertRange(long &fromPixel, long &toPixel) const
@@ -166,15 +221,6 @@ int CSpectrum::PixelwiseOperation(const double value, double f(double, double))
     }
 
     return 0;
-}
-
-CSpectrum &CSpectrum::operator =(const CSpectrum &s2)
-{
-    this->m_length = std::min(s2.m_length, long(MAX_SPECTRUM_LENGTH));
-    this->m_length = std::max(this->m_length, 0L);
-    this->m_info = s2.m_info;
-    memcpy(m_data, s2.m_data, sizeof(double) * m_length);
-    return *this;
 }
 
 double CSpectrum::GetOffset() const
