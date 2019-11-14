@@ -247,10 +247,10 @@ int CEvaluationBase::SetSkySpectrum(const CSpectrum &spec)
     {
         sky.m_waveLength = spec.m_wavelength;
     }
-    return SetSkySpectrum(sky);
+    return SetSkySpectrum(sky, true);
 }
 
-int CEvaluationBase::SetSkySpectrum(const CCrossSectionData& spec)
+int CEvaluationBase::SetSkySpectrum(const CCrossSectionData& spec, bool removeOffset)
 {
     // make sure that these make sense
     if (m_window.specLength != (int)spec.GetSize())
@@ -260,11 +260,13 @@ int CEvaluationBase::SetSkySpectrum(const CCrossSectionData& spec)
 
     // set the data
     m_sky = spec;
-    // m_sky = std::vector<double>(spec.m_data, spec.m_data + spec.m_length);
 
     // --------- prepare the sky spectrum for evaluation ---------
     // Remove any remaining offset of the sky-spectrum
-    RemoveOffset(m_sky.m_crossSection.data(), m_sky.GetSize(), m_window.UV);
+    if (removeOffset)
+    {
+        RemoveOffset(m_sky.m_crossSection.data(), m_sky.GetSize(), m_window.UV);
+    }
 
     if (m_window.fitType == FIT_HP_SUB)
     {
@@ -337,16 +339,14 @@ void CEvaluationBase::CreateReferenceForIntensitySpacePolynomial(const std::vect
     yValues.SetSize((int)I0.size());
     for (int k = 0; k < (int)I0.size(); ++k)
     {
-        yValues.SetAt(k, 1.0 / I0[k]);
+        yValues.SetAt(k, std::abs(I0[k]) < std::numeric_limits<double>::epsilon() ? 0.0 : 1.0 / I0[k]);
     }
 
+    auto tempXVec = vXData.SubVector(0, (int)I0.size());
+    if (!m_intensitySpacePolynomial->SetData(tempXVec, yValues))
     {
-        auto tempXVec = vXData.SubVector(0, (int)I0.size());
-        if (!m_intensitySpacePolynomial->SetData(tempXVec, yValues))
-        {
-            Error0("Error initializing spline object!");
-            return;
-        }
+        Error0("Error initializing spline object!");
+        return;
     }
 
     // Don't shift / squeeze this reference...
@@ -366,7 +366,6 @@ void CEvaluationBase::CreateReferenceForSkySpectrum()
     // set the spectral data of the reference spectrum to the object. This also causes an internal
     // transformation of the spectral data into a B-Spline that will be used to interpolate the
     // reference spectrum during shift and squeeze operations
-    //if(!ref[i]->SetData(vXData.SubVector(0, m_referenceData[i].GetSize()), m_referenceData[i]))
     CVector yValues;
     yValues.Copy(m_sky.m_crossSection.data(), m_sky.GetSize());
 
@@ -393,11 +392,19 @@ void CEvaluationBase::CreateReferenceForSkySpectrum()
         m_skyReference->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
     }
 
+    if (m_ringSpectrum != nullptr)
+    {
+        m_ringSpectrum->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_skyReference, CReferenceSpectrumFunction::SHIFT);
+        m_ringSpectrum->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_skyReference, CReferenceSpectrumFunction::SQUEEZE);
+    }
+
     if (m_ringSpectrumLambda4 != nullptr)
     {
-        // TODO: Is this a good option ?
-        m_ringSpectrumLambda4->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
-        m_ringSpectrumLambda4->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
+        m_ringSpectrumLambda4->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_skyReference, CReferenceSpectrumFunction::SHIFT);
+        m_ringSpectrumLambda4->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_skyReference, CReferenceSpectrumFunction::SQUEEZE);
+
+        // m_ringSpectrumLambda4->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
+        // m_ringSpectrumLambda4->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
     }
 }
 
@@ -423,9 +430,8 @@ void CEvaluationBase::CreateReferenceForRingSpectrum(const CSpectrum& ring)
         return;
     }
 
-    // TODO: Is this a good option ?
-    m_ringSpectrum->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
-    m_ringSpectrum->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
+    // m_ringSpectrum->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
+    // m_ringSpectrum->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
 }
 
 void CEvaluationBase::CreateReferenceForRingSpectrumLambda4(const CSpectrum& ring)
@@ -448,18 +454,12 @@ void CEvaluationBase::CreateReferenceForRingSpectrumLambda4(const CSpectrum& rin
         yValues.SetAt((int)ii, ring.m_data[ii] * std::pow(lambda, 4.0));
     }
 
+    auto tempXVec = vXData.SubVector(0, (int)ring.m_length);
+    if (!m_ringSpectrumLambda4->SetData(tempXVec, yValues))
     {
-        auto tempXVec = vXData.SubVector(0, (int)ring.m_length);
-        if (!m_ringSpectrumLambda4->SetData(tempXVec, yValues))
-        {
-            Error0("Error initializing spline object!");
-            return;
-        }
+        Error0("Error initializing spline object!");
+        return;
     }
-
-    // TODO: Is this a good option ?
-    m_ringSpectrumLambda4->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
-    m_ringSpectrumLambda4->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
 }
 
 void CEvaluationBase::SaveResidual(CStandardFit& cFirstFit)
@@ -528,7 +528,7 @@ int CEvaluationBase::Evaluate(const double* measured, size_t measuredLength, int
     vMeas.Copy(measArray.data(), m_window.specLength, 1);
 
     // To perform the fit we need to extract the wavelength (or pixel)
-    //	information from the vXData-vector
+    //  information from the vXData-vector
     CVector vXSec(fitHigh - fitLow);
     vXSec.Copy(vXData.SubVector(fitLow, fitHigh - fitLow));
 

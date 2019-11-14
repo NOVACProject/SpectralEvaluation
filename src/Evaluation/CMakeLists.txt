@@ -17,6 +17,7 @@ set(SPECTRUM_EVALUATION_HEADERS
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/ReferenceFile.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/ReferenceFitResult.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/ScanEvaluationBase.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/WavelengthFit.h
     PARENT_SCOPE)
 
 
@@ -33,4 +34,5 @@ set(SPECTRUM_EVALUATION_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/ReferenceFile.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ReferenceFitResult.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ScanEvaluationBase.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/WavelengthFit.cpp
     PARENT_SCOPE)

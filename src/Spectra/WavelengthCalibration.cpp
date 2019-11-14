@@ -2,7 +2,7 @@
 #include <SpectralEvaluation/Spectra/WavelengthCalibration.h>
 #include <SpectralEvaluation/Spectra/ReferenceSpectrumConvolution.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
-#include <SpectralEvaluation/Evaluation/EvaluationBase.h>
+#include <SpectralEvaluation/Evaluation/WavelengthFit.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/VectorUtils.h>
 #include <SpectralEvaluation/File/File.h>
@@ -66,10 +66,11 @@ bool EstimateWavelengthToPixelMapping(
     }
     doasFitWindow.nRef = (int)convolvedReference.size();
 
-    CEvaluationBase doasFit{ doasFitWindow };
+    /*
+    CWavelengthFit doasFit{ doasFitWindow };
     doasFit.SetSkySpectrum(convolvedSolarAtlas);
     doasFit.Evaluate(localMeasured.m_crossSection.data(), localMeasured.m_crossSection.size());
-
+    */
 
     return true;
 }

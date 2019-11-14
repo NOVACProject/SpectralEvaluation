@@ -63,7 +63,7 @@ public:
     /** Sets the sky-spectrum to use. This will be used in the upcoming evaluations.
         The provided spectrum must have been corrected for dark. */
     int SetSkySpectrum(const CSpectrum& spec);
-    int SetSkySpectrum(const CCrossSectionData& spec);
+    int SetSkySpectrum(const CCrossSectionData& spec, bool removeOffset = false);
 
     /** Evaluate using the parameters set in the local parameter 'm_window'
             and using the sky-spectrum which has been set by a previous call to 'SetSkySpectrum'
@@ -102,8 +102,6 @@ public:
         the sky-spectrum is included in the fit or an offset polynomial is included */
     size_t NumberOfReferencesFitted() const { return m_ref.size(); }
 
-protected:
-
     // The CReferenceSpectrumFunctions are used in the evaluation process to model
     // the reference spectra for the different species that are being fitted.
     //  The vector must hold pointers to the references, as these cannot be copied...
@@ -125,6 +123,8 @@ protected:
     // If a calculated ring spectrum scaled by lamda^4 is to be included in the evaluation 
     //  then this represents the reference-spectrum of that ring.
     CReferenceSpectrumFunction* m_ringSpectrumLambda4 = nullptr;
+
+protected:
 
     /** The sky spectrum to use in the evaluations.
         This is set by calling 'SetSkySpectrum' which must be called prior to calling 'Evaluate' */
