@@ -2,6 +2,7 @@
 
 #include "../Defintions.h"
 #include <vector>
+#include <string>
 
 /** The class <b>CPlumeInScanProperty</b> is used to describe
     how a plume is seen by a scan. This incorporates properties
