@@ -100,7 +100,8 @@ namespace MathFit
 		*/
 		virtual bool RemoveOperand(IParamFunction& ipfRef)
 		{
-			for(int i = 0; i < mOperandsCount; i++)
+            int i;
+			for(i = 0; i < mOperandsCount; i++)
             {
                 if(mOperands[i] == &ipfRef)
 				{
