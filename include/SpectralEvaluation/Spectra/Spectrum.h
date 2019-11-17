@@ -57,7 +57,7 @@ public:
     // -------------------------- PROPERTIES --------------------------------
     // ----------------------------------------------------------------------
 
-    bool IsWavelengthValid() const { return m_wavelength.size() == m_length; }
+    bool IsWavelengthValid() const { return m_wavelength.size() == (size_t)m_length; }
 
     // ----------------------------------------------------------------------
     // ----------------------- PUBLIC METHODS -------------------------------
