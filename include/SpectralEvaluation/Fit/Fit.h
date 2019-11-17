@@ -39,7 +39,7 @@ namespace MathFit
 		* @param ipmLinear		The minimizer object to be used for linear fitting.
 		* @param ipmNonlinear	The minimizer object used for nonlinear fitting.
 		*/
-		CFit(IParamFunction& ipfModel, IMinimizer& ipmLinear, IMinimizer& ipmNonlinear) : IMinimizer(ipfModel), mMinimizer(ipmNonlinear), mLinearMinimizer(ipmLinear)
+		CFit(IParamFunction& ipfModel, IMinimizer& ipmLinear, IMinimizer& ipmNonlinear) : IMinimizer(ipfModel), mLinearMinimizer(ipmLinear), mMinimizer(ipmNonlinear)
 		{
 		}
 
@@ -164,13 +164,13 @@ namespace MathFit
 
 	private:
 		/**
-		* The nonlinear minimizer object.
-		*/
-		IMinimizer& mMinimizer;
-		/**
 		* The linear minimizer object.
 		*/
 		IMinimizer& mLinearMinimizer;
+		/**
+		* The nonlinear minimizer object.
+		*/
+		IMinimizer& mMinimizer;
 	};
 }
 
