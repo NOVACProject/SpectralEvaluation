@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+
+/** CGPSData represents a location on the Earth */
 class CGPSData
 {
 public:
@@ -27,4 +30,21 @@ public:
     /* The GPS reports latitude and longitude in the format ddmm.mmmm
             this function converts this to the format dd.dddd */
     static double DoubleToAngle(double rawData);
+};
+
+/** CNamedLocation corresponds to a location with a given name.
+    Commonly used to pin-point the peak of a volcano (with the name of the volcano). */
+class CNamedLocation : public CGPSData
+{
+public:
+    CNamedLocation() : CGPSData() { }
+
+    CNamedLocation(double lat, double lon, double alt, const std::string& name);
+
+    /** The name given to this location */
+    std::string m_name;
+
+    CNamedLocation(const CNamedLocation &gps2);
+    CNamedLocation &operator=(const CNamedLocation &gps2);
+
 };
