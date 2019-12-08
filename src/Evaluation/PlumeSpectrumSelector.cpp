@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <cstdio>
 
 #include <SpectralEvaluation/Evaluation/PlumeSpectrumSelector.h>
 #include <SpectralEvaluation/File/ScanFileHandler.h>
@@ -12,14 +13,14 @@ using namespace Evaluation;
 std::string FormatDate(const CSpectrumInfo& spectrumInfo)
 {
     char buffer[64];
-    sprintf_s(buffer, 64, "%04d%02d%02d", spectrumInfo.m_startTime.year, spectrumInfo.m_startTime.month, spectrumInfo.m_startTime.day);
+    snprintf(buffer, 64, "%04d%02d%02d", spectrumInfo.m_startTime.year, spectrumInfo.m_startTime.month, spectrumInfo.m_startTime.day);
     return std::string(buffer);
 }
 
 std::string FormatTimestamp(const CDateTime& time)
 {
     char buffer[64];
-    sprintf_s(buffer, 64, "%02d%02d%02d", (int)time.hour, (int)time.minute, (int)time.second);
+    snprintf(buffer, 64, "%02d%02d%02d", (int)time.hour, (int)time.minute, (int)time.second);
     return std::string(buffer);
 }
 
@@ -80,7 +81,7 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
         referenceSpectrum.m_info.m_scanIndex = 2;
 
         std::stringstream spectrumOutputFileName;
-        spectrumOutputFileName << outputDirectory << "/" << darkSpectrum.m_info.m_device;
+        spectrumOutputFileName << outputDirectory << "/PlumeSpectra_" << darkSpectrum.m_info.m_device;
         spectrumOutputFileName << "_" << FormatDate(skySpectrum.m_info);
         spectrumOutputFileName << "_" << FormatTimestamp(skySpectrum.m_info.m_startTime);
         spectrumOutputFileName << "_0.pak";
@@ -90,54 +91,39 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
         spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), darkSpectrum);
         spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), inPlumeSpectrum);
 
-        std::stringstream xmlOutputFileName;
-        xmlOutputFileName << outputDirectory << "/" << darkSpectrum.m_info.m_device;
-        xmlOutputFileName << "_" << FormatDate(skySpectrum.m_info);
-        xmlOutputFileName << "_" << FormatTimestamp(skySpectrum.m_info.m_startTime);
-        xmlOutputFileName << "_0.xml";
+        std::stringstream textOutputFileName;
+        textOutputFileName << outputDirectory << "/PlumeSpectra_" << darkSpectrum.m_info.m_device;
+        textOutputFileName << "_" << FormatDate(skySpectrum.m_info);
+        textOutputFileName << "_" << FormatTimestamp(skySpectrum.m_info.m_startTime);
+        textOutputFileName << "_0.txt";
 
-        std::ofstream xmlOutput(xmlOutputFileName.str());
-        xmlOutput << "<?xml version=\"1.0\" encoding=\"ISO - 8859 - 1\"?>" << std::endl;
-        xmlOutput << "<!-- This file shows the selected in-plume and out-of-plume spectra in one scan. -->" << std::endl;
-        xmlOutput << "<inPlume>" << std::endl;
+        std::ofstream textOutput(textOutputFileName.str());
+        textOutput << "InPlume: " << std::endl;
         for (size_t idx : inPlumeSpectrumIndices)
         {
             CSpectrum spectrum;
             originalScanFile.GetSpectrum(spectrum, (long)idx);
-            xmlOutput << "\t<spectrum>" << std::endl;
-            xmlOutput << "\t\t<index>" << idx << "</index>" << std::endl;
-            xmlOutput << "\t\t<scanAngle>" << spectrum.m_info.m_scanAngle << "</scanAngle>" << std::endl;
-            xmlOutput << "\t\t<starttime>" << FormatTimestamp(spectrum.m_info.m_startTime) << "</starttime>" << std::endl;
-            xmlOutput << "\t</spectrum>" << std::endl;
+            textOutput << idx << "\t" << spectrum.m_info.m_scanAngle << "\t" << FormatTimestamp(spectrum.m_info.m_startTime) << std::endl;
         }
-        xmlOutput << "</inPlume>" << std::endl;
+        textOutput << std::endl;
 
-        xmlOutput << "<reference>" << std::endl;
+        textOutput << "Reference: " << std::endl;
         for (size_t idx : referenceSpectrumIndices)
         {
             CSpectrum spectrum;
             originalScanFile.GetSpectrum(spectrum, (long)idx);
-            xmlOutput << "\t<spectrum>" << std::endl;
-            xmlOutput << "\t\t<index>" << idx << "</index>" << std::endl;
-            xmlOutput << "\t\t<scanAngle>" << spectrum.m_info.m_scanAngle << "</scanAngle>" << std::endl;
-            xmlOutput << "\t\t<starttime>" << FormatTimestamp(spectrum.m_info.m_startTime) << "</starttime>" << std::endl;
-            xmlOutput << "\t</spectrum>" << std::endl;
+            textOutput << idx << "\t" << spectrum.m_info.m_scanAngle << "\t" << FormatTimestamp(spectrum.m_info.m_startTime) << std::endl;
         }
-        xmlOutput << "</reference>" << std::endl;
+        textOutput << std::endl;
 
-        xmlOutput << "<plumeProperties>" << std::endl;
-        xmlOutput << "\t<completeness>" << properties.completeness << "</completeness>" << std::endl;
-        xmlOutput << "\t<center>" << properties.plumeCenter << "</center>" << std::endl;
-        xmlOutput << "\t<offset>" << properties.offset << "</offset>" << std::endl;
-        xmlOutput << "\t<edge>" << std::endl;
-        xmlOutput << "\t\t<low>" << properties.plumeEdgeLow << "</low>" << std::endl;
-        xmlOutput << "\t\t<high>" << properties.plumeEdgeHigh << "</high>" << std::endl;
-        xmlOutput << "\t</edge>" << std::endl;
-        xmlOutput << "\t<hwhm>" << std::endl;
-        xmlOutput << "\t\t<low>" << properties.plumeHalfLow << "</low>" << std::endl;
-        xmlOutput << "\t\t<high>" << properties.plumeHalfHigh << "</high>" << std::endl;
-        xmlOutput << "\t</hwhm>" << std::endl;
-        xmlOutput << "</plumeProperties>" << std::endl;
+        textOutput << "Plume Properties: " << std::endl;
+        textOutput << "  Completeness: " << properties.completeness << std::endl;
+        textOutput << "  Center: " << properties.plumeCenter << std::endl;
+        textOutput << "  Offset: " << properties.offset << std::endl;
+        textOutput << "  Low Edge: " << properties.plumeEdgeLow << std::endl;
+        textOutput << "  High Edge: " << properties.plumeEdgeHigh << std::endl;
+        textOutput << "  HWHM Low: " << properties.plumeHalfLow << std::endl;
+        textOutput << "  HWHM High: " << properties.plumeHalfHigh << std::endl;
     }
 }
 

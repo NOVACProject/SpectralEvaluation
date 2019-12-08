@@ -816,22 +816,24 @@ namespace MathFit
 
 			CMatrix mRes(mSizeY, mSizeY);
 
-			int i, j;
-			for(i = 0; i < mSizeY; i++)
-				for(j = 0; j < mSizeY; j++)
+			for(int i = 0; i < mSizeY; i++)
+            {
+                for(int j = 0; j < mSizeY; j++)
 				{
-					int k;
 					TFitData fSum = 0;
-					for(k = 0; k < mSizeX; k++)
-						fSum += GetAt(i, k) * mOperant.GetAt(k, j);
+					for(int k = 0; k < mSizeX; k++)
+                    {
+                        fSum += GetAt(i, k) * mOperant.GetAt(k, j);
+                    }
 					mRes.SetAt(i, j, fSum);
 				}
+            }
 
-				// get data from temporary object
-				Attach(mRes);
-				mRes.Detach();
+            // get data from temporary object
+            Attach(mRes);
+            mRes.Detach();
 
-				return *this;
+            return *this;
 		}
 
 		/**
@@ -1378,27 +1380,32 @@ namespace MathFit
 			CMatrix mNew(mSizeX, mSizeX);
 
 			// fill in the upper diagonal matrix
-
-			int iRow, iCol;
-			for(iRow = 0; iRow < mSizeX; iRow++)
-				for(iCol = iRow; iCol < mSizeX; iCol++)
+			for(int iRow = 0; iRow < mSizeX; iRow++)
+            {
+                for(int iCol = iRow; iCol < mSizeX; iCol++)
 				{
 					TFitData fSum = 0;
-					int k;
-					for(k = 0; k < mSizeY; k++)
-						fSum += GetAt(k, iRow) * GetAt(k, iCol);
+					for(int k = 0; k < mSizeY; k++)
+					{
+                        fSum += GetAt(k, iRow) * GetAt(k, iCol);
+                    }
 					mNew.SetAt(iRow, iCol, fSum);
 				}
+            }
 
-				// now we have to fill in the lowe matrix
-				for(iRow = 0; iRow < mSizeX; iRow++)
-					for(iCol = iRow; iCol < mSizeX; iCol++)
-						mNew.SetAt(iCol, iRow, mNew.GetAt(iRow, iCol));
+            // now we have to fill in the lowe matrix
+            for(int iRow = 0; iRow < mSizeX; iRow++)
+            {
+                for(int iCol = iRow; iCol < mSizeX; iCol++)
+                {
+                    mNew.SetAt(iCol, iRow, mNew.GetAt(iRow, iCol));
+                }
+            }
+            
+            Attach(mNew);
+            mNew.Detach();
 
-				Attach(mNew);
-				mNew.Detach();
-
-				return *this;
+            return *this;
 		}
 
 		/**
