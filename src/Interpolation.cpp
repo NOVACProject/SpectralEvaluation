@@ -15,6 +15,39 @@ bool LinearInterpolation(const std::vector<float>& values, double index, double&
     return true;
 }
 
+double Stdev(const std::vector<double>& values, double average)
+{
+    if (values.size() <= 1)
+    {
+        return 0.0;
+    }
+    double diff = (values[0] - average) * (values[0] - average);
+    for (size_t ii = 1; ii < values.size(); ++ii)
+    {
+        diff += (values[ii] - average) * (values[ii] - average);
+    }
+    return std::sqrt(diff / (values.size() - 1));
+}
+
+// Calculates the standard deviation of a vector of eight values.
+double Stdev8(const std::vector<double>& values, double average)
+{
+    double diff0 = (values[0] - average) * (values[0] - average);
+    double diff1 = (values[1] - average) * (values[1] - average);
+    double diff2 = (values[2] - average) * (values[2] - average);
+    double diff3 = (values[3] - average) * (values[3] - average);
+
+    diff0 += (values[4] - average) * (values[4] - average);
+    diff1 += (values[5] - average) * (values[5] - average);
+    diff2 += (values[6] - average) * (values[6] - average);
+    diff3 += (values[7] - average) * (values[7] - average);
+
+    diff0 += diff1;
+    diff2 += diff3;
+
+    return std::sqrt((diff0 + diff2) / 7.0);
+}
+
 bool TriLinearInterpolation(const std::vector<double>& values, const std::vector<double>& index, double& result)
 {
     double ignoredValue;
@@ -23,7 +56,7 @@ bool TriLinearInterpolation(const std::vector<double>& values, const std::vector
 
 bool TriLinearInterpolation(const std::vector<double>& values, const std::vector<double>& index, double& result, double& estimatedVariation)
 {
-    if (values.size() != 8 || 
+    if (values.size() != 8 ||
         index.size() != 3 ||
         index[0] < 0.0 || index[0] > 1.0 ||
         index[1] < 0.0 || index[1] > 1.0 ||
@@ -45,7 +78,7 @@ bool TriLinearInterpolation(const std::vector<double>& values, const std::vector
     const double c1 = c10 * (1.0 - idxY) + c11 * idxY;
 
     result = c0 * (1.0 - idxX) + c1 * idxX;
-    estimatedVariation = c1 - c0; // TODO: this isn't really correct is it?
+    estimatedVariation = Stdev8(values, result);
 
     return true;
 }
