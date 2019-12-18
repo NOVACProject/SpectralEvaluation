@@ -2,6 +2,7 @@
 #include <SpectralEvaluation/VectorUtils.h>
 #include <algorithm>
 #include <cstring>
+#include <sstream>
 
 template <class T> double Average(T array[], long nElements) {
     if (nElements <= 0)
@@ -35,7 +36,8 @@ template <class T> T Max(T *pBuffer, long bufLen) {
 /// --------------------------- FINDING THE PLUME IN ONE SCAN ---------------------------
 
 // VERSION 1: FROM NOVACPROGRAM
-bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, long numPoints, CPlumeInScanProperty& plumeProperties) {
+bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, long numPoints, CPlumeInScanProperty& plumeProperties, std::string* message)
+{
 
     // There is a plume iff there is a region, where the column-values are considerably
     //	much higher than in the rest of the scan
@@ -57,32 +59,43 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
         }
     }
     if (nCol <= 5) { // <-- if too few ok points, then there's no plume
+        if (nullptr != message)
+        {
+            *message = "Plume not found, less than five spectra are labelled as good evaluations.";
+        }
         return false;
     }
 
     // Try different divisions of the scan to see if there is a region of at least
     //	'minWidth' values where the column-value is considerably higher than the rest
-    double highestDifference = -1e16;
+    double highestDifference = -1e16; // maximum difference between in-plume and out-of-plume regions
     long minWidth = 5;
-    int regionLow = 0, regionHigh = 0;
-    for (int low = 0; low < nCol; ++low) {
-        for (int high = low + minWidth; high < nCol; ++high) {
+    int foundRegionLowIdx = 0;
+    int foundRegionHighIdx = 0;
+    for (int testedLowIdx = 0; testedLowIdx < nCol; ++testedLowIdx)
+    {
+        for (int testedHighIdx = testedLowIdx + minWidth; testedHighIdx < nCol; ++testedHighIdx)
+        {
+            const int testedRegionSize = testedHighIdx - testedLowIdx;
+
             // The width of the region has to be at least 'minWidth' values, otherwise there's no idea to search
             //  There must also be at least 'minWidth' values outside of the region...
-            if ((high - low < minWidth) || (nCol - high + low < minWidth))
+            if ((testedRegionSize < minWidth) || (nCol - testedRegionSize < minWidth))
+            {
                 continue;
+            }
 
             // the average column value in the region we're testing
-            const double avgInRegion = Average(col.data() + low, high - low);
+            const double avgInRegion = Average(col.data() + testedLowIdx, testedRegionSize);
 
             // the average column value outside of the region we're testing
-            // TODO: These are actually 'sum'
-            const double avgOutRegion = (Average(col.data(), low)*low + Average(col.data() + high, nCol - high)*(nCol - high)) / (low + nCol - high);
+            const double avgOutRegion = (Average(col.data(), testedLowIdx)*testedLowIdx + Average(col.data() + testedHighIdx, nCol - testedHighIdx)*(nCol - testedHighIdx)) / (testedLowIdx + nCol - testedHighIdx);
 
-            if (avgInRegion - avgOutRegion > highestDifference) {
+            if (avgInRegion - avgOutRegion > highestDifference)
+            {
                 highestDifference = avgInRegion - avgOutRegion;
-                regionLow = low;
-                regionHigh = high;
+                foundRegionLowIdx = testedLowIdx;
+                foundRegionHighIdx = testedHighIdx;
             }
         }
     }
@@ -90,11 +103,13 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
     // Calculate the average column error, for the good measurement points
     double avgColError = Average(colE.data(), nCol);
 
-    if (highestDifference > 5 * avgColError) {
+    if (highestDifference > 5 * avgColError)
+    {
         // the plume centre is the average of the scan-angles in the 'plume-region'
         //	weighted with the column values
         double sumAngle_alpha = 0, sumAngle_phi = 0, sumWeight = 0;
-        for (int k = regionLow; k < regionHigh; ++k) {
+        for (int k = foundRegionLowIdx; k < foundRegionHighIdx; ++k)
+        {
             sumAngle_alpha += angle[k] * col[k];
             sumAngle_phi += p[k] * col[k];
             sumWeight += col[k];
@@ -108,10 +123,12 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
         plumeProperties.plumeEdgeHigh = angle[nCol - 1];
         double peakLow = angle[0];
         double peakHigh = angle[nCol - 1];
-        double minCol = Min(col.data(), nCol);
-        double maxCol_div_e = (Max(col.data(), nCol) - minCol) * 0.3679;
-        double maxCol_90 = (Max(col.data(), nCol) - minCol) * 0.90;
-        double maxCol_half = (Max(col.data(), nCol) - minCol) * 0.5;
+        const double minCol = Min(col.data(), nCol);
+        const double maxCol = Max(col.data(), nCol) - minCol;
+        const double maxCol_div_e = maxCol * 0.3679;
+        const double maxCol_90 = maxCol * 0.90;
+        const double maxCol_half = maxCol * 0.5;
+
         for (int k = 0; k < nCol; ++k)
         {
             if (angle[k] > plumeProperties.plumeCenter)
@@ -131,7 +148,7 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
                 peakLow = angle[k];
             }
         }
-        for (int k = nCol - 1; k >= 0; --k)
+        for (int k = nCol - 1; k > 0; --k)
         {
             if (angle[k] <= plumeProperties.plumeCenter)
             {
@@ -155,7 +172,14 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
 
         return true;
     }
-    else {
+    else
+    {
+        if (nullptr != message)
+        {
+            std::stringstream msg;
+            msg << "Plume not found, strongest plume-to-background difference: " << highestDifference << ", average column error: " << avgColError << ", plume-to-background ratio: " << highestDifference / avgColError;
+            *message = msg.str();
+        }
         return false;
     }
 }
@@ -163,12 +187,13 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
 /// --------------------------- PLUME COMPLETENESS ---------------------------
 
 // VERSION 1: FROM NOVACPROGRAM
-bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, double offset, long numPoints, CPlumeInScanProperty &plumeProperties) {
+bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, double offset, long numPoints, CPlumeInScanProperty &plumeProperties, std::string* message)
+{
 
     int nDataPointsToAverage = 5;
 
     // Check if there is a plume at all...
-    bool inPlume = FindPlume(scanAngles, phi, columns, columnErrors, badEvaluation, numPoints, plumeProperties);
+    bool inPlume = FindPlume(scanAngles, phi, columns, columnErrors, badEvaluation, numPoints, plumeProperties, message);
     if (!inPlume) {
         plumeProperties.completeness = 0.0; // <-- no plume at all
         return false;

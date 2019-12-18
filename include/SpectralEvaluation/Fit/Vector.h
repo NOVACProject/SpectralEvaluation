@@ -449,6 +449,13 @@ namespace MathFit
 			return GetSafePtr()[iIndex * mStepSize];
 		}
 
+        TFitData& operator[](int iIndex) const
+        {
+            MATHFIT_ASSERT(iIndex >= 0 && iIndex < mLength);
+
+            return GetSafePtr()[iIndex * mStepSize];
+        }
+
 		/**
 		* Returns the desired element of the vector at any index.
 		* The borders of the vector are constantly expanded so the given index must

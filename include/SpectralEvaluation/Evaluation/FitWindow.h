@@ -1,16 +1,25 @@
 #pragma once
 
 #include "ReferenceFile.h"
+#include <vector>
 
 // TODO: Remove
 #define MAX_N_REFERENCES 10
 
 namespace Evaluation
 {
-    enum FIT_TYPE {
+    enum FIT_TYPE
+    {
         FIT_HP_DIV,
         FIT_HP_SUB,
         FIT_POLY
+    };
+
+    enum class RING_CALCULATION_OPTION
+    {
+        DO_NOT_CALCULATE_RING,  // the user supplies a ring spectrum, don't calculate any
+        CALCULATE_RING,         // calculate a ring spectrum and include in the fit
+        CALCULATE_RING_X2       // calculate 2 ring spectra and include in the fit (regular ring and ring * lambda^4)
     };
 
     /** CFitWindow is a class for describing the settings
@@ -22,12 +31,14 @@ namespace Evaluation
     class CFitWindow
     {
     public:
-        CFitWindow();
+        CFitWindow() = default;
+        ~CFitWindow() = default;
 
-        ~CFitWindow();
+        CFitWindow& operator=(const CFitWindow& other);
+        CFitWindow(const CFitWindow& other);
 
-        CFitWindow &operator=(const CFitWindow &w2);
-        CFitWindow(const CFitWindow &wnd);
+        CFitWindow& operator=(CFitWindow&& other);
+        CFitWindow(CFitWindow&& other);
 
         /** The lower edge of the fit window (in pixels) */
         int fitLow = 320;
@@ -55,8 +66,21 @@ namespace Evaluation
             is same as the wavelength calibration of each reference file. */
         CReferenceFile fraunhoferRef;
 
-        /** The order of the polynomial that will also be fitted */
+        /** The order of the polynomial that is fitted in optical depth space. */
         int polyOrder = 5;
+
+        /** Set to true to include a polynomial (currently only 0th degree)
+            fitted in intensity space. Used to correct for stray light in spectrometer. 
+            Notice: This can only be included when fitType is FIT_POLY  */
+        bool includeIntensitySpacePolyominal = false;
+
+        /** The option for if a ring spectrum should be calculated and included in the fit.
+            Possible options are 
+                1) don't calculate a ring
+                2) calculate a ring from the sky spectrum and include this in the fit
+                3) calculate a ring from the sky spectrum and include this and ring * lambda^4 into the fit. */
+        // TODO: Resolve how this should be able to get a correct wavelength calibration for the sky spectrum !
+        RING_CALCULATION_OPTION ringCalculation = RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING;
 
         /** The length of the spectra */
         int specLength = 2048;
@@ -75,7 +99,7 @@ namespace Evaluation
 
         /** true if the sky-spectrum should be allowed to shift.
                 only useful if fitType is FIT_HP_SUB or FIT_POLY */
-		int shiftSky;
+        int shiftSky = 0;
 
         /** Larger than 1 if the spectra are read out in an interlaced way.
             This parameter works in the same way as the CSpectrumInfo::m_interlaceStep */
@@ -83,13 +107,19 @@ namespace Evaluation
 
         /** 'UV' is true if the start wavelength of the spectrum is 290 nm or shorter */
         // TODO: replace this with the pixel-range which should be used for the offset-correction (which this variable is used for)
-		int UV = 1;
+        int UV = 1;
 
         /** True if the scan should be twice, once for finding the highest column value.
             The spectrum with the highest column value is then evluated again with
             the shift of all references set to free and the optimum shift value is found.
             The scan is then evaluated again using this shift value. */
-		int findOptimalShift = 0;
+        int findOptimalShift = 0;
+
+        /** This is an optional set of child windows which are to be evaluated in conjunction with the current one.
+            These are typically used for ratio-evaluations, where the spectrum is evaluated in one region
+            for e.g. SO2 and another region for e.g. BrO, but could also in the future be used for 
+            e.g. studying what happens if the spectrum is evaluated in two different regions. */
+        std::vector<CFitWindow> child;
 
         // ------------------ METHODS ----------------------------------
 

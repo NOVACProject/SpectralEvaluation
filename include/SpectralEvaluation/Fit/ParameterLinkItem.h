@@ -32,7 +32,8 @@ namespace MathFit
 		* @param pPrev		A pointer to the previous link item object. Needed to build a chain of link items.
 		* @param pNext		A pointer to the next link item object. Needed to build a chain of link items.
 		*/
-		CParameterLinkItem(int iSrcID, CParameterVector* pvTarget, int iTargetID, CParameterLinkItem* pPrev = NULL, CParameterLinkItem* pNext = NULL) : mTarget(pvTarget), mTargetID(iTargetID), mSrcID(iSrcID), mPrev(pPrev), mNext(pNext)
+		CParameterLinkItem(int iSrcID, CParameterVector* pvTarget, int iTargetID, CParameterLinkItem* pPrev = NULL, CParameterLinkItem* pNext = NULL) 
+            : mTarget(pvTarget), mTargetID(iTargetID), mSrcID(iSrcID), mNext(pNext), mPrev(pPrev)
 		{
 		}
 

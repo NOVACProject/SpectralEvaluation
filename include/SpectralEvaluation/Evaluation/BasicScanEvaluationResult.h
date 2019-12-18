@@ -43,5 +43,15 @@ namespace Evaluation
             There is one entry here for each spectrum which wasn't evaluated. */
         std::vector<unsigned int> m_corruptedSpectra;
 
+        /** Returns the index of the specie with the provided name.
+            E.g. checks the scan result for which index corresponds to SO2.
+            The comparison is done ignoring case.
+            @return -1 if the specie could not be found */
+        int GetSpecieIndex(const char* specieName) const;
     };
+
+    /** @return all the evaluated columns for the specie with the provided index.
+        @return an empty vector if result is empty specieIndex is invalid. */
+    std::vector<double> GetColumns(const BasicScanEvaluationResult& result, int specieIndex);
+
 }

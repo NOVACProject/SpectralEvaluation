@@ -241,3 +241,11 @@ double Centroid(const std::vector<double>& values)
     return FindValue(compoundMass, 0.5 * totalMass, 0, compoundMass.size());
 }
 
+double Resolution(const std::vector<double>& wavelGrid)
+{
+    const double minValue = wavelGrid.front();
+    const double maxValue = wavelGrid.back();
+    assert(maxValue > minValue);
+
+    return (maxValue - minValue) / (double)(wavelGrid.size() - 1);
+}

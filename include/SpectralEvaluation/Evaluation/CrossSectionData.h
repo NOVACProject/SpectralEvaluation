@@ -18,7 +18,12 @@ namespace Evaluation {
     {
     public:
         CCrossSectionData();
+
+        /** Creates a fully copy of another cross section */
         CCrossSectionData(const CCrossSectionData& other);
+
+        /** Creates a copy of a range of another cross section */
+        CCrossSectionData(const CCrossSectionData& other, double startWavelength, double endWavelength);
 
         CCrossSectionData &operator=(const CCrossSectionData &other);
 
@@ -55,6 +60,10 @@ namespace Evaluation {
 
         /** Gets the wavelength at the given pixel */
         double GetWavelengthAt(unsigned int index) const;
+
+        /** Locates and returns the index which corresponds to the provided wavelength.
+            Returns -1 if no such index could be found. */
+        double FindWavelength(double wavelength) const;
 
         /** Reads the cross section from a file
             @return 0 on success
@@ -95,4 +104,10 @@ namespace Evaluation {
     /** Shifts the provided data the given number of pixels (positive values corresponds to shifting towards 
         higher indices). This will approximate the data using a cubic spline and then shift the spline. */
     void Shift(std::vector<double>& data, double pixelCount);
+
+    /** Creates a simple gaussian function centered in the middle of the resulting CCrossSectionData 
+        @param gaussianSigma The sigma parameter of the Gaussian to generate
+        @param deltaLambda The difference wavelength between two neighbouring points in the generated
+            gaussian.m_waveLength array */
+    void CreateGaussian(double gaussianSigma, double deltaLambda, CCrossSectionData& gaussian);
 }

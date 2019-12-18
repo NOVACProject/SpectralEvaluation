@@ -18,11 +18,11 @@ namespace MathFit
 	{
 	public:
 		CStandardFit(IParamFunction& ipfModel) :
-		  mLeastSquare(ipfModel),
-			  mLevenberg(ipfModel),
-			  CFit(ipfModel, mLeastSquare, mLevenberg)
-		  {
-		  }
+            mLeastSquare(ipfModel),
+			mLevenberg(ipfModel),
+			CFit(ipfModel, mLeastSquare, mLevenberg)
+		{
+		}
 
 	private:
 		CLeastSquareFit mLeastSquare;

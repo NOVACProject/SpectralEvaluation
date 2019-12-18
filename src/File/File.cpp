@@ -1,10 +1,14 @@
+#include <SpectralEvaluation/StringUtils.h>
 #include <SpectralEvaluation/File/File.h>
+#include <SpectralEvaluation/File/STDFile.h>
+#include <SpectralEvaluation/File/TXTFile.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
+#include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <cstring>
 
 namespace FileIo
 {
-    // @return the number of columsn read.
+    // @return the number of columns read.
     int ReadFromFile(FILE* f, const char* formatStr, double& col1, double& col2)
     {
         int nCols = fscanf(f, formatStr, &col1, &col2);
@@ -17,10 +21,14 @@ namespace FileIo
 
     int GetFileFormat(const char* string, char* format)
     {
-        if(nullptr == string || nullptr == format) 
+        if (nullptr == string || nullptr == format)
+        {
             return 0;
-        if(0 == strlen(string))
+        }
+        if (0 == strlen(string))
+        {
             return 0;
+        }
 
         double col1 = 0, col2 = 0;
 
@@ -48,8 +56,34 @@ namespace FileIo
         return 0;
     }
 
+    bool ReadCrossSectionFromStdFile(const std::string& fullFilePath, Evaluation::CCrossSectionData& result, bool saveAsWavelength)
+    {
+        CSpectrum spectrum;
+        if (!SpectrumIO::CSTDFile::ReadSpectrum(spectrum, fullFilePath))
+        {
+            return false;
+        }
+
+        if (saveAsWavelength)
+        {
+            result.m_waveLength = std::vector<double>(spectrum.m_data, spectrum.m_data + spectrum.m_length);
+        }
+        else
+        {
+            result.m_crossSection = std::vector<double>(spectrum.m_data, spectrum.m_data + spectrum.m_length);
+        }
+
+        return true;
+    }
+
     bool ReadCrossSectionFile(const std::string& fullFilePath, Evaluation::CCrossSectionData& result, bool saveAsWavelength)
     {
+        const std::string fileEnding = Right(fullFilePath, 4);
+        if (EqualsIgnoringCase(fileEnding, ".std"))
+        {
+            return ReadCrossSectionFromStdFile(fullFilePath, result, saveAsWavelength);
+        }
+
         FILE* f = fopen(fullFilePath.c_str(), "r");
         if (nullptr == f)
         {
@@ -59,7 +93,7 @@ namespace FileIo
         // Get the file-format and number of columns from the file.
         char tempBuffer[8192];
         char format[256];
-        if(nullptr == fgets(tempBuffer, 8191, f))
+        if (nullptr == fgets(tempBuffer, 8191, f))
         {
             fclose(f);
             return false;
@@ -78,13 +112,12 @@ namespace FileIo
             double col1 = 0.0;
             double col2 = 0.0;
             int nCols = ReadFromFile(f, format, col1, col2);
-            
+
             if (nCols != numColumns)
             {
                 break;
             }
-            
-            
+
             if (nCols == 1)
             {
                 if (saveAsWavelength)
@@ -99,7 +132,6 @@ namespace FileIo
             }
         }
 
-        // close the file before we return
         fclose(f);
 
         return true;
@@ -119,7 +151,7 @@ namespace FileIo
         }
 
         const bool twoColumns = data.m_waveLength.size() == data.m_crossSection.size();
-        const size_t length   = data.m_crossSection.size();
+        const size_t length = data.m_crossSection.size();
 
         for (size_t ii = 0; ii < length; ++ii)
         {
@@ -138,4 +170,22 @@ namespace FileIo
         return true;
     }
 
+    bool ReadSpectrum(const std::string& fullFilePath, CSpectrum& result)
+    {
+        if (fullFilePath.size() < 5)
+        {
+            return false; // invalid filename
+        }
+        const std::string fileEnding = Right(fullFilePath, 4);
+
+        if (EqualsIgnoringCase(fileEnding, ".std"))
+        {
+            return SpectrumIO::CSTDFile::ReadSpectrum(result, fullFilePath);
+        }
+        else if (EqualsIgnoringCase(fileEnding, ".txt"))
+        {
+            return SpectrumIO::CTXTFile::ReadSpectrum(result, fullFilePath);
+        }
+        return false; // unknown file format.
+    }
 }

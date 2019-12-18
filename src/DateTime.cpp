@@ -2,7 +2,7 @@
 #include <time.h>
 #include <cstring>
 #include <string>
-#include <SpectralEvaluation/Utils.h>
+#include <SpectralEvaluation/StringUtils.h>
 
 CDateTime::CDateTime(const CDateTime &t2)
     : year(t2.year), month(t2.month), day(t2.day), hour(t2.hour), minute(t2.minute), second(t2.second), millisecond(t2.millisecond)

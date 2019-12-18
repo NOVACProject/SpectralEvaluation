@@ -100,51 +100,56 @@ namespace MathFit
 		*/
 		virtual bool RemoveOperand(IParamFunction& ipfRef)
 		{
-			int i;
+            int i;
 			for(i = 0; i < mOperandsCount; i++)
-				if(mOperands[i] == &ipfRef)
+            {
+                if(mOperands[i] == &ipfRef)
 				{
-					int j;
-					for(j = i; j < mOperandsCount - 1; j++)
-						mOperands[j] = mOperands[j + 1];
+					for(int j = i; j < mOperandsCount - 1; j++)
+                    {
+                        mOperands[j] = mOperands[j + 1];
+                    }
 					mOperandsCount--;
 					break;
 				}
+            }
 
-				// operand not found?
-				if(i == mOperandsCount)
-					return false;
+            // operand not found?
+            if(i == mOperandsCount)
+            {
+                return false;
+            }
 
-				// build new parameter vectors
-				BuildLinearParameter();
-				BuildNonlinearParameter();
+            // build new parameter vectors
+            BuildLinearParameter();
+            BuildNonlinearParameter();
 
-				// check for wasted space
-				if(mMaxOperands > DEFAULTNOOPERANDS)
-				{
-					int iMinArraySize = mMaxOperands / 3;
+            // check for wasted space
+            if(mMaxOperands > DEFAULTNOOPERANDS)
+            {
+                int iMinArraySize = mMaxOperands / 3;
 
-					// if we have less than a third of the whole array filled, we decrease its size by half.
-					if(mOperandsCount <= iMinArraySize)
-					{
-						// create a new list
-						IParamFunction** pNewList = new IParamFunction*[mMaxOperands / 2];
-						memset(pNewList, 0, mMaxOperands * sizeof(IParamFunction*) / 2);
+                // if we have less than a third of the whole array filled, we decrease its size by half.
+                if(mOperandsCount <= iMinArraySize)
+                {
+                    // create a new list
+                    IParamFunction** pNewList = new IParamFunction*[mMaxOperands / 2];
+                    memset(pNewList, 0, mMaxOperands * sizeof(IParamFunction*) / 2);
 
-						// copy the old elements
-						memmove(pNewList, mOperands, mOperandsCount * sizeof(IParamFunction*));
+                    // copy the old elements
+                    memmove(pNewList, mOperands, mOperandsCount * sizeof(IParamFunction*));
 
-						// replace old list
-						IParamFunction** pTemp = mOperands;
-						mOperands = pNewList;
-						mMaxOperands /= 2;
+                    // replace old list
+                    IParamFunction** pTemp = mOperands;
+                    mOperands = pNewList;
+                    mMaxOperands /= 2;
 
-						// get rid of the old list
-						delete(pTemp);
-					}
-				}
+                    // get rid of the old list
+                    delete(pTemp);
+                }
+            }
 
-				return true;
+            return true;
 		}
 
 		/**

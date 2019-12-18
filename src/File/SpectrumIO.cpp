@@ -1,7 +1,7 @@
 #include <SpectralEvaluation/File/SpectrumIO.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
-#include <SpectralEvaluation/Utils.h>
+#include <SpectralEvaluation/StringUtils.h>
 
 #include <algorithm>
 #include <cstring>
@@ -33,7 +33,7 @@ namespace SpectrumIO
         FILE *f = fopen(fileName.c_str(), "rb");
 
         if (f == NULL) {
-            printf("Could not open spectrum file: %s", fileName.c_str());
+            printf("Could not open spectrum file: %s\n", fileName.c_str());
             m_lastError = ERROR_COULD_NOT_OPEN_FILE;
             return(1);
         }
@@ -85,7 +85,7 @@ namespace SpectrumIO
 
         if (f == nullptr)
         {
-            printf("Could not open spectrum file: %s", fileName.c_str());
+            printf("Could not open spectrum file: %s\n", fileName.c_str());
             m_lastError = ERROR_COULD_NOT_OPEN_FILE;
             return 0;
         }
@@ -101,7 +101,7 @@ namespace SpectrumIO
 
             /** Look in the buffer */
             // 1. Clean the spectrum name from special characters...
-            std::string specName{MKZY.name};
+            std::string specName{ MKZY.name };
             CleanString(specName);
             Trim(specName, " \t");
             const size_t size1 = specName.size();
@@ -167,7 +167,7 @@ namespace SpectrumIO
         FILE *f = fopen(fileName.c_str(), "rb");
 
         if (f == NULL) {
-            printf("Could not open spectrum file: %s", fileName.c_str());
+            printf("Could not open spectrum file: %s\n", fileName.c_str());
             m_lastError = ERROR_COULD_NOT_OPEN_FILE;
             return false;
         }
@@ -221,7 +221,7 @@ namespace SpectrumIO
 
                 if (fread(buffer, 1, MKZY.size, f) < MKZY.size) //read compressed info
                 {
-                    printf("Error EOF! in %s", fileName.c_str());
+                    printf("Error EOF! in %s\n", fileName.c_str());
                     fclose(f);
                     m_lastError = ERROR_EOF;
                     return false;
@@ -368,7 +368,7 @@ namespace SpectrumIO
 
         if (fread(buffer, 1, MKZY.size, f) < MKZY.size) //read compressed info
         {
-            printf("Error EOF! in pak-file");
+            printf("Error EOF! in pak-file\n");
 
             m_lastError = ERROR_EOF;
             return false;
@@ -459,8 +459,8 @@ namespace SpectrumIO
             d = day.day * 10000 + day.month * 100 + day.year - (day.year / 100) * 100;
     }
 
-    int CSpectrumIO::AddSpectrumToFile(const std::string &fileName, const CSpectrum &spectrum, const char *headerBuffer, int headerSize) {
-
+    int CSpectrumIO::AddSpectrumToFile(const std::string &fileName, const CSpectrum &spectrum, const char *headerBuffer, int headerSize, bool overwrite)
+    {
         long last, tmp;
         int i;
         std::uint16_t outsiz;
@@ -470,11 +470,14 @@ namespace SpectrumIO
 
         // Test the input-data
         if (spectrum.m_length <= 0)
+        {
             return 1;
+        }
 
         // ---- start by converting the spectrum into 'long'
         std::vector<long> spec(spectrum.m_length);
-        for (i = 0; i < spectrum.m_length; ++i) {
+        for (i = 0; i < spectrum.m_length; ++i)
+        {
             spec[i] = (long)spectrum.m_data[i];
         }
 
@@ -483,13 +486,15 @@ namespace SpectrumIO
         // calculate checksum
         checksum = 0;
         for (i = 0; i < spectrum.m_length; ++i)
+        {
             checksum += spec[i];
+        }
         p = (std::uint16_t *)&checksum;
         MKZY.checksum = p[0] + p[1];
 
         // the spectrum should be stored as just the difference
-        //	between each two pixels (delta compression)
-        //	except for the first pixel (of course)
+        //  between each two pixels (delta compression)
+        //  except for the first pixel (of course)
         last = spec[0];
         for (i = 1; i < spectrum.m_length; i++)
         {
@@ -539,10 +544,22 @@ namespace SpectrumIO
         MKZY.viewangle = (std::uint16_t)info.m_scanAngle;
         MKZY.viewangle2 = (std::uint16_t)info.m_scanAngle2;
 
-        FILE *f = fopen(fileName.c_str(), "r+b");
-        if (f == NULL) // this will happen if the file does not exist...
-            f = fopen(fileName.c_str(), "w+b");
-        if (f == NULL) {
+        FILE *f = nullptr;
+
+        if (overwrite)
+        {
+            f = fopen(fileName.c_str(), "wb");
+        }
+        else
+        {
+            f = fopen(fileName.c_str(), "r+b");
+            if (f == nullptr) // this will happen if the file does not exist...
+            {
+                f = fopen(fileName.c_str(), "w+b");
+            }
+        }
+        if (f == nullptr)
+        {
             return 1;
         }
 
@@ -639,7 +656,7 @@ namespace SpectrumIO
             info->m_coneAngle = MKZY.coneangle;
             info->m_compass = (float)MKZY.compassdir / 10.0f;
             if (info->m_compass > 360.0 || info->m_compass < 0) {
-                printf("Spectrum has compass angle outside of the expected [0, 360] degree range. ");
+                printf("Spectrum has compass angle outside of the expected [0, 360] degree range.\n");
             }
             info->m_batteryVoltage = (float)MKZY.ADC[0] / 100.0f;
             info->m_temperature = MKZY.temperature;

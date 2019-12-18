@@ -33,7 +33,7 @@ CSpectrumInfo::CSpectrumInfo(void)
 	m_scanAngle2			= 0.0;
 	m_scanIndex				= 0;
 	m_scanSpecNum			= 0;
-	m_specModel				= S2000;
+    m_specModelName         = "S2000";
 	m_startChannel  = 0;
 	memset(&m_startTime, 0, sizeof(CDateTime));
 	memset(&m_stopTime, 0, sizeof(CDateTime));
@@ -75,7 +75,7 @@ CSpectrumInfo::CSpectrumInfo(const CSpectrumInfo &spec){
 	m_scanAngle2		= spec.m_scanAngle2;
 	m_scanIndex			= spec.m_scanIndex;
 	m_scanSpecNum		= spec.m_scanSpecNum;
-	m_specModel			= spec.m_specModel;
+    m_specModelName     = spec.m_specModelName;
 	m_startChannel		= spec.m_startChannel;
 	m_startTime			= spec.m_startTime;
 	m_stopTime			= spec.m_stopTime;

@@ -1180,7 +1180,6 @@ void CBasicMath::CrossCorrelate(double *fFirst, int iLengthFirst, double *fSec, 
 	for(i = 1; i <= iLengthFirst; i++)
 	{
 		double fSum = 0.0;
-		int iSampleCount = 0;
 
 		int iStartIndexSec = std::max(-iLengthSec / 2, -i);	// we either have to start at the end of the second data array or we can start before the zero index of the first array
 		int iStopIndexSec = std::min(iLengthSec / 2, iLengthFirst - i);	// we can go further than iLengthFirst

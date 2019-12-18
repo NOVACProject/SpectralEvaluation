@@ -14,10 +14,7 @@ namespace FileHandler
     class CScanFileHandler
     {
     public:
-        /** Default constructor */
         CScanFileHandler();
-
-        ~CScanFileHandler();
 
         // ----------------------------------------------------------------------
         // ---------------------- PUBLIC DATA -----------------------------------
@@ -63,7 +60,7 @@ namespace FileHandler
             If any file-error occurs the parameter 'm_lastError' will be set.
             @param spec - will on successful return be filled with the newly read spectrum.
             @param specNo - The zero-based index into the scan-file.
-            @return the number of spectra read.*/
+            @return the number of spectra read (1 if successful, otherwise 0) */
         int GetSpectrum(CSpectrum &spec, long specNo);
 
         /** Gets the dark spectrum of the scan
@@ -97,7 +94,7 @@ namespace FileHandler
                     datapoint in the spectra (normally 0).
                  @return the start-channel for the spectra in this scan.
                  @return -1 if the function 'CheckScanFile' has not been called */
-        int	GetStartChannel() const;
+        int GetStartChannel() const;
 
         /** Retrieves GPS-information from the spectrum files */
         const CGPSData &GetGPS() const;
@@ -112,7 +109,12 @@ namespace FileHandler
         void  ResetCounter();
 
         /** Retrieves the total number of spectra in the .pak-file (including sky and dark) */
-        int GetSpectrumNumInFile();
+        int GetSpectrumNumInFile() const;
+
+        /** Returns a spectrum which is the average of the provided indices.
+            @return the number of spectra co-added (may be less than indices.size()
+            if some spectrum/spectra could not be read). */
+        int AddSpectra(const std::vector<size_t>& indices, CSpectrum& result);
 
     private:
         // ----------------------------------------------------------------------

@@ -59,16 +59,6 @@ void Resample(const CCrossSectionData& slf, const std::vector<double>& wavelengt
     }
 }
 
-/** @return the average resolution of the provided wavelength grid */
-double Resolution(const std::vector<double>& wavelGrid)
-{
-    const double minValue = wavelGrid.front();
-    const double maxValue = wavelGrid.back();
-    assert(maxValue > minValue);
-
-    return (maxValue - minValue) / (double)(wavelGrid.size() - 1);
-}
-
 void ConvolutionCore(const std::vector<double>& input, const std::vector<double>& core, std::vector<double>& result)
 {
     const size_t refSize  = input.size();
