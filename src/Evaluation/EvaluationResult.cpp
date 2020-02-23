@@ -1,5 +1,6 @@
 #include <SpectralEvaluation/Evaluation/EvaluationResult.h>
 #include <SpectralEvaluation/Spectra/SpectrumInfo.h>
+#include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 #include <cstring>
 #include <cmath>
 
