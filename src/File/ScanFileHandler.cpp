@@ -207,7 +207,10 @@ namespace FileHandler
             this->m_startTime = spec.m_info.m_startTime;
 
         // Extract the spectrometer-model from the serial-number of the spectrometer
-        spec.m_info.m_specModelName = CSpectrometerDatabase::GetInstance().GuessModelFromSerial(spec.m_info.m_device).modelName;
+        SpectrometerModel spectrometer = CSpectrometerDatabase::GetInstance().GuessModelFromSerial(spec.m_info.m_device);
+
+        spec.m_info.m_average = spectrometer.averagesSpectra;
+        spec.m_info.m_specModelName = spectrometer.modelName;
 
         return 1;
     }

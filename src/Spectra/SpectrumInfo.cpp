@@ -81,6 +81,8 @@ CSpectrumInfo::CSpectrumInfo(const CSpectrumInfo &spec){
 	m_stopTime			= spec.m_stopTime;
 
 	m_temperature		= spec.m_temperature;
+
+    m_average = spec.m_average;
 }
 
 CSpectrumInfo::~CSpectrumInfo(void)
