@@ -33,7 +33,7 @@ int CSpectrum::AssertRange(long &fromPixel, long &toPixel) const{
 	assert(fromPixel >= 0 && toPixel >= 0);
 
 	toPixel	= std::min(toPixel, m_length - 1);
-	fromPixel = std::max(fromPixel, toPixel - 1);
+	fromPixel = std::min(fromPixel, toPixel - 1);
 	  
 	assert(fromPixel <= toPixel);
 

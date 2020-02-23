@@ -3,10 +3,11 @@
 #include <string>
 #include <vector>
 
+class CSpectrumInfo;
+
 /** The class <b>CSpectrometerModel</b> contains a collection of the
         the spectrometer types/models that can be connected with the scanning
         instruments. */
-
 enum SPECTROMETER_MODEL {
     S2000,
     USB2000,
@@ -15,6 +16,7 @@ enum SPECTROMETER_MODEL {
     HR4000,
     QE65000,
     MAYAPRO,
+    AVASPEC,
     UNKNOWN_SPECTROMETER,
     NUM_CONF_SPEC_MODELS // the number of spectrometers that are configured
 };
@@ -41,14 +43,16 @@ public:
 
 struct SpectrometerModel
 {
-    SpectrometerModel(const std::string& name, double maxIntensity)
-        :modelName(name), maximumIntensity(maxIntensity)
+    SpectrometerModel(const std::string& name, SPECTROMETER_MODEL modelIdx, double maxIntensity, bool averages = false)
+        :modelName(name), model(modelIdx), maximumIntensity(maxIntensity), averagesSpectra(averages)
     {
     }
 
     std::string modelName = "S2000";
     double maximumIntensity = 4096;
     int numberOfChannels = 1;
+    bool averagesSpectra = false;
+    SPECTROMETER_MODEL model = UNKNOWN_SPECTROMETER;
 };
 
 class CSpectrometerDatabase
@@ -78,18 +82,26 @@ public:
     /** @return a list of all configured spectrometer models */
     std::vector<std::string> ListModels() const;
 
-    static SpectrometerModel SpectrometerModel_Unknown() { return SpectrometerModel{ "", 4095 }; }
-    static SpectrometerModel SpectrometerModel_S2000() { return SpectrometerModel{ "S2000", 4095 }; }
-    static SpectrometerModel SpectrometerModel_USB2000() { return SpectrometerModel{ "USB2000", 4095 }; }
-    static SpectrometerModel SpectrometerModel_USB4000() { return SpectrometerModel{ "USB4000", 65535 }; }
-    static SpectrometerModel SpectrometerModel_HR2000() { return SpectrometerModel{ "HR2000", 4095 }; }
-    static SpectrometerModel SpectrometerModel_HR4000() { return SpectrometerModel{ "HR4000", 16535 }; }
-    static SpectrometerModel SpectrometerModel_QE65000() { return SpectrometerModel{ "QE65000", 65535 }; }
-    static SpectrometerModel SpectrometerModel_MAYAPRO() { return SpectrometerModel{ "MAYAPRO", 65535 }; }
+    static SpectrometerModel SpectrometerModel_Unknown() { return SpectrometerModel{ "", UNKNOWN_SPECTROMETER, 4095 }; }
+    static SpectrometerModel SpectrometerModel_S2000() { return SpectrometerModel{ "S2000", S2000, 4095 }; }
+    static SpectrometerModel SpectrometerModel_USB2000() { return SpectrometerModel{ "USB2000", USB2000, 4095 }; }
+    static SpectrometerModel SpectrometerModel_USB4000() { return SpectrometerModel{ "USB4000", USB4000, 65535 }; }
+    static SpectrometerModel SpectrometerModel_HR2000() { return SpectrometerModel{ "HR2000", HR2000, 4095 }; }
+    static SpectrometerModel SpectrometerModel_HR4000() { return SpectrometerModel{ "HR4000", HR4000, 16535 }; }
+    static SpectrometerModel SpectrometerModel_QE65000() { return SpectrometerModel{ "QE65000", QE65000, 65535 }; }
+    static SpectrometerModel SpectrometerModel_MAYAPRO() { return SpectrometerModel{ "MAYAPRO", MAYAPRO, 65535 }; }
+    static SpectrometerModel SpectrometerModel_AVASPEC() { return SpectrometerModel{ "AVASPEC", AVASPEC, 262143, true }; }
 
 private:
     CSpectrometerDatabase();
 
     std::vector<SpectrometerModel> modelDb;
-    const SpectrometerModel unknown = SpectrometerModel{ "", 4095 };
+    const SpectrometerModel unknown = SpectrometerModel{ "", UNKNOWN_SPECTROMETER, 4095 };
 };
+
+/// ----------- Free Functions, useful for spectrometer related questions ----------- 
+
+// Calculates the maximum intensity necessary to display a spectrum with the 
+//  provided collection properties, based on the number of spectra measured and
+//  the spectrometer model.
+double FullDynamicRangeForSpectrum(const CSpectrumInfo& info);

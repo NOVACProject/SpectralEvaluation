@@ -87,10 +87,12 @@ namespace Evaluation
 
         // The maximum saturation-level in the fit-region
         double fitSaturation = 0.0;
-        if (info.m_fitIntensity <= 1.0) {
+        if (info.m_fitIntensity <= 1.0 || info.m_average)
+        {
             fitSaturation = info.m_fitIntensity;
         }
-        else {
+        else
+        {
             if (info.m_numSpec > 0)
                 fitSaturation = info.m_fitIntensity / (maxInt * info.m_numSpec);
             else {
@@ -101,7 +103,11 @@ namespace Evaluation
 
         // The offset of the spectrum
         double offset = 0.0;
-        if (info.m_numSpec > 0) {
+        if (info.m_average)
+        {
+            offset = info.m_offset / maxInt;
+        }
+        else if (info.m_numSpec > 0) {
             offset = info.m_offset / (maxInt * info.m_numSpec);
         }
         else {

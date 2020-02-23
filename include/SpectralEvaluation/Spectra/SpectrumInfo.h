@@ -136,4 +136,6 @@ public:
              In degrees from the horizontal plane. */
     float  m_pitch;
 
+    /** Set to true if the spectrum is read out as an average instead of a sum of consituent spectra. */
+    bool m_average = false;
 };
