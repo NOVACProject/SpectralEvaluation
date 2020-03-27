@@ -1,6 +1,7 @@
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 #include <SpectralEvaluation/StringUtils.h>
 #include <algorithm>
+#include <SpectralEvaluation/Spectra/SpectrumInfo.h>
 
 SpectrometerModel::PixelRange::PixelRange()
     : from(0), to(0)
@@ -14,26 +15,29 @@ SpectrometerModel::PixelRange::PixelRange(int low, int high)
 
 CSpectrometerDatabase::CSpectrometerDatabase()
 {
-    SpectrometerModel s2000{ "S2000", 4095 };
+    SpectrometerModel s2000 = SpectrometerModel_S2000();
     modelDb.push_back(s2000);
 
-    SpectrometerModel USB2000{ "USB2000", 4095 };
+    SpectrometerModel USB2000 = SpectrometerModel_USB2000();
     modelDb.push_back(USB2000);
 
-    SpectrometerModel USB4000{ "USB4000", 65535 };
+    SpectrometerModel USB4000 = SpectrometerModel_USB4000();
     modelDb.push_back(USB4000);
 
-    SpectrometerModel HR2000{ "HR2000", 4095 };
+    SpectrometerModel HR2000 = SpectrometerModel_HR2000();
     modelDb.push_back(HR2000);
 
-    SpectrometerModel HR4000{ "HR4000", 16535 };
+    SpectrometerModel HR4000 = SpectrometerModel_HR4000();
     modelDb.push_back(HR4000);
 
-    SpectrometerModel QE65000{ "QE65000", 65535 };
+    SpectrometerModel QE65000 = SpectrometerModel_QE65000();
     modelDb.push_back(QE65000);
 
-    SpectrometerModel MAYAPRO{ "MAYAPRO", 65535 };
+    SpectrometerModel MAYAPRO = SpectrometerModel_MAYAPRO();
     modelDb.push_back(MAYAPRO);
+
+    SpectrometerModel AVASPEC = SpectrometerModel_AVASPEC();
+    modelDb.push_back(AVASPEC);
 }
 
 SpectrometerModel CSpectrometerDatabase::GuessModelFromSerial(const std::string& deviceSerialNumber)
@@ -69,6 +73,10 @@ SpectrometerModel CSpectrometerDatabase::GuessModelFromSerial(const std::string&
     else if (Contains(deviceSerialNumber, "MAYAPRO"))
     {
         return CSpectrometerDatabase::SpectrometerModel_MAYAPRO();
+    }
+    else if (Contains(deviceSerialNumber, "M1") && deviceSerialNumber.size() == 9)
+    {
+        return CSpectrometerDatabase::SpectrometerModel_AVASPEC();
     }
     else
     {
@@ -148,3 +156,21 @@ bool CSpectrometerDatabase::AddModel(const SpectrometerModel& newModel)
     return true;
 }
 
+double FullDynamicRangeForSpectrum(const CSpectrumInfo& info)
+{
+    SpectrometerModel model = CSpectrometerDatabase::GetInstance().GuessModelFromSerial(info.m_device);
+
+    if (model.averagesSpectra)
+    {
+        return model.maximumIntensity;
+    }
+    else if (info.m_numSpec > 0)
+    {
+        return model.maximumIntensity * info.m_numSpec;
+    }
+    else
+    {
+        // the number of co-added spectra can sometimes be wrongly set to zero. Handle this case as well...
+        return (long)(model.maximumIntensity * (info.m_peakIntensity / model.maximumIntensity));
+    }
+}

@@ -1,4 +1,5 @@
 #include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 
 #include <algorithm>
 

@@ -2,7 +2,6 @@
 
 #include <SpectralEvaluation/GPSData.h>
 #include <SpectralEvaluation/DateTime.h>
-#include "SpectrometerModel.h"
 
 /** <b>CSpectrumInfo</b> is a class that contains all auxilliary information about
          a spectrum, such as exposure time, number of spectra averaged, time when the spectrum
@@ -12,14 +11,11 @@
 class CSpectrumInfo
 {
 public:
-    /** Default constructor */
-    CSpectrumInfo();
+    CSpectrumInfo() = default;
 
-    /** Copy constructor */
-    CSpectrumInfo(const CSpectrumInfo &spec);
-
-    /** Default destructor */
-    ~CSpectrumInfo();
+    /** Copy */
+    CSpectrumInfo(const CSpectrumInfo& other) = default;
+    CSpectrumInfo& operator=(const CSpectrumInfo& other) = default;
 
     /** The number of exposures that are added together */
     long m_numSpec = 0;
@@ -33,15 +29,15 @@ public:
 
     /** The scan angle for the first motor when the spectrum was collected.
             For the old (flat) Mark1 scanner this is defined as the angle from zenith [degrees]*/
-    float m_scanAngle;
+    float m_scanAngle = 0.0F;
 
     /** The scan angle for the second motor when the spectrum was collected.
             For spectra from the single-motor system, this is 0.0. */
-    float m_scanAngle2;
+    float m_scanAngle2 = 0.0F;
 
     /** The compass direction for the scanner system that collected
             this spectrum in degrees from north. */
-    float m_compass;
+    float m_compass = 0.0F;
 
     /** The battery voltage when this spectrum was read out. */
     float m_batteryVoltage;
@@ -54,18 +50,18 @@ public:
 
     /** The spectrometer which collected the spectrum.
         For OceanOptics Spectrometers this is the serial number */
-    std::string m_device;
+    std::string m_device = "";
 
     /** The name of the spectrometer model which was used to collect this spectrum */
-    std::string m_specModelName;
+    std::string m_specModelName = "S2000";
 
     /** The name of the spectrum */
-    std::string m_name;
+    std::string m_name = "";
 
     /** Some of the settings of the setup of the scanning - instrument*/
-    std::string m_volcano;
-    std::string m_site;
-    std::string m_observatory;
+    std::string m_volcano = "";
+    std::string m_site = "";
+    std::string m_observatory = "";
 
     /** The channel with which the spectrum was collected.
             Values range from 0 (Master), 1 (1:st slave) to 7 (7:th slave).
@@ -84,23 +80,23 @@ public:
             Channel = 33 --> Slave1 channel spectrum read out as every third pixel
             ...
             Channel = 39 --> Slave7 channel spectrum read out as every third pixel */
-    unsigned char m_channel;
+    unsigned char m_channel = 0;
 
     /** This spectrum's position in the scan.
             0 means that this is the first spectrum in the scan. */
-    short  m_scanIndex;
+    short  m_scanIndex = 0;
 
     /** This shows how many spectrum there were in the scan. */
-    short  m_scanSpecNum;
+    short  m_scanSpecNum = 0;
 
     /** I don't know the use of this variable,
             but it is stored with the spectra, so let's keep it.*/
-    unsigned char  m_flag;
+    unsigned char  m_flag = 0;
 
     /** The start channel of the spectrum. The spectra can be read out
             partially, e.g. a read-out spectrum can contain the data from pixel
             129 to 540 on the detector. 0 by default. */
-    unsigned short m_startChannel;
+    unsigned short m_startChannel = 0;
 
     /** Larger than 1 if the spectrum has been read-out in an interlaced way.
             E.g. for a OceanOptics spectrometer, it is possible to read out
@@ -108,32 +104,34 @@ public:
             This is 1 by default (every pixel is read out)
             If every other pixel is read out, this has the value of 2.
             If three spectrometers are connected to one adc, this can have a value of 3. */
-    int  m_interlaceStep;
+    int  m_interlaceStep = 1;
 
     /** The maximum intensity of the spectrum */
-    float  m_peakIntensity;
+    float  m_peakIntensity = 0.0F;
 
     /** The maximum intensity in the fit region of the spectrum */
-    float  m_fitIntensity;
+    float  m_fitIntensity = 0.0F;
 
     /** The opening angle of the scanner that generated this spectrum.
             The opening angle is defined as 90.0 degrees for the old scanner,
             and variable between 45 and 90 degrees for the new Chalmers scanner.
             This is 90 by default. */
-    float  m_coneAngle;
+    float  m_coneAngle = 90.0F;
 
     /** The offset of the spectrum */
-    float  m_offset;
+    float  m_offset = 0.0F;
 
     /** The temperature when the spectrum was collected */
-    float  m_temperature;
+    float  m_temperature = 0.0F;
 
     /** The roll (the 'leaning' of the box in the direction perpendicular
             to the scanning unit). In degrees from the horizontal plane. */
-    float  m_roll;
+    float  m_roll = 0.0F;
 
     /** The pitch (the 'leaning' of the box in the direction of the scanning unit).
              In degrees from the horizontal plane. */
-    float  m_pitch;
+    float  m_pitch = 0.0F;
 
+    /** Set to true if the spectrum is read out as an average instead of a sum of consituent spectra. */
+    bool m_average = false;
 };

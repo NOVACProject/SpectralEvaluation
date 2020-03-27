@@ -52,6 +52,9 @@ public:
             // TODO: Implement saving this
     CCrossSectionData m_fitResult[MAX_N_REFERENCES + 2];
 
+    /** The measured spectrum, after all processing is done, right before the fit is performed. */
+    std::vector<double> m_measuredData;
+
     /** The last error from calling 'Evaluate' or 'EvaluateShift'.
         This is set by Evaluate and EvaluateShift and is only set if these methods return an error. */
     std::string m_lastError = "";
