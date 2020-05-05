@@ -7,6 +7,7 @@
 #include <SpectralEvaluation/File/ScanFileHandler.h>
 #include <SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h>
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
+#include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 
 using namespace Evaluation;
 

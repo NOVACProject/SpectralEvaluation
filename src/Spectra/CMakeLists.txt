@@ -13,6 +13,7 @@ set(SPECTRUM_CLASS_HEADERS
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/SpectrumInfo.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/SpectrometerModel.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/WavelengthCalibration.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/WavelengthRange.h
     PARENT_SCOPE)
 
 

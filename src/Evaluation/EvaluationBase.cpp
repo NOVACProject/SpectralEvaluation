@@ -225,7 +225,6 @@ void CEvaluationBase::PrepareSpectra_HP_Sub(double* /*skyArray*/, double *measAr
 
 void CEvaluationBase::PrepareSpectra_Poly(double* /*skyArray*/, double *measArray, const CFitWindow &window)
 {
-
     // 1. remove any remaining offset in the measured spectrum
     RemoveOffset(measArray, window.specLength, window.UV);
 
@@ -520,6 +519,7 @@ int CEvaluationBase::Evaluate(const double* measured, size_t measuredLength, int
     //----------------------------------------------------------------
 
     PrepareSpectra(m_sky.m_crossSection.data(), measArray.data(), m_window);
+    m_measuredData = std::vector<double>(begin(measArray), end(measArray));
 
     //----------------------------------------------------------------
 

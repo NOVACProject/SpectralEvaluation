@@ -7,6 +7,7 @@
 #define MAX_CHANNEL_NUM 8
 
 #include "SpectrumInfo.h"
+#include <vector>
 
 struct SpectrometerModel;
 
