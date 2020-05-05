@@ -129,6 +129,20 @@ void CDateTime::SetToNow() {
     this->second = (unsigned char)tim->tm_sec;
 }
 
+void CDateTime::SetToNowUTC() {
+	struct tm *tim;
+	time_t t;
+	time(&t);
+	tim = gmtime(&t);
+
+	this->year = (unsigned short)(1900 + tim->tm_year);
+	this->month = (unsigned char)(1 + tim->tm_mon);
+	this->day = (unsigned char)tim->tm_mday;
+	this->hour = (unsigned char)tim->tm_hour;
+	this->minute = (unsigned char)tim->tm_min;
+	this->second = (unsigned char)tim->tm_sec;
+}
+
 /** Calculates the difference, in seconds, between two times.
         If t2 is later than t1, then the result will be negative. */
 double CDateTime::Difference(const CDateTime &t1, const CDateTime &t2) {

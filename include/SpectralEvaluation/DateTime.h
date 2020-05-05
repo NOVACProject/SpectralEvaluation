@@ -47,6 +47,9 @@ public:
     /** Sets the time of this CDateTime-object to the current (local PC) time */
     void SetToNow();
 
+	/** Sets the time of this CDateTime-object to the current (UTC) time */
+	void SetToNowUTC();
+
     /** Increments the current time with the supplied number of seconds */
     void Increment(int seconds);
 
