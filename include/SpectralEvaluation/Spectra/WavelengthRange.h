@@ -12,6 +12,8 @@ struct WavelengthRange
     }
     double low = 0.0;
     double high = 0.0;
+
+    inline bool Empty() const { return high - low < 0.001; }
 };
 
 }
