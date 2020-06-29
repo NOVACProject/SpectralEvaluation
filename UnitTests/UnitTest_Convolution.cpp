@@ -3,11 +3,11 @@
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/VectorUtils.h>
 
-std::vector<double> CreateGaussian(double sigmaInPixels, int length = 19)
+std::vector<double> CreateGaussian(double sigma, int length = 19)
 {
     const int halfLength    = (length / 2);
     const int midIdx        = halfLength + 1;
-    const double s2         = sigmaInPixels * sigmaInPixels;
+    const double s2         = sigma * sigma;
 
     std::vector<double> slf(length);
     for (int dI = 0; dI < halfLength; ++dI)
@@ -20,9 +20,9 @@ std::vector<double> CreateGaussian(double sigmaInPixels, int length = 19)
     return slf;
 }
 
-std::vector<double> CreateGaussian(double sigmaInPixels, const std::vector<double>& x)
+std::vector<double> CreateGaussian(double sigma, const std::vector<double>& x)
 {
-    const double s2 = sigmaInPixels * sigmaInPixels;
+    const double s2 = sigma * sigma;
 
     std::vector<double> slf(x.size());
     for(size_t i = 0; i < x.size(); ++i)

@@ -16,9 +16,11 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Evaluation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FindPlume.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitWindow.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_InstrumentLineShape.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_RatioEvaluation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Utils.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_VectorUtils.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_WavelengthCalibration.cpp
 )
 
 target_include_directories(SpectralEvaluationTests PRIVATE ${SPECTRALEVAUATION_INCLUDE_DIRS})

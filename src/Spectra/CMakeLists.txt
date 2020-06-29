@@ -8,6 +8,7 @@ set(SPECTRUM_CLASS_HEADERS
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/GPSData.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/EstimatedValue.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/Grid.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/InstrumentLineShape.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/ReferenceSpectrumConvolution.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/Scattering.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/Spectrum.h
@@ -21,6 +22,7 @@ set(SPECTRUM_CLASS_HEADERS
 set(SPECTRUM_CLASS_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/../DateTime.cpp
     ${CMAKE_CURRENT_LIST_DIR}/../GPSData.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/InstrumentLineShape.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ReferenceSpectrumConvolution.cpp
     ${CMAKE_CURRENT_LIST_DIR}/Scattering.cpp
     ${CMAKE_CURRENT_LIST_DIR}/Spectrum.cpp
