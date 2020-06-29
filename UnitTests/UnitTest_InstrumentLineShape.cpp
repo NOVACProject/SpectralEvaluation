@@ -9,16 +9,46 @@ std::vector<double> CreateGaussian(double sigma, const std::vector<double>& x); 
 // -------- Fitting symmetrical Gaussians --------
 TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple Gaussian input returns correct fitted function", "[InstrumentLineShape]")
 {
-    const double sigma = 0.2; // [nm]
     CSpectrum idealGaussian;
     idealGaussian.m_wavelength = CreatePixelToWavelengthMapping(-2.0, +2.0, 43); // 4nm range with 43 sample pointss
-    std::vector<double> spec = CreateGaussian(sigma, idealGaussian.m_wavelength);
-    memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
-    idealGaussian.m_length = (long)spec.size();
+    idealGaussian.m_length = (long)idealGaussian.m_wavelength.size();
 
-    Evaluation::GaussianLineShape result;
-    auto ret = Evaluation::FitInstrumentLineShape(idealGaussian, result);
+    SECTION("Narrow line width")
+    {
+        const double sigma = 0.2; // [nm]
+        std::vector<double> spec = CreateGaussian(sigma, idealGaussian.m_wavelength);
+        memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
-    REQUIRE(ret == Evaluation::ILF_RETURN_CODE::SUCCESS);
-    REQUIRE(fabs(result.sigma - sigma) < 0.005);
+        Evaluation::GaussianLineShape result;
+        auto ret = Evaluation::FitInstrumentLineShape(idealGaussian, result);
+
+        REQUIRE(ret == Evaluation::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(fabs(result.sigma - sigma) < 0.005);
+    }
+
+    SECTION("Wide line width")
+    {
+        const double sigma = 0.8; // [nm]
+        std::vector<double> spec = CreateGaussian(sigma, idealGaussian.m_wavelength);
+        memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
+
+        Evaluation::GaussianLineShape result;
+        auto ret = Evaluation::FitInstrumentLineShape(idealGaussian, result);
+
+        REQUIRE(ret == Evaluation::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(fabs(result.sigma - sigma) < 0.005);
+    }
+
+    SECTION("Really wide line width")
+    {
+        const double sigma = 1.5; // [nm] this is very wide compared to the width of the wavelength window
+        std::vector<double> spec = CreateGaussian(sigma, idealGaussian.m_wavelength);
+        memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
+
+        Evaluation::GaussianLineShape result;
+        auto ret = Evaluation::FitInstrumentLineShape(idealGaussian, result);
+
+        REQUIRE(ret == Evaluation::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(fabs(result.sigma - sigma) < 0.005);
+    }
 }

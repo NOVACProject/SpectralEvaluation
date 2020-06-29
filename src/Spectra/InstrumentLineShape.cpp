@@ -8,6 +8,37 @@
 namespace Evaluation
 {
 
+template<class T>
+ILF_RETURN_CODE FitFunction(MathFit::CVector& xData, MathFit::CVector& yData, T& functionToFit)
+{
+    try
+    {
+        MathFit::CCubicSplineFunction cubicSplineRepresentation{ xData, yData };
+
+        MathFit::CStandardMetricFunction diff(cubicSplineRepresentation, functionToFit);
+
+        MathFit::CStandardFit fit(diff);
+        fit.SetFitRange(xData);
+        fit.SetMaxFitSteps(500);
+        fit.PrepareMinimize();
+
+        if (!fit.Minimize())
+        {
+            return ILF_RETURN_CODE::FIT_FAILURE;
+        }
+        fit.FinishMinimize();
+
+        return ILF_RETURN_CODE::SUCCESS;
+    }
+    catch (MathFit::CFitException& e)
+    {
+        std::cout << "Fit failed: " << e.mMessage << std::endl;
+
+        return ILF_RETURN_CODE::SUCCESS;
+    }
+}
+
+
 ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLineShape& result)
 {
     if (mercuryLine.m_length == 0)
@@ -26,32 +57,19 @@ ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLin
     MathFit::CVector xData{ &localX[0], mercuryLine.m_length, 1, autoReleaseData };
     MathFit::CVector yData{ &localY[0], mercuryLine.m_length, 1, autoReleaseData };
 
-    MathFit::CCubicSplineFunction cubicSplineRepresentation{ xData, yData };
+    MathFit::CGaussFunction gaussianToFit;
 
-    MathFit::CGaussFunction functionToFit;
-    MathFit::CStandardMetricFunction diff(cubicSplineRepresentation, functionToFit);
-
-    MathFit::CStandardFit fit(diff);
-    fit.SetFitRange(xData);
-    fit.SetMaxFitSteps(500);
-
-    try
+    ILF_RETURN_CODE ret = FitFunction(xData, yData, gaussianToFit);
+    if (ret != ILF_RETURN_CODE::SUCCESS)
     {
-        fit.PrepareMinimize();
-        if (!fit.Minimize())
-        {
-            return ILF_RETURN_CODE::FIT_FAILURE;
-        }
-        fit.FinishMinimize();
+        return ret;
     }
-    catch (MathFit::CFitException& e)
+    else
     {
-        std::cout << "Fit failed: " << e.mMessage << std::endl;
+        result.sigma = gaussianToFit.GetSigma();
+
+        return ILF_RETURN_CODE::SUCCESS;
     }
-
-    result.sigma = functionToFit.GetSigma();
-
-    return ILF_RETURN_CODE::SUCCESS;
 }
 
 
