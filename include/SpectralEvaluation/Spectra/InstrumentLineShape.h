@@ -19,6 +19,16 @@ struct GaussianLineShape
     double Fwhm() const { return sigma * 2.35482; }
 };
 
+// Asymmetric gaussian line shape, consisting of a left and a right half with different widths.
+struct AsymmetricGaussianLineShape
+{
+    // The width parameter of the left gaussian
+    double sigmaLeft = 0.0;
+
+    // The width parameter of the right gaussian
+    double sigmaRight = 0.0;
+};
+
 // Symmetric super-gaussian line shape: exp(-[x^2/(2 * sigma^2)]^P)
 struct SuperGaussianLineShape
 {
@@ -40,5 +50,6 @@ enum class ILF_RETURN_CODE
 // Fits a symmetrical Gaussian line to an extract of a mercury spectrum containing only one (full) mercury line.
 // The measured spectrum needs to have a wavelength calibration
 ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLineShape& result);
+ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, AsymmetricGaussianLineShape& result);
 
 }

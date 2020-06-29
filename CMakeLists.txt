@@ -18,6 +18,7 @@ set(SPECTRALEVAUATION_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include CACHE STRIN
 add_subdirectory(src/Configuration)
 add_subdirectory(src/Evaluation)
 add_subdirectory(src/Fit)
+add_subdirectory(src/FitExtensions)
 add_subdirectory(src/File)
 add_subdirectory(src/Flux)
 add_subdirectory(src/Spectra)
@@ -27,6 +28,7 @@ add_library(NovacSpectralEvaluation
     ${SPECTRUM_EVALUATION_SOURCES}
     ${SPECTRUM_FIT_HEADERS}
     ${SPECTRUM_FIT_SOURCES}
+    ${SPECTRUM_FIT_EXTENSION_HEADERS}
     ${SPECTRUM_FLUX_HEADERS}
     ${SPECTRUM_FLUX_SOURCES}
     ${SPECTRUM_CLASS_HEADERS}
@@ -50,6 +52,7 @@ source_group("Header Files\\Configuration"          FILES ${SPECTRUM_CONFIGURATI
 source_group("Header Files\\Evaluation"             FILES ${SPECTRUM_EVALUATION_HEADERS})
 source_group("Header Files\\File"                   FILES ${SPECTRUM_FILE_HEADERS})
 source_group("Header Files\\Fit"                    FILES ${SPECTRUM_FIT_HEADERS})
+source_group("Header Files\\Fit"                    FILES ${SPECTRUM_FIT_EXTENSION_HEADERS})
 source_group("Header Files\\Flux"                   FILES ${SPECTRUM_FLUX_HEADERS})
 source_group("Header Files\\Spectra"                FILES ${SPECTRUM_CLASS_HEADERS})
 

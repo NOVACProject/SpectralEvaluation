@@ -3,6 +3,7 @@
 #include <SpectralEvaluation/Fit/StandardFit.h>
 #include <SpectralEvaluation/Fit/StandardMetricFunction.h>
 #include <SpectralEvaluation/Fit/GaussFunction.h>
+#include <SpectralEvaluation/FitExtensions/AsymmetricGaussFunction.h>
 #include <SpectralEvaluation/Fit/CubicSplineFunction.h>
 
 namespace Evaluation
@@ -67,6 +68,40 @@ ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLin
     else
     {
         result.sigma = gaussianToFit.GetSigma();
+
+        return ILF_RETURN_CODE::SUCCESS;
+    }
+}
+
+ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, AsymmetricGaussianLineShape& result)
+{
+    if (mercuryLine.m_length == 0)
+    {
+        return ILF_RETURN_CODE::EMPTY_INPUT;
+    }
+    else if (mercuryLine.m_wavelength.size() != mercuryLine.m_length)
+    {
+        return ILF_RETURN_CODE::MISSING_WAVELENGTH_CALIBRATION;
+    }
+
+    std::vector<double> localX{ mercuryLine.m_wavelength };
+    std::vector<double> localY{ mercuryLine.m_data, mercuryLine.m_data + mercuryLine.m_length };
+
+    const bool autoReleaseData = false;
+    MathFit::CVector xData{ &localX[0], mercuryLine.m_length, 1, autoReleaseData };
+    MathFit::CVector yData{ &localY[0], mercuryLine.m_length, 1, autoReleaseData };
+
+    MathFit::CAsymmetricGaussFunction gaussianToFit;
+
+    ILF_RETURN_CODE ret = FitFunction(xData, yData, gaussianToFit);
+    if (ret != ILF_RETURN_CODE::SUCCESS)
+    {
+        return ret;
+    }
+    else
+    {
+        result.sigmaLeft = gaussianToFit.GetSigmaLeft();
+        result.sigmaRight = gaussianToFit.GetSigmaRight();
 
         return ILF_RETURN_CODE::SUCCESS;
     }
