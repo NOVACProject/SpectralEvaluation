@@ -4,6 +4,7 @@
 #include <SpectralEvaluation/Fit/StandardMetricFunction.h>
 #include <SpectralEvaluation/Fit/GaussFunction.h>
 #include <SpectralEvaluation/FitExtensions/AsymmetricGaussFunction.h>
+#include <SpectralEvaluation/FitExtensions/SuperGaussFunction.h>
 #include <SpectralEvaluation/Fit/CubicSplineFunction.h>
 
 namespace Evaluation
@@ -108,4 +109,48 @@ ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, AsymmetricG
 }
 
 
+ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, SuperGaussianLineShape& result)
+{
+    if (mercuryLine.m_length == 0)
+    {
+        return ILF_RETURN_CODE::EMPTY_INPUT;
+    }
+    else if (mercuryLine.m_wavelength.size() != mercuryLine.m_length)
+    {
+        return ILF_RETURN_CODE::MISSING_WAVELENGTH_CALIBRATION;
+    }
+
+    std::vector<double> localX{ mercuryLine.m_wavelength };
+    std::vector<double> localY{ mercuryLine.m_data, mercuryLine.m_data + mercuryLine.m_length };
+
+    const bool autoReleaseData = false;
+    MathFit::CVector xData{ &localX[0], mercuryLine.m_length, 1, autoReleaseData };
+    MathFit::CVector yData{ &localY[0], mercuryLine.m_length, 1, autoReleaseData };
+
+    MathFit::CSuperGaussFunction gaussianToFit;
+
+    ILF_RETURN_CODE ret = FitFunction(xData, yData, gaussianToFit);
+    if (ret != ILF_RETURN_CODE::SUCCESS)
+    {
+        return ret;
+    }
+    else
+    {
+        result.sigma = gaussianToFit.GetSigma();
+        result.P = gaussianToFit.GetPower();
+
+        return ILF_RETURN_CODE::SUCCESS;
+    }
 }
+
+}
+
+
+
+
+
+
+
+
+
+

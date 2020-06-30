@@ -158,3 +158,70 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
     }
 }
+
+
+
+// -------- Fitting symmetrical SuperGaussian --------
+TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple Gaussian input returns correct fitted function", "[InstrumentLineShape]")
+{
+    CSpectrum idealGaussian;
+    idealGaussian.m_wavelength = CreatePixelToWavelengthMapping(-2.0, +2.0, 43); // 4nm range with 43 sample pointss
+    idealGaussian.m_length = (long)idealGaussian.m_wavelength.size();
+
+    SECTION("Narrow line width")
+    {
+        const double sigma = 0.2; // [nm]
+        std::vector<double> spec = CreateGaussian(sigma, idealGaussian.m_wavelength);
+        memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
+
+        Evaluation::SuperGaussianLineShape result;
+        auto ret = Evaluation::FitInstrumentLineShape(idealGaussian, result);
+
+        REQUIRE(ret == Evaluation::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(fabs(result.sigma - sigma) < 0.005);
+        REQUIRE(fabs(result.P - 2) < 0.0005);
+    }
+}
+
+
+// -------- Fitting symmetrical SuperGaussian --------
+TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Real SLF input returns reasonable fitted function", "[InstrumentLineShape]")
+{
+    std::vector<double> xData = { -1.823155769, -1.740163507, -1.657182786, -1.574213609,
+        -1.491255984,     -1.408309915,     -1.325375407,     -1.242452466,
+        -1.159541097,     -1.076641306,    -0.993753097,    -0.910876477,
+        -0.82801145,    -0.745158022,    -0.662316199,    -0.579485984,
+        -0.496667385,    -0.413860406,    -0.331065052,    -0.248281329,
+        -0.165509243,    -0.082748798,    0.0,    0.082737146,
+        0.165462634,    0.248176459,    0.330878616,    0.4135691,
+        0.496247904,    0.578915024,    0.661570455,    0.74421419,
+        0.826846226,    0.909466555,    0.992075174,    1.074672076,
+        1.157257257,    1.23983071 ,    1.322392432,    1.404942415,
+        1.487480656,    1.570007148,    1.652521887,    1.735024866,
+        1.817516081 };
+
+    std::vector<double> yData = { 7.897011196, 8.702061524, 9.416269597, 12.20731957,
+        16.3484734 , 19.98842858, 22.42863949, 25.44209636,
+        28.80952478, 30.98034142, 33.33284258, 37.57423613,
+        45.10161333, 60.24407748, 95.47834242, 211.5371543,
+        671.311734 , 1918.519509, 4204.884369, 7004.03183 ,
+        8959.771604, 9851.169062, 10000      , 9649.502388,
+        8045.297081, 5455.735232, 3228.467958, 1912.639823,
+        1102.154622, 691.2187178, 484.1829538, 334.8163592,
+        206.0427641, 108.4719174, 57.91350376, 37.55230869,
+        25.63004586, 20.04794592, 13.96464733, 11.2331147 ,
+        8.567364387, 5.785711892, 2.822374886, 2.220936508,
+        0 };
+
+    CSpectrum measuredSpectrum;
+    measuredSpectrum.m_wavelength = xData;
+    measuredSpectrum.m_length = (long)xData.size();
+    memcpy(&measuredSpectrum.m_data, yData.data(), yData.size() * sizeof(double));
+
+    Evaluation::SuperGaussianLineShape result;
+    auto ret = Evaluation::FitInstrumentLineShape(measuredSpectrum, result);
+
+    REQUIRE(ret == Evaluation::ILF_RETURN_CODE::SUCCESS);
+    REQUIRE(fabs(result.sigma - 0.232946) < 0.005);
+    REQUIRE(fabs(result.P - 2) < 0.0005);
+}

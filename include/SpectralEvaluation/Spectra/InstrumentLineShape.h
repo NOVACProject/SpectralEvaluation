@@ -29,14 +29,14 @@ struct AsymmetricGaussianLineShape
     double sigmaRight = 0.0;
 };
 
-// Symmetric super-gaussian line shape: exp(-[x^2/(2 * sigma^2)]^P)
+// Symmetric super-gaussian line shape: exp(-0.5 * [x/sigma]^2P)
 struct SuperGaussianLineShape
 {
     // The width parameter
     double sigma = 0.0;
 
-    // The exponent (P = 1.0 equals a 'regular' Gaussian)
-    double P = 1.0;
+    // The exponent (P = 2.0 equals a 'regular' Gaussian)
+    double P = 2.0;
 };
 
 enum class ILF_RETURN_CODE
@@ -51,5 +51,6 @@ enum class ILF_RETURN_CODE
 // The measured spectrum needs to have a wavelength calibration
 ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLineShape& result);
 ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, AsymmetricGaussianLineShape& result);
+ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, SuperGaussianLineShape& result);
 
 }

@@ -15,6 +15,7 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_DateTime.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Evaluation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FindPlume.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitExtensions.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitWindow.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_InstrumentLineShape.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_RatioEvaluation.cpp
