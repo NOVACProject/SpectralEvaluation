@@ -20,6 +20,7 @@ struct GaussianLineShape
 };
 
 // Asymmetric gaussian line shape, consisting of a left and a right half with different widths.
+//  The 'left' is used for x < center and 'right' used for x >= center
 struct AsymmetricGaussianLineShape
 {
     // The width parameter of the left gaussian
@@ -29,7 +30,7 @@ struct AsymmetricGaussianLineShape
     double sigmaRight = 0.0;
 };
 
-// Symmetric super-gaussian line shape: exp(-0.5 * [x/sigma]^2P)
+// Symmetric super-gaussian line shape: exp(-0.5 * [x/sigma]^P)
 struct SuperGaussianLineShape
 {
     // The width parameter

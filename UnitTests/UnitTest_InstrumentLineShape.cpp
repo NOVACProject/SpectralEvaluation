@@ -184,8 +184,8 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple Gaussian in
 }
 
 
-// -------- Fitting symmetrical SuperGaussian --------
-TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Real SLF input returns reasonable fitted function", "[InstrumentLineShape]")
+// -------- Fitting to real data--------
+TEST_CASE("FitInstrumentLineShape: Real SLF input returns reasonable fitted function", "[InstrumentLineShape]")
 {
     std::vector<double> xData = { -1.823155769, -1.740163507, -1.657182786, -1.574213609,
         -1.491255984,     -1.408309915,     -1.325375407,     -1.242452466,
@@ -218,10 +218,32 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Real SLF input ret
     measuredSpectrum.m_length = (long)xData.size();
     memcpy(&measuredSpectrum.m_data, yData.data(), yData.size() * sizeof(double));
 
-    Evaluation::SuperGaussianLineShape result;
-    auto ret = Evaluation::FitInstrumentLineShape(measuredSpectrum, result);
+    SECTION("Asmmetric Gaussian")
+    {
+        Evaluation::AsymmetricGaussianLineShape result;
+        auto ret = Evaluation::FitInstrumentLineShape(measuredSpectrum, result);
 
-    REQUIRE(ret == Evaluation::ILF_RETURN_CODE::SUCCESS);
-    REQUIRE(fabs(result.sigma - 0.232946) < 0.005);
-    REQUIRE(fabs(result.P - 2) < 0.0005);
+        REQUIRE(ret == Evaluation::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(fabs(result.sigmaLeft  - 0.241512) < 0.005);
+        REQUIRE(fabs(result.sigmaRight - 0.221779) < 0.005);
+    }
+
+    SECTION("Symmetric Gaussian")
+    {
+        Evaluation::GaussianLineShape result;
+        auto ret = Evaluation::FitInstrumentLineShape(measuredSpectrum, result);
+
+        REQUIRE(ret == Evaluation::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(fabs(result.sigma - 0.23295) < 0.005);
+    }
+
+    SECTION("Symmetric Super Gaussian")
+    {
+        Evaluation::SuperGaussianLineShape result;
+        auto ret = Evaluation::FitInstrumentLineShape(measuredSpectrum, result);
+
+        REQUIRE(ret == Evaluation::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(fabs(result.sigma - 0.249618) < 0.005);
+        REQUIRE(fabs(result.P -     2.341718) < 0.0005);
+    }
 }

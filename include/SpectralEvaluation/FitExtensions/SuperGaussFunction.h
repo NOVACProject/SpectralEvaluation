@@ -16,8 +16,6 @@ namespace MathFit
 * The super-Gaussian function is a generalization of the Gaussian function but allows for a higher order power:
 *   \begin{verbatim}f(x)=s*exp(-1/2*[(x-a)/sigma]^P)\end{verbatim}
 * Where P=2 yields a regular Gaussian function.
-* To improve the numerical stability, this class will internally store the power as a (2.0 + DeltaPower) as this
-*    makes it easier to fit the function
 */
 class CSuperGaussFunction : public IParamFunction
 {
@@ -26,7 +24,7 @@ private:
 
     const int NonLinearParamIdx_Center = 0;
     const int NonLinearParamIdx_Sigma = 1;
-    const int NonLinearParamIdx_DeltaP = 2;
+    const int NonLinearParamIdx_Power = 2;
 
 public:
     /**
@@ -180,9 +178,7 @@ public:
     */
     TFitData GetPower()
     {
-        // The non-linear parameter 'NonLinearParamIdx_DeltaP' stores the difference from the 
-        //  Gaussian value of 2.0 as this improves numerical stability when calculating derivatives.
-        return 2.0 + mNonlinearParams.GetAllParameter().GetAt(NonLinearParamIdx_DeltaP);
+        return mNonlinearParams.GetAllParameter().GetAt(NonLinearParamIdx_Power);
     }
 
     /**
@@ -239,9 +235,7 @@ public:
     */
     void SetPower(TFitData newValue)
     {
-        // The non-linear parameter 'NonLinearParamIdx_DeltaP' stores the difference from the 
-        //  Gaussian value of 2.0 as this improves numerical stability when calculating derivatives.
-        mNonlinearParams.SetParameter(NonLinearParamIdx_DeltaP, newValue - 2.0);
+        mNonlinearParams.SetParameter(NonLinearParamIdx_Power, newValue);
     }
 
     /**
@@ -270,9 +264,9 @@ public:
     virtual void ResetNonlinearParameter()
     {
         mNonlinearParams.SetSize(3);
-        mNonlinearParams.SetParameter(NonLinearParamIdx_Center, 0); // default: center = 0.0
-        mNonlinearParams.SetParameter(NonLinearParamIdx_Sigma, 1);  // default: sigma = 1.0
-        mNonlinearParams.SetParameter(NonLinearParamIdx_DeltaP, 0);  // default: power = 2.0 (standard Gaussian)
+        mNonlinearParams.SetParameter(NonLinearParamIdx_Center, 0.0); // default: center = 0.0
+        mNonlinearParams.SetParameter(NonLinearParamIdx_Sigma, 1.0);  // default: sigma = 1.0
+        mNonlinearParams.SetParameter(NonLinearParamIdx_Power, 2.0);  // default: power = 2.0 (standard Gaussian)
     }
 
 private:

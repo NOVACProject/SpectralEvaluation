@@ -127,17 +127,28 @@ ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, SuperGaussi
     MathFit::CVector xData{ &localX[0], mercuryLine.m_length, 1, autoReleaseData };
     MathFit::CVector yData{ &localY[0], mercuryLine.m_length, 1, autoReleaseData };
 
-    MathFit::CSuperGaussFunction gaussianToFit;
+    // Start by fitting a "regular" Gaussian function
+    MathFit::CGaussFunction regularGaussian;
+    ILF_RETURN_CODE ret = FitFunction(xData, yData, regularGaussian);
+    if (ret != ILF_RETURN_CODE::SUCCESS)
+    {
+        return ret;
+    }
 
-    ILF_RETURN_CODE ret = FitFunction(xData, yData, gaussianToFit);
+    // Copy the relevant parameters from the regular Gaussian and proceed with fitting the super-gaussian
+    MathFit::CSuperGaussFunction superGaussian;
+    superGaussian.SetCenter(regularGaussian.GetCenter());
+    superGaussian.SetSigma(regularGaussian.GetSigma());
+
+    ret = FitFunction(xData, yData, superGaussian);
     if (ret != ILF_RETURN_CODE::SUCCESS)
     {
         return ret;
     }
     else
     {
-        result.sigma = gaussianToFit.GetSigma();
-        result.P = gaussianToFit.GetPower();
+        result.sigma = superGaussian.GetSigma();
+        result.P = superGaussian.GetPower();
 
         return ILF_RETURN_CODE::SUCCESS;
     }
