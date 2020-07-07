@@ -6,7 +6,7 @@
 
 class CSpectrum;
 
-namespace Evaluation
+namespace Calibration
 {
 
 // --------- Possible representations of instrument line shapes ---------

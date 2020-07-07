@@ -10,7 +10,7 @@
 
 class CSpectrum;
 
-namespace Evaluation
+namespace Calibration
 {
     struct SpectrometerCalibration
     {
@@ -18,17 +18,17 @@ namespace Evaluation
         std::vector<double> wavelengthToPixelMapping;
 
         /** The estimated slit function of the spectrometer */
-        CCrossSectionData slf;
+        ::Evaluation::CCrossSectionData slf;
     };
 
     struct WavelengthCalibrationSetup
     {
         // A high-resolved Kurucz spektrum
-        CCrossSectionData solarAtlas;
+        ::Evaluation::CCrossSectionData solarAtlas;
 
         // The high-resolution absorption cross sections necessary to get a good fit.
         // Typically just O3 (the ring spectrum will be calculated in the fit routine).
-        std::vector<CCrossSectionData> crossSections;
+        std::vector<::Evaluation::CCrossSectionData> crossSections;
     };
 
     /** Estimates the wavelength to pixel mapping for a given measured spectrum by fitting

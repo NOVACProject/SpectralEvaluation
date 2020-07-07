@@ -7,7 +7,7 @@
 #include <SpectralEvaluation/FitExtensions/SuperGaussFunction.h>
 #include <SpectralEvaluation/Fit/CubicSplineFunction.h>
 
-namespace Evaluation
+namespace Calibration
 {
 
 template<class T>
