@@ -1,6 +1,6 @@
 #include <algorithm>
-#include <SpectralEvaluation/Spectra/WavelengthCalibration.h>
-#include <SpectralEvaluation/Spectra/ReferenceSpectrumConvolution.h>
+#include <SpectralEvaluation/Calibration/WavelengthCalibration.h>
+#include <SpectralEvaluation/Calibration/ReferenceSpectrumConvolution.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Evaluation/WavelengthFit.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>

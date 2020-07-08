@@ -15,6 +15,7 @@ endif()
 set(SPECTRALEVAUATION_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include CACHE STRING "")
 
 # Create a library from the SpectralEvaluation classes
+add_subdirectory(src/Calibration)
 add_subdirectory(src/Configuration)
 add_subdirectory(src/Evaluation)
 add_subdirectory(src/Fit)
@@ -24,6 +25,8 @@ add_subdirectory(src/Flux)
 add_subdirectory(src/Spectra)
 
 add_library(NovacSpectralEvaluation
+    ${SPECTRUM_CALIBRATION_HEADERS}
+    ${SPECTRUM_CALIBRATION_SOURCES}
     ${SPECTRUM_EVALUATION_HEADERS}
     ${SPECTRUM_EVALUATION_SOURCES}
     ${SPECTRUM_FIT_HEADERS}
@@ -48,6 +51,7 @@ add_library(NovacSpectralEvaluation
 target_include_directories(NovacSpectralEvaluation PUBLIC ${SPECTRALEVAUATION_INCLUDE_DIRS})
 
 #Organize the files into folders, for ease of use
+source_group("Header Files\\Calibration"            FILES ${SPECTRUM_CALIBRATION_HEADERS})
 source_group("Header Files\\Configuration"          FILES ${SPECTRUM_CONFIGURATION_HEADERS})
 source_group("Header Files\\Evaluation"             FILES ${SPECTRUM_EVALUATION_HEADERS})
 source_group("Header Files\\File"                   FILES ${SPECTRUM_FILE_HEADERS})
@@ -57,6 +61,7 @@ source_group("Header Files\\Flux"                   FILES ${SPECTRUM_FLUX_HEADER
 source_group("Header Files\\Spectra"                FILES ${SPECTRUM_CLASS_HEADERS})
 
 
+source_group("Source Files\\Calibration"            FILES ${SPECTRUM_CALIBRATION_SOURCES})
 source_group("Source Files\\Configuration"          FILES ${SPECTRUM_CONFIGURATION_SOURCES})
 source_group("Source Files\\Evaluation"             FILES ${SPECTRUM_EVALUATION_SOURCES})
 source_group("Source Files\\File"                   FILES ${SPECTRUM_FILE_SOURCES})

@@ -1,5 +1,5 @@
 #include "catch.hpp"
-#include <SpectralEvaluation/Spectra/ReferenceSpectrumConvolution.h>
+#include <SpectralEvaluation/Calibration/ReferenceSpectrumConvolution.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/VectorUtils.h>
 

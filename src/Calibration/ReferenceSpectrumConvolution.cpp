@@ -1,4 +1,4 @@
-#include <SpectralEvaluation/Spectra/ReferenceSpectrumConvolution.h>
+#include <SpectralEvaluation/Calibration/ReferenceSpectrumConvolution.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Fit/CubicSplineFunction.h>
 #include <SpectralEvaluation/File/File.h>

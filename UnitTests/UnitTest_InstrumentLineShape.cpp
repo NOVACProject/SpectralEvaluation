@@ -1,5 +1,5 @@
 #include "catch.hpp"
-#include <SpectralEvaluation/Spectra/InstrumentLineShape.h>
+#include <SpectralEvaluation/Calibration/InstrumentLineShape.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 
 std::vector<double> CreatePixelToWavelengthMapping(double start, double stop, int size = 2048); // located elsewhere

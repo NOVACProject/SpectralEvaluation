@@ -1,4 +1,4 @@
-#include <SpectralEvaluation/Spectra/InstrumentLineShape.h>
+#include <SpectralEvaluation/Calibration/InstrumentLineShape.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Fit/StandardFit.h>
 #include <SpectralEvaluation/Fit/StandardMetricFunction.h>
