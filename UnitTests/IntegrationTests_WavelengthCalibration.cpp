@@ -1,0 +1,34 @@
+#include <SpectralEvaluation/Spectra/SpectrumUtils.h>
+#include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/File/TXTFile.h>
+#include "catch.hpp"
+
+namespace novac
+{
+std::string GetMercuryFileName()
+{
+#ifdef _MSC_VER
+    return std::string("../testData/Hg_D2J2200_all.Master.Sample.txt");
+#else
+    return std::string("testData/Hg_D2J2200_all.Master.Sample.txt");
+#endif // _MSC_VER
+}
+
+// -------- Doing a calibration from a mercury spectrum --------
+TEST_CASE("D2J2200 Mercury Spectrum", "[SpectrumUtils][InstrumentCalibration][IntegrationTest][MercurySpectrum]")
+{
+    CSpectrum spectrum;
+    SpectrumIO::CTXTFile::ReadSpectrum(spectrum, GetMercuryFileName());
+
+    SECTION("Find peak locates all mercury peaks")
+    {
+        const double minimumIntensity = 500.0;
+        std::vector<SpectrumDataPoint> result;
+
+        FindPeaks(spectrum, minimumIntensity, result);
+
+        REQUIRE(10 == result.size());
+    }
+}
+
+}

@@ -33,6 +33,21 @@ std::vector<double> CreateGaussian(double sigma, const std::vector<double>& x)
     return slf;
 }
 
+std::vector<double> CreateGaussian(double center, double sigma, const std::vector<double>& x)
+{
+    const double s2 = sigma * sigma;
+
+    std::vector<double> slf(x.size());
+    for (size_t i = 0; i < x.size(); ++i)
+    {
+        const double diff = x[i] - center;
+        slf[i] = std::exp(-(diff * diff) / (2.0 * s2));
+    }
+
+    return slf;
+}
+
+
 
 std::vector<double> CreatePixelToWavelengthMapping(double start, double stop, int size = 2048)
 {
