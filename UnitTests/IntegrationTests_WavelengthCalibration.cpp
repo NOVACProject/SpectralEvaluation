@@ -29,6 +29,14 @@ TEST_CASE("D2J2200 Mercury Spectrum", "[SpectrumUtils][InstrumentCalibration][In
 
         REQUIRE(10 == result.size());
     }
+
+    // SECTION("Do mercury calibration locates all relevant mercury peaks and creates wavelength calibration")
+    // {
+    //     std::vector<SpectrumDataPoint> foundPeaks;
+    //     std::vector<double> polynomial;
+    //     MercuryCalibration(spectrum, 3, foundPeaks, polynomial);
+    // 
+    // }
 }
 
 }

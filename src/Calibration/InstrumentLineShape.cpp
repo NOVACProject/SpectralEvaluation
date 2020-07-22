@@ -40,6 +40,51 @@ ILF_RETURN_CODE FitFunction(MathFit::CVector& xData, MathFit::CVector& yData, T&
     }
 }
 
+void CreateInitialEstimate(const std::vector<double>& x, const std::vector<double>& y, MathFit::CGaussFunction& result)
+{
+    size_t idxOfMaximumAmplitude = 0;
+    double maximumAmplitude = y[0];
+    for (size_t ii = 1; ii < y.size(); ++ii)
+    {
+        if (y[ii] > maximumAmplitude)
+        {
+            maximumAmplitude = y[ii];
+            idxOfMaximumAmplitude = ii;
+        }
+    }
+
+    result.SetCenter(x[idxOfMaximumAmplitude]);
+    result.SetScale(maximumAmplitude);
+
+    if (idxOfMaximumAmplitude <= 2 || idxOfMaximumAmplitude >= y.size() - 2)
+    {
+        return; // the algorithm below will not work for this case, skip
+    }
+
+    // Estimate the Full Width at Half Maximum (FWHM) by finding the points where the amplitude has dropped by half
+    size_t halfAmplitudeLeft = idxOfMaximumAmplitude;
+    for (size_t ii = idxOfMaximumAmplitude - 1; ii > 1; --ii)
+    {
+        if (y[ii] < maximumAmplitude * 0.5)
+        {
+            halfAmplitudeLeft = ii;
+            break;
+        }
+    }
+    size_t halfAmplitudeRight = idxOfMaximumAmplitude;
+    for (size_t ii = idxOfMaximumAmplitude + 1; ii < y.size(); ++ii)
+    {
+        if (y[ii] < maximumAmplitude * 0.5)
+        {
+            halfAmplitudeRight = ii;
+            break;
+        }
+    }
+    const double fwhm = x[halfAmplitudeRight] - x[halfAmplitudeLeft];
+    const double estimatedSigma = fwhm / 2.35482;
+
+    result.SetSigma(estimatedSigma);
+}
 
 ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLineShape& result)
 {
@@ -59,7 +104,9 @@ ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLin
     MathFit::CVector xData{ &localX[0], mercuryLine.m_length, 1, autoReleaseData };
     MathFit::CVector yData{ &localY[0], mercuryLine.m_length, 1, autoReleaseData };
 
+    // First create an initial estimation of the location, width and amplitude of the Gaussian
     MathFit::CGaussFunction gaussianToFit;
+    CreateInitialEstimate(localX, localY, gaussianToFit);
 
     ILF_RETURN_CODE ret = FitFunction(xData, yData, gaussianToFit);
     if (ret != ILF_RETURN_CODE::SUCCESS)
@@ -92,7 +139,15 @@ ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, AsymmetricG
     MathFit::CVector xData{ &localX[0], mercuryLine.m_length, 1, autoReleaseData };
     MathFit::CVector yData{ &localY[0], mercuryLine.m_length, 1, autoReleaseData };
 
+    // First create an initial estimation of the location, width and amplitude of the Gaussian
+    MathFit::CGaussFunction simpleGaussian;
+    CreateInitialEstimate(localX, localY, simpleGaussian);
+
     MathFit::CAsymmetricGaussFunction gaussianToFit;
+    gaussianToFit.SetCenter(simpleGaussian.GetCenter());
+    gaussianToFit.SetScale(simpleGaussian.GetScale());
+    gaussianToFit.SetSigmaLeft(simpleGaussian.GetSigma());
+    gaussianToFit.SetSigmaRight(simpleGaussian.GetSigma());
 
     ILF_RETURN_CODE ret = FitFunction(xData, yData, gaussianToFit);
     if (ret != ILF_RETURN_CODE::SUCCESS)
@@ -127,20 +182,16 @@ ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, SuperGaussi
     MathFit::CVector xData{ &localX[0], mercuryLine.m_length, 1, autoReleaseData };
     MathFit::CVector yData{ &localY[0], mercuryLine.m_length, 1, autoReleaseData };
 
-    // Start by fitting a "regular" Gaussian function
+    // First create an initial estimation of the location, width and amplitude of the Gaussian
     MathFit::CGaussFunction regularGaussian;
-    ILF_RETURN_CODE ret = FitFunction(xData, yData, regularGaussian);
-    if (ret != ILF_RETURN_CODE::SUCCESS)
-    {
-        return ret;
-    }
+    CreateInitialEstimate(localX, localY, regularGaussian);
 
     // Copy the relevant parameters from the regular Gaussian and proceed with fitting the super-gaussian
     MathFit::CSuperGaussFunction superGaussian;
     superGaussian.SetCenter(regularGaussian.GetCenter());
     superGaussian.SetSigma(regularGaussian.GetSigma());
 
-    ret = FitFunction(xData, yData, superGaussian);
+    ILF_RETURN_CODE ret = FitFunction(xData, yData, superGaussian);
     if (ret != ILF_RETURN_CODE::SUCCESS)
     {
         return ret;

@@ -75,7 +75,7 @@ public:
     *
     * @see  GetValue
     */
-    virtual CVector& GetValues(const CVector& vXValues, CVector& vYTargetVector)
+    virtual CVector& GetValues(CVector& vXValues, CVector& vYTargetVector)
     {
         const TFitData sigma2Left = (TFitData)-0.5 / (GetSigmaLeft() * GetSigmaLeft());
         const TFitData sigma2Right = (TFitData)-0.5 / (GetSigmaRight() * GetSigmaRight());
@@ -178,8 +178,16 @@ public:
     {
         // get the function value without the scale factor
         TFitData fVal = fXValue - GetCenter();
-        fVal *= fVal;
-        fVal /= GetSigma(fXValue) * GetSigma(fXValue);
+        if (fVal < 0.0)
+        {
+            fVal *= fVal;
+            fVal /= (GetSigmaLeft() * GetSigmaLeft());
+        }
+        else
+        {
+            fVal *= fVal;
+            fVal /= (GetSigmaRight() * GetSigmaRight());
+        }
         fVal *= -0.5;
 
         return (TFitData)exp(fVal);

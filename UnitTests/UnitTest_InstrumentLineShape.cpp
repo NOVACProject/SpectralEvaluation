@@ -4,9 +4,10 @@
 
 std::vector<double> CreatePixelToWavelengthMapping(double start, double stop, int size = 2048); // located elsewhere
 std::vector<double> CreateGaussian(double sigma, const std::vector<double>& x); // located elsewhere
+std::vector<double> CreateGaussian(double center, double sigma, const std::vector<double>& x); // located elsewhere
 
-// creates an asymetric gaussian with width 'sigmaNegative' for x < 0 and 'sigmaPositive' for x > 0
-std::vector<double> CreateAsymmetricGaussian(double sigmaNegative, double sigmaPositive, const std::vector<double>& x)
+// creates an asymetric gaussian with width 'sigmaNegative' for x < center and 'sigmaPositive' for x > center
+std::vector<double> CreateAsymmetricGaussian(double center, double sigmaNegative, double sigmaPositive, const std::vector<double>& x)
 {
     std::vector<double> slf(x.size());
     const double s2n = sigmaNegative * sigmaNegative;
@@ -15,16 +16,22 @@ std::vector<double> CreateAsymmetricGaussian(double sigmaNegative, double sigmaP
     size_t idx = 0;
     while (idx < x.size() && x[idx] < 0.0)
     {
-        slf[idx] = std::exp(-(x[idx] * x[idx]) / (2.0 * s2n));
+        const double diff = x[idx] - center;
+        slf[idx] = std::exp(-(diff * diff) / (2.0 * s2n));
         ++idx;
     }
     while (idx < x.size())
     {
-        slf[idx] = std::exp(-(x[idx] * x[idx]) / (2.0 * s2p));
+        const double diff = x[idx] - center;
+        slf[idx] = std::exp(-(diff * diff) / (2.0 * s2p));
         ++idx;
     }
 
     return slf;
+}
+std::vector<double> CreateAsymmetricGaussian(double sigmaNegative, double sigmaPositive, const std::vector<double>& x)
+{
+    return CreateAsymmetricGaussian(0.0, sigmaNegative, sigmaPositive, x);
 }
 
 
@@ -75,6 +82,52 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple Gaussian input re
     }
 }
 
+TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple not centered Gaussian input returns correct fitted function", "[InstrumentLineShape]")
+{
+    const double gaussianCenter = 300.0;
+    CSpectrum idealGaussian;
+    idealGaussian.m_wavelength = CreatePixelToWavelengthMapping(gaussianCenter - 2.0, gaussianCenter + 2.0, 43); // 4nm range with 43 sample pointss
+    idealGaussian.m_length = (long)idealGaussian.m_wavelength.size();
+
+    SECTION("Narrow line width")
+    {
+        const double sigma = 0.2; // [nm]
+        std::vector<double> spec = CreateGaussian(gaussianCenter, sigma, idealGaussian.m_wavelength);
+        memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
+
+        Calibration::GaussianLineShape result;
+        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+
+        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(fabs(result.sigma - sigma) < 0.005);
+    }
+
+    SECTION("Wide line width")
+    {
+        const double sigma = 0.8; // [nm]
+        std::vector<double> spec = CreateGaussian(gaussianCenter, sigma, idealGaussian.m_wavelength);
+        memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
+
+        Calibration::GaussianLineShape result;
+        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+
+        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(fabs(result.sigma - sigma) < 0.005);
+    }
+
+    SECTION("Really wide line width")
+    {
+        const double sigma = 1.5; // [nm] this is very wide compared to the width of the wavelength window
+        std::vector<double> spec = CreateGaussian(gaussianCenter, sigma, idealGaussian.m_wavelength);
+        memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
+
+        Calibration::GaussianLineShape result;
+        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+
+        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(fabs(result.sigma - sigma) < 0.005);
+    }
+}
 
 // -------- Fitting asymmetrical Gaussians --------
 TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussian input returns correct fitted function", "[InstrumentLineShape]")
@@ -159,10 +212,93 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
     }
 }
 
+// -------- Fitting asymmetrical Gaussians --------
+// TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple not centered Asymetric Gaussian input returns correct fitted function", "[InstrumentLineShape]")
+// {
+//     const double gaussianCenter = 300.0;
+//     CSpectrum idealGaussian;
+//     idealGaussian.m_wavelength = CreatePixelToWavelengthMapping(gaussianCenter - 2.0, gaussianCenter + 2.0, 43); // 4nm range with 43 sample pointss
+//     idealGaussian.m_length = (long)idealGaussian.m_wavelength.size();
+// 
+//     SECTION("Symmetric input, narrow line width")
+//     {
+//         const double sigmaLeft = 0.2; // [nm]
+//         const double sigmaRight = 0.2; // [nm]
+//         std::vector<double> spec = CreateAsymmetricGaussian(gaussianCenter, sigmaLeft, sigmaRight, idealGaussian.m_wavelength);
+//         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
+// 
+//         Calibration::AsymmetricGaussianLineShape result;
+//         auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+// 
+//         REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+//         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
+//         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
+//     }
+// 
+//     SECTION("Asymmetric input, narrow line width")
+//     {
+//         const double sigmaLeft = 0.2; // [nm]
+//         const double sigmaRight = 0.5; // [nm]
+//         std::vector<double> spec = CreateAsymmetricGaussian(gaussianCenter, sigmaLeft, sigmaRight, idealGaussian.m_wavelength);
+//         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
+// 
+//         Calibration::AsymmetricGaussianLineShape result;
+//         auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+// 
+//         REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+//         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
+//         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
+//     }
+// 
+//     SECTION("Asymmetric input, narrow line width #2")
+//     {
+//         const double sigmaLeft = 0.5; // [nm]
+//         const double sigmaRight = 0.2; // [nm]
+//         std::vector<double> spec = CreateAsymmetricGaussian(gaussianCenter, sigmaLeft, sigmaRight, idealGaussian.m_wavelength);
+//         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
+// 
+//         Calibration::AsymmetricGaussianLineShape result;
+//         auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+// 
+//         REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+//         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
+//         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
+//     }
+// 
+//     SECTION("Very asymmetric input, really wide line width")
+//     {
+//         const double sigmaLeft = 0.5; // [nm]
+//         const double sigmaRight = 1.5; // [nm] this is very wide compared to the width of the wavelength window
+//         std::vector<double> spec = CreateAsymmetricGaussian(gaussianCenter, sigmaLeft, sigmaRight, idealGaussian.m_wavelength);
+//         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
+// 
+//         Calibration::AsymmetricGaussianLineShape result;
+//         auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+// 
+//         REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+//         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
+//         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
+//     }
+// 
+//     SECTION("Very asymmetric input, really wide line width #2")
+//     {
+//         const double sigmaLeft = 1.5; // [nm] this is very wide compared to the width of the wavelength window
+//         const double sigmaRight = 0.5; // [nm]
+//         std::vector<double> spec = CreateAsymmetricGaussian(gaussianCenter, sigmaLeft, sigmaRight, idealGaussian.m_wavelength);
+//         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
+// 
+//         Calibration::AsymmetricGaussianLineShape result;
+//         auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+// 
+//         REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+//         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
+//         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
+//     }
+// }
 
 
 // -------- Fitting symmetrical SuperGaussian --------
-TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple Gaussian input returns correct fitted function", "[InstrumentLineShape]")
+TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple Gaussian input returns correct fitted function", "[InstrumentLineShape][SuperGaussian]")
 {
     CSpectrum idealGaussian;
     idealGaussian.m_wavelength = CreatePixelToWavelengthMapping(-2.0, +2.0, 43); // 4nm range with 43 sample pointss
@@ -172,6 +308,28 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple Gaussian in
     {
         const double sigma = 0.2; // [nm]
         std::vector<double> spec = CreateGaussian(sigma, idealGaussian.m_wavelength);
+        memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
+
+        Calibration::SuperGaussianLineShape result;
+        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+
+        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(fabs(result.sigma - sigma) < 0.005);
+        REQUIRE(fabs(result.P - 2) < 0.0005);
+    }
+}
+
+TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple not centered Gaussian input returns correct fitted function", "[InstrumentLineShape][SuperGaussian]")
+{
+    const double gaussianCenter = 300.0;
+    CSpectrum idealGaussian;
+    idealGaussian.m_wavelength = CreatePixelToWavelengthMapping(gaussianCenter - 2.0, gaussianCenter + 2.0, 43); // 4nm range with 43 sample pointss
+    idealGaussian.m_length = (long)idealGaussian.m_wavelength.size();
+
+    SECTION("Narrow line width")
+    {
+        const double sigma = 0.2; // [nm]
+        std::vector<double> spec = CreateGaussian(gaussianCenter, sigma, idealGaussian.m_wavelength);
         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
         Calibration::SuperGaussianLineShape result;
@@ -224,7 +382,7 @@ TEST_CASE("FitInstrumentLineShape: Real SLF input returns reasonable fitted func
         auto ret = Calibration::FitInstrumentLineShape(measuredSpectrum, result);
 
         REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
-        REQUIRE(fabs(result.sigmaLeft  - 0.241512) < 0.005);
+        REQUIRE(fabs(result.sigmaLeft - 0.241512) < 0.005);
         REQUIRE(fabs(result.sigmaRight - 0.221779) < 0.005);
     }
 
@@ -243,7 +401,7 @@ TEST_CASE("FitInstrumentLineShape: Real SLF input returns reasonable fitted func
         auto ret = Calibration::FitInstrumentLineShape(measuredSpectrum, result);
 
         REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
-        REQUIRE(fabs(result.sigma - 0.249618) < 0.005);
-        REQUIRE(fabs(result.P -     2.341718) < 0.0005);
+        REQUIRE(fabs(result.sigma - 0.249856) < 0.005);
+        REQUIRE(fabs(result.P - 2.34576) < 0.0005);
     }
 }

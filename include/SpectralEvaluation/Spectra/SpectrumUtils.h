@@ -17,11 +17,14 @@ struct SpectrumDataPoint
     double intensity = 0.0;
 };
 
-/// Locates all significant peaks in the provided spectrum and returns the result in the provided vector
-/// @param spectrum The spectrum in which peaks should be found, 
-///     if this has a wavelength calibration then the resulting points will have a wavelength filled in.
+/**
+ * @brief Locates all significant peaks in the provided spectrum and returns the result in the provided vector
+ * @param spectrum The spectrum in which peaks should be found,
+ *  if this has a wavelength calibration then the resulting points will have a wavelength filled in.
+ * @param minimumPeakIntensity Only peaks with a maximum intensity above this value will be returned.
+ * @param result Will on return be filled with the found peaks.
+*/
 void FindPeaks(const CSpectrum& spectrum, double minimumPeakIntensity, std::vector<SpectrumDataPoint>& result);
-
 
 /**
  * @brief Calculates a first order derivative on the provided data array wrt index value using finite difference.
