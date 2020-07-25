@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 
 // ---------------------------------------------------------------------------------------------------------------
 // -- This header contains methods used to extract and characterize the instrument line shape of a spectrometer --
@@ -54,6 +55,15 @@ enum class ILF_RETURN_CODE
 ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLineShape& result);
 ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, AsymmetricGaussianLineShape& result);
 ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, SuperGaussianLineShape& result);
+
+/**  Calculates the value of the provided line shape on the provided x-axis grid
+    The additional parameters required to calculate the value of the line shape are provided as additional parameters
+    @param center The x-axis value around which the line shape should be centered
+    @param amplitude The maximum value of the line shape (above the baseline)
+    @param baseline This value is added to each output value  */
+std::vector<double> SampleInstrumentLineShape(const GaussianLineShape& lineShape, const std::vector<double>& x, double center, double amplitude, double baseline = 0.0);
+std::vector<double> SampleInstrumentLineShape(const AsymmetricGaussianLineShape& lineShape, const std::vector<double>& x, double center, double amplitude, double baseline = 0.0);
+std::vector<double> SampleInstrumentLineShape(const SuperGaussianLineShape& lineShape, const std::vector<double>& x, double center, double amplitude, double baseline = 0.0);
 
 
 enum class MercuryPeak

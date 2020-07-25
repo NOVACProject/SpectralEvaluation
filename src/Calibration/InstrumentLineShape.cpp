@@ -175,7 +175,6 @@ ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, AsymmetricG
     }
 }
 
-
 ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, SuperGaussianLineShape& result)
 {
     if (mercuryLine.m_length == 0)
@@ -216,6 +215,52 @@ ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, SuperGaussi
         return ILF_RETURN_CODE::SUCCESS;
     }
 }
+
+template<class T>
+std::vector<double> GetFunctionValues(T& function, const std::vector<double>& x, double baseline = 0.0)
+{
+    std::vector<double> y(x.size());
+
+    for (size_t ii = 0; ii < x.size(); ++ii)
+    {
+        y[ii] = baseline + function.GetValue(x[ii]);
+    }
+
+    return y;
+}
+
+std::vector<double> SampleInstrumentLineShape(const GaussianLineShape& lineShape, const std::vector<double>& x, double center, double amplitude, double baseline)
+{
+    MathFit::CGaussFunction gaussian;
+    gaussian.SetCenter(center);
+    gaussian.SetSigma(lineShape.sigma);
+    gaussian.SetScale(amplitude);
+
+    return GetFunctionValues(gaussian, x, baseline);
+}
+
+std::vector<double> SampleInstrumentLineShape(const AsymmetricGaussianLineShape& lineShape, const std::vector<double>& x, double center, double amplitude, double baseline)
+{
+    MathFit::CAsymmetricGaussFunction gaussian;
+    gaussian.SetCenter(center);
+    gaussian.SetSigmaLeft(lineShape.sigmaLeft);
+    gaussian.SetSigmaRight(lineShape.sigmaRight);
+    gaussian.SetScale(amplitude);
+
+    return GetFunctionValues(gaussian, x, baseline);
+}
+
+std::vector<double> SampleInstrumentLineShape(const SuperGaussianLineShape& lineShape, const std::vector<double>& x, double center, double amplitude, double baseline)
+{
+    MathFit::CSuperGaussFunction superGauss;
+    superGauss.SetCenter(center);
+    superGauss.SetSigma(lineShape.sigma);
+    superGauss.SetPower(lineShape.P);
+    superGauss.SetScale(amplitude);
+
+    return GetFunctionValues(superGauss, x, baseline);
+}
+
 
 }
 
