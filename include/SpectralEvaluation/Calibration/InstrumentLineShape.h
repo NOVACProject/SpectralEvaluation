@@ -50,6 +50,7 @@ enum class ILF_RETURN_CODE
 
 // Fits a symmetrical Gaussian line to an extract of a mercury spectrum containing only one (full) mercury line.
 // The measured spectrum needs to have a wavelength calibration
+// The measured spectrum needs to be dark corrected and corrected such that any offset has been removed
 ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLineShape& result);
 ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, AsymmetricGaussianLineShape& result);
 ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, SuperGaussianLineShape& result);

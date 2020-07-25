@@ -382,8 +382,8 @@ TEST_CASE("FitInstrumentLineShape: Real SLF input returns reasonable fitted func
         auto ret = Calibration::FitInstrumentLineShape(measuredSpectrum, result);
 
         REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
-        REQUIRE(fabs(result.sigmaLeft - 0.241512) < 0.005);
-        REQUIRE(fabs(result.sigmaRight - 0.221779) < 0.005);
+        REQUIRE(fabs(result.sigmaLeft - 0.20991) < 0.005);
+        REQUIRE(fabs(result.sigmaRight - 0.25473) < 0.005);
     }
 
     SECTION("Symmetric Gaussian")
@@ -401,7 +401,7 @@ TEST_CASE("FitInstrumentLineShape: Real SLF input returns reasonable fitted func
         auto ret = Calibration::FitInstrumentLineShape(measuredSpectrum, result);
 
         REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
-        REQUIRE(fabs(result.sigma - 0.249856) < 0.005);
-        REQUIRE(fabs(result.P - 2.34576) < 0.0005);
+        REQUIRE(fabs(result.sigma - 0.249351) < 0.005);
+        REQUIRE(fabs(result.P - 2.37497) < 0.0005);
     }
 }

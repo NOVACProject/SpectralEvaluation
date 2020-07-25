@@ -42,6 +42,7 @@ ILF_RETURN_CODE FitFunction(MathFit::CVector& xData, MathFit::CVector& yData, T&
 
 void CreateInitialEstimate(const std::vector<double>& x, const std::vector<double>& y, MathFit::CGaussFunction& result)
 {
+    // Find the amplitude of the Gaussian
     size_t idxOfMaximumAmplitude = 0;
     double maximumAmplitude = y[0];
     for (size_t ii = 1; ii < y.size(); ++ii)
@@ -52,8 +53,6 @@ void CreateInitialEstimate(const std::vector<double>& x, const std::vector<doubl
             idxOfMaximumAmplitude = ii;
         }
     }
-
-    result.SetCenter(x[idxOfMaximumAmplitude]);
     result.SetScale(maximumAmplitude);
 
     if (idxOfMaximumAmplitude <= 2 || idxOfMaximumAmplitude >= y.size() - 2)
@@ -84,6 +83,17 @@ void CreateInitialEstimate(const std::vector<double>& x, const std::vector<doubl
     const double estimatedSigma = fwhm / 2.35482;
 
     result.SetSigma(estimatedSigma);
+
+    // Estimate the center as the center-of-mass of the entire dataset
+    double sumOfWeights = 0.0;
+    double weightedSum = 0.0;
+    for (size_t ii = 0; ii < y.size(); ++ii)
+    {
+        weightedSum += x[ii] * y[ii];
+        sumOfWeights += y[ii];
+    }
+    const double centerOfMass = weightedSum / sumOfWeights;
+    result.SetCenter(centerOfMass);
 }
 
 ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLineShape& result)
@@ -132,16 +142,18 @@ ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, AsymmetricG
         return ILF_RETURN_CODE::MISSING_WAVELENGTH_CALIBRATION;
     }
 
-    std::vector<double> localX{ mercuryLine.m_wavelength };
     std::vector<double> localY{ mercuryLine.m_data, mercuryLine.m_data + mercuryLine.m_length };
-
-    const bool autoReleaseData = false;
-    MathFit::CVector xData{ &localX[0], mercuryLine.m_length, 1, autoReleaseData };
-    MathFit::CVector yData{ &localY[0], mercuryLine.m_length, 1, autoReleaseData };
 
     // First create an initial estimation of the location, width and amplitude of the Gaussian
     MathFit::CGaussFunction simpleGaussian;
-    CreateInitialEstimate(localX, localY, simpleGaussian);
+    CreateInitialEstimate(mercuryLine.m_wavelength, localY, simpleGaussian);
+
+
+    const bool autoReleaseData = false;
+    std::vector<double> localX{ mercuryLine.m_wavelength };
+    MathFit::CVector xData{ &localX[0], mercuryLine.m_length, 1, autoReleaseData };
+    MathFit::CVector yData{ &localY[0], mercuryLine.m_length, 1, autoReleaseData };
+
 
     MathFit::CAsymmetricGaussFunction gaussianToFit;
     gaussianToFit.SetCenter(simpleGaussian.GetCenter());
