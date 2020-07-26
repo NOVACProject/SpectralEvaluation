@@ -79,7 +79,7 @@ bool CTXTFile::WriteSpectrum(const CSpectrum& spec, const std::string& fileName)
         // Include the wavelength data as a separate column
         for (int k = 0; k < spec.m_length; ++k)
         {
-            if (fprintf(f, "%lf\t%lf\r\n", spec.m_wavelength[k], spec.m_data[k]) < 0)
+            if (fprintf(f, "%lf\t%lf\n", spec.m_wavelength[k], spec.m_data[k]) < 0)
             {
                 // an error has occured, try to close the file
                 fclose(f);
@@ -91,7 +91,7 @@ bool CTXTFile::WriteSpectrum(const CSpectrum& spec, const std::string& fileName)
     {
         for (int k = 0; k < spec.m_length; ++k)
         {
-            if (fprintf(f, "%lf\r\n", spec.m_data[k]) < 0)
+            if (fprintf(f, "%lf\n", spec.m_data[k]) < 0)
             {
                 // an error has occured, try to close the file
                 fclose(f);
