@@ -1,6 +1,13 @@
 #include <SpectralEvaluation/File/TXTFile.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 
+namespace FileIo
+{
+// TODO: move these functions to a common helper
+int ReadFromFile(FILE* f, const char* formatStr, double& col1, double& col2);
+int GetFileFormat(const char* string, char* format);
+}
+
 namespace SpectrumIO
 {
 
@@ -20,12 +27,30 @@ bool CTXTFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName)
     std::vector<double> wavelengths(MAX_SPECTRUM_LENGTH);
     bool containsWavelengthData = false;
 
+    // Get the file-format and number of columns from the file.
+    char tempBuffer[8192];
+    char format[256];
+    if (nullptr == fgets(tempBuffer, 8191, f))
+    {
+        fclose(f);
+        return false;
+    }
+    const int numColumns = FileIo::GetFileFormat(tempBuffer, format);
+    fseek(f, 0, SEEK_SET);
+
     // Simply read the spectrum, one pixel at a time
     int length = 0;
     while (length < MAX_SPECTRUM_LENGTH)
     {
-        double col1, col2;
-        const int nCols = fscanf(f, "%lf %lf", &col1, &col2);
+        double col1 = 0.0;
+        double col2 = 0.0;
+        int nCols = FileIo::ReadFromFile(f, format, col1, col2);
+
+        if (nCols != numColumns)
+        {
+            break;
+        }
+
         if (nCols == 1)
         {
             spec.m_data[length] = col1;
