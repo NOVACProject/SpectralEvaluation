@@ -4,7 +4,6 @@
 namespace SpectrumIO
 {
 
-/** Reads a spectrum from a TXT-file */
 bool CTXTFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName)
 {
     // Open the file
@@ -56,26 +55,48 @@ bool CTXTFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName)
     return true;
 }
 
-/** Writes a spectrum to a TXT-file */
-bool CTXTFile::WriteSpectrum(const CSpectrum* spec, const std::string& fileName) {
-    if (spec == NULL)
+bool CTXTFile::WriteSpectrum(const CSpectrum* spec, const std::string& fileName)
+{
+    if (spec == nullptr)
+    {
         return false;
+    }
     return WriteSpectrum(*spec, fileName);
 }
 
-/** Writes a spectrum to a TXT-file */
-bool CTXTFile::WriteSpectrum(const CSpectrum& spec, const std::string& fileName) {
+bool CTXTFile::WriteSpectrum(const CSpectrum& spec, const std::string& fileName)
+{
     // Open the file
     FILE* f = fopen(fileName.c_str(), "w");
-    if (NULL == f)
+    if (nullptr == f)
+    {
         return false;
+    }
 
     // Write the spectrum, one data-point at a time
-    for (int k = 0; k < spec.m_length; ++k) {
-        if (0 > fprintf(f, "%lf\r\n", spec.m_data[k])) {
-            // an error has occured, try to close the file
-            fclose(f);
-            return false;
+    if (spec.m_wavelength.size() == (size_t)spec.m_length)
+    {
+        // Include the wavelength data as a separate column
+        for (int k = 0; k < spec.m_length; ++k)
+        {
+            if (fprintf(f, "%lf\t%lf\r\n", spec.m_wavelength[k], spec.m_data[k]) < 0)
+            {
+                // an error has occured, try to close the file
+                fclose(f);
+                return false;
+            }
+        }
+    }
+    else
+    {
+        for (int k = 0; k < spec.m_length; ++k)
+        {
+            if (fprintf(f, "%lf\r\n", spec.m_data[k]) < 0)
+            {
+                // an error has occured, try to close the file
+                fclose(f);
+                return false;
+            }
         }
     }
 
