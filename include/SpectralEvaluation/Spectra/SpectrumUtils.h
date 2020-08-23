@@ -15,16 +15,28 @@ struct SpectrumDataPoint
 
     // The intensity value of the spectrum at this point
     double intensity = 0.0;
+
+    // A type enumerator, may be used to classify points
+    int type = 0;
 };
 
 /**
  * @brief Locates all significant peaks in the provided spectrum and returns the result in the provided vector
  * @param spectrum The spectrum in which peaks should be found,
  *  if this has a wavelength calibration then the resulting points will have a wavelength filled in.
- * @param minimumPeakIntensity Only peaks with a maximum intensity above this value will be returned.
+ * @param minimumIntensity Only peaks with a maximum intensity above this value will be returned.
  * @param result Will on return be filled with the found peaks.
 */
-void FindPeaks(const CSpectrum& spectrum, double minimumPeakIntensity, std::vector<SpectrumDataPoint>& result);
+void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<SpectrumDataPoint>& result);
+
+/**
+ * @brief Locates all significant valleys in the provided spectrum and returns the result in the provided vector
+ * @param spectrum The spectrum in which valleys should be found,
+ *  if this has a wavelength calibration then the resulting points will have a wavelength filled in.
+ * @param minimumIntensity Only valleys with a maximum intensity above this value will be returned.
+ * @param result Will on return be filled with the found valleys.
+*/
+void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector<SpectrumDataPoint>& result);
 
 /**
  * @brief Calculates a first order derivative on the provided data array wrt index value using finite difference.
