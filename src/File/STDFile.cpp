@@ -347,6 +347,7 @@ namespace SpectrumIO
             fprintf(f, "FitHigh = 0\n");
             fprintf(f, "FitLow = 0\n");
             fprintf(f, "Gain = 0\n");
+            fprintf(f, "IntegrationMethod = Sum\n"); 
             fprintf(f, "Latitude = %.6lf\n", info.m_gps.m_latitude);
             fprintf(f, "LightPath = 0\n");
             fprintf(f, "LightSource = \"\"\n");
