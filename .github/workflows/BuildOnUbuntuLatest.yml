@@ -17,6 +17,8 @@ jobs:
       run: cmake -G "Unix Makefiles" .
     - name: Build
       run: make
+    - name: List Files
+      run: ls
     - name: Run Tests
-      run: ../bin/SpectralEvaluationTests
+      run: ./bin/SpectralEvaluationTests
       
