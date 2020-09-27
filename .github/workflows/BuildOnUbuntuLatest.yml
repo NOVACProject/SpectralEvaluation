@@ -18,5 +18,5 @@ jobs:
     - name: Build
       run: make
     - name: Run Tests
-      run: ./bin/Release/SpectralEvaluationTests
+      run: ../bin/SpectralEvaluationTests
       
