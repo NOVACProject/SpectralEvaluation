@@ -13,5 +13,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: BuildOnUnix
-      run: ./Build_UnixMake.sh
+    - name: Run CMake to Create Project Files
+      run: cmake -G "Unix Makefiles" .
+    - name: Build
+      run: make
