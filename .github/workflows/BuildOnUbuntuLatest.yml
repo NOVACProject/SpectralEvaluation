@@ -18,7 +18,7 @@ jobs:
     - name: Build
       run: make
     - name: List Files
-      run: ls/bin/
+      run: ls bin/
     - name: Run Tests
       run: ./bin/SpectralEvaluationTests
       
