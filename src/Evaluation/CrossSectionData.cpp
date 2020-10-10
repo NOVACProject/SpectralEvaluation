@@ -186,6 +186,14 @@ int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
     {
         fileRef.getline(tmpBuffer.data(), maxSize);
 
+        // Ignore empty-lines and lines starting with a comment character
+        if (strlen(tmpBuffer.data()) == 0 ||
+            tmpBuffer[0] == ';' ||
+            tmpBuffer[0] == '#')
+        {
+            continue;
+        }
+
         // this construction enables us to read files with both one or two columns
         double fValue1 = 0.0;
         double fValue2 = 0.0;
