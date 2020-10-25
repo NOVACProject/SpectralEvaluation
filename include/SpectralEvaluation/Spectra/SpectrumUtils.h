@@ -47,3 +47,13 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
  * @returns true if all is ok
 */
 bool Derivative(const double* data, size_t dataLength, std::vector<double>& result);
+
+/**
+ * @brief Calculates a first or second order derivative on the provided data array wrt index value using finite difference.
+ * @param data The data array (spectrum) to calculate the derivative of.
+ * @param dataLength The length of data.
+ * @param result Will on successful result be filled with the calculated first order derivative.
+ *       This will be reallocated to dataLength long and the first and last elements will be set to zero
+ * @returns true if all is ok
+*/
+bool Derivative(const double* data, size_t dataLength, int order, std::vector<double>& result);

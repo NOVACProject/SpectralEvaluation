@@ -1,6 +1,7 @@
 #include <SpectralEvaluation/Spectra/SpectrumUtils.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Interpolation.h>
+#include <SpectralEvaluation/Evaluation/BasicMath.h>
 #include <cassert>
 
 enum class Sign
@@ -22,6 +23,22 @@ inline Sign SignOf(double value, double nearZero)
     return value > nearZero ? Sign::Positive : (value < -nearZero ? Sign::Negative : Sign::Undetermined);
 }
 
+/// <summary>
+/// Calculates and returns the center of mass of the values in the region [firstIndex, lastIndex]
+/// </summary>
+double CenterOfMass(const double* values, size_t firstIndex, size_t lastIndex, double baseline = 0.0)
+{
+    double weights = 0.0;
+    double weightedSum = 0.0;
+    for (size_t ii = firstIndex; ii < lastIndex; ++ii)
+    {
+        const double weight = std::abs(values[ii] - baseline);
+        weightedSum += ii * weight;
+        weights += weight;
+    }
+    return weightedSum / weights;
+}
+
 void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<SpectrumDataPoint>& result)
 {
     result.clear();
@@ -31,9 +48,18 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
         return;
     }
 
+    std::vector<double> lowPassFilteredSpectrum(spectrum.m_data, spectrum.m_data + spectrum.m_length);
+    CBasicMath math;
+    math.LowPassBinomial(lowPassFilteredSpectrum.data(), spectrum.m_length, 3);
+
     // Calculate the first and second order derivatives
     std::vector<double> ddx;
-    if (!Derivative(spectrum.m_data, spectrum.m_length, ddx))
+    if (!Derivative(lowPassFilteredSpectrum.data(), spectrum.m_length, ddx))
+    {
+        return;
+    }
+    std::vector<double> ddx2;
+    if (!Derivative(lowPassFilteredSpectrum.data(), spectrum.m_length, 2, ddx2))
     {
         return;
     }
@@ -48,22 +74,42 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
         {
             SpectrumDataPoint pt;
 
-            // do a small linear interpolation to find the location of the zero crossing more precisely
-            const double alpha = ddx[idxOfLastSignificantDerivativeSign] / (ddx[idxOfLastSignificantDerivativeSign] - ddx[ii]);
-            const double idx = (double)idxOfLastSignificantDerivativeSign + alpha * ((double)ii - (double)idxOfLastSignificantDerivativeSign);
-
-            assert(idx > (double)idxOfLastSignificantDerivativeSign && idx < (double)ii);
-
-            pt.pixel = idx;
-            if (spectrum.m_wavelength.size() == (size_t)spectrum.m_length)
+            // Find a 'basis' region for the peak by locating the area around it where ddx2 is negative.
+            size_t startIdx = ii;
+            size_t endIdx = ii;
+            while (startIdx > 0 && ddx2[startIdx] < 0.0)
             {
-                LinearInterpolation(spectrum.m_wavelength, idx, pt.wavelength);
+                --startIdx;
             }
-            LinearInterpolation(spectrum.m_data, (size_t)spectrum.m_length, idx, pt.intensity);
-
-            if (pt.intensity > minimumIntensity)
+            while (endIdx < spectrum.m_length && ddx2[endIdx] < 0.0)
             {
-                result.push_back(pt);
+                ++endIdx;
+            }
+
+            const double peakHeight = lowPassFilteredSpectrum[ii] - std::max(lowPassFilteredSpectrum[startIdx], lowPassFilteredSpectrum[endIdx]);
+            const size_t peakWidth = endIdx - startIdx;
+
+            if (peakHeight > 5 && peakWidth >= 5) // TODO: Find reasonable values here
+            {
+                // do a small linear interpolation to find the location of the zero crossing more precisely
+                const double alpha = ddx[idxOfLastSignificantDerivativeSign] / (ddx[idxOfLastSignificantDerivativeSign] - ddx[ii]);
+                const double idx = (double)idxOfLastSignificantDerivativeSign + alpha * ((double)ii - (double)idxOfLastSignificantDerivativeSign);
+
+                assert(idx > (double)idxOfLastSignificantDerivativeSign && idx < (double)ii);
+
+                pt.pixel = idx;
+
+                LinearInterpolation(lowPassFilteredSpectrum.data(), (size_t)spectrum.m_length, idx, pt.intensity);
+
+                if (pt.intensity > minimumIntensity)
+                {
+                    if (spectrum.m_wavelength.size() == (size_t)spectrum.m_length)
+                    {
+                        LinearInterpolation(spectrum.m_wavelength, idx, pt.wavelength);
+                    }
+
+                    result.push_back(pt);
+                }
             }
         }
 
@@ -75,6 +121,7 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
     }
 }
 
+// TODO: Combine FindPeaks and FindValleys into one method, since they do the same processing...
 void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector<SpectrumDataPoint>& result)
 {
     result.clear();
@@ -84,9 +131,18 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
         return;
     }
 
+    std::vector<double> lowPassFilteredSpectrum(spectrum.m_data, spectrum.m_data + spectrum.m_length);
+    CBasicMath math;
+    math.LowPassBinomial(lowPassFilteredSpectrum.data(), spectrum.m_length, 3);
+
     // Calculate the first and second order derivatives
     std::vector<double> ddx;
-    if (!Derivative(spectrum.m_data, spectrum.m_length, ddx))
+    if (!Derivative(lowPassFilteredSpectrum.data(), spectrum.m_length, ddx))
+    {
+        return;
+    }
+    std::vector<double> ddx2;
+    if (!Derivative(lowPassFilteredSpectrum.data(), spectrum.m_length, 2, ddx2))
     {
         return;
     }
@@ -101,22 +157,42 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
         {
             SpectrumDataPoint pt;
 
-            // do a small linear interpolation to find the location of the zero crossing more precisely
-            const double alpha = ddx[idxOfLastSignificantDerivativeSign] / (ddx[idxOfLastSignificantDerivativeSign] - ddx[ii]);
-            const double idx = (double)idxOfLastSignificantDerivativeSign + alpha * ((double)ii - (double)idxOfLastSignificantDerivativeSign);
-
-            assert(idx > (double)idxOfLastSignificantDerivativeSign && idx < (double)ii);
-
-            pt.pixel = idx;
-            if (spectrum.m_wavelength.size() == (size_t)spectrum.m_length)
+            // Find a 'basis' region for the peak by locating the area around it where ddx2 is positive.
+            size_t startIdx = ii;
+            size_t endIdx = ii;
+            while (startIdx > 0 && ddx2[startIdx] > 0.0)
             {
-                LinearInterpolation(spectrum.m_wavelength, idx, pt.wavelength);
+                --startIdx;
             }
-            LinearInterpolation(spectrum.m_data, (size_t)spectrum.m_length, idx, pt.intensity);
-
-            if (pt.intensity > minimumIntensity)
+            while (endIdx < spectrum.m_length && ddx2[endIdx] > 0.0)
             {
-                result.push_back(pt);
+                ++endIdx;
+            }
+
+            const double valleyDepth = std::min(lowPassFilteredSpectrum[startIdx], lowPassFilteredSpectrum[endIdx]) - lowPassFilteredSpectrum[ii];
+            const size_t valleyWidth = endIdx - startIdx;
+
+            if (valleyDepth > 5 && valleyWidth >= 5) // TODO: Find reasonable values here
+            {
+                // do a small linear interpolation to find the location of the zero crossing more precisely
+                const double alpha = ddx[idxOfLastSignificantDerivativeSign] / (ddx[idxOfLastSignificantDerivativeSign] - ddx[ii]);
+                const double idx = (double)idxOfLastSignificantDerivativeSign + alpha * ((double)ii - (double)idxOfLastSignificantDerivativeSign);
+
+                assert(idx > (double)idxOfLastSignificantDerivativeSign && idx < (double)ii);
+
+                pt.pixel = idx;
+
+                LinearInterpolation(lowPassFilteredSpectrum.data(), (size_t)spectrum.m_length, idx, pt.intensity);
+
+                if (pt.intensity > minimumIntensity)
+                {
+                    if (spectrum.m_wavelength.size() == (size_t)spectrum.m_length)
+                    {
+                        LinearInterpolation(spectrum.m_wavelength, idx, pt.wavelength);
+                    }
+
+                    result.push_back(pt);
+                }
             }
         }
 
@@ -145,4 +221,34 @@ bool Derivative(const double* data, size_t dataLength, std::vector<double>& resu
     result[dataLength - 1] = 0.0;
 
     return true;
+}
+
+bool Derivative(const double* data, size_t dataLength, int order, std::vector<double>& result)
+{
+    if (order == 1)
+    {
+        return Derivative(data, dataLength, result);
+    }
+    else if (order == 2)
+    {
+        if (data == nullptr || dataLength < 3 || dataLength > 1024 * 1024) // check such that the data isn't unreasonably large
+        {
+            return false;
+        }
+
+        result.resize(dataLength);
+        result[0] = 0.0;
+
+        for (size_t ii = 1; ii < dataLength - 2; ++ii)
+        {
+            result[ii] = data[ii + 1] - 2 * data[ii] + data[ii - 1];
+        }
+        result[dataLength - 1] = 0.0;
+
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
