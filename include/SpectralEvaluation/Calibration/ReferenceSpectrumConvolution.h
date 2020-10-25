@@ -13,6 +13,12 @@ enum class WavelengthConversion
     VacuumToAir
 };
 
+enum class ConvolutionMethod
+{
+    Direct,
+    Fft
+};
+
 namespace Evaluation
 {
     class CCrossSectionData;
@@ -30,7 +36,7 @@ namespace Evaluation
     /** Performs a convolution of the high resolution reference function with the given slf (slit function, the convolution core)
         and resamples the result to the given pixelToWavelengthMapping.
         This expects the slf to be shifted to have the center in the middle of the vector. */
-    bool ConvolveReference(const std::vector<double>& pixelToWavelengthMapping, const CCrossSectionData& slf, const CCrossSectionData& highResReference, std::vector<double>& result, WavelengthConversion conversion = WavelengthConversion::None);
+    bool ConvolveReference(const std::vector<double>& pixelToWavelengthMapping, const CCrossSectionData& slf, const CCrossSectionData& highResReference, std::vector<double>& result, WavelengthConversion conversion = WavelengthConversion::None, ConvolutionMethod method = ConvolutionMethod::Direct);
 
     /** Performs a convolution of the high resolution reference function with the given slf (slit function, the convolution core).
         The result will be sampled on the same wavelength grid as the highResReference.
