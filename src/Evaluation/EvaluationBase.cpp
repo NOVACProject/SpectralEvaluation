@@ -387,8 +387,8 @@ void CEvaluationBase::CreateReferenceForSkySpectrum()
     }
     else if (m_window.shiftSky == 2)
     {
-        m_skyReference->SetParameter(CReferenceSpectrumFunction::SHIFT, (TFitData)m_window.skyShift);
-        m_skyReference->SetParameter(CReferenceSpectrumFunction::SQUEEZE, (TFitData)m_window.skySqueeze);
+        m_skyReference->FixParameter(CReferenceSpectrumFunction::SHIFT, (TFitData)m_window.skyShift);
+        m_skyReference->FixParameter(CReferenceSpectrumFunction::SQUEEZE, (TFitData)m_window.skySqueeze);
     }
     else
     {
