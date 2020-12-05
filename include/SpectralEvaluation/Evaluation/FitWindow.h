@@ -97,9 +97,16 @@ namespace Evaluation
         /** The type of fit. Novac standard is FIT_HP_DIV. */
         FIT_TYPE fitType = FIT_HP_DIV;
 
-        /** true if the sky-spectrum should be allowed to shift.
-                only useful if fitType is FIT_HP_SUB or FIT_POLY */
+        /** Set to zero (0) if the sky-spectrum should have a fixed shift/squeeze of 0.0 / 1.0.
+            Set to one (1) if the sky-spectrum should be allowed to shift freely.
+            Set to two (2) if the sky-spectrum should have a fixed shift/squeeze set by the skyShift / skySqueeze parameters.
+            only useful if fitType is FIT_HP_SUB or FIT_POLY */
         int shiftSky = 0;
+
+        /** The amount of shift to apply to the sky-spectrum. 
+            Only used if shiftSky == 2 */
+        double skyShift = 0.0;
+        double skySqueeze = 1.0;
 
         /** Larger than 1 if the spectra are read out in an interlaced way.
             This parameter works in the same way as the CSpectrumInfo::m_interlaceStep */

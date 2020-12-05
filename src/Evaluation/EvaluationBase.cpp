@@ -380,10 +380,15 @@ void CEvaluationBase::CreateReferenceForSkySpectrum()
     m_skyReference->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, concentrationMultiplier * m_skyReference->GetAmplitudeScale());
 
     // Check the options for the shift & squeeze
-    if (m_window.shiftSky)
+    if (m_window.shiftSky == 1)
     {
         m_skyReference->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)-3.0, (TFitData)3.0, 1);
         m_skyReference->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)0.95, (TFitData)1.05, 1e7);
+    }
+    else if (m_window.shiftSky == 2)
+    {
+        m_skyReference->SetParameter(CReferenceSpectrumFunction::SHIFT, (TFitData)m_window.skyShift);
+        m_skyReference->SetParameter(CReferenceSpectrumFunction::SQUEEZE, (TFitData)m_window.skySqueeze);
     }
     else
     {

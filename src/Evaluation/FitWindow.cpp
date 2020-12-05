@@ -13,6 +13,8 @@ CFitWindow::CFitWindow(const CFitWindow &other)
     fitLow(other.fitLow),
     fitType(other.fitType),
     shiftSky(other.shiftSky),
+    skyShift(other.skyShift),
+    skySqueeze(other.skySqueeze),
     interlaceStep(other.interlaceStep),
     name(other.name),
     nRef(other.nRef),
@@ -64,6 +66,8 @@ CFitWindow &CFitWindow::operator=(const CFitWindow &other)
     this->fitLow = other.fitLow;
     this->fitType = other.fitType;
     this->shiftSky = other.shiftSky;
+    this->skyShift = other.skyShift;
+    this->skySqueeze = other.skySqueeze;
     this->interlaceStep = other.interlaceStep;
     this->name = other.name;
     this->nRef = other.nRef;
@@ -91,6 +95,8 @@ CFitWindow &CFitWindow::operator=(CFitWindow&& other)
     this->fitLow = other.fitLow;
     this->fitType = other.fitType;
     this->shiftSky = other.shiftSky;
+    this->skyShift = other.skyShift;
+    this->skySqueeze = other.skySqueeze;
     this->interlaceStep = other.interlaceStep;
     this->name = std::move(other.name);
     this->nRef = other.nRef;
