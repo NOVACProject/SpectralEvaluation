@@ -22,6 +22,7 @@ CReferenceFile &CReferenceFile::operator=(const CReferenceFile &other)
     this->m_squeezeValue = other.m_squeezeValue;
     this->m_squeezeMaxValue = other.m_squeezeMaxValue;
     this->m_isFiltered = other.m_isFiltered;
+    this->m_include = other.m_include;
 
     if (other.m_data != nullptr)
     {
@@ -48,6 +49,7 @@ CReferenceFile &CReferenceFile::operator=(CReferenceFile&& other)
     this->m_squeezeValue = other.m_squeezeValue;
     this->m_squeezeMaxValue = other.m_squeezeMaxValue;
     this->m_isFiltered = other.m_isFiltered;
+    this->m_include = other.m_include;
 
     if (other.m_data != nullptr)
     {
@@ -72,7 +74,8 @@ CReferenceFile::CReferenceFile(const CReferenceFile& other)
     m_squeezeOption(other.m_squeezeOption),
     m_squeezeValue(other.m_squeezeValue),
     m_squeezeMaxValue(other.m_squeezeMaxValue),
-    m_isFiltered(other.m_isFiltered)
+    m_isFiltered(other.m_isFiltered),
+    m_include(other.m_include)
 {
     if (other.m_data != nullptr)
     {
@@ -95,7 +98,8 @@ CReferenceFile::CReferenceFile(CReferenceFile&& other)
     m_squeezeOption(other.m_squeezeOption),
     m_squeezeValue(other.m_squeezeValue),
     m_squeezeMaxValue(other.m_squeezeMaxValue),
-    m_isFiltered(other.m_isFiltered)
+    m_isFiltered(other.m_isFiltered),
+    m_include(other.m_include)
 {
     if (other.m_data != nullptr)
     {
