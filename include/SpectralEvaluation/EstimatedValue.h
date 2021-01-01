@@ -20,6 +20,9 @@ struct EstimatedValue
     double value = 0.0;
 
     double error = 0.0;
+
+    /** Returns the relative error of this value, i.e. error / value */
+    double RelativeError() const;
 };
 
 #endif  //ESTIMATEDVALUE_H
