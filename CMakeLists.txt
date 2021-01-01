@@ -42,10 +42,12 @@ add_library(NovacSpectralEvaluation
     ${SPECTRUM_CONFIGURATION_SOURCES}
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Interpolation.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/EstimatedValue.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Statistics.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/StringUtils.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/VectorUtils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Interpolation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/EstimatedValue.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Statistics.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/StringUtils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/VectorUtils.cpp
 )
