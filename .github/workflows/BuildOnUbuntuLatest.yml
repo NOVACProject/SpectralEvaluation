@@ -20,5 +20,5 @@ jobs:
     - name: List Files
       run: ls bin/
     - name: Run Tests
-      run: ./bin/SpectralEvaluationTests
+      run: cd ./bin; ./SpectralEvaluationTests
       
