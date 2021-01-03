@@ -60,11 +60,12 @@ CReferenceFile &CReferenceFile::operator=(CReferenceFile&& other)
 }
 
 CReferenceFile::CReferenceFile(const CReferenceFile& other)
-    : m_path(other.m_path),
+    : m_specieName(other.m_specieName),
+    m_path(other.m_path),
     m_crossSectionFile(other.m_crossSectionFile),
     m_slitFunctionFile(other.m_slitFunctionFile),
     m_wavelengthCalibrationFile(other.m_wavelengthCalibrationFile),
-    m_specieName(other.m_specieName),
+    m_gasFactor(other.m_gasFactor),
     m_columnOption(other.m_columnOption),
     m_columnValue(other.m_columnValue),
     m_columnMaxValue(other.m_columnMaxValue),
@@ -84,11 +85,12 @@ CReferenceFile::CReferenceFile(const CReferenceFile& other)
 }
 
 CReferenceFile::CReferenceFile(CReferenceFile&& other)
-    : m_path(other.m_path),
+    : m_specieName(other.m_specieName),
+    m_path(other.m_path),
     m_crossSectionFile(other.m_crossSectionFile),
     m_slitFunctionFile(other.m_slitFunctionFile),
     m_wavelengthCalibrationFile(other.m_wavelengthCalibrationFile),
-    m_specieName(other.m_specieName),
+    m_gasFactor(other.m_gasFactor),
     m_columnOption(other.m_columnOption),
     m_columnValue(other.m_columnValue),
     m_columnMaxValue(other.m_columnMaxValue),

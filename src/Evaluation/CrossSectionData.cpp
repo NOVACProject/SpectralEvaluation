@@ -19,8 +19,8 @@ CCrossSectionData::CCrossSectionData()
 }
 
 CCrossSectionData::CCrossSectionData(const CCrossSectionData& other)
-    : m_crossSection(begin(other.m_crossSection), end(other.m_crossSection)),
-    m_waveLength(begin(other.m_waveLength), end(other.m_waveLength))
+    : m_waveLength(begin(other.m_waveLength), end(other.m_waveLength)),
+    m_crossSection(begin(other.m_crossSection), end(other.m_crossSection))
 {
 }
 
