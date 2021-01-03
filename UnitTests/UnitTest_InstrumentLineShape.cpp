@@ -1,4 +1,5 @@
 #include "catch.hpp"
+#include <string.h>
 #include <SpectralEvaluation/Calibration/InstrumentLineShape.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 
