@@ -1,4 +1,5 @@
 #include "catch.hpp"
+#include <string.h>
 #include <SpectralEvaluation/Spectra/SpectrumUtils.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 

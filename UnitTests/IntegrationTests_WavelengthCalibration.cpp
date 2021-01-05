@@ -8,9 +8,9 @@ namespace novac
 std::string GetMercuryFileName()
 {
 #ifdef _MSC_VER
-    return std::string("../testData/Hg_D2J2200_all.Master.Sample.txt");
+    return std::string("../TestData/Hg_D2J2200_all.Master.Sample.txt");
 #else
-    return std::string("testData/Hg_D2J2200_all.Master.Sample.txt");
+    return std::string("TestData/Hg_D2J2200_all.Master.Sample.txt");
 #endif // _MSC_VER
 }
 

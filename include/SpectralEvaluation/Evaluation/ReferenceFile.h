@@ -41,8 +41,8 @@ namespace Evaluation
         CReferenceFile& operator=(CReferenceFile&& other);
         CReferenceFile(CReferenceFile&& other);
 
-        /** The name of the specie */
-        std::string  m_specieName = "";
+        /** The name of the specie, e.g. SO2 or O3. */
+        std::string m_specieName = "";
 
         /** The path to the reference file.
             This is a ready-to-use cross section on the correct wavelength grid convolved 
@@ -51,53 +51,53 @@ namespace Evaluation
             The main option is to use this file to evaluate the spectra. 
             This may be empty, in which case the cross section will be generated using
             m_crossSectionFile, m_slitFunctionFile and m_wavelengthCalibrationFile below. */
-        std::string   m_path = "";
+        std::string m_path = "";
 
         /** The path to a high-resolved cross section which can be convolved with 
             'm_slitFunctionFile' and resampled to the wavelength in 'm_wavelengthCalibrationFile'
             to generate a reference file. If m_path is empty then these three must be provided
             in order to generate the reference on the fly. */
-        std::string   m_crossSectionFile = "";
-        std::string   m_slitFunctionFile = "";
-        std::string   m_wavelengthCalibrationFile = "";
+        std::string m_crossSectionFile = "";
+        std::string m_slitFunctionFile = "";
+        std::string m_wavelengthCalibrationFile = "";
 
         /** The magic gas-factor is the conversion factor 
             between ppmm and mg and is necessary to calculate a flux.
             The factor 2.66 is for SO2, other gases needs other values. */
-        double        m_gasFactor = 2.66;
+        double m_gasFactor = 2.66;
 
         /** The option for the column value. */
-        SHIFT_TYPE    m_columnOption = SHIFT_FREE;
+        SHIFT_TYPE m_columnOption = SHIFT_FREE;
 
         /** The value for the column value (only used if m_columnOption is not SHIFT_FREE) */
-        double        m_columnValue = 0.0;
+        double m_columnValue = 0.0;
 
         /** if m_columnOption is SHIFT_LIMIT,
             this is the maximum column value allowed
             and m_columnValue is the minimum column value allowed */
-        double        m_columnMaxValue = 0.0;
+        double m_columnMaxValue = 0.0;
 
         /** The option for the shift */
-        SHIFT_TYPE    m_shiftOption = SHIFT_FIX;
+        SHIFT_TYPE m_shiftOption = SHIFT_FIX;
 
         /** The value for the shift */
-        double        m_shiftValue = 0.0;
+        double m_shiftValue = 0.0;
 
         /** if m_shiftOption is SHIFT_LIMIT,
             this is the maximum shift value allowed
             and m_shiftValue is the minimum shift value allowed */
-        double        m_shiftMaxValue = 0.0;
+        double m_shiftMaxValue = 0.0;
 
         /** The option for the squeeze */
-        SHIFT_TYPE    m_squeezeOption = SHIFT_FIX;
+        SHIFT_TYPE m_squeezeOption = SHIFT_FIX;
 
         /** The value for the squeeze */
-        double          m_squeezeValue = 1.0;
+        double m_squeezeValue = 1.0;
 
         /** if m_squeezeOption is SHIFT_LIMIT,
             this is the maximum squeeze value allowed
             and m_squeezeValue is the minimum squeeze value allowed */
-        double          m_squeezeMaxValue = 1.0;
+        double m_squeezeMaxValue = 1.0;
 
         /** This is true if this cross section file is high-pass filtered already on disk
             If this is false and the fit-type if HP_SUB or HP_DIV then the reference will be 
@@ -105,7 +105,11 @@ namespace Evaluation
             NOTICE that in the NovacProgram are the references given for real-time evaluation always filtered
             and this flag must be set to true before running the evaluation. In NovacPPP are the references given
             always NOT filtered. */
-        bool            m_isFiltered = false;
+        bool m_isFiltered = false;
+
+        /** Set this to false to not include the reference into the DOAS fit. 
+            This can be used to selectively include/exclude references. */
+        bool m_include = true;
 
         /** The actual data of this reference - file. This is equal to
                 nullptr if the reference data has not been read in yet, otherwise
