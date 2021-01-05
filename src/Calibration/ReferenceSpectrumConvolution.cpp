@@ -5,6 +5,7 @@
 #include <SpectralEvaluation/VectorUtils.h>
 #include <SpectralEvaluation/Spectra/Grid.h>
 #include <SpectralEvaluation/Air.h>
+#include <SpectralEvaluation/Math/FFT.h>
 #include <iostream>
 #include <assert.h>
 
@@ -59,6 +60,7 @@ void Resample(const CCrossSectionData& slf, const std::vector<double>& wavelengt
     }
 }
 
+/* Performs a convolution between the input and core and stores the result in 'result' */
 void ConvolutionCore(const std::vector<double>& input, const std::vector<double>& core, std::vector<double>& result)
 {
     const size_t refSize = input.size();
@@ -83,6 +85,63 @@ void ConvolutionCore(const std::vector<double>& input, const std::vector<double>
             resultPtr[n] += inputPtr[k] * corePtr[n - k];
         }
     }
+}
+
+/* Performs a convolution using FFT between the input and core and stores the result in 'result' */
+void ConvolutionCoreFft(const std::vector<double>& input, const std::vector<double>& core, std::vector<double>& result)
+{
+    const size_t refSize = input.size();
+    const size_t coreSize = core.size();
+
+    // The final size of the 'result' vector
+    const size_t resultSize = input.size() + core.size() - 1;
+    result.resize(resultSize, 0.0);
+
+    // The convolution is performed by taking the fft of both the input and the core, multiplying their (complex) outputs and taking the inverse fft.
+
+    // For the multiplication to work, the two vectors need to have equal length. Do this by pad the 'core' with the first and last values
+    std::vector<double> paddedCore(input.size());
+    if (core.size() < input.size())
+    {
+        const size_t endOfPad1 = (input.size() - core.size()) / 2;
+        const size_t startOfPad2 = core.size() + endOfPad1;
+        for (size_t ii = 0; ii < endOfPad1; ++ii)
+        {
+            paddedCore[ii] = core[0];
+        }
+        for (size_t ii = endOfPad1; ii < startOfPad2; ++ii)
+        {
+            paddedCore[ii] = core[ii - endOfPad1];
+        }
+        for (size_t ii = startOfPad2; ii < input.size(); ++ii)
+        {
+            paddedCore[ii] = core[core.size() - 1];
+        }
+    }
+
+    // Do the fft
+    // TODO: Make sure that the lengths here are even numbers, as required by Fft_Real
+    std::vector<std::complex<double>> dftOfInput(input.size());
+    novac::Fft_Real(input, dftOfInput);
+
+    // TODO: Make sure that the lengths here are even numbers, as required by Fft_Real
+    std::vector<std::complex<double>> dftOfCore(input.size());
+    novac::Fft_Real(paddedCore, dftOfCore);
+
+    // Multiply
+    std::vector<std::complex<double>> product(input.size());
+    for (size_t ii = 0; ii < input.size(); ++ii)
+    {
+        product[ii] = dftOfInput[ii] * dftOfCore[ii];
+    }
+
+    // Inverse transform
+    const bool forwardTransform = false;
+    std::vector<std::complex<double>> complexResult(input.size());
+    novac::Fft(product, complexResult, false);
+
+    // Extract the result and return.
+
 }
 
 bool ConvolveReference(
@@ -314,9 +373,7 @@ bool ConvolveReference(
     }
     else if (method == ConvolutionMethod::Fft)
     {
-        // ConvolutionCoreFft(uniformHighResReference, normalizedSlf, intermediate);
-        std::cout << " Error in call to 'ConvolveReference', convolution using FFT is not yet implemented." << std::endl;
-        return false;
+        ConvolutionCoreFft(uniformHighResReference, normalizedSlf, intermediate);
 
     }
 

@@ -22,6 +22,7 @@ add_subdirectory(src/Fit)
 add_subdirectory(src/FitExtensions)
 add_subdirectory(src/File)
 add_subdirectory(src/Flux)
+add_subdirectory(src/Math)
 add_subdirectory(src/Spectra)
 
 add_library(NovacSpectralEvaluation
@@ -38,6 +39,8 @@ add_library(NovacSpectralEvaluation
     ${SPECTRUM_CLASS_SOURCES}
     ${SPECTRUM_FILE_HEADERS}
     ${SPECTRUM_FILE_SOURCES}
+    ${SPECTRUM_MATH_HEADERS}
+    ${SPECTRUM_MATH_SOURCES}
     ${SPECTRUM_CONFIGURATION_HEADERS}
     ${SPECTRUM_CONFIGURATION_SOURCES}
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Interpolation.h
@@ -62,6 +65,7 @@ source_group("Header Files\\File"                   FILES ${SPECTRUM_FILE_HEADER
 source_group("Header Files\\Fit"                    FILES ${SPECTRUM_FIT_HEADERS})
 source_group("Header Files\\Fit"                    FILES ${SPECTRUM_FIT_EXTENSION_HEADERS})
 source_group("Header Files\\Flux"                   FILES ${SPECTRUM_FLUX_HEADERS})
+source_group("Header Files\\Math"                   FILES ${SPECTRUM_MATH_HEADERS})
 source_group("Header Files\\Spectra"                FILES ${SPECTRUM_CLASS_HEADERS})
 
 
@@ -71,6 +75,7 @@ source_group("Source Files\\Evaluation"             FILES ${SPECTRUM_EVALUATION_
 source_group("Source Files\\File"                   FILES ${SPECTRUM_FILE_SOURCES})
 source_group("Source Files\\Fit"                    FILES ${SPECTRUM_FIT_SOURCES})
 source_group("Source Files\\Flux"                   FILES ${SPECTRUM_FLUX_SOURCES})
+source_group("Source Files\\Math"                   FILES ${SPECTRUM_MATH_SOURCES})
 source_group("Source Files\\Spectra"                FILES ${SPECTRUM_CLASS_SOURCES})
 
 
