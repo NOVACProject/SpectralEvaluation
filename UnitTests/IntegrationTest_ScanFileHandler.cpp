@@ -7,9 +7,9 @@ namespace novac
     std::string GetFileName()
     {
 #ifdef _MSC_VER
-        return std::string("../testData/I2J8549_170216_1230_0.pak");
+        return std::string("../TestData/I2J8549_170216_1230_0.pak");
 #else
-        return std::string("testData/I2J8549_170216_1230_0.pak");
+        return std::string("TestData/I2J8549_170216_1230_0.pak");
 #endif // _MSC_VER
     }
 

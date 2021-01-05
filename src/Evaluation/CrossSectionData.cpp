@@ -19,8 +19,8 @@ CCrossSectionData::CCrossSectionData()
 }
 
 CCrossSectionData::CCrossSectionData(const CCrossSectionData& other)
-    : m_crossSection(begin(other.m_crossSection), end(other.m_crossSection)),
-    m_waveLength(begin(other.m_waveLength), end(other.m_waveLength))
+    : m_waveLength(begin(other.m_waveLength), end(other.m_waveLength)),
+    m_crossSection(begin(other.m_crossSection), end(other.m_crossSection))
 {
 }
 
@@ -185,6 +185,14 @@ int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
     while (!fileRef.eof())
     {
         fileRef.getline(tmpBuffer.data(), maxSize);
+
+        // Ignore empty-lines and lines starting with a comment character
+        if (strlen(tmpBuffer.data()) == 0 ||
+            tmpBuffer[0] == ';' ||
+            tmpBuffer[0] == '#')
+        {
+            continue;
+        }
 
         // this construction enables us to read files with both one or two columns
         double fValue1 = 0.0;

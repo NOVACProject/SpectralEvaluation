@@ -31,8 +31,8 @@ CSpectrum::CSpectrum(const std::vector<double>& wavelength, const std::vector<do
 }
 
 CSpectrum::CSpectrum(const CSpectrum& other)
-    : m_info(other.m_info),
-    m_length(other.m_length)
+    : m_length(other.m_length), 
+      m_info(other.m_info)
 {
     memcpy(this->m_data, &other.m_data, sizeof(double) * MAX_SPECTRUM_LENGTH);
 
@@ -43,8 +43,8 @@ CSpectrum::CSpectrum(const CSpectrum& other)
 }
 
 CSpectrum::CSpectrum(CSpectrum&& other)
-    : m_info(std::move(other.m_info)),
-    m_length(other.m_length)
+    : m_length(other.m_length),
+    m_info(std::move(other.m_info))
 {
     // this still has to be copied
     memcpy(this->m_data, &other.m_data, sizeof(double) * MAX_SPECTRUM_LENGTH);

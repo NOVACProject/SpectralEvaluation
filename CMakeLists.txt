@@ -15,18 +15,23 @@ endif()
 set(SPECTRALEVAUATION_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include CACHE STRING "")
 
 # Create a library from the SpectralEvaluation classes
+add_subdirectory(src/Calibration)
 add_subdirectory(src/Configuration)
 add_subdirectory(src/Evaluation)
 add_subdirectory(src/Fit)
+add_subdirectory(src/FitExtensions)
 add_subdirectory(src/File)
 add_subdirectory(src/Flux)
 add_subdirectory(src/Spectra)
 
 add_library(NovacSpectralEvaluation
+    ${SPECTRUM_CALIBRATION_HEADERS}
+    ${SPECTRUM_CALIBRATION_SOURCES}
     ${SPECTRUM_EVALUATION_HEADERS}
     ${SPECTRUM_EVALUATION_SOURCES}
     ${SPECTRUM_FIT_HEADERS}
     ${SPECTRUM_FIT_SOURCES}
+    ${SPECTRUM_FIT_EXTENSION_HEADERS}
     ${SPECTRUM_FLUX_HEADERS}
     ${SPECTRUM_FLUX_SOURCES}
     ${SPECTRUM_CLASS_HEADERS}
@@ -36,9 +41,13 @@ add_library(NovacSpectralEvaluation
     ${SPECTRUM_CONFIGURATION_HEADERS}
     ${SPECTRUM_CONFIGURATION_SOURCES}
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Interpolation.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/EstimatedValue.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Statistics.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/StringUtils.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/VectorUtils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Interpolation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/EstimatedValue.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Statistics.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/StringUtils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/VectorUtils.cpp
 )
@@ -46,14 +55,17 @@ add_library(NovacSpectralEvaluation
 target_include_directories(NovacSpectralEvaluation PUBLIC ${SPECTRALEVAUATION_INCLUDE_DIRS})
 
 #Organize the files into folders, for ease of use
+source_group("Header Files\\Calibration"            FILES ${SPECTRUM_CALIBRATION_HEADERS})
 source_group("Header Files\\Configuration"          FILES ${SPECTRUM_CONFIGURATION_HEADERS})
 source_group("Header Files\\Evaluation"             FILES ${SPECTRUM_EVALUATION_HEADERS})
 source_group("Header Files\\File"                   FILES ${SPECTRUM_FILE_HEADERS})
 source_group("Header Files\\Fit"                    FILES ${SPECTRUM_FIT_HEADERS})
+source_group("Header Files\\Fit"                    FILES ${SPECTRUM_FIT_EXTENSION_HEADERS})
 source_group("Header Files\\Flux"                   FILES ${SPECTRUM_FLUX_HEADERS})
 source_group("Header Files\\Spectra"                FILES ${SPECTRUM_CLASS_HEADERS})
 
 
+source_group("Source Files\\Calibration"            FILES ${SPECTRUM_CALIBRATION_SOURCES})
 source_group("Source Files\\Configuration"          FILES ${SPECTRUM_CONFIGURATION_SOURCES})
 source_group("Source Files\\Evaluation"             FILES ${SPECTRUM_EVALUATION_SOURCES})
 source_group("Source Files\\File"                   FILES ${SPECTRUM_FILE_SOURCES})
