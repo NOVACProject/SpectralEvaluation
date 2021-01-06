@@ -87,6 +87,14 @@ double SumOfSquaredDifferences(const std::vector<double>& a, const std::vector<d
     return sum;
 }
 
+void Mult(std::vector<double>& values, double factor)
+{
+    for (double& v : values)
+    {
+        v *= factor;
+    }
+}
+
 double Average(const std::vector<double>& values)
 {
     if (values.size() == 0)

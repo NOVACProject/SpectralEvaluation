@@ -33,6 +33,9 @@ double Sum(const std::vector<double>& values);
     If a.size() != b.size() then -1.0 is returned. */
 double SumOfSquaredDifferences(const std::vector<double>& a, const std::vector<double>& b);
 
+/** Multiplies all values in the provided vector with the provided factor */
+void Mult(std::vector<double>& values, double factor);
+
 /** @return the Average of all the given values
     If values.size() == 0 then 0.0 is returned. */
 double Average(const std::vector<double>& values);

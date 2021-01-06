@@ -239,14 +239,26 @@ TEST_CASE("ConvolveReference (FFT) returns expected output - simple input", "[Co
     slf.m_waveLength = CreatePixelToWavelengthMapping(-2.0, +2.0, 41); // 0.1 nm resolution
     slf.m_crossSection = CreateGaussian(slfSigma, slf.m_waveLength);
 
-    std::vector<double> result;
-
     SECTION("Result has correct length")
     {
+        std::vector<double> result;
         bool retVal = ConvolveReference(wavelMapping, slf, highResReference, result, WavelengthConversion::None, ConvolutionMethod::Fft);
 
         REQUIRE(retVal == true);
         REQUIRE(result.size() == wavelMapping.size());
+    }
+
+    SECTION("Result is identical to output from direct convolution")
+    {
+        std::vector<double> resultFromFft;
+        ConvolveReference(wavelMapping, slf, highResReference, resultFromFft, WavelengthConversion::None, ConvolutionMethod::Fft);
+
+        std::vector<double> resultFromDirectConv;
+        ConvolveReference(wavelMapping, slf, highResReference, resultFromDirectConv, WavelengthConversion::None, ConvolutionMethod::Direct);
+
+        // The two vectors should be identical
+        REQUIRE(resultFromFft.size() == resultFromDirectConv.size());
+        REQUIRE(std::abs(SumOfSquaredDifferences(resultFromFft, resultFromDirectConv)) < std::numeric_limits<float>::epsilon());
     }
 }
 

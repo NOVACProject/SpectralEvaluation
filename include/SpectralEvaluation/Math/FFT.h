@@ -18,6 +18,10 @@ std::vector<double> Real(const std::vector<std::complex<double>>& complexData);
 std::vector<float> Imag(const std::vector<std::complex<float>>& complexData);
 std::vector<double> Imag(const std::vector<std::complex<double>>& complexData);
 
+/** Returns the absolute of the provided vector of complex values */
+std::vector<float> Abs(const std::vector<std::complex<float>>& complexData);
+std::vector<double> Abs(const std::vector<std::complex<double>>& complexData);
+
 /** Calculates the Fourier Transform of the provided complex-valued input sequence
     and stores the result in the given output parameter 'result'.
     @param input The data to calculate the fourier transform of.

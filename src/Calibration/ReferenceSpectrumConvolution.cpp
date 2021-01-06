@@ -87,61 +87,48 @@ void ConvolutionCore(const std::vector<double>& input, const std::vector<double>
     }
 }
 
-/* Performs a convolution using FFT between the input and core and stores the result in 'result' */
+/* Performs a convolution using FFT between the input and core and stores the result in 'result'.
+    The result will have length equal to (input.size() + core.size() - 1)
+*/
 void ConvolutionCoreFft(const std::vector<double>& input, const std::vector<double>& core, std::vector<double>& result)
 {
-    const size_t refSize = input.size();
-    const size_t coreSize = core.size();
-
-    // The final size of the 'result' vector
-    const size_t resultSize = input.size() + core.size() - 1;
-    result.resize(resultSize, 0.0);
+    const size_t outputSize = input.size() + core.size() - 1;
+    const size_t fftSize = (outputSize % 2 == 0) ? outputSize : outputSize + 1; // the FFT_real used below only accepts vectors of even length
 
     // The convolution is performed by taking the fft of both the input and the core, multiplying their (complex) outputs and taking the inverse fft.
 
-    // For the multiplication to work, the two vectors need to have equal length. Do this by pad the 'core' with the first and last values
-    std::vector<double> paddedCore(input.size());
-    if (core.size() < input.size())
-    {
-        const size_t endOfPad1 = (input.size() - core.size()) / 2;
-        const size_t startOfPad2 = core.size() + endOfPad1;
-        for (size_t ii = 0; ii < endOfPad1; ++ii)
-        {
-            paddedCore[ii] = core[0];
-        }
-        for (size_t ii = endOfPad1; ii < startOfPad2; ++ii)
-        {
-            paddedCore[ii] = core[ii - endOfPad1];
-        }
-        for (size_t ii = startOfPad2; ii < input.size(); ++ii)
-        {
-            paddedCore[ii] = core[core.size() - 1];
-        }
-    }
+    // Start by creating a padded core, where the original core has been padded with zeros to the correct length.
+    std::vector<double> paddedCore(fftSize, 0.0);
+    memcpy(paddedCore.data(), core.data(), core.size() * sizeof(double));
+
+    // Create a padded input, where the original input has been padded with zeros
+    std::vector<double> paddedInput(fftSize, 0.0);
+    memcpy(paddedInput.data(), input.data(), input.size() * sizeof(double));
 
     // Do the fft
     // TODO: Make sure that the lengths here are even numbers, as required by Fft_Real
-    std::vector<std::complex<double>> dftOfInput(input.size());
-    novac::Fft_Real(input, dftOfInput);
+    std::vector<std::complex<double>> dftOfInput(fftSize);
+    novac::Fft_Real(paddedInput, dftOfInput);
 
     // TODO: Make sure that the lengths here are even numbers, as required by Fft_Real
-    std::vector<std::complex<double>> dftOfCore(input.size());
+    std::vector<std::complex<double>> dftOfCore(fftSize);
     novac::Fft_Real(paddedCore, dftOfCore);
 
     // Multiply
-    std::vector<std::complex<double>> product(input.size());
-    for (size_t ii = 0; ii < input.size(); ++ii)
+    std::vector<std::complex<double>> product(fftSize);
+    for (size_t ii = 0; ii < fftSize; ++ii)
     {
         product[ii] = dftOfInput[ii] * dftOfCore[ii];
     }
 
     // Inverse transform
     const bool forwardTransform = false;
-    std::vector<std::complex<double>> complexResult(input.size());
+    std::vector<std::complex<double>> complexResult(fftSize);
     novac::Fft(product, complexResult, false);
 
-    // Extract the result and return.
-
+    // Extract the result and return, remember to scale with the length of the fft (since the Ifft above doesn't do that).
+    result = novac::Abs(complexResult);
+    Mult(result, 1.0 / (double)fftSize);
 }
 
 bool ConvolveReference(
@@ -366,20 +353,21 @@ bool ConvolveReference(
 
     // Do the actual convolution
     std::vector<double> intermediate;
-
     if (method == ConvolutionMethod::Direct)
     {
         ConvolutionCore(uniformHighResReference, normalizedSlf, intermediate);
+
     }
     else if (method == ConvolutionMethod::Fft)
     {
         ConvolutionCoreFft(uniformHighResReference, normalizedSlf, intermediate);
-
     }
 
-    // Cut down the result to the same size as the output is supposed to be
     CCrossSectionData resultSpec;
+
+    // Cut down the result to the same size as the output is supposed to be
     resultSpec.m_crossSection = std::vector<double>(begin(intermediate) + coreSize / 2, begin(intermediate) + refSize + coreSize / 2);
+
     resultSpec.m_waveLength = std::vector<double>(resultSpec.m_crossSection.size());
     convolutionGrid.Generate(resultSpec.m_waveLength);
 

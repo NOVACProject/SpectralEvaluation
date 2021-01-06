@@ -37,6 +37,18 @@ std::vector<T> ImagT(const std::vector<std::complex<T>>& complexData)
     return result;
 }
 
+template<class T>
+std::vector<T> AbsT(const std::vector<std::complex<T>>& complexData)
+{
+    std::vector<T> result(complexData.size());
+    for (size_t ii = 0; ii < complexData.size(); ++ii)
+    {
+        result[ii] = std::abs(complexData[ii]);
+    }
+    return result;
+}
+
+
 std::vector<float> Real(const std::vector<std::complex<float>>& complexData)
 {
     return RealT(complexData);
@@ -54,6 +66,16 @@ std::vector<double> Imag(const std::vector<std::complex<double>>& complexData)
 {
     return ImagT(complexData);
 }
+
+std::vector<float> Abs(const std::vector<std::complex<float>>& complexData)
+{
+    return AbsT(complexData);
+}
+std::vector<double> Abs(const std::vector<std::complex<double>>& complexData)
+{
+    return AbsT(complexData);
+}
+
 
 
 // The FFT implementation here makes use of kiss fft https://github.com/mborgerding/kissfft
