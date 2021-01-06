@@ -97,22 +97,23 @@ void ConvolutionCoreFft(const std::vector<double>& input, const std::vector<doub
 
     // The convolution is performed by taking the fft of both the input and the core, multiplying their (complex) outputs and taking the inverse fft.
 
-    // Start by creating a padded core, where the original core has been padded with zeros to the correct length.
-    std::vector<double> paddedCore(fftSize, 0.0);
-    memcpy(paddedCore.data(), core.data(), core.size() * sizeof(double));
-
-    // Create a padded input, where the original input has been padded with zeros
-    std::vector<double> paddedInput(fftSize, 0.0);
-    memcpy(paddedInput.data(), input.data(), input.size() * sizeof(double));
-
-    // Do the fft
-    // TODO: Make sure that the lengths here are even numbers, as required by Fft_Real
+    // Do the fft of the input
     std::vector<std::complex<double>> dftOfInput(fftSize);
-    novac::Fft_Real(paddedInput, dftOfInput);
+    {
+        // Create a padded input, where the original input has been padded with zeros to the correct length.
+        std::vector<double> paddedInput(fftSize, 0.0);
+        memcpy(paddedInput.data(), input.data(), input.size() * sizeof(double));
+        novac::Fft_Real(paddedInput, dftOfInput);
+    }
 
-    // TODO: Make sure that the lengths here are even numbers, as required by Fft_Real
+    // Do the fft of the core
     std::vector<std::complex<double>> dftOfCore(fftSize);
-    novac::Fft_Real(paddedCore, dftOfCore);
+    {
+        // Create a padded core, where the original core has been padded with zeros to the correct length.
+        std::vector<double> paddedCore(fftSize, 0.0);
+        memcpy(paddedCore.data(), core.data(), core.size() * sizeof(double));
+        novac::Fft_Real(paddedCore, dftOfCore);
+    }
 
     // Multiply
     std::vector<std::complex<double>> product(fftSize);
@@ -124,7 +125,7 @@ void ConvolutionCoreFft(const std::vector<double>& input, const std::vector<doub
     // Inverse transform
     const bool forwardTransform = false;
     std::vector<std::complex<double>> complexResult(fftSize);
-    novac::Fft(product, complexResult, false);
+    novac::Fft(product, complexResult, forwardTransform);
 
     // Extract the result and return, remember to scale with the length of the fft (since the Ifft above doesn't do that).
     result = novac::Abs(complexResult);

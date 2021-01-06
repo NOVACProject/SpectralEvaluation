@@ -38,8 +38,9 @@ void Fft(const std::vector<std::complex<double>>& input, std::vector<std::comple
     @param result Will on scucessful return be filled with the calculated fourier transform data of the input.
         This will be resized to input.size() if required.
     @param forward If true then the forward Fourier transform is calculated, if false then the inverse Fourier transform is calculated.
+    @param outputAllValues If true then the entire result is calculated, if false then only the first half is calculated and the other half can be inferred later by mirroring.
     The length of the input MUST be an even number. */
-void Fft_Real(const std::vector<double>& input, std::vector<std::complex<double>>& result, bool forward = true);
+void Fft_Real(const std::vector<double>& input, std::vector<std::complex<double>>& result, bool forward = true, bool outputAllValues = true);
 
 
 }
