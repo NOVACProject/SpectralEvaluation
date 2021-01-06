@@ -62,11 +62,28 @@ double Min(const std::vector<double>& values)
 double Sum(const std::vector<double>& values)
 {
     double sum = 0.0;
-    for(size_t ii = 0; ii < values.size(); ++ii)
+    for (size_t ii = 0; ii < values.size(); ++ii)
     {
         sum += values[ii];
     }
-    
+
+    return sum;
+}
+
+double SumOfSquaredDifferences(const std::vector<double>& a, const std::vector<double>& b)
+{
+    if (a.size() != b.size())
+    {
+        return -1.0;
+    }
+
+    double sum = 0.0;
+    for (size_t ii = 0; ii < a.size(); ++ii)
+    {
+        const double diff = a[ii] - b[ii];
+        sum += diff * diff;
+    }
+
     return sum;
 }
 
@@ -94,7 +111,7 @@ double Area(const std::vector<double>& values, double xStep)
     double sum = 0.0;
     for (size_t ii = 1; ii < values.size(); ++ii)
     {
-        sum += (values[ii] + values[ii-1]);
+        sum += (values[ii] + values[ii - 1]);
     }
 
     sum *= 0.5 * xStep;
@@ -140,7 +157,7 @@ void NormalizeArea(const std::vector<double>& input, std::vector<double>& output
         return;
     }
 
-    const double minValue    = Min(input);
+    const double minValue = Min(input);
     const double sumOfValues = Sum(input) - minValue * input.size();
 
     for (size_t ii = 0; ii < input.size(); ++ii)
@@ -207,7 +224,7 @@ double GetAt(const std::vector<double>& values, double idx)
     {
         return 0.0;
     }
-    if (idx >(double)(values.size() - 1))
+    if (idx > (double)(values.size() - 1))
     {
         return 0.0;
     }
@@ -233,7 +250,7 @@ double Centroid(const std::vector<double>& values)
 
     for (size_t ii = 1; ii < values.size(); ++ii)
     {
-        compoundMass[ii] = compoundMass[ii-1] + values[ii];
+        compoundMass[ii] = compoundMass[ii - 1] + values[ii];
     }
 
     const double totalMass = compoundMass.back();

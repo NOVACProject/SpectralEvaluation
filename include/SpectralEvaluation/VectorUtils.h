@@ -28,6 +28,11 @@ double Min(const std::vector<double>& values);
     If values.size() == 0 then 0.0 is returned. */
 double Sum(const std::vector<double>& values);
 
+/** @return the sum the squared differences between the two provided vectors.
+    If a.size() == 0 then 0.0 is returned.
+    If a.size() != b.size() then -1.0 is returned. */
+double SumOfSquaredDifferences(const std::vector<double>& a, const std::vector<double>& b);
+
 /** @return the Average of all the given values
     If values.size() == 0 then 0.0 is returned. */
 double Average(const std::vector<double>& values);

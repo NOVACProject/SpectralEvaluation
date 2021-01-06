@@ -102,11 +102,17 @@ void Fft_Real(const std::vector<double>& input, std::vector<std::complex<double>
         std::vector<kiss_fft_cpx> cx_out(length, defaultValue);
         kiss_fftr(cfg, input.data(), cx_out.data());
 
-        // Copy out the result
+        // Copy out the result, the output is symmetrical around the mid point and kiss_fftr only fills in the first half of the values
+        //  the second loop here is to fill in the second half (with changed sign on the imaginary component).
         result.resize(length);
-        for (size_t ii = 0; ii < length; ++ii)
+        const size_t midLength = length / 2;
+        for (size_t ii = 0; ii < midLength; ++ii)
         {
             result[ii] = std::complex<double>(static_cast<double>(cx_out[ii].r), static_cast<double>(cx_out[ii].i));
+        }
+        for (size_t ii = midLength; ii < length; ++ii)
+        {
+            result[ii] = std::complex<double>(static_cast<double>(cx_out[length - ii].r), static_cast<double>(-cx_out[length - ii].i));
         }
 
         kiss_fft_free(cfg);
