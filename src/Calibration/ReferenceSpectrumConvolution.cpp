@@ -130,6 +130,11 @@ void ConvolutionCoreFft(const std::vector<double>& input, const std::vector<doub
     // Extract the result and return, remember to scale with the length of the fft (since the Ifft above doesn't do that).
     result = novac::Abs(complexResult);
     Mult(result, 1.0 / (double)fftSize);
+
+    if (outputSize != fftSize)
+    {
+        result.resize(outputSize);
+    }
 }
 
 bool ConvolveReference(
