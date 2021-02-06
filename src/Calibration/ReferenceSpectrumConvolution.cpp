@@ -332,7 +332,10 @@ bool ConvolveReference(
     Convert(highResReference, conversion, convertedHighResReference);
 
     // We need to make sure we work on the correct resolution, the highest possible to get the most accurate results.
-    const double highestResolution = std::min(Resolution(convertedHighResReference.m_waveLength), Resolution(slf.m_waveLength));
+    const double resolutionOfSlf = Resolution(slf.m_waveLength);
+    const double maximumAllowedResolution = 0.2 * resolutionOfSlf; // do not use more than 5 points per pixel of the SLF
+    const double resolutionOfReference = Resolution(convertedHighResReference.m_waveLength);
+    const double highestResolution = std::max(std::min(resolutionOfReference, resolutionOfSlf), maximumAllowedResolution);
 
     // Resample the convertedHighResReference to be on a uniform grid.
     // Study the SLF and the reference to see which has the highest resolution and take that.

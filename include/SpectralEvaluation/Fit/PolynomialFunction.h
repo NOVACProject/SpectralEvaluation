@@ -41,7 +41,7 @@ namespace MathFit
 		{
 			SetOrder(iOrder);
 		}
-
+	 
 		/**
 		* @see IFunction::GetValue
 		* @see CVector::CalcPoly
