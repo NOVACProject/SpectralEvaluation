@@ -48,6 +48,10 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
         return;
     }
 
+    const double intensityRange = spectrum.MaxValue() - spectrum.MinValue();
+    const double minPeakHeight = intensityRange / 3000.0; // TODO: Find a reasonable value here!
+    const size_t minPeakWidth = 5; // TODO: Find a reasonable value here!
+
     std::vector<double> lowPassFilteredSpectrum(spectrum.m_data, spectrum.m_data + spectrum.m_length);
     CBasicMath math;
     math.LowPassBinomial(lowPassFilteredSpectrum.data(), spectrum.m_length, 3);
@@ -89,7 +93,7 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
             const double peakHeight = lowPassFilteredSpectrum[ii] - std::max(lowPassFilteredSpectrum[startIdx], lowPassFilteredSpectrum[endIdx]);
             const size_t peakWidth = endIdx - startIdx;
 
-            if (peakHeight > 5 && peakWidth >= 5) // TODO: Find reasonable values here
+            if (peakHeight > minPeakHeight && peakWidth >= minPeakWidth)
             {
                 // do a small linear interpolation to find the location of the zero crossing more precisely
                 const double alpha = ddx[idxOfLastSignificantDerivativeSign] / (ddx[idxOfLastSignificantDerivativeSign] - ddx[ii]);
@@ -99,7 +103,8 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
 
                 pt.pixel = idx;
 
-                LinearInterpolation(lowPassFilteredSpectrum.data(), (size_t)spectrum.m_length, idx, pt.intensity);
+                // extract the intensity of the spectrum at this fractional pixel point by linear interpolation
+                LinearInterpolation(spectrum.m_data, (size_t)spectrum.m_length, idx, pt.intensity);
 
                 if (pt.intensity > minimumIntensity)
                 {
@@ -130,6 +135,10 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
     {
         return;
     }
+
+    const double intensityRange = spectrum.MaxValue() - spectrum.MinValue();
+    const double minValleyDepth = intensityRange / 3000.0; // TODO: Find a reasonable value here!
+    const size_t minValleyidth = 5; // TODO: Find a reasonable value here!
 
     std::vector<double> lowPassFilteredSpectrum(spectrum.m_data, spectrum.m_data + spectrum.m_length);
     CBasicMath math;
@@ -172,7 +181,7 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
             const double valleyDepth = std::min(lowPassFilteredSpectrum[startIdx], lowPassFilteredSpectrum[endIdx]) - lowPassFilteredSpectrum[ii];
             const size_t valleyWidth = endIdx - startIdx;
 
-            if (valleyDepth > 5 && valleyWidth >= 5) // TODO: Find reasonable values here
+            if (valleyDepth > minValleyDepth && valleyWidth >= minValleyidth)
             {
                 // do a small linear interpolation to find the location of the zero crossing more precisely
                 const double alpha = ddx[idxOfLastSignificantDerivativeSign] / (ddx[idxOfLastSignificantDerivativeSign] - ddx[ii]);
@@ -182,7 +191,8 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
 
                 pt.pixel = idx;
 
-                LinearInterpolation(lowPassFilteredSpectrum.data(), (size_t)spectrum.m_length, idx, pt.intensity);
+                // extract the intensity of the spectrum at this fractional pixel point by linear interpolation
+                LinearInterpolation(spectrum.m_data, (size_t)spectrum.m_length, idx, pt.intensity);
 
                 if (pt.intensity > minimumIntensity)
                 {
