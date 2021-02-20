@@ -142,6 +142,11 @@ namespace MathFit
 			return mLinearParams.GetAllParameter();
 		}
 
+		const CVector& GetCoefficients() const
+		{
+			return mLinearParams.GetAllParameter();
+		}
+
 		/**
 		* Sets the polynomial coefficients at once.
 		* The index of the given vector elements must match the index of the polynomial coefficients.
@@ -164,6 +169,11 @@ namespace MathFit
 		* @return The value of the selected polynomial coefficient.
 		*/
 		TFitData GetCoefficient(int iIndex)
+		{
+			return GetCoefficients().GetAt(iIndex);
+		}
+
+		TFitData GetCoefficient(int iIndex) const
 		{
 			return GetCoefficients().GetAt(iIndex);
 		}
