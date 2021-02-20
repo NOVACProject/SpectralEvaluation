@@ -10,7 +10,10 @@
 #include <SpectralEvaluation/Fit/CubicSplineFunction.h>
 
 
-using namespace novac::Calibration;
+namespace novac
+{
+namespace Calibration
+{
 
 
 // ---------------------------------- RansacWavelengthCalibrationResult ----------------------------------
@@ -86,13 +89,13 @@ std::vector<Correspondence> SelectMaybeInliers(size_t number, const std::vector<
 }
 
 // TODO: MOVE AND MERGE WITH FITFUNCTION IN INSTRUMENTLINESHAPE.CPP
-bool FitPolynomial(MathFit::CVector& xData, MathFit::CVector& yData, std::vector<double>& polynomialCoefficients)
+bool FitPolynomial(MathFit::CVector& xData, MathFit::CVector& yData, size_t order, std::vector<double>& polynomialCoefficients)
 {
     try
     {
         MathFit::CCubicSplineFunction cubicSplineRepresentation{ xData, yData };
 
-        MathFit::CPolynomialFunction functionToFit;
+        MathFit::CPolynomialFunction functionToFit{ static_cast<int>(order) };
         MathFit::CStandardMetricFunction diff(cubicSplineRepresentation, functionToFit);
 
         MathFit::CStandardFit fit(diff);
@@ -125,7 +128,7 @@ bool FitPolynomial(MathFit::CVector& xData, MathFit::CVector& yData, std::vector
         return false;
     }
 }
-bool FitPolynomial(std::vector<double>& xData, std::vector<double>& yData, std::vector<double>& polynomialCoefficients)
+bool FitPolynomial(std::vector<double>& xData, std::vector<double>& yData, size_t order, std::vector<double>& polynomialCoefficients)
 {
     if (xData.size() != yData.size())
     {
@@ -136,9 +139,25 @@ bool FitPolynomial(std::vector<double>& xData, std::vector<double>& yData, std::
     MathFit::CVector xVector{ &xData[0], (int)xData.size(), 1, autoReleaseData };
     MathFit::CVector yVector{ &yData[0], (int)yData.size(), 1, autoReleaseData };
 
-    return FitPolynomial(xVector, yVector, polynomialCoefficients);
+    return FitPolynomial(xVector, yVector, order, polynomialCoefficients);
 }
 
+double PolynomialValueAt(const std::vector<double>& coefficients, double x)
+{
+    if (coefficients.size() == 1)
+    {
+        return coefficients[0];
+    }
+
+    auto it = coefficients.rbegin();
+    double result = *it;
+    ++it;
+    for ( ; it != coefficients.rend(); ++it)
+    {
+        result = x * result + *it;
+    }
+    return result;
+}
 
 // Hard coded polynomial calculation for order = 3
 inline double CalculateValueAt(const std::vector<double>& coefficients, double x)
@@ -216,7 +235,7 @@ RansacWavelengthCalibrationSetup::RansacWavelengthCalibrationSetup(RansacWavelen
 }
 
 RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelengthCalibration(
-    const std::vector<Correspondence>& possibleCorrespondences  )
+    const std::vector<Correspondence>& possibleCorrespondences)
 {
     RansacWavelengthCalibrationResult result(settings.modelPolynomialOrder);
     result.numberOfPossibleCorrelations = possibleCorrespondences.size();
@@ -241,7 +260,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
             selectedWavelengths[ii] = selectedCorrespondences[ii].theoreticalValue;
         }
         std::vector<double> suggestionForPolynomial;
-        if (!FitPolynomial(selectedPixelValues, selectedWavelengths, suggestionForPolynomial))
+        if (!FitPolynomial(selectedPixelValues, selectedWavelengths, settings.modelPolynomialOrder, suggestionForPolynomial))
         {
             std::cout << "Polynomial fit failed" << std::endl;
             continue;
@@ -268,7 +287,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
                         wavelengths.push_back(possibleCorrespondences[ii].theoreticalValue);
                     }
                 }
-                if (!FitPolynomial(pixelValues, wavelengths, result.bestFittingModelCoefficients))
+                if (!FitPolynomial(pixelValues, wavelengths, settings.modelPolynomialOrder, result.bestFittingModelCoefficients))
                 {
                     std::cout << "Polynomial fit failed" << std::endl;
                     continue;
@@ -434,4 +453,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
     */
 
     return result;
+}
+
+}
 }

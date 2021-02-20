@@ -53,6 +53,9 @@ struct Correspondence
 };
 
 
+// TODO: Move
+double PolynomialValueAt(const std::vector<double>& coefficients, double x);
+
 struct RansacWavelengthCalibrationSettings
 {
     size_t modelPolynomialOrder = 3;
