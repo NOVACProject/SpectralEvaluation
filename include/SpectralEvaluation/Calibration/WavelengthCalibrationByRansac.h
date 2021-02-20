@@ -8,8 +8,6 @@
 
 namespace novac
 {
-namespace Calibration
-{
 
 /// <summary>
 /// A Correspondence is an essential part in the ransac calibration routine, it
@@ -116,5 +114,4 @@ private:
 
 };
 
-}
 }

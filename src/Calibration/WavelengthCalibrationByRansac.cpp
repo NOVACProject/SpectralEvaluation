@@ -12,9 +12,6 @@
 
 namespace novac
 {
-namespace Calibration
-{
-
 
 // ---------------------------------- RansacWavelengthCalibrationResult ----------------------------------
 RansacWavelengthCalibrationResult::RansacWavelengthCalibrationResult(size_t polynomialOrder) :
@@ -455,5 +452,4 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
     return result;
 }
 
-}
 }
