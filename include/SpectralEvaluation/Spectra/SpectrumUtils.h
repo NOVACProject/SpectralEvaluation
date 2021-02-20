@@ -39,6 +39,15 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
 void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector<SpectrumDataPoint>& result);
 
 /**
+ * @brief Locates all significant peaks _and_ valleys in the provided spectrum and returns the result in the provided vector
+ * @param spectrum The spectrum in which keypoints should be found,
+ *  if this has a wavelength calibration then the resulting points will have a wavelength filled in.
+ * @param minimumIntensity Only keypoints with an intensity above this value will be returned.
+ * @param result Will on return be filled with the found keypoints.
+*/
+void FindKeypointsInSpectrum(const CSpectrum& spectrum, double minimumIntensity, std::vector<SpectrumDataPoint>& result);
+
+/**
  * @brief Calculates a first order derivative on the provided data array wrt index value using finite difference.
  * @param data The data array (spectrum) to calculate the derivative of.
  * @param dataLength The length of data.
@@ -57,3 +66,14 @@ bool Derivative(const double* data, size_t dataLength, std::vector<double>& resu
  * @returns true if all is ok
 */
 bool Derivative(const double* data, size_t dataLength, int order, std::vector<double>& result);
+
+/**
+ * @brief Locates significant points in the provided spectrum with the property that the points (pixel[ii], intensity[ii])
+ *  lies on the spectrum and all points in the spectrum lies either at or below the lines between the found points.
+ *  This is the envelope of the spectrum, or the complex-hull if you will.
+ * @param spectrum The spectrum in which points should be found.
+ * @param pixel Will on return be filled with the pixel-values of the found points.
+ * @param intensity Will on return be filled with the intensity of the found points (in the same units as the spectrum).
+*/
+bool GetEnvelope(const CSpectrum& spectrum, std::vector<double>& pixel, std::vector<double>& intensity);
+

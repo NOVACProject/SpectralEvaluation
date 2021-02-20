@@ -65,7 +65,7 @@ public:
     /// <param name="pixelToWavelengthMapping">The wavelength (in nm air) for each pixel on the detector.</param>
     /// <param name="measuredSlf">A measurement of the instrument line shape</param>
     /// <param name="ozoneColumn">The total column of ozone in the resulting Fraunhofer spectrum. In molecules / cm2</param>
-    /// <returns></returns>
+    /// <returns>The high resolution solar spectrum convolved with the measured slf and resample to the provided grid.</returns>
     std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
         const std::vector<double>& pixelToWavelengthMapping,
         const ::Evaluation::CCrossSectionData& measuredSlf,

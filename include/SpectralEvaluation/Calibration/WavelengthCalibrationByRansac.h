@@ -88,7 +88,6 @@ struct RansacWavelengthCalibrationResult
     size_t numberOfPossibleCorrelations = 0U;
 };
 
-
 /// <summary>
 /// RansacWavelengthCalibrationSetup is the setup of a calibration run
 ///     and contains all necessary elements to perform the calibration.

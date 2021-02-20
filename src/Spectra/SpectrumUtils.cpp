@@ -3,6 +3,7 @@
 #include <SpectralEvaluation/Interpolation.h>
 #include <SpectralEvaluation/Evaluation/BasicMath.h>
 #include <cassert>
+#include <algorithm>
 
 enum class Sign
 {
@@ -214,6 +215,40 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
     }
 }
 
+void FindKeypointsInSpectrum(const CSpectrum& spectrum, double minimumIntensity, std::vector<SpectrumDataPoint>& result)
+{
+    // Locate all peaks and valleys in the measured spectrum
+    //  These have the correct pixel position (for the spectrometer we're trying to calibrate)
+    std::vector< SpectrumDataPoint> peaks;
+    FindPeaks(spectrum, minimumIntensity, peaks);
+
+    std::vector< SpectrumDataPoint> valleys;
+    FindValleys(spectrum, minimumIntensity, valleys);
+
+    if (peaks.size() == 0 || valleys.size() == 0)
+    {
+        std::cout << "Failed to find peaks/valleys in the measured spectrum." << std::endl;
+        result.clear();
+        return;
+    }
+
+    result.reserve(valleys.size() + peaks.size());
+
+    for (SpectrumDataPoint& pt : valleys)
+    {
+        pt.type = -1;
+        result.push_back(pt);
+    }
+
+    for (SpectrumDataPoint& pt : peaks)
+    {
+        pt.type = +1;
+        result.push_back(pt);
+    }
+
+    std::sort(begin(result), end(result), [](const SpectrumDataPoint& p1, const SpectrumDataPoint& p2) { return p1.pixel < p2.pixel; });
+}
+
 bool Derivative(const double* data, size_t dataLength, std::vector<double>& result)
 {
     if (data == nullptr || dataLength < 3 || dataLength > 1024 * 1024) // check such that the data isn't unreasonably large
@@ -261,4 +296,82 @@ bool Derivative(const double* data, size_t dataLength, int order, std::vector<do
     {
         return false;
     }
+}
+
+struct Point
+{
+    Point(double xLocation, double yLocation)
+        : x(xLocation), y(yLocation)
+    {
+    }
+    double x;
+    double y;
+};
+
+// This is not an optimal way of calculating the envelope but does its job
+std::vector<Point> Reduce(const std::vector<Point>& selectedPoints)
+{
+    std::vector<Point> reducedPoints;
+    reducedPoints.push_back(selectedPoints[0]);
+    for (size_t ii = 1; ii < selectedPoints.size() - 1; ++ii)
+    {
+        // draw a line from selectedPoints[ii - 1] to selectedPoints[ii + 1]. If thie line goes _above_ the selectedPoints[ii] then selectedPoints[ii] can be removed.
+        const double alpha = (selectedPoints[ii].x - selectedPoints[ii - 1].x) / (selectedPoints[ii + 1].x - selectedPoints[ii - 1].x);
+        const double y = selectedPoints[ii - 1].y + alpha * (selectedPoints[ii + 1].y - selectedPoints[ii - 1].y) / (selectedPoints[ii + 1].x - selectedPoints[ii - 1].x);
+        if (y < selectedPoints[ii].y)
+        {
+            reducedPoints.push_back(selectedPoints[ii]);
+        }
+    }
+    reducedPoints.push_back(selectedPoints[selectedPoints.size() - 1]);
+
+    return reducedPoints;
+}
+
+
+bool GetEnvelope(const CSpectrum& spectrum, std::vector<double>& pixel, std::vector<double>& intensity)
+{
+    // TODO: Unit test properly
+    std::vector<Point> selectedPoints;
+
+    // Select all local maxima
+    for (size_t ii = 1; ii < static_cast<unsigned long long>(spectrum.m_length) - 1; ++ii)
+    {
+        if (spectrum.m_data[ii] > spectrum.m_data[ii - 1] && spectrum.m_data[ii] > spectrum.m_data[ii + 1])
+        {
+            selectedPoints.push_back(Point{ static_cast<double>(ii), spectrum.m_data[ii] });
+        }
+    }
+
+    // Now reduce the points by seeing which point can be skipped by drawing a line from the point before and after (but don't remove the first and last point)
+    std::vector<Point> reducedPoints;
+    while (true)
+    {
+        reducedPoints = Reduce(selectedPoints);
+
+        if (reducedPoints.size() < selectedPoints.size())
+        {
+            selectedPoints = reducedPoints;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    pixel.resize(selectedPoints.size());
+    intensity.resize(selectedPoints.size());
+    // always include the first point
+    pixel.push_back(0);
+    intensity.push_back(spectrum.m_data[0]);
+    for (size_t ii = 1; ii < selectedPoints.size(); ++ii)
+    {
+        pixel.push_back(selectedPoints[ii].x);
+        intensity.push_back(selectedPoints[ii].y);
+    }
+    // always include the last point
+    pixel.push_back(spectrum.m_length - 1);
+    intensity.push_back(spectrum.m_data[spectrum.m_length - 1]);
+
+    return true;
 }
