@@ -40,6 +40,11 @@ void Mult(std::vector<double>& values, double factor);
     If values.size() == 0 then 0.0 is returned. */
 double Average(const std::vector<double>& values);
 
+/** @return the Median of all the given values.
+    This will sort the provided vector.
+    If values.size() == 0 then 0.0 is returned. */
+double Median(std::vector<double>& values);
+
 /** @return the area under the provided function, assuming it is sampled
     on a uniform grid with x-axis step size 'xStep'.
     If values.size() == 0 then 0.0 is returned. */

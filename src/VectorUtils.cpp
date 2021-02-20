@@ -109,6 +109,29 @@ double Average(const std::vector<double>& values)
     return (sum / (double)values.size());
 }
 
+double Median(std::vector<double>& values)
+{
+    if (values.size() == 0)
+    {
+        return 0.0;
+    }
+    else if (values.size() == 1)
+    {
+        return values[0];
+    }
+    std::sort(begin(values), end(values));
+
+    const size_t midpointIndex = (values.size() >> 1);
+    if (values.size() % 2 == 0)
+    {
+        return 0.5 * (values[midpointIndex] + values[midpointIndex + 1]);
+    }
+    else
+    {
+        return values[midpointIndex];
+    }
+}
+
 double Area(const std::vector<double>& values, double xStep)
 {
     if (values.size() < 2)
