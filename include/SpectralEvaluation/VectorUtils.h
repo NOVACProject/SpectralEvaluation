@@ -36,6 +36,14 @@ double SumOfSquaredDifferences(const std::vector<double>& a, const std::vector<d
 /** Multiplies all values in the provided vector with the provided factor */
 void Mult(std::vector<double>& values, double factor);
 
+/** Multiplies all values in the provided first vector with the corresponding value in the second vector.
+    The results are stored in the second vector.
+    @throws std::invalid_argument if the two vectors have different length. */
+void Mult(const std::vector<double>& firstVector, std::vector<double>& secondVectorAndResult);
+
+/** Calculates the exponent of the provided values */
+void Exp(std::vector<double>& values);
+
 /** @return the Average of all the given values
     If values.size() == 0 then 0.0 is returned. */
 double Average(const std::vector<double>& values);

@@ -30,36 +30,6 @@ double CalculateFhwm(const CCrossSectionData& slf)
     return (rightX - leftX);
 }
 
-// Resamples the provided slf to the provided wavelength grid.
-void Resample(const CCrossSectionData& slf, const std::vector<double>& wavelength, std::vector<double>& resampledSlf)
-{
-    const double xMin = slf.m_waveLength.front();
-    const double xMax = slf.m_waveLength.back();
-
-    std::vector<double> xCopy(begin(slf.m_waveLength), end(slf.m_waveLength)); // a non-const local copy
-    std::vector<double> yCopy(begin(slf.m_crossSection), end(slf.m_crossSection)); // a non-const local copy
-
-    MathFit::CVector slfX(xCopy.data(), (int)xCopy.size(), 1, false);
-    MathFit::CVector slfY(yCopy.data(), (int)yCopy.size(), 1, false);
-
-    // Create a spline from the slit-function.
-    MathFit::CCubicSplineFunction spline(slfX, slfY);
-
-    // do the resampling...
-    resampledSlf.resize(wavelength.size());
-    for (size_t ii = 0; ii < wavelength.size(); ++ii)
-    {
-        if (wavelength[ii] >= xMin && wavelength[ii] <= xMax)
-        {
-            resampledSlf[ii] = spline.GetValue(wavelength[ii]);
-        }
-        else
-        {
-            resampledSlf[ii] = 0.0;
-        }
-    }
-}
-
 /* Performs a convolution between the input and core and stores the result in 'result' */
 void ConvolutionCore(const std::vector<double>& input, const std::vector<double>& core, std::vector<double>& result)
 {

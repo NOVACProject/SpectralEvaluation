@@ -324,6 +324,38 @@ void Resample(const CCrossSectionData& slf, double resolution, std::vector<doubl
     }
 }
 
+void Resample(const CCrossSectionData& crossSection, const std::vector<double>& newGrid, std::vector<double>& result)
+{
+    const double newXMin = newGrid.front();
+    const double newXMax = newGrid.back();
+    const double oldXMin = crossSection.m_waveLength.front();
+    const double oldXMax = crossSection.m_waveLength.back();
+
+    std::vector<double> xCopy(begin(crossSection.m_waveLength), end(crossSection.m_waveLength)); // a non-const local copy
+    std::vector<double> yCopy(begin(crossSection.m_crossSection), end(crossSection.m_crossSection)); // a non-const local copy
+    MathFit::CVector slfX(xCopy.data(), (int)xCopy.size(), 1, false);
+    MathFit::CVector slfY(yCopy.data(), (int)yCopy.size(), 1, false);
+
+    // Create a spline from the slit-function.
+    MathFit::CCubicSplineFunction spline(slfX, slfY);
+
+    // do the resampling...
+    result.resize(newGrid.size());
+    for (size_t ii = 0; ii < newGrid.size(); ++ii)
+    {
+        const double x = newGrid[ii];
+
+        if (x >= oldXMin && x <= oldXMax)
+        {
+            result[ii] = spline.GetValue(x);
+        }
+        else
+        {
+            result[ii] = 0.0;
+        }
+    }
+}
+
 void Shift(std::vector<double>& data, double pixelCount)
 {
     std::vector<double> xData(data.size(), 0.0);

@@ -1,6 +1,7 @@
 #include <SpectralEvaluation/VectorUtils.h>
 #include <algorithm>
 #include <cmath>
+#include <stdexcept>
 #include <assert.h>
 
 double Max(const std::vector<double>& values, size_t& idx)
@@ -92,6 +93,27 @@ void Mult(std::vector<double>& values, double factor)
     for (double& v : values)
     {
         v *= factor;
+    }
+}
+
+void Mult(const std::vector<double>& firstVector, std::vector<double>& secondVectorAndResult)
+{
+    if (firstVector.size() != secondVectorAndResult.size())
+    {
+        throw std::invalid_argument("In multiplication, the first and the second vector must have equal length");
+    }
+
+    for (size_t ii = 0; ii < firstVector.size(); ++ii)
+    {
+        secondVectorAndResult[ii] = firstVector[ii] * secondVectorAndResult[ii];
+    }
+}
+
+void Exp(std::vector<double>& values)
+{
+    for (double& v : values)
+    {
+        v = std::exp(v);
     }
 }
 
