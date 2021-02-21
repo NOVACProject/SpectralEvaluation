@@ -6,8 +6,12 @@
 // - This header contains methods used to perform the wavelength calibration of a spectrometer using a ransac approach -
 // ---------------------------------------------------------------------------------------------------------------------
 
+class CSpectrum;
+
 namespace novac
 {
+
+struct SpectrumDataPoint;
 
 /// <summary>
 /// A Correspondence is an essential part in the ransac calibration routine, it
@@ -25,7 +29,7 @@ struct Correspondence
     { }
 
     /// <summary>
-    /// The index of the keypoint in the measured spectrum (for reference)
+    /// The index of the keypoint in the measured spectrum
     /// </summary>
     size_t measuredIdx = 0;
 
@@ -35,7 +39,7 @@ struct Correspondence
     double measuredValue = 0.0;
 
     /// <summary>
-    /// The index of the keypoint in the theoretical spectrum (for reference)
+    /// The index of the keypoint in the theoretical spectrum
     /// </summary>
     size_t theoreticalIdx = 0;
 
@@ -51,8 +55,77 @@ struct Correspondence
 };
 
 
+// ------------- Keypoint selection and preparation -------------
+
+/// <summary>
+/// A collection of the settings necessary to determine which keypoints
+/// will make up good correspondences between the measured and fraunhofer spectra.
+/// </summary>
+struct CorrespondenceSelectionSettings
+{
+    /// <summary>
+    /// The width, in pixels, around each keypoint which will be used to gauge the error in the correspondence.
+    /// The default value of 20 is retrieved as 2x the average keypoint distance in tested spectra and should hence cover the entire width of a valley / peak.
+    /// </summary>
+    size_t pixelRegionSizeForCorrespondenceErrorMeasurement = 20;
+
+    /// <summary>
+    /// The relative number of correspondences to select out of the total.
+    /// 0.2 corresponds to selecting the 20% correspondences with the lowest error.
+    /// </summary>
+    double percentageOfCorrespondencesToSelect = 0.2;
+
+    /// <summary>
+    /// The first pixel to include in the calibration routine. 
+    /// Often do the signal in the spectra decline at short wavelengths and this is a means to disregard points with low intensity.
+    /// </summary>
+    size_t measuredPixelStart = 600;
+
+    /// <summary>
+    /// The last pixel to include in the calibration routine. 
+    /// Often do the signal in the spectra decline at short wavelengths and this is a means to disregard points with low intensity.
+    /// This must be larger than measuredPixelStart.
+    /// </summary>
+    size_t measuredPixelStop = 4095;
+};
+
+/// <summary>
+/// Measures the similarity between the two spectra at the two indices given by the correspondence.
+/// The similarity is measured as a sum of squared differences between the two 
+/// spectra in the region around the given pixels.
+/// A lower return value corresponds to a higher similarity
+/// <param name="corr">The Correspondence to measure the error of. This will be updated with the measured error.</param>
+/// <param name="measuredSpectrum">The measured spectrum of the correspondence.</param>
+/// <param name="theoreticalSpectrum">The theoretical spectrum of the correspondence.</param>
+/// </summary>
+void MeasureCorrespondenceError(novac::Correspondence& corr, const ::CSpectrum& measuredSpectrum, const ::CSpectrum& theoreticalSpectrum, const CorrespondenceSelectionSettings& settings);
+
+struct RansacWavelengthCalibrationSettings;
+/// <summary>
+/// This should be run as a preparatory step before the Ransac algorithm can be run.
+/// This generates the list of all reasonable correspondences between the measured and 
+/// fraunhofer spectra based on keypoints found in the two spectra.
+/// </summary>
+/// <param name="measuredKeypoints">The keypoints found in the measured spectrum.</param>
+/// <param name="measuredSpectrum">The measured spectrum itself.</param>
+/// <param name="fraunhoferKeypoints">The keypoints found in the fraunhofer spectrum.</param>
+/// <param name="fraunhoferSpectrum">The fraunhofer spectrum itself</param>
+/// <param name="settings">The settings for the following Ransac wavelength calibration</param>
+/// <param name="percentageOfCorrespondencesToSelect">A hard limit of how</param>
+/// <returns></returns>
+std::vector<novac::Correspondence> ListPossibleCorrespondences(
+    const std::vector<novac::SpectrumDataPoint>& measuredKeypoints,
+    const CSpectrum& measuredSpectrum,
+    const std::vector<novac::SpectrumDataPoint>& fraunhoferKeypoints,
+    const CSpectrum& fraunhoferSpectrum,
+    const RansacWavelengthCalibrationSettings& ransacSettings,
+    const CorrespondenceSelectionSettings& correspondenceSettings);
+
+
 // TODO: Move
 double PolynomialValueAt(const std::vector<double>& coefficients, double x);
+
+// ------------- Wavelength calibration by Ransac  -------------
 
 struct RansacWavelengthCalibrationSettings
 {
@@ -90,7 +163,8 @@ struct RansacWavelengthCalibrationResult
 
 /// <summary>
 /// RansacWavelengthCalibrationSetup is the setup of a calibration run
-///     and contains all necessary elements to perform the calibration.
+///     and contains all necessary elements to perform the calibration
+///     by using a set of correspondences between a measured and an already calibrated spectrum.
 /// </summary>
 class RansacWavelengthCalibrationSetup
 {

@@ -1,7 +1,8 @@
 #pragma once
 
-#include <vector>
+#include <utility>
 #include <memory>
+#include <vector>
 #include <string>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 
@@ -15,23 +16,43 @@ struct SpectrumDataPoint;
 namespace novac
 {
 
-struct SpectrometerCalibration
+/// <summary>
+/// This is the result of running the wavelength calibration routine.
+/// </summary>
+struct SpectrometerCalibrationResult
 {
-    /** The wavelength for each pixel on the detector */
-    std::vector<double> wavelengthToPixelMapping;
+    /// <summary>
+    /// The final estimate for the pixel to wavelength mapping.
+    /// </summary>
+    std::vector<double> pixelToWavelengthMapping;
 
-    /** The estimated slit function of the spectrometer */
-    ::Evaluation::CCrossSectionData slf;
+    /// <summary>
+    /// The coefficients of the pixel-to-wavelength mapping polynomial
+    /// </summary>
+    std::vector<double> pixelToWavelengthMappingCoefficients;
+
 };
 
-struct WavelengthCalibrationSetup
+struct WavelengthCalibrationSettings
 {
-    // A high-resolved Kurucz spektrum
-    ::Evaluation::CCrossSectionData solarAtlas;
+    /// <summary>
+    /// The intial estimate for the pixel to wavelength mapping.
+    /// </summary>
+    std::vector<double> initialPixelToWavelengthMapping;
 
-    // The high-resolution absorption cross sections necessary to get a good fit.
-    // Typically just O3 (the ring spectrum will be calculated in the fit routine).
-    std::vector<::Evaluation::CCrossSectionData> crossSections;
+    /// <summary>
+    /// The path to the high resolved solar atlas to be used.
+    ///  Assumed that this has the wavelength unit of nm air.
+    /// </summary>
+    std::string highResSolarAtlas;
+
+    /// <summary>
+    /// A set of high resolved cross sections to include into the generation
+    /// of the fraunhofer spectrum. Each pair makes up a path to the cross section
+    /// file on disk and a total column of the cross section to use.
+    /// Only cross sections with a total column != 0 will be included.
+    /// </summary>
+    std::vector<std::pair<std::string, double>> crossSections;
 };
 
 /// <summary>
@@ -52,10 +73,8 @@ public:
     /// Sets up the generation parameters
     /// </summary>
     /// <param name="highResolutionSolarAtlas">The full path to the high resolved solar atlas. This must be in nm air.</param>
-    /// <param name="highResolutionOzoneCrossSection">The full path to the high resolved ozone cross section. 
-    ///     This must have x-axis unit of nm air and y-axis unit of molecules / cm2</param>
-    FraunhoferSpectrumGeneration(const std::string& highResolutionSolarAtlas, const std::string& highResolutionOzoneCrossSection)
-        : solarAtlasFile(highResolutionSolarAtlas), ozoneCrossSectionFile(highResolutionOzoneCrossSection)
+    FraunhoferSpectrumGeneration(const std::string& highResolutionSolarAtlas)
+        : solarAtlasFile(highResolutionSolarAtlas)
     {
     }
 
@@ -63,27 +82,35 @@ public:
     /// Creates a Fraunhofer reference spectrum using the provided pixel-to-wavelength mapping and measured instrument line shape.
     /// </summary>
     /// <param name="pixelToWavelengthMapping">The wavelength (in nm air) for each pixel on the detector.</param>
-    /// <param name="measuredSlf">A measurement of the instrument line shape</param>
+    /// <param name="measuredInstrumentLineShape">A measurement of the instrument line shape</param>
+    /// <param name="highResolutionOzoneCrossSection">The full path to the high resolved ozone cross section. 
+    ///     This must have x-axis unit of nm air and y-axis unit of molecules / cm2</param>
     /// <param name="ozoneColumn">The total column of ozone in the resulting Fraunhofer spectrum. In molecules / cm2</param>
     /// <returns>The high resolution solar spectrum convolved with the measured slf and resample to the provided grid.</returns>
     std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
         const std::vector<double>& pixelToWavelengthMapping,
-        const ::Evaluation::CCrossSectionData& measuredSlf,
+        const ::Evaluation::CCrossSectionData& measuredInstrumentLineShape,
+        const std::string& highResolutionOzoneCrossSection,
         double ozoneColumn);
+
+    /// <summary>
+    /// Creates a Fraunhofer reference spectrum using the provided pixel-to-wavelength mapping and measured instrument line shape.
+    /// </summary>
+    /// <param name="pixelToWavelengthMapping">The wavelength (in nm air) for each pixel on the detector.</param>
+    /// <param name="measuredInstrumentLineShape">A measurement of the instrument line shape</param>
+    /// <param name="highResolutionCrossSections">The full path to a set of high resolved molecular cross section together with the total column for them.
+    ///     These must have x-axis unit of nm air and y-axis unit of molecules / cm2</param>
+    /// <returns>The high resolution solar spectrum convolved with the measured slf and resample to the provided grid.</returns>
+    std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
+        const std::vector<double>& pixelToWavelengthMapping,
+        const ::Evaluation::CCrossSectionData& measuredInstrumentLineShape,
+        const std::vector<std::pair<std::string, double>>& highResolutionCrossSections);
 
 private:
     const std::string solarAtlasFile;
-    const std::string ozoneCrossSectionFile;
 };
 
 
-
-/// <summary>
-/// Generates a Fraunhofer reference spectrum from the provided data.
-/// </summary>
-/// <param name="pixelToWavelengthMapping"></param>
-/// <param name="initialSlfFile"></param>
-/// <returns></returns>
 
 /**
  * @brief Performs a wavelength calibration of a spectrometer using a measured mercury spectrum.
@@ -109,15 +136,33 @@ bool MercuryCalibration(
     std::vector<SpectrumDataPoint>& foundPeaks,
     std::vector<double> pixelToWavelengthPolynomial);
 
-/** Estimates the wavelength to pixel mapping for a given measured spectrum by fitting
-    the solar atlas (convolved with the instrument slit function) towards the measured spectrum.
-    This will estimate the wavelength-to-pixel mapping but not alter the slit function.
-    @param measuredspectrum A (dark-corrected) measured spectrum.
-    @param initialCalibration The initial wavelength-to-pixel mapping and the measured / estimated slit-function. */
-bool EstimateWavelengthToPixelMapping(
-    const WavelengthCalibrationSetup& calibrationSetup,
-    const SpectrometerCalibration& initialCalibration,
-    const CSpectrum& measuredspectrum,
-    SpectrometerCalibration& result);
+
+
+/// <summary>
+/// WavelengthCalibrationSetup is the setup of a calibration run
+///     and contains all necessary elements to perform the calibration.
+/// </summary>
+class WavelengthCalibrationSetup
+{
+public:
+    WavelengthCalibrationSetup(const WavelengthCalibrationSettings& calibrationSettings);
+
+    /// <summary>
+    /// This performs the actual calibration of a measured spectrum against a 
+    ///   high resolution fraunhofer spectrum assuming that the provided measured instrument line shape
+    ///   is the correct line shape for the instrument.
+    /// This will modify the measured spectrum, by normalizing its intensity to the range [0, 1]
+    /// </summary>
+    SpectrometerCalibrationResult DoWavelengthCalibration(CSpectrum& measuredSpectrum, const Evaluation::CCrossSectionData& measuredInstrumentLineShape);
+
+    // TODO: Create a way to get out some more internal information regarding the calibration, for debugging
+
+private:
+
+    WavelengthCalibrationSettings settings;
+
+    static std::vector<double> GetPixelToWavelengthMapping(const std::vector<double>& polynomialCoefficients, size_t detectorSize);
+
+};
 
 }

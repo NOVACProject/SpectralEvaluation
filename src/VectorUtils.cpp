@@ -131,6 +131,15 @@ double Average(const std::vector<double>& values)
     return (sum / (double)values.size());
 }
 
+void RemoveMean(std::vector<double>& values)
+{
+    double mean = Average(values);
+    for (double& value : values)
+    {
+        value -= mean;
+    }
+}
+
 double Median(std::vector<double>& values)
 {
     if (values.size() == 0)

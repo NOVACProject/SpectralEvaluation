@@ -2,6 +2,9 @@
 #include <random>
 #include <set>
 #include <stdexcept>
+#include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/Spectra/SpectrumUtils.h>
+#include <SpectralEvaluation/VectorUtils.h>
 
 // TODO: Try to remove these
 #include <SpectralEvaluation/Fit/StandardFit.h>
@@ -42,6 +45,80 @@ RansacWavelengthCalibrationResult& RansacWavelengthCalibrationResult::operator=(
 
     return *this;
 }
+
+// ---------------------------------- Free functions used to select the correspondences ----------------------------------
+
+void MeasureCorrespondenceError(novac::Correspondence& corr, const ::CSpectrum& measuredSpectrum, const ::CSpectrum& theoreticalSpectrum, const CorrespondenceSelectionSettings& settings)
+{
+    // extract a small region around 'idxOfMeasuredSpectrum' in the measured spectrum
+    const size_t measuredLocationStart = (size_t)std::max(0.0, std::min((double)(measuredSpectrum.m_length - settings.pixelRegionSizeForCorrespondenceErrorMeasurement), corr.measuredIdx - settings.pixelRegionSizeForCorrespondenceErrorMeasurement * 0.5));
+    std::vector<double> measuredRegion{ measuredSpectrum.m_data + measuredLocationStart, measuredSpectrum.m_data + measuredLocationStart + settings.pixelRegionSizeForCorrespondenceErrorMeasurement };
+    RemoveMean(measuredRegion);
+
+    // likewise, extract a small region around 'fraunhoferLcation' in the fraunhofer spectrum
+    const size_t fraunhoferLocationStart = (size_t)std::max(0.0, std::min((double)(theoreticalSpectrum.m_length - settings.pixelRegionSizeForCorrespondenceErrorMeasurement), corr.theoreticalIdx - settings.pixelRegionSizeForCorrespondenceErrorMeasurement * 0.5));
+    std::vector<double> fraunhoferRegion{ theoreticalSpectrum.m_data + fraunhoferLocationStart, theoreticalSpectrum.m_data + fraunhoferLocationStart + settings.pixelRegionSizeForCorrespondenceErrorMeasurement };
+    RemoveMean(fraunhoferRegion);
+
+    corr.error = SumOfSquaredDifferences(measuredRegion, fraunhoferRegion);
+}
+
+std::vector<novac::Correspondence> ListPossibleCorrespondences(
+    const std::vector<novac::SpectrumDataPoint>& measuredKeypoints,
+    const CSpectrum& measuredSpectrum,
+    const std::vector<novac::SpectrumDataPoint>& fraunhoferKeypoints,
+    const CSpectrum& fraunhoferSpectrum,
+    const RansacWavelengthCalibrationSettings& ransacSettings,
+    const CorrespondenceSelectionSettings& correspondenceSettings)
+{
+    std::vector<novac::Correspondence> possibleCorrespondences;
+    std::vector<double> errors; // keep track of the errors, we will use this later to filter the correspondences
+    for (size_t ii = 0; ii < measuredKeypoints.size(); ii++)
+    {
+        if (measuredKeypoints[ii].pixel >= correspondenceSettings.measuredPixelStart && measuredKeypoints[ii].pixel <= correspondenceSettings.measuredPixelStop)
+        {
+            for (size_t jj = 0; jj < fraunhoferKeypoints.size(); jj++)
+            {
+                if (measuredKeypoints[ii].type == fraunhoferKeypoints[jj].type &&
+                    std::abs(measuredKeypoints[ii].pixel - fraunhoferKeypoints[jj].pixel) <= ransacSettings.maximumPixelDistanceForPossibleCorrespondence)
+                {
+                    novac::Correspondence corr;
+                    corr.measuredIdx = ii;
+                    corr.measuredValue = measuredKeypoints[ii].pixel;
+                    corr.theoreticalIdx = jj;
+                    corr.theoreticalValue = fraunhoferKeypoints[jj].wavelength;
+                    novac::MeasureCorrespondenceError(corr, measuredSpectrum, fraunhoferSpectrum, correspondenceSettings);
+                    possibleCorrespondences.push_back(corr);
+
+                    errors.push_back(corr.error);
+                }
+            }
+        }
+    }
+
+    if (possibleCorrespondences.size() == 0)
+    {
+        return possibleCorrespondences;
+    }
+
+    // Filter out correspondences by keeping only the ones which have an error < median(error)
+    std::sort(begin(errors), end(errors));
+    size_t idx = std::min(errors.size() - 1, (size_t)(correspondenceSettings.percentageOfCorrespondencesToSelect * errors.size()));
+    const double errorLimit = errors[idx];
+
+    std::vector<novac::Correspondence> filteredCorrespondences;
+    filteredCorrespondences.reserve(possibleCorrespondences.size());
+    for (const novac::Correspondence& corr : possibleCorrespondences)
+    {
+        if (corr.error <= errorLimit)
+        {
+            filteredCorrespondences.push_back(corr);
+        }
+    }
+
+    return filteredCorrespondences;
+}
+
 
 // ---------------------------------- Free functions used to run the calibration ----------------------------------
 std::vector<Correspondence> SelectMaybeInliers(size_t number, const std::vector<Correspondence>& allCorrespondences, std::mt19937& randomGenerator)
@@ -149,7 +226,7 @@ double PolynomialValueAt(const std::vector<double>& coefficients, double x)
     auto it = coefficients.rbegin();
     double result = *it;
     ++it;
-    for ( ; it != coefficients.rend(); ++it)
+    for (; it != coefficients.rend(); ++it)
     {
         result = x * result + *it;
     }
