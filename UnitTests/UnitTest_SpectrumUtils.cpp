@@ -20,7 +20,7 @@ TEST_CASE("Derivative", "[SpectrumUtils]")
             inputSpectrum.m_data[ii] = 1.0;
         }
 
-        bool ret = Derivative(inputSpectrum.m_data, inputSpectrum.m_length, result);
+        bool ret = novac::Derivative(inputSpectrum.m_data, inputSpectrum.m_length, result);
 
         REQUIRE(ret == true);
         REQUIRE(inputSpectrum.m_length == result.size());
@@ -43,7 +43,7 @@ TEST_CASE("FindPeaks", "[SpectrumUtils][FindPeaks]")
         inputSpectrum.m_wavelength[ii] = 310.0 + ii * 0.3;
     }
 
-    std::vector<SpectrumDataPoint> result;
+    std::vector<novac::SpectrumDataPoint> result;
 
     SECTION("Flat Line - returns no peaks")
     {
@@ -52,7 +52,7 @@ TEST_CASE("FindPeaks", "[SpectrumUtils][FindPeaks]")
             inputSpectrum.m_data[ii] = 1.0;
         }
 
-        FindPeaks(inputSpectrum, 0.0, result);
+        novac::FindPeaks(inputSpectrum, 0.0, result);
 
         REQUIRE(0 == result.size());
     }
@@ -64,7 +64,7 @@ TEST_CASE("FindPeaks", "[SpectrumUtils][FindPeaks]")
         std::vector<double> spec = CreateGaussian(center, sigma, inputSpectrum.m_wavelength);
         memcpy(&inputSpectrum.m_data, spec.data(), spec.size() * sizeof(double));
 
-        FindPeaks(inputSpectrum, 0.0, result);
+        novac::FindPeaks(inputSpectrum, 0.0, result);
 
         REQUIRE(1 == result.size());
         REQUIRE(result[0].pixel == inputSpectrum.m_length / 2);
@@ -79,7 +79,7 @@ TEST_CASE("FindPeaks", "[SpectrumUtils][FindPeaks]")
         std::vector<double> spec = CreateGaussian(center, sigma, inputSpectrum.m_wavelength);
         memcpy(&inputSpectrum.m_data, spec.data(), spec.size() * sizeof(double));
 
-        FindPeaks(inputSpectrum, 0.0, result);
+        novac::FindPeaks(inputSpectrum, 0.0, result);
 
         REQUIRE(1 == result.size());
         REQUIRE(std::abs(result[0].wavelength - center) < 0.01);

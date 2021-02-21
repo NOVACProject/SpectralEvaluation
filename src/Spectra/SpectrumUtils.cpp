@@ -5,6 +5,9 @@
 #include <cassert>
 #include <algorithm>
 
+namespace novac
+{
+
 enum class Sign
 {
     Undetermined = 0,
@@ -359,8 +362,10 @@ bool GetEnvelope(const CSpectrum& spectrum, std::vector<double>& pixel, std::vec
         }
     }
 
-    pixel.resize(selectedPoints.size());
-    intensity.resize(selectedPoints.size());
+    pixel.clear();
+    intensity.clear();
+    pixel.reserve(selectedPoints.size());
+    intensity.reserve(selectedPoints.size());
     // always include the first point
     pixel.push_back(0);
     intensity.push_back(spectrum.m_data[0]);
@@ -370,8 +375,10 @@ bool GetEnvelope(const CSpectrum& spectrum, std::vector<double>& pixel, std::vec
         intensity.push_back(selectedPoints[ii].y);
     }
     // always include the last point
-    pixel.push_back(spectrum.m_length - 1);
+    pixel.push_back(static_cast<double>(spectrum.m_length) - 1);
     intensity.push_back(spectrum.m_data[spectrum.m_length - 1]);
 
     return true;
+}
+
 }

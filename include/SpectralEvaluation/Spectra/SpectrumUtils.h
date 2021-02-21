@@ -4,6 +4,10 @@
 
 class CSpectrum;
 
+namespace novac
+{
+
+
 // Simple structure used to represent a point in a spectrum
 struct SpectrumDataPoint
 {
@@ -77,3 +81,4 @@ bool Derivative(const double* data, size_t dataLength, int order, std::vector<do
 */
 bool GetEnvelope(const CSpectrum& spectrum, std::vector<double>& pixel, std::vector<double>& intensity);
 
+}
