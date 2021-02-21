@@ -140,7 +140,7 @@ WavelengthCalibrationSetup::WavelengthCalibrationSetup(const WavelengthCalibrati
 {
 }
 
-SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibration(CSpectrum& measuredSpectrum, const Evaluation::CCrossSectionData& measuredInstrumentLineShape)
+SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibration(const CSpectrum& measuredSpectrum, const Evaluation::CCrossSectionData& measuredInstrumentLineShape)
 {
     // TODO: Validation of the setup and incoming parameters!
 
@@ -154,20 +154,19 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
     novac::RansacWavelengthCalibrationSetup ransacCalibrationSetup{ ransacSettings };
 
     // Start by normalizing the intensity of the measured spectrum, such that we can compare it to the fraunhofer spectrum.
-    Normalize(measuredSpectrum);
+    this->calibrationState.measuredSpectrum = std::make_unique<CSpectrum>(measuredSpectrum);
+    Normalize(*calibrationState.measuredSpectrum);
 
     // Get the envelope of the measured spectrum (used to correct the shape of the fraunhofer spectrum to the detector sensitivity + optics absorption of the spectrometer)
-    SpectrumEnvelope measuredSpectrumEnvelope;
-    novac::GetEnvelope(measuredSpectrum, measuredSpectrumEnvelope.pixel, measuredSpectrumEnvelope.intensity);
+    novac::GetEnvelope(*calibrationState.measuredSpectrum, calibrationState.measuredSpectrumEnvelopePixels, calibrationState.measuredSpectrumEnvelopeIntensities);
 
     // Find the keypoints of the measured spectrum
-    std::vector<novac::SpectrumDataPoint> measuredKeypoints;
-    novac::FindKeypointsInSpectrum(measuredSpectrum, minimumPeakIntensityInMeasuredSpectrum, measuredKeypoints);
+    novac::FindKeypointsInSpectrum(*calibrationState.measuredSpectrum, minimumPeakIntensityInMeasuredSpectrum, calibrationState.measuredKeypoints);
 
     // Get the Fraunhofer spectrum
     novac::FraunhoferSpectrumGeneration fraunhoferSetup{ settings.highResSolarAtlas };
-    const auto originalFraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(settings.initialPixelToWavelengthMapping, measuredInstrumentLineShape, settings.crossSections);
-    std::unique_ptr<CSpectrum> fraunhoferSpectrum = std::make_unique<CSpectrum>(*originalFraunhoferSpectrum); // create a copy which we can modify
+    calibrationState.originalFraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(settings.initialPixelToWavelengthMapping, measuredInstrumentLineShape, settings.crossSections);
+    calibrationState.fraunhoferSpectrum = std::make_unique<CSpectrum>(*calibrationState.originalFraunhoferSpectrum); // create a copy which we can modify
 
     SpectrometerCalibrationResult result;
     result.pixelToWavelengthMapping = settings.initialPixelToWavelengthMapping;
@@ -177,20 +176,20 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
     for (int iterationIdx = 0; iterationIdx < numberOfIterations; ++iterationIdx)
     {
         // Get all the keypoints from the fraunhofer spectrum
-        std::vector<novac::SpectrumDataPoint> fraunhoferKeypoints;
-        novac::FindKeypointsInSpectrum(*fraunhoferSpectrum, minimumPeakIntensityInFraunhoferReference, fraunhoferKeypoints);
+        novac::FindKeypointsInSpectrum(*calibrationState.fraunhoferSpectrum, minimumPeakIntensityInFraunhoferReference, calibrationState.fraunhoferKeypoints);
 
         // List all possible correspondences (with some filtering applied).
-        const auto possibleCorrespondences = novac::ListPossibleCorrespondences(measuredKeypoints, measuredSpectrum, fraunhoferKeypoints, *fraunhoferSpectrum, ransacSettings, correspondenceSelectionSettings);
+        this->calibrationState.allCorrespondences = novac::ListPossibleCorrespondences(calibrationState.measuredKeypoints, *calibrationState.measuredSpectrum, calibrationState.fraunhoferKeypoints, *calibrationState.fraunhoferSpectrum, ransacSettings, correspondenceSelectionSettings);
 
         // The actual wavelength calibration by ransac
         auto startTime = std::chrono::steady_clock::now();
-        auto ransacResult = ransacCalibrationSetup.DoWavelengthCalibration(possibleCorrespondences);
+        auto ransacResult = ransacCalibrationSetup.DoWavelengthCalibration(calibrationState.allCorrespondences);
         auto stopTime = std::chrono::steady_clock::now();
 
         // Save the result
         result.pixelToWavelengthMappingCoefficients = ransacResult.bestFittingModelCoefficients;
         result.pixelToWavelengthMapping = GetPixelToWavelengthMapping(ransacResult.bestFittingModelCoefficients, settings.initialPixelToWavelengthMapping.size());
+        calibrationState.correspondenceIsInlier = ransacResult.correspondenceIsInlier;
 
         {
             // Output for debugging
@@ -212,29 +211,27 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
         if (iterationIdx < numberOfIterations - 1)
         {
             // Re-convolve the Fraunhofer spectrum to get it on the new pixel grid
-            fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(result.pixelToWavelengthMapping, measuredInstrumentLineShape, settings.crossSections);
+            calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(result.pixelToWavelengthMapping, measuredInstrumentLineShape, settings.crossSections);
 
             // Create a wavelength -> intensity spline using the new wavelength calibration and the envelope of the measured spectrum
             // TODO: Move to separate function
             {
-                std::vector<double> measuredSpectrumWavelength(measuredSpectrumEnvelope.Size());
-                std::vector<double> measuredSpectrumIntensity(measuredSpectrumEnvelope.Size());
-                for (size_t ii = 0; ii < measuredSpectrumEnvelope.Size(); ++ii)
+                std::vector<double> measuredSpectrumWavelength(calibrationState.measuredSpectrumEnvelopePixels.size());
+                for (size_t ii = 0; ii < calibrationState.measuredSpectrumEnvelopePixels.size(); ++ii)
                 {
-                    measuredSpectrumWavelength[ii] = novac::PolynomialValueAt(ransacResult.bestFittingModelCoefficients, measuredSpectrumEnvelope.pixel[ii]);
-                    measuredSpectrumIntensity[ii] = measuredSpectrumEnvelope.intensity[ii];
+                    measuredSpectrumWavelength[ii] = novac::PolynomialValueAt(ransacResult.bestFittingModelCoefficients, calibrationState.measuredSpectrumEnvelopePixels[ii]);
                 }
                 MathFit::CVector modelInput(measuredSpectrumWavelength.data(), (int)measuredSpectrumWavelength.size(), 1, false);
-                MathFit::CVector modelOutput(measuredSpectrumIntensity.data(), (int)measuredSpectrumIntensity.size(), 1, false);
+                MathFit::CVector modelOutput(calibrationState.measuredSpectrumEnvelopeIntensities.data(), (int)calibrationState.measuredSpectrumEnvelopeIntensities.size(), 1, false);
 
                 // Create a spline from the slit-function.
                 MathFit::CCubicSplineFunction apparentSensitivitySpline(modelInput, modelOutput);
 
                 // Adjust the shape of the Fraunhofer spectrum to match the measured
-                for (size_t pixelIdx = 0; pixelIdx < fraunhoferSpectrum->m_length; ++pixelIdx)
+                for (size_t pixelIdx = 0; pixelIdx < calibrationState.fraunhoferSpectrum->m_length; ++pixelIdx)
                 {
-                    const double apparentSensitivity = apparentSensitivitySpline.GetValue((MathFit::TFitData)fraunhoferSpectrum->m_wavelength[pixelIdx]);
-                    fraunhoferSpectrum->m_data[pixelIdx] *= apparentSensitivity;
+                    const double apparentSensitivity = apparentSensitivitySpline.GetValue((MathFit::TFitData)calibrationState.fraunhoferSpectrum->m_wavelength[pixelIdx]);
+                    calibrationState.fraunhoferSpectrum->m_data[pixelIdx] *= apparentSensitivity;
                 }
             }
         }

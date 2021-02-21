@@ -16,6 +16,9 @@ struct SpectrumDataPoint;
 namespace novac
 {
 
+struct SpectrumDataPoint;
+struct Correspondence;
+
 /// <summary>
 /// This is the result of running the wavelength calibration routine.
 /// </summary>
@@ -151,15 +154,35 @@ public:
     /// This performs the actual calibration of a measured spectrum against a 
     ///   high resolution fraunhofer spectrum assuming that the provided measured instrument line shape
     ///   is the correct line shape for the instrument.
-    /// This will modify the measured spectrum, by normalizing its intensity to the range [0, 1]
     /// </summary>
-    SpectrometerCalibrationResult DoWavelengthCalibration(CSpectrum& measuredSpectrum, const Evaluation::CCrossSectionData& measuredInstrumentLineShape);
+    SpectrometerCalibrationResult DoWavelengthCalibration(const CSpectrum& measuredSpectrum, const Evaluation::CCrossSectionData& measuredInstrumentLineShape);
 
-    // TODO: Create a way to get out some more internal information regarding the calibration, for debugging
+    /// <summary>
+    /// Simple structure used to save the internal state of the wavelength calibration. For inspection and debugging
+    /// </summary>
+    struct SpectrumeterCalibrationState
+    {
+        std::unique_ptr<CSpectrum> measuredSpectrum;
+        std::unique_ptr<CSpectrum> fraunhoferSpectrum;
+        std::unique_ptr<CSpectrum> originalFraunhoferSpectrum;
+        std::vector<novac::SpectrumDataPoint> measuredKeypoints;
+        std::vector<novac::SpectrumDataPoint> fraunhoferKeypoints;
+        std::vector<double> measuredSpectrumEnvelopePixels;
+        std::vector<double> measuredSpectrumEnvelopeIntensities;
+        std::vector<novac::Correspondence> allCorrespondences;
+        std::vector<bool> correspondenceIsInlier;
+    };
+
+    /// <summary>
+    /// Helper function which retrieves the state and result of the last call to 'DoWavelengthCalibration', for debugging.
+    /// </summary>
+    const WavelengthCalibrationSetup::SpectrumeterCalibrationState& GetLastCalibrationSetup() { return this->calibrationState; }
 
 private:
 
     WavelengthCalibrationSettings settings;
+
+    SpectrumeterCalibrationState calibrationState;
 
     static std::vector<double> GetPixelToWavelengthMapping(const std::vector<double>& polynomialCoefficients, size_t detectorSize);
 

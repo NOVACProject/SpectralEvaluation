@@ -30,6 +30,7 @@ RansacWavelengthCalibrationResult::RansacWavelengthCalibrationResult(const Ransa
     bestFittingModelCoefficients(begin(other.bestFittingModelCoefficients), end(other.bestFittingModelCoefficients)),
     modelPolynomialOrder(other.modelPolynomialOrder),
     highestNumberOfInliers(other.highestNumberOfInliers),
+    correspondenceIsInlier(other.correspondenceIsInlier),
     smallestError(other.smallestError),
     numberOfPossibleCorrelations(other.numberOfPossibleCorrelations)
 {
@@ -40,6 +41,7 @@ RansacWavelengthCalibrationResult& RansacWavelengthCalibrationResult::operator=(
     this->modelPolynomialOrder = other.modelPolynomialOrder;
     this->bestFittingModelCoefficients = std::vector<double>(begin(other.bestFittingModelCoefficients), end(other.bestFittingModelCoefficients));
     this->highestNumberOfInliers = other.highestNumberOfInliers;
+    this->correspondenceIsInlier = std::vector<bool>(begin(other.correspondenceIsInlier), end(other.correspondenceIsInlier));
     this->smallestError = other.smallestError;
     this->numberOfPossibleCorrelations = other.numberOfPossibleCorrelations;
 
@@ -48,19 +50,24 @@ RansacWavelengthCalibrationResult& RansacWavelengthCalibrationResult::operator=(
 
 // ---------------------------------- Free functions used to select the correspondences ----------------------------------
 
-void MeasureCorrespondenceError(novac::Correspondence& corr, const ::CSpectrum& measuredSpectrum, const ::CSpectrum& theoreticalSpectrum, const CorrespondenceSelectionSettings& settings)
+double MeasureCorrespondenceError(
+    const ::CSpectrum& measuredSpectrum,
+    double pixelInMeasuredSpectrum,
+    const ::CSpectrum& fraunhoferSpectrum,
+    double pixelInFraunhoferSpectrum,
+    const CorrespondenceSelectionSettings& settings)
 {
     // extract a small region around 'idxOfMeasuredSpectrum' in the measured spectrum
-    const size_t measuredLocationStart = (size_t)std::max(0.0, std::min((double)(measuredSpectrum.m_length - settings.pixelRegionSizeForCorrespondenceErrorMeasurement), corr.measuredIdx - settings.pixelRegionSizeForCorrespondenceErrorMeasurement * 0.5));
+    const size_t measuredLocationStart = (size_t)std::max(0.0, std::min((double)(measuredSpectrum.m_length - settings.pixelRegionSizeForCorrespondenceErrorMeasurement), pixelInMeasuredSpectrum - settings.pixelRegionSizeForCorrespondenceErrorMeasurement * 0.5));
     std::vector<double> measuredRegion{ measuredSpectrum.m_data + measuredLocationStart, measuredSpectrum.m_data + measuredLocationStart + settings.pixelRegionSizeForCorrespondenceErrorMeasurement };
     RemoveMean(measuredRegion);
 
     // likewise, extract a small region around 'fraunhoferLcation' in the fraunhofer spectrum
-    const size_t fraunhoferLocationStart = (size_t)std::max(0.0, std::min((double)(theoreticalSpectrum.m_length - settings.pixelRegionSizeForCorrespondenceErrorMeasurement), corr.theoreticalIdx - settings.pixelRegionSizeForCorrespondenceErrorMeasurement * 0.5));
-    std::vector<double> fraunhoferRegion{ theoreticalSpectrum.m_data + fraunhoferLocationStart, theoreticalSpectrum.m_data + fraunhoferLocationStart + settings.pixelRegionSizeForCorrespondenceErrorMeasurement };
+    const size_t fraunhoferLocationStart = (size_t)std::max(0.0, std::min((double)(fraunhoferSpectrum.m_length - settings.pixelRegionSizeForCorrespondenceErrorMeasurement), pixelInFraunhoferSpectrum - settings.pixelRegionSizeForCorrespondenceErrorMeasurement * 0.5));
+    std::vector<double> fraunhoferRegion{ fraunhoferSpectrum.m_data + fraunhoferLocationStart, fraunhoferSpectrum.m_data + fraunhoferLocationStart + settings.pixelRegionSizeForCorrespondenceErrorMeasurement };
     RemoveMean(fraunhoferRegion);
 
-    corr.error = SumOfSquaredDifferences(measuredRegion, fraunhoferRegion);
+    return SumOfSquaredDifferences(measuredRegion, fraunhoferRegion);
 }
 
 std::vector<novac::Correspondence> ListPossibleCorrespondences(
@@ -87,7 +94,7 @@ std::vector<novac::Correspondence> ListPossibleCorrespondences(
                     corr.measuredValue = measuredKeypoints[ii].pixel;
                     corr.theoreticalIdx = jj;
                     corr.theoreticalValue = fraunhoferKeypoints[jj].wavelength;
-                    novac::MeasureCorrespondenceError(corr, measuredSpectrum, fraunhoferSpectrum, correspondenceSettings);
+                    corr.error = novac::MeasureCorrespondenceError(measuredSpectrum, measuredKeypoints[ii].pixel, fraunhoferSpectrum, fraunhoferKeypoints[jj].pixel, correspondenceSettings);
                     possibleCorrespondences.push_back(corr);
 
                     errors.push_back(corr.error);
@@ -118,7 +125,6 @@ std::vector<novac::Correspondence> ListPossibleCorrespondences(
 
     return filteredCorrespondences;
 }
-
 
 // ---------------------------------- Free functions used to run the calibration ----------------------------------
 std::vector<Correspondence> SelectMaybeInliers(size_t number, const std::vector<Correspondence>& allCorrespondences, std::mt19937& randomGenerator)
@@ -370,9 +376,10 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
                 // recount the inliers
                 numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondences, settings.inlierLimitInWavelength, isInlier, meanErrorOfModel);
 
-                std::cout << "Updating model at iteration " << iteration << ", new number of inliers is: " << numberOfInliers << ", mean eror: " << meanErrorOfModel << std::endl;
+                std::cout << "Updating model at iteration " << iteration << ", new number of inliers is: " << numberOfInliers << ", mean error: " << meanErrorOfModel << std::endl;
 
                 result.highestNumberOfInliers = numberOfInliers;
+                result.correspondenceIsInlier = isInlier;
                 result.smallestError = meanErrorOfModel;
                 correspondenceIsInlier = isInlier;
             }
@@ -383,148 +390,12 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
                 result.bestFittingModelCoefficients = std::move(suggestionForPolynomial);
 
                 result.highestNumberOfInliers = numberOfInliers;
+                result.correspondenceIsInlier = isInlier;
                 result.smallestError = meanErrorOfModel;
                 correspondenceIsInlier = isInlier;
             }
         }
     }
-
-    // Save the result to the debug output file
-    /*
-    if (debugOutputFile.length() > 3)
-    {
-        rapidjson::Document doc;
-        doc.SetObject();
-        rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
-
-        // The Keypoints in the Fraunhofer spectrum
-        {
-            rapidjson::Value pixelArray(rapidjson::kArrayType);
-            rapidjson::Value wavelengthArray(rapidjson::kArrayType);
-            rapidjson::Value intensityArray(rapidjson::kArrayType);
-            rapidjson::Value typeArray(rapidjson::kArrayType);
-            rapidjson::Value calcWavlengthArray(rapidjson::kArrayType);
-            for (const SpectrumDataPoint& pt : fraunhoferKeypoints)
-            {
-                pixelArray.PushBack(pt.pixel, allocator);
-                wavelengthArray.PushBack(pt.wavelength, allocator);
-                intensityArray.PushBack(pt.intensity, allocator);
-                typeArray.PushBack(pt.type, allocator);
-                calcWavlengthArray.PushBack(result.bestFittingModel.GetValue(pt.pixel), allocator);
-            }
-
-            rapidjson::Value fraunhoferKeypointsDoc(rapidjson::kObjectType);
-            fraunhoferKeypointsDoc.AddMember("description", "This is the set of peaks/valleys found in the convolved Fraunhofer spectrum", allocator);
-            fraunhoferKeypointsDoc.AddMember("pixel", pixelArray, allocator);
-            fraunhoferKeypointsDoc.AddMember("wavelength", wavelengthArray, allocator);
-            fraunhoferKeypointsDoc.AddMember("intensity", intensityArray, allocator);
-            fraunhoferKeypointsDoc.AddMember("type", typeArray, allocator);
-            fraunhoferKeypointsDoc.AddMember("calcWavelength", calcWavlengthArray, allocator);
-
-            doc.AddMember("fraunhoferKeypoints", fraunhoferKeypointsDoc, allocator);
-        }
-
-        // The Keypoints in the Measured spectrum
-        {
-            rapidjson::Value pixelArray(rapidjson::kArrayType);
-            rapidjson::Value intensityArray(rapidjson::kArrayType);
-            rapidjson::Value typeArray(rapidjson::kArrayType);
-            rapidjson::Value calcWavlengthArray(rapidjson::kArrayType);
-            for (const SpectrumDataPoint& pt : measuredKeypoints)
-            {
-                pixelArray.PushBack(pt.pixel, allocator);
-                intensityArray.PushBack(pt.intensity, allocator);
-                typeArray.PushBack(pt.type, allocator);
-                calcWavlengthArray.PushBack(result.bestFittingModel.GetValue(pt.pixel), allocator);
-            }
-
-            rapidjson::Value measKeypointsDoc(rapidjson::kObjectType);
-            measKeypointsDoc.AddMember("description", "This is the set of peaks/valleys found in the measured spectrum", allocator);
-            measKeypointsDoc.AddMember("pixel", pixelArray, allocator);
-            measKeypointsDoc.AddMember("intensity", intensityArray, allocator);
-            measKeypointsDoc.AddMember("type", typeArray, allocator);
-            measKeypointsDoc.AddMember("calcWavelength", calcWavlengthArray, allocator);
-
-            doc.AddMember("measuredKeypoints", measKeypointsDoc, allocator);
-        }
-
-        // The Correspondences
-        {
-            rapidjson::Value pixelArray(rapidjson::kArrayType);
-            rapidjson::Value wavelengthArray(rapidjson::kArrayType);
-            rapidjson::Value calcWavlengthArray(rapidjson::kArrayType);
-            rapidjson::Value measIntensityArray(rapidjson::kArrayType);
-            rapidjson::Value fraunhoferIntensityArray(rapidjson::kArrayType);
-            rapidjson::Value selectedArray(rapidjson::kArrayType);
-            rapidjson::Value scoreArray(rapidjson::kArrayType);
-            for (size_t ii = 0; ii < possibleCorrespondences.size(); ++ii)
-            {
-                const SpectrumDataPoint& pixelPt = measuredKeypoints[possibleCorrespondences[ii].measuredIdx];
-                const SpectrumDataPoint& wavelPt = fraunhoferKeypoints[possibleCorrespondences[ii].theoreticalIdx];
-                const bool isSelected = correspondenceIsInlier[ii];
-
-                pixelArray.PushBack(pixelPt.pixel, allocator);
-                wavelengthArray.PushBack(wavelPt.wavelength, allocator);
-                calcWavlengthArray.PushBack(result.bestFittingModel.GetValue(pixelPt.pixel), allocator);
-                measIntensityArray.PushBack(pixelPt.intensity, allocator);
-                fraunhoferIntensityArray.PushBack(wavelPt.intensity, allocator);
-                selectedArray.PushBack(isSelected, allocator);
-                scoreArray.PushBack(possibleCorrespondences[ii].error, allocator);
-            }
-
-            rapidjson::Value correspondencesDoc(rapidjson::kObjectType);
-            correspondencesDoc.AddMember("description", "This is the set of correspondences between the measured and the fraunhofer keypoints. Pixel is from the measured, wavelength is from the fraunhofer spectrum and calcWavelength is from the model", allocator);
-            correspondencesDoc.AddMember("pixel", pixelArray, allocator);
-            correspondencesDoc.AddMember("wavelength", wavelengthArray, allocator);
-            correspondencesDoc.AddMember("calcWavelength", calcWavlengthArray, allocator);
-            correspondencesDoc.AddMember("measIntensity", measIntensityArray, allocator);
-            correspondencesDoc.AddMember("fraunhoferIntensity", fraunhoferIntensityArray, allocator);
-            correspondencesDoc.AddMember("selected", selectedArray, allocator);
-            correspondencesDoc.AddMember("score", scoreArray, allocator);
-
-            doc.AddMember("correspondences", correspondencesDoc, allocator);
-        }
-
-        // The initial calibration
-        if (initialWavelengthCalibrationForDebug != nullptr)
-        {
-            // initialWavelengthCalibrationForDebug
-            rapidjson::Value calibrationArray(rapidjson::kArrayType);
-            for (double value : *initialWavelengthCalibrationForDebug)
-            {
-                calibrationArray.PushBack(value, allocator);
-            }
-            doc.AddMember("initialCalibration", calibrationArray, allocator);
-        }
-
-        // The final model
-        {
-            rapidjson::Value polynomial;
-            polynomial.SetObject();
-
-            polynomial.AddMember("order", (int)result.modelPolynomialOrder, allocator);
-
-            for (int orderIdx = 0; orderIdx <= (int)result.modelPolynomialOrder; ++orderIdx)
-            {
-                char name[64];
-                sprintf(name, "c%d", orderIdx);
-
-                rapidjson::Value coefficientName(name, allocator);
-
-                polynomial.AddMember(coefficientName, result.bestFittingModel.GetCoefficient(orderIdx), allocator);
-            }
-            doc.AddMember("polynomial", polynomial, allocator);
-        }
-
-        rapidjson::StringBuffer sb;
-        rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(sb);
-        doc.Accept(writer);    // Accept() traverses the DOM and generates Handler events.
-
-        std::ofstream dst{ debugOutputFile };
-        dst << sb.GetString() << newLine;
-    }
-
-    */
 
     return result;
 }

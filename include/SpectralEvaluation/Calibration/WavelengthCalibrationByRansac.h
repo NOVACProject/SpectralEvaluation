@@ -79,14 +79,14 @@ struct CorrespondenceSelectionSettings
     /// The first pixel to include in the calibration routine. 
     /// Often do the signal in the spectra decline at short wavelengths and this is a means to disregard points with low intensity.
     /// </summary>
-    size_t measuredPixelStart = 600;
+    size_t measuredPixelStart = 650; // TODO: Lower
 
     /// <summary>
     /// The last pixel to include in the calibration routine. 
     /// Often do the signal in the spectra decline at short wavelengths and this is a means to disregard points with low intensity.
     /// This must be larger than measuredPixelStart.
     /// </summary>
-    size_t measuredPixelStop = 4095;
+    size_t measuredPixelStop = 2100; // TODO: Raise
 };
 
 /// <summary>
@@ -153,6 +153,12 @@ struct RansacWavelengthCalibrationResult
 
     /** The number of inliers which were achieved with this model */
     size_t highestNumberOfInliers = 0U;
+
+    /// <summary>
+    /// Lists which of the incoming correspondences is an inlier.
+    /// The number of true elements in this vector equals 'highestNumberOfInliers'
+    /// </summary>
+    std::vector<bool> correspondenceIsInlier;
 
     /** The smallest error in the model, by using the inliers */
     double smallestError = std::numeric_limits<double>::max();

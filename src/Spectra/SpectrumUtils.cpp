@@ -235,6 +235,7 @@ void FindKeypointsInSpectrum(const CSpectrum& spectrum, double minimumIntensity,
         return;
     }
 
+    result.clear();
     result.reserve(valleys.size() + peaks.size());
 
     for (SpectrumDataPoint& pt : valleys)
