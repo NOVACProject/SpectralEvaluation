@@ -319,7 +319,9 @@ std::vector<Point> Reduce(const std::vector<Point>& selectedPoints)
     reducedPoints.push_back(selectedPoints[0]);
     for (size_t ii = 1; ii < selectedPoints.size() - 1; ++ii)
     {
-        // draw a line from selectedPoints[ii - 1] to selectedPoints[ii + 1]. If thie line goes _above_ the selectedPoints[ii] then selectedPoints[ii] can be removed.
+        // Draw a line from selectedPoints[ii - 1] to selectedPoints[ii + 1]. 
+        //  If this line goes _above_ selectedPoints[ii] then selectedPoints[ii] can be removed.
+        // TODO: This isn't fully correct since the line should go above _all_ points between selectedPoints[ii - 1].x and selectedPoints[ii + 1].x
         const double alpha = (selectedPoints[ii].x - selectedPoints[ii - 1].x) / (selectedPoints[ii + 1].x - selectedPoints[ii - 1].x);
         const double y = selectedPoints[ii - 1].y + alpha * (selectedPoints[ii + 1].y - selectedPoints[ii - 1].y) / (selectedPoints[ii + 1].x - selectedPoints[ii - 1].x);
         if (y < selectedPoints[ii].y)
@@ -341,7 +343,7 @@ bool GetEnvelope(const CSpectrum& spectrum, std::vector<double>& pixel, std::vec
     // Select all local maxima
     for (size_t ii = 1; ii < static_cast<unsigned long long>(spectrum.m_length) - 1; ++ii)
     {
-        if (spectrum.m_data[ii] > spectrum.m_data[ii - 1] && spectrum.m_data[ii] > spectrum.m_data[ii + 1])
+        if (spectrum.m_data[ii] >= spectrum.m_data[ii - 1] && spectrum.m_data[ii] > spectrum.m_data[ii + 1])
         {
             selectedPoints.push_back(Point{ static_cast<double>(ii), spectrum.m_data[ii] });
         }

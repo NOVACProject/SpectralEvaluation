@@ -113,27 +113,6 @@ bool MercuryCalibration(
 
 /// --------------------------- Wavelength Calibration --------------------------------
 
-// Helper structure for keeping track of the envelope
-struct SpectrumEnvelope
-{
-    std::vector<double> pixel;
-    std::vector<double> intensity;
-
-    /// <summary>
-    /// Adds one more point to this envelope by adding it to the end of 'pixel' and 'intensity'
-    /// </summary>
-    void Add(double x, double y)
-    {
-        this->pixel.push_back(x);
-        this->intensity.push_back(y);
-    }
-
-    size_t Size() const
-    {
-        return this->pixel.size();
-    }
-};
-
 
 WavelengthCalibrationSetup::WavelengthCalibrationSetup(const WavelengthCalibrationSettings& calibrationSettings)
     : settings(calibrationSettings)
