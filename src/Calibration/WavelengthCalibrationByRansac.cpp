@@ -245,7 +245,7 @@ inline double CalculateValueAt(const std::vector<double>& coefficients, double x
     return coefficients[0] + x * (coefficients[1] + x * (coefficients[2] + x * coefficients[3]));
 }
 
-size_t CountInliers(const std::vector<double>& polynomialCoefficients, const std::vector<Correspondence> possibleCorrespondences, double toleranceInWavelength, std::vector<bool>& isInlier, double& averageError)
+size_t CountInliers(const std::vector<double>& polynomialCoefficients, const std::vector<Correspondence>& possibleCorrespondences, double toleranceInWavelength, std::vector<bool>& isInlier, double& averageError)
 {
     size_t count = 0;
     isInlier.resize(possibleCorrespondences.size());
