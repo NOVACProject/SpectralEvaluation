@@ -46,22 +46,22 @@ std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
     Evaluation::CCrossSectionData solarCrossSection;
     FileIo::ReadCrossSectionFile(this->solarAtlasFile, solarCrossSection);
 
-    for each (auto crossSection in highResolutionCrossSections)
+    for each (const auto& crossSectionOfAbsorber in highResolutionCrossSections)
     {
-        const std::string& path = crossSection.first;
-        const double totalColumn = crossSection.second;
+        const std::string& path = crossSectionOfAbsorber.first;
+        const double totalColumn = crossSectionOfAbsorber.second;
 
         // Turn the molecular absorption into an absorbance spectrum and multiply with the high res solar
         if (std::abs(totalColumn) > std::numeric_limits<double>::epsilon())
         {
             // Get the high res ozone spectrum
-            Evaluation::CCrossSectionData ozoneCrossSection;
-            FileIo::ReadCrossSectionFile(path, ozoneCrossSection);
+            Evaluation::CCrossSectionData crossSectionData;
+            FileIo::ReadCrossSectionFile(path, crossSectionData);
 
-            Mult(ozoneCrossSection.m_crossSection, -totalColumn);
-            Exp(ozoneCrossSection.m_crossSection);
+            Mult(crossSectionData.m_crossSection, -totalColumn);
+            Exp(crossSectionData.m_crossSection);
             std::vector<double> resampledOzoneCrossSection;
-            Evaluation::Resample(ozoneCrossSection, solarCrossSection.m_waveLength, resampledOzoneCrossSection);
+            Evaluation::Resample(crossSectionData, solarCrossSection.m_waveLength, resampledOzoneCrossSection);
             Mult(resampledOzoneCrossSection, solarCrossSection.m_crossSection);
         }
     }

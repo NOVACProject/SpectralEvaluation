@@ -16,6 +16,115 @@
 namespace novac
 {
 
+// ---------------------------------- PolynomialFit ----------------------------------
+
+class CVectorDataFunction : public MathFit::IParamFunction
+{
+private:
+    MathFit::CVector xVector;
+    MathFit::CVector yVector;
+public:
+    CVectorDataFunction(const MathFit::CVector& x, const MathFit::CVector& y)
+        : xVector(x), yVector(y)
+    {
+        if (xVector.GetSize() != yVector.GetSize())
+        {
+            throw std::invalid_argument("Cannot setup a vector data function with not equal length of the x- and y- vectors");
+        }
+    }
+
+    virtual MathFit::TFitData GetLinearBasisFunction(MathFit::TFitData /*fXValue*/, int /*iParamID*/, bool /*bFixedID*/) override
+    {
+        throw std::exception("CVectorDataFunction::GetLinearBasisFunction is not implemented");
+    }
+
+    virtual MathFit::TFitData GetValue(MathFit::TFitData /*fXValue*/) override
+    {
+        throw std::exception("CVectorDataFunction::GetValue is not implemented");
+    }
+
+    virtual MathFit::CVector& GetValues(MathFit::CVector& vXValues, MathFit::CVector& vYTargetVector) override
+    {
+        if (vXValues.GetSize() != this->xVector.GetSize())
+        {
+            throw std::invalid_argument("The CVectorDataFunction is constructed to only use vectors of equal length.");
+        }
+
+        const int size = this->xVector.GetSize();
+        for (int i = 0; i < size; i++)
+        {
+            vYTargetVector.SetAt(i, this->yVector.GetAt(i));
+        }
+
+        return vYTargetVector;
+    }
+
+    virtual MathFit::TFitData GetSlope(MathFit::TFitData /*fXValue*/) override
+    {
+        throw std::exception("CVectorDataFunction::GetSlope is not implemented");
+    }
+};
+
+// The PolynomialFit is a helper class used to somewhat optimize the fitting of a polynomial to data again and again using the MathFit code from DOASIS
+class PolynomialFit
+{
+private:
+    MathFit::CPolynomialFunction functionToFit;
+public:
+    PolynomialFit(int order)
+        : functionToFit(order)
+    {
+    }
+
+    bool FitPolynomial(std::vector<double>& xData, std::vector<double>& yData, std::vector<double>& polynomialCoefficients)
+    {
+        if (xData.size() != yData.size())
+        {
+            return false;
+        }
+
+        const bool autoReleaseData = false;
+        MathFit::CVector xVector{ &xData[0], (int)xData.size(), 1, autoReleaseData };
+        MathFit::CVector yVector{ &yData[0], (int)yData.size(), 1, autoReleaseData };
+
+        try
+        {
+            // This is a home-made replacement for the spline. In order to speed up the fitting somewhat.
+            CVectorDataFunction cubicSplineRepresentation{ xVector, yVector };
+
+            MathFit::CStandardMetricFunction diff(cubicSplineRepresentation, this->functionToFit);
+
+            MathFit::CLeastSquareFit fit(diff);
+            fit.SetFitRange(xVector);
+            fit.SetMaxFitSteps(500);
+            fit.PrepareMinimize();
+
+            (void)fit.Minimize();
+            fit.FinishMinimize();
+
+            // Now extract the coefficients
+            {
+                const auto& modelVector = functionToFit.GetCoefficients();
+                polynomialCoefficients.resize(modelVector.GetSize());
+                for (int orderIdx = 0; orderIdx < modelVector.GetSize(); ++orderIdx)
+                {
+                    polynomialCoefficients[orderIdx] = modelVector.GetAt(orderIdx);
+                }
+            }
+
+            return true;
+        }
+        catch (MathFit::CFitException& e)
+        {
+            std::cout << "Fit failed: " << e.mMessage << std::endl;
+
+            return false;
+        }
+
+    }
+
+};
+
 // ---------------------------------- RansacWavelengthCalibrationResult ----------------------------------
 RansacWavelengthCalibrationResult::RansacWavelengthCalibrationResult(size_t polynomialOrder) :
     bestFittingModelCoefficients(polynomialOrder + 1),
@@ -127,17 +236,19 @@ std::vector<novac::Correspondence> ListPossibleCorrespondences(
 }
 
 // ---------------------------------- Free functions used to run the calibration ----------------------------------
-std::vector<Correspondence> SelectMaybeInliers(size_t number, const std::vector<Correspondence>& allCorrespondences, std::mt19937& randomGenerator)
+void SelectMaybeInliers(size_t number, const std::vector<Correspondence>& allCorrespondences, std::mt19937& randomGenerator, std::vector<Correspondence>& result)
 {
     if (number == allCorrespondences.size())
     {
-        return allCorrespondences;
+        result = allCorrespondences;
+        return;
     }
     else if (number > allCorrespondences.size())
     {
         throw std::invalid_argument("Cannot select a larger number of inliers than the entire data set.");
     }
 
+    result.resize(number);
     std::uniform_int_distribution<size_t> uniform_dist(0, allCorrespondences.size() - 1);
 
     // "Randomly" select correspondences with the following restrictions
@@ -158,68 +269,13 @@ std::vector<Correspondence> SelectMaybeInliers(size_t number, const std::vector<
         }
     }
 
-    std::vector<Correspondence> result;
-    result.reserve(number);
+
+    size_t resultIdx = 0;
     for (size_t idx : selectedIndices)
     {
-        result.push_back(allCorrespondences[idx]);
+        result[resultIdx] = allCorrespondences[idx];
+        ++resultIdx;
     }
-
-    return result;
-}
-
-// TODO: MOVE AND MERGE WITH FITFUNCTION IN INSTRUMENTLINESHAPE.CPP
-bool FitPolynomial(MathFit::CVector& xData, MathFit::CVector& yData, size_t order, std::vector<double>& polynomialCoefficients)
-{
-    try
-    {
-        MathFit::CCubicSplineFunction cubicSplineRepresentation{ xData, yData };
-
-        MathFit::CPolynomialFunction functionToFit{ static_cast<int>(order) };
-        MathFit::CStandardMetricFunction diff(cubicSplineRepresentation, functionToFit);
-
-        MathFit::CStandardFit fit(diff);
-        fit.SetFitRange(xData);
-        fit.SetMaxFitSteps(500);
-        fit.PrepareMinimize();
-
-        if (!fit.Minimize())
-        {
-            return false;
-        }
-        fit.FinishMinimize();
-
-        // Now extract the coefficients
-        {
-            const auto& modelVector = functionToFit.GetCoefficients();
-            polynomialCoefficients.resize(modelVector.GetSize());
-            for (int orderIdx = 0; orderIdx < modelVector.GetSize(); ++orderIdx)
-            {
-                polynomialCoefficients[orderIdx] = modelVector.GetAt(orderIdx);
-            }
-        }
-
-        return true;
-    }
-    catch (MathFit::CFitException& e)
-    {
-        std::cout << "Fit failed: " << e.mMessage << std::endl;
-
-        return false;
-    }
-}
-bool FitPolynomial(std::vector<double>& xData, std::vector<double>& yData, size_t order, std::vector<double>& polynomialCoefficients)
-{
-    if (xData.size() != yData.size())
-    {
-        return false;
-    }
-
-    const bool autoReleaseData = false;
-    MathFit::CVector xVector{ &xData[0], (int)xData.size(), 1, autoReleaseData };
-    MathFit::CVector yVector{ &yData[0], (int)yData.size(), 1, autoReleaseData };
-
-    return FitPolynomial(xVector, yVector, order, polynomialCoefficients);
 }
 
 double PolynomialValueAt(const std::vector<double>& coefficients, double x)
@@ -277,7 +333,9 @@ size_t CountInliers(
     // Version 2. Order the correspondences by the measured keypoint they belong to and only select one correspondence per keypoint
     averageError = 0.0;
     inlier.clear();
+    inlier.reserve(100); // guess for the upper bound
     std::vector<double> distances;
+    distances.reserve(100); // guess for the upper bound.
     for (size_t keypointIdx = 0; keypointIdx < possibleCorrespondences.size(); ++keypointIdx)
     {
         if (possibleCorrespondences[keypointIdx].size() == 0)
@@ -393,13 +451,16 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
 
     const auto possibleCorrespondencesOrderedByMeasuredKeypoint = ArrangeByMeasuredKeypoint(possibleCorrespondences);
 
+    std::vector<Correspondence> selectedCorrespondences;
+    PolynomialFit polyFit{ static_cast<int>(settings.modelPolynomialOrder) };
+
     // Seed with a real random value, if available
     std::random_device r;
     std::mt19937 rnd{ r() };
 
     for (int iteration = 0; iteration < settings.numberOfRansacIterations; ++iteration)
     {
-        std::vector<Correspondence> selectedCorrespondences = SelectMaybeInliers(settings.sampleSize, possibleCorrespondences, rnd);
+        SelectMaybeInliers(settings.sampleSize, possibleCorrespondences, rnd, selectedCorrespondences);
 
         // Create a new (better?) model from these selected correspondences
         std::vector<double> selectedPixelValues(settings.sampleSize);
@@ -410,7 +471,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
             selectedWavelengths[ii] = selectedCorrespondences[ii].theoreticalValue;
         }
         std::vector<double> suggestionForPolynomial;
-        if (!FitPolynomial(selectedPixelValues, selectedWavelengths, settings.modelPolynomialOrder, suggestionForPolynomial))
+        if (!polyFit.FitPolynomial(selectedPixelValues, selectedWavelengths, suggestionForPolynomial))
         {
             std::cout << "Polynomial fit failed" << std::endl;
             continue;
@@ -435,7 +496,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
                     wavelengths.push_back(corr.theoreticalValue);
                 }
 
-                if (!FitPolynomial(pixelValues, wavelengths, settings.modelPolynomialOrder, result.bestFittingModelCoefficients))
+                if (!polyFit.FitPolynomial(pixelValues, wavelengths, result.bestFittingModelCoefficients))
                 {
                     std::cout << "Polynomial fit failed" << std::endl;
                     continue;
