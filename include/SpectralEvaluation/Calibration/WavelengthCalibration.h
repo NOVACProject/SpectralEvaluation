@@ -83,6 +83,7 @@ public:
 
     /// <summary>
     /// Creates a Fraunhofer reference spectrum using the provided pixel-to-wavelength mapping and measured instrument line shape.
+    /// The created spectrum will have a normalized intensity, with all data points in the range [0, 1].
     /// </summary>
     /// <param name="pixelToWavelengthMapping">The wavelength (in nm air) for each pixel on the detector.</param>
     /// <param name="measuredInstrumentLineShape">A measurement of the instrument line shape</param>

@@ -313,18 +313,29 @@ struct Point
 };
 
 // This is not an optimal way of calculating the envelope but does its job
-std::vector<Point> Reduce(const std::vector<Point>& selectedPoints)
+std::vector<Point> Reduce(const std::vector<Point>& selectedPoints, const double* const data)
 {
     std::vector<Point> reducedPoints;
     reducedPoints.push_back(selectedPoints[0]);
     for (size_t ii = 1; ii < selectedPoints.size() - 1; ++ii)
     {
         // Draw a line from selectedPoints[ii - 1] to selectedPoints[ii + 1]. 
-        //  If this line goes _above_ selectedPoints[ii] then selectedPoints[ii] can be removed.
-        // TODO: This isn't fully correct since the line should go above _all_ points between selectedPoints[ii - 1].x and selectedPoints[ii + 1].x
-        const double alpha = (selectedPoints[ii].x - selectedPoints[ii - 1].x) / (selectedPoints[ii + 1].x - selectedPoints[ii - 1].x);
-        const double y = selectedPoints[ii - 1].y + alpha * (selectedPoints[ii + 1].y - selectedPoints[ii - 1].y) / (selectedPoints[ii + 1].x - selectedPoints[ii - 1].x);
-        if (y < selectedPoints[ii].y)
+        //  If this line goes _above_ all the intermediate points in the data then selectedPoints[ii] can be removed.
+        bool intersectsData = false;
+        const size_t startIdx = static_cast<size_t>(selectedPoints[ii - 1].x);
+        const size_t stopIdx = static_cast<size_t>(selectedPoints[ii + 1].x);
+        for (size_t pixelIdx = startIdx; pixelIdx < stopIdx; ++pixelIdx)
+        {
+            const double alpha = (pixelIdx - selectedPoints[ii - 1].x) / (selectedPoints[ii + 1].x - selectedPoints[ii - 1].x);
+            const double y = selectedPoints[ii - 1].y + alpha * (selectedPoints[ii + 1].y - selectedPoints[ii - 1].y) / (selectedPoints[ii + 1].x - selectedPoints[ii - 1].x);
+            if (y < data[pixelIdx])
+            {
+                intersectsData = true;
+                break;
+            }
+        }
+
+        if (intersectsData)
         {
             reducedPoints.push_back(selectedPoints[ii]);
         }
@@ -337,8 +348,8 @@ std::vector<Point> Reduce(const std::vector<Point>& selectedPoints)
 
 bool GetEnvelope(const CSpectrum& spectrum, std::vector<double>& pixel, std::vector<double>& intensity)
 {
-    // TODO: Unit test properly
-    std::vector<Point> selectedPoints;
+    // Version 1. Selecting peaks
+    /* std::vector<Point> selectedPoints;
 
     // Select all local maxima
     for (size_t ii = 1; ii < static_cast<unsigned long long>(spectrum.m_length) - 1; ++ii)
@@ -353,7 +364,7 @@ bool GetEnvelope(const CSpectrum& spectrum, std::vector<double>& pixel, std::vec
     std::vector<Point> reducedPoints;
     while (true)
     {
-        reducedPoints = Reduce(selectedPoints);
+        reducedPoints = Reduce(selectedPoints, spectrum.m_data);
 
         if (reducedPoints.size() < selectedPoints.size())
         {
@@ -381,7 +392,29 @@ bool GetEnvelope(const CSpectrum& spectrum, std::vector<double>& pixel, std::vec
     pixel.push_back(static_cast<double>(spectrum.m_length) - 1);
     intensity.push_back(spectrum.m_data[spectrum.m_length - 1]);
 
+    return true; */
+
+    // Version 2. Selecting _all_ peaks and low pass filtering the resulting data
+    pixel.clear();
+    intensity.clear();
+
+    // Select all local maxima
+    for (size_t ii = 1; ii < static_cast<unsigned long long>(spectrum.m_length) - 1; ++ii)
+    {
+        if (spectrum.m_data[ii] >= spectrum.m_data[ii - 1] && spectrum.m_data[ii] > spectrum.m_data[ii + 1])
+        {
+            pixel.push_back(static_cast<double>(ii));
+            intensity.push_back(spectrum.m_data[ii]);
+        }
+    }
+
+    // Low pass filter to reduce fast variations
+    CBasicMath basicMath;
+    basicMath.LowPassBinomial(intensity.data(), static_cast<int>(intensity.size()), 15);
+
+    // done.
     return true;
+
 }
 
 }
