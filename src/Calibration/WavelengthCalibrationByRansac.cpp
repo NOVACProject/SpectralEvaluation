@@ -245,73 +245,142 @@ inline double CalculateValueAt(const std::vector<double>& coefficients, double x
     return coefficients[0] + x * (coefficients[1] + x * (coefficients[2] + x * coefficients[3]));
 }
 
-size_t CountInliers(const std::vector<double>& polynomialCoefficients, const std::vector<Correspondence>& possibleCorrespondences, double toleranceInWavelength, std::vector<bool>& isInlier, double& averageError)
+int FindCorrespondenceWithTheoreticalIdx(const std::vector<Correspondence>& allEntries, size_t theoreticalIdxOfEntryToFind)
 {
-    size_t count = 0;
-    isInlier.resize(possibleCorrespondences.size());
-    std::fill(begin(isInlier), end(isInlier), false); // set all values to false
-
-    struct CorrespondenceWithDistance
+    for (int ii = 0; ii < static_cast<int>(allEntries.size()); ++ii)
     {
-        Correspondence correspondence;
-        double distance = 0.0;
-        size_t index = 0U;
-    };
-
-    // First make a prelimiary list of all correspondences which fulfill the distance criterion.
-    size_t maxMeasuredIdx = 0U; // This is used in the loop below...
-    size_t maxTheoreticalIdx = 0U; // This is used in the loop below...
-    std::vector<CorrespondenceWithDistance> selectedCorrespondences;
-    selectedCorrespondences.reserve(possibleCorrespondences.size() / 10); // guess for the final number of correspondences.
-    for (size_t ii = 0; ii < possibleCorrespondences.size(); ++ii)
-    {
-        maxMeasuredIdx = std::max(maxMeasuredIdx, possibleCorrespondences[ii].measuredIdx);
-        maxTheoreticalIdx = std::max(maxTheoreticalIdx, possibleCorrespondences[ii].theoreticalIdx);
-
-        const double pixelValue = possibleCorrespondences[ii].measuredValue;
-        const double wavelength = possibleCorrespondences[ii].theoreticalValue;
-        const double predictedWavelength = CalculateValueAt(polynomialCoefficients, pixelValue); // TODO: Generalize
-        const double distance = std::abs(predictedWavelength - wavelength);
-
-        if (distance < toleranceInWavelength)
+        if (allEntries[ii].theoreticalIdx == theoreticalIdxOfEntryToFind)
         {
-            CorrespondenceWithDistance result;
-            result.correspondence = possibleCorrespondences[ii];
-            result.distance = distance;
-            result.index = ii;
-            selectedCorrespondences.push_back(result);
+            return ii;
         }
     }
 
-    // Now we have a preliminary list, which may contain duplicates in both measured and theoretical index.
-    //  Sort them by increasing distance, and select the ones with the smallest distances first.
-    std::sort(begin(selectedCorrespondences), end(selectedCorrespondences), [](const CorrespondenceWithDistance& c1, const CorrespondenceWithDistance& c2) { return c1.distance < c2.distance; });
-    std::vector<bool> selectedMeasuredIdx(maxMeasuredIdx + 1, false);
-    std::vector<bool> selectedTheoreticalIdx(maxTheoreticalIdx + 1, false);
+    return -1; // not found
+}
+
+/// <summary>
+/// Counts the number of inliers in the provided model.
+/// </summary>
+/// <param name="polynomialCoefficients"></param>
+/// <param name="possibleCorrespondences"></param>
+/// <param name="toleranceInWavelength"></param>
+/// <param name="inlier">Will on return be filled with the found inliers. inlier.size() == return value</param>
+/// <param name="averageError"></param>
+/// <returns></returns>
+size_t CountInliers(
+    const std::vector<double>& polynomialCoefficients,
+    const std::vector<std::vector<Correspondence>>& possibleCorrespondences,
+    double toleranceInWavelength,
+    std::vector<Correspondence>& inlier,
+    double& averageError)
+{
+    // Version 2. Order the correspondences by the measured keypoint they belong to and only select one correspondence per keypoint
     averageError = 0.0;
-    for each (const CorrespondenceWithDistance & corr in selectedCorrespondences)
+    inlier.clear();
+    std::vector<double> distances;
+    for (size_t keypointIdx = 0; keypointIdx < possibleCorrespondences.size(); ++keypointIdx)
     {
-        if (selectedMeasuredIdx[corr.correspondence.measuredIdx] == false &&
-            selectedTheoreticalIdx[corr.correspondence.theoreticalIdx] == false)
+        if (possibleCorrespondences[keypointIdx].size() == 0)
         {
-            // These points have not been handled already. Insert.
-            isInlier[corr.index] = true;
-            ++count;
-            averageError += corr.distance;
-            selectedMeasuredIdx[corr.correspondence.measuredIdx] = true;
-            selectedTheoreticalIdx[corr.correspondence.theoreticalIdx] = true;
+            continue;
+        }
+
+        // Find the best possible correspondence for this measured keypoint.
+        Correspondence bestcorrespondence;
+        double smallestDistance = std::numeric_limits<double>::max();
+
+        for each (const auto & corr in possibleCorrespondences[keypointIdx])
+        {
+            // Calculate the distance, in nm air, between the wavelength of this keypoint in the fraunhofer spectrum and the predicted wavelength of the measured keypoint
+            const double pixelValue = corr.measuredValue;
+            const double wavelength = corr.theoreticalValue;
+            const double predictedWavelength = CalculateValueAt(polynomialCoefficients, pixelValue);
+            const double distance = std::abs(predictedWavelength - wavelength); // in nm air
+
+            if (distance < toleranceInWavelength && distance < smallestDistance)
+            {
+                bestcorrespondence = corr;
+                smallestDistance = distance;
+            }
+        }
+
+        if (smallestDistance < toleranceInWavelength)
+        {
+            // There are correspondences with the same theoreticalIdx in the incoming list
+            //  but the selected inliers must be unique wrt both the measuredIdx and theoreticalIdx.
+            //  Hence, check if we have already inserted a correspondence with this same theoreticalIdx in the result list.
+            const int idxOfDuplicateEntry = FindCorrespondenceWithTheoreticalIdx(inlier, bestcorrespondence.theoreticalIdx);
+
+            if (idxOfDuplicateEntry < 0)
+            {
+                // unique
+                inlier.push_back(bestcorrespondence);
+                distances.push_back(smallestDistance);
+                averageError += smallestDistance;
+            }
+            else
+            {
+                // this theoreticalIdx already exists, compare the distances and keep the entry with the lowest distance
+                if (smallestDistance < distances[idxOfDuplicateEntry])
+                {
+                    // Replace the existing entry with this
+                    distances[idxOfDuplicateEntry] = smallestDistance;
+                    inlier[idxOfDuplicateEntry] = bestcorrespondence;
+                }
+                // else, do nothing...
+            }
         }
     }
 
-    averageError /= (double)count;
+    averageError /= (double)inlier.size();
 
-    return count;
+    return inlier.size();
 }
 
 // ---------------------------------- RansacWavelengthCalibrationSetup ----------------------------------
 RansacWavelengthCalibrationSetup::RansacWavelengthCalibrationSetup(RansacWavelengthCalibrationSettings calibrationSettings) :
     settings(calibrationSettings)
 {
+}
+
+/// <summary>
+/// Sorts the provided set of correspondences into a vector where the element at position 'N' lists all the correspondences for the measured keypoint 'N'
+/// </summary>
+std::vector<std::vector<Correspondence>> ArrangeByMeasuredKeypoint(const std::vector<Correspondence>& allCorrespondences)
+{
+    std::vector<std::vector<Correspondence>> result;
+    result.reserve(100); // initial guess
+
+    for (const Correspondence& c : allCorrespondences)
+    {
+        if (c.measuredIdx >= result.size())
+        {
+            result.resize(1 + c.measuredIdx);
+        }
+        result[c.measuredIdx].push_back(c);
+    }
+
+    return result;
+}
+
+std::vector<bool> ListInliers(const std::vector<Correspondence>& selectedValues, const std::vector<Correspondence>& allValues)
+{
+    std::vector<bool> result(allValues.size(), false);
+
+    // TODO: This is not efficient!
+    for (const auto& selectedValue : selectedValues)
+    {
+        for (size_t ii = 0; ii < allValues.size(); ++ii)
+        {
+            if (allValues[ii].measuredIdx == selectedValue.measuredIdx && allValues[ii].theoreticalIdx == selectedValue.theoreticalIdx)
+            {
+                result[ii] = true;
+                break;
+            }
+        }
+    }
+
+    return result;
 }
 
 RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelengthCalibration(
@@ -321,7 +390,8 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
     result.numberOfPossibleCorrelations = possibleCorrespondences.size();
     result.highestNumberOfInliers = 0U;
     result.smallestError = std::numeric_limits<double>::max();
-    std::vector<bool> correspondenceIsInlier;
+
+    const auto possibleCorrespondencesOrderedByMeasuredKeypoint = ArrangeByMeasuredKeypoint(possibleCorrespondences);
 
     // Seed with a real random value, if available
     std::random_device r;
@@ -348,9 +418,9 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
 
         // Evaluate if this suggested polynomial fits better than the guess we already have by counting how many of the 
         //  possible correspondences fits with the provided model.
-        std::vector<bool> isInlier;
+        std::vector<Correspondence> inlierCorrespondences;
         double meanErrorOfModel = 0.0;
-        size_t numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondences, settings.inlierLimitInWavelength, isInlier, meanErrorOfModel);
+        size_t numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondencesOrderedByMeasuredKeypoint, settings.inlierLimitInWavelength, inlierCorrespondences, meanErrorOfModel);
         if (iteration == 0 || numberOfInliers > result.highestNumberOfInliers || (numberOfInliers == result.highestNumberOfInliers && meanErrorOfModel < result.smallestError))
         {
             if (settings.refine && numberOfInliers > settings.modelPolynomialOrder)
@@ -359,14 +429,12 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
                 std::vector<double> wavelengths;
                 pixelValues.reserve(numberOfInliers);
                 wavelengths.reserve(numberOfInliers);
-                for (size_t ii = 0; ii < possibleCorrespondences.size(); ++ii)
+                for each (const auto & corr in inlierCorrespondences)
                 {
-                    if (isInlier[ii])
-                    {
-                        pixelValues.push_back(possibleCorrespondences[ii].measuredValue);
-                        wavelengths.push_back(possibleCorrespondences[ii].theoreticalValue);
-                    }
+                    pixelValues.push_back(corr.measuredValue);
+                    wavelengths.push_back(corr.theoreticalValue);
                 }
+
                 if (!FitPolynomial(pixelValues, wavelengths, settings.modelPolynomialOrder, result.bestFittingModelCoefficients))
                 {
                     std::cout << "Polynomial fit failed" << std::endl;
@@ -374,14 +442,13 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
                 }
 
                 // recount the inliers
-                numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondences, settings.inlierLimitInWavelength, isInlier, meanErrorOfModel);
+                numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondencesOrderedByMeasuredKeypoint, settings.inlierLimitInWavelength, inlierCorrespondences, meanErrorOfModel);
 
                 std::cout << "Updating model at iteration " << iteration << ", new number of inliers is: " << numberOfInliers << ", mean error: " << meanErrorOfModel << std::endl;
 
                 result.highestNumberOfInliers = numberOfInliers;
-                result.correspondenceIsInlier = isInlier;
+                result.correspondenceIsInlier = ListInliers(inlierCorrespondences, possibleCorrespondences);
                 result.smallestError = meanErrorOfModel;
-                correspondenceIsInlier = isInlier;
             }
             else
             {
@@ -390,9 +457,8 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
                 result.bestFittingModelCoefficients = std::move(suggestionForPolynomial);
 
                 result.highestNumberOfInliers = numberOfInliers;
-                result.correspondenceIsInlier = isInlier;
+                result.correspondenceIsInlier = ListInliers(inlierCorrespondences, possibleCorrespondences);
                 result.smallestError = meanErrorOfModel;
-                correspondenceIsInlier = isInlier;
             }
         }
     }

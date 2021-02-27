@@ -187,7 +187,7 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
         //  We have the sensitivity of the spectrometer (pixel -> intesity) from the calculated envelope
         //  We have the pixel-to-wavelength mapping of the spectrometer from the ransac calibration
         // This allows us to calculate the wavelength -> intensity mapping of the 
-        if (iterationIdx < numberOfIterations - 1)
+        // if (iterationIdx < numberOfIterations - 1)
         {
             // Re-convolve the Fraunhofer spectrum to get it on the new pixel grid
             calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(result.pixelToWavelengthMapping, measuredInstrumentLineShape, settings.crossSections);
