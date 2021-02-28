@@ -28,48 +28,39 @@ std::vector<double> GetPixelToWavelengthMappingFromFile(const std::string& clbFi
 
 std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
     const std::vector<double>& pixelToWavelengthMapping,
-    const ::Evaluation::CCrossSectionData& measuredInstrumentLineShape,
-    const std::string& highResolutionOzoneCrossSection,
-    double ozoneTotalColumn)
-{
-    std::pair<std::string, double> ozone{ highResolutionOzoneCrossSection, ozoneTotalColumn };
-    std::vector< std::pair<std::string, double>> crossSections{ ozone };
-    return GetFraunhoferSpectrum(pixelToWavelengthMapping, measuredInstrumentLineShape, crossSections);
-}
-
-std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
-    const std::vector<double>& pixelToWavelengthMapping,
-    const ::Evaluation::CCrossSectionData& measuredInstrumentLineShape,
-    const std::vector<std::pair<std::string, double>>& highResolutionCrossSections)
+    const ::Evaluation::CCrossSectionData& measuredInstrumentLineShape)
 {
     // Get the high res solar spectrum
-    Evaluation::CCrossSectionData solarCrossSection;
-    FileIo::ReadCrossSectionFile(this->solarAtlasFile, solarCrossSection);
-
-    for each (const auto& crossSectionOfAbsorber in highResolutionCrossSections)
+    if (this->solarCrossSection == nullptr)
     {
-        const std::string& path = crossSectionOfAbsorber.first;
-        const double totalColumn = crossSectionOfAbsorber.second;
+        solarCrossSection = std::make_unique<Evaluation::CCrossSectionData>();
+        FileIo::ReadCrossSectionFile(this->solarAtlasFile, *solarCrossSection);
 
-        // Turn the molecular absorption into an absorbance spectrum and multiply with the high res solar
-        if (std::abs(totalColumn) > std::numeric_limits<double>::epsilon())
+        for each (const auto & crossSectionOfAbsorber in this->crossSectionsToInclude)
         {
-            // Get the high res ozone spectrum
-            Evaluation::CCrossSectionData crossSectionData;
-            FileIo::ReadCrossSectionFile(path, crossSectionData);
+            const std::string& path = crossSectionOfAbsorber.first;
+            const double totalColumn = crossSectionOfAbsorber.second;
 
-            Mult(crossSectionData.m_crossSection, -totalColumn);
-            Exp(crossSectionData.m_crossSection);
-            std::vector<double> resampledOzoneCrossSection;
-            Evaluation::Resample(crossSectionData, solarCrossSection.m_waveLength, resampledOzoneCrossSection);
-            Mult(resampledOzoneCrossSection, solarCrossSection.m_crossSection);
+            // Turn the molecular absorption into an absorbance spectrum and multiply with the high res solar
+            if (std::abs(totalColumn) > std::numeric_limits<double>::epsilon())
+            {
+                // Get the high res ozone spectrum
+                Evaluation::CCrossSectionData crossSectionData;
+                FileIo::ReadCrossSectionFile(path, crossSectionData);
+
+                Mult(crossSectionData.m_crossSection, -totalColumn);
+                Exp(crossSectionData.m_crossSection);
+                std::vector<double> resampledOzoneCrossSection;
+                Evaluation::Resample(crossSectionData, solarCrossSection->m_waveLength, resampledOzoneCrossSection);
+                Mult(resampledOzoneCrossSection, solarCrossSection->m_crossSection);
+            }
         }
     }
 
     // Generate a theoretical solar spectrum by convolving the high-res solar atlas with the measured slf
     auto startTime = std::chrono::steady_clock::now();
     std::vector<double> theoreticalFraunhoferSpectrumData;
-    ::Evaluation::ConvolveReference(pixelToWavelengthMapping, measuredInstrumentLineShape, solarCrossSection, theoreticalFraunhoferSpectrumData, WavelengthConversion::None, ConvolutionMethod::Fft);
+    ::Evaluation::ConvolveReference(pixelToWavelengthMapping, measuredInstrumentLineShape, *solarCrossSection, theoreticalFraunhoferSpectrumData, WavelengthConversion::None, ConvolutionMethod::Fft);
     auto stopTime = std::chrono::steady_clock::now();
     std::cout << "Convolution of Fraunhofer Reference took " << std::chrono::duration_cast<std::chrono::milliseconds>(stopTime - startTime).count() << " ms" << std::endl;
 
@@ -143,8 +134,8 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
     novac::FindKeypointsInSpectrum(*calibrationState.measuredSpectrum, minimumPeakIntensityInMeasuredSpectrum, calibrationState.measuredKeypoints);
 
     // Get the Fraunhofer spectrum
-    novac::FraunhoferSpectrumGeneration fraunhoferSetup{ settings.highResSolarAtlas };
-    calibrationState.originalFraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(settings.initialPixelToWavelengthMapping, measuredInstrumentLineShape, settings.crossSections);
+    novac::FraunhoferSpectrumGeneration fraunhoferSetup{ settings.highResSolarAtlas, settings.crossSections };
+    calibrationState.originalFraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(settings.initialPixelToWavelengthMapping, measuredInstrumentLineShape);
     calibrationState.fraunhoferSpectrum = std::make_unique<CSpectrum>(*calibrationState.originalFraunhoferSpectrum); // create a copy which we can modify
 
     SpectrometerCalibrationResult result;
@@ -190,7 +181,7 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
         // if (iterationIdx < numberOfIterations - 1)
         {
             // Re-convolve the Fraunhofer spectrum to get it on the new pixel grid
-            calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(result.pixelToWavelengthMapping, measuredInstrumentLineShape, settings.crossSections);
+            calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(result.pixelToWavelengthMapping, measuredInstrumentLineShape);
 
             // Create a wavelength -> intensity spline using the new wavelength calibration and the envelope of the measured spectrum
             // TODO: Move to separate function

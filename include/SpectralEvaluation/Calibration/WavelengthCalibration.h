@@ -68,6 +68,8 @@ std::vector<double> GetPixelToWavelengthMappingFromFile(const std::string& clbFi
 /// <summary>
 /// This is a helper class for generating a Fraunhofer spectrum from a high resolved
 /// solar spectrum, a likewise high resolved ozone spectrum and a given instrument setup.
+/// Notice that this class will read in the high-resolved solar spectrum when needed (calling GetFraunhoferSpectrum)
+/// and will keep it in memory to save loading time. If memory is a consern, then make sure that this object gets destructed when no longer needed.
 /// </summary>
 class FraunhoferSpectrumGeneration
 {
@@ -76,42 +78,38 @@ public:
     /// Sets up the generation parameters
     /// </summary>
     /// <param name="highResolutionSolarAtlas">The full path to the high resolved solar atlas. This must be in nm air.</param>
-    FraunhoferSpectrumGeneration(const std::string& highResolutionSolarAtlas)
-        : solarAtlasFile(highResolutionSolarAtlas)
+    /// <param name="highResolutionCrossSections">The full path to a set of high resolved molecular cross section together with the total column for them.
+    ///     These must have x-axis unit of nm air and y-axis unit of molecules / cm2</param>
+    FraunhoferSpectrumGeneration(const std::string& highResolutionSolarAtlas, const std::vector<std::pair<std::string, double>>& highResolutionCrossSections)
+        : solarAtlasFile(highResolutionSolarAtlas), crossSectionsToInclude(highResolutionCrossSections)
     {
     }
 
     /// <summary>
     /// Creates a Fraunhofer reference spectrum using the provided pixel-to-wavelength mapping and measured instrument line shape.
-    /// The created spectrum will have a normalized intensity, with all data points in the range [0, 1].
     /// </summary>
     /// <param name="pixelToWavelengthMapping">The wavelength (in nm air) for each pixel on the detector.</param>
     /// <param name="measuredInstrumentLineShape">A measurement of the instrument line shape</param>
-    /// <param name="highResolutionOzoneCrossSection">The full path to the high resolved ozone cross section. 
-    ///     This must have x-axis unit of nm air and y-axis unit of molecules / cm2</param>
-    /// <param name="ozoneColumn">The total column of ozone in the resulting Fraunhofer spectrum. In molecules / cm2</param>
     /// <returns>The high resolution solar spectrum convolved with the measured slf and resample to the provided grid.</returns>
     std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
         const std::vector<double>& pixelToWavelengthMapping,
-        const ::Evaluation::CCrossSectionData& measuredInstrumentLineShape,
-        const std::string& highResolutionOzoneCrossSection,
-        double ozoneColumn);
-
-    /// <summary>
-    /// Creates a Fraunhofer reference spectrum using the provided pixel-to-wavelength mapping and measured instrument line shape.
-    /// </summary>
-    /// <param name="pixelToWavelengthMapping">The wavelength (in nm air) for each pixel on the detector.</param>
-    /// <param name="measuredInstrumentLineShape">A measurement of the instrument line shape</param>
-    /// <param name="highResolutionCrossSections">The full path to a set of high resolved molecular cross section together with the total column for them.
-    ///     These must have x-axis unit of nm air and y-axis unit of molecules / cm2</param>
-    /// <returns>The high resolution solar spectrum convolved with the measured slf and resample to the provided grid.</returns>
-    std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
-        const std::vector<double>& pixelToWavelengthMapping,
-        const ::Evaluation::CCrossSectionData& measuredInstrumentLineShape,
-        const std::vector<std::pair<std::string, double>>& highResolutionCrossSections);
+        const ::Evaluation::CCrossSectionData& measuredInstrumentLineShape);
 
 private:
+    /// <summary>
+    /// The path and filename of the solar atlas file to use.
+    /// </summary>
     const std::string solarAtlasFile;
+
+    /// <summary>
+    /// The path and total column of the high resolved absorption cross section files to include.
+    /// </summary>
+    const std::vector<std::pair<std::string, double>> crossSectionsToInclude;
+
+    /// <summary>
+    /// The read in high resolution solar cross section, saved in order to reduce file-io time.
+    /// </summary>
+    std::unique_ptr<Evaluation::CCrossSectionData> solarCrossSection;
 };
 
 
