@@ -60,7 +60,7 @@ std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
     // Generate a theoretical solar spectrum by convolving the high-res solar atlas with the measured slf
     auto startTime = std::chrono::steady_clock::now();
     std::vector<double> theoreticalFraunhoferSpectrumData;
-    ::Evaluation::ConvolveReference(pixelToWavelengthMapping, measuredInstrumentLineShape, *solarCrossSection, theoreticalFraunhoferSpectrumData, WavelengthConversion::None, ConvolutionMethod::Fft);
+    ::Evaluation::ConvolveReference(pixelToWavelengthMapping, measuredInstrumentLineShape, *solarCrossSection, theoreticalFraunhoferSpectrumData, WavelengthConversion::VacuumToAir, ConvolutionMethod::Fft);
     auto stopTime = std::chrono::steady_clock::now();
     std::cout << "Convolution of Fraunhofer Reference took " << std::chrono::duration_cast<std::chrono::milliseconds>(stopTime - startTime).count() << " ms" << std::endl;
 
