@@ -132,7 +132,7 @@ struct RansacWavelengthCalibrationSettings
     size_t modelPolynomialOrder = 3;
     int numberOfRansacIterations = 500000;
     size_t sampleSize = 4; // the number of correspondences to select in one iteration - should really be (modelPolynomialOrder + 1)
-    double inlierLimitInWavelength = 0.5; // how close a keypoint needs to be for it to be considered an inlier. In nm
+    double inlierLimitInWavelength = 0.2; // how close a keypoint needs to be for it to be considered an inlier. In nm
     int maximumPixelDistanceForPossibleCorrespondence = 150; // maximum pixel error in the initial clb file.
     bool refine = true;
 };
