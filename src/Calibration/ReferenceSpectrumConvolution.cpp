@@ -278,6 +278,29 @@ bool Convolve(
     return true;
 }
 
+// Small helper method, counts how many factors of 2, 3 and 5 which makes up the provided number
+int CountBasicPrimeFactors(size_t number)
+{
+    int count = 0;
+    while (number % 2 == 0)
+    {
+        ++count;
+        number /= 2;
+    }
+    while (number % 3 == 0)
+    {
+        ++count;
+        number /= 3;
+    }
+    while (number % 5 == 0)
+    {
+        ++count;
+        number /= 5;
+    }
+    return count;
+}
+
+
 bool ConvolveReference(
     const std::vector<double>& pixelToWavelengthMapping,
     const CCrossSectionData& slf,
@@ -313,6 +336,20 @@ bool ConvolveReference(
     convolutionGrid.minValue = convertedHighResReference.m_waveLength.front();
     convolutionGrid.maxValue = convertedHighResReference.m_waveLength.back();
     convolutionGrid.length = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / highestResolution);
+
+    if (method == ConvolutionMethod::Fft)
+    {
+        // for the sake of efficiency of the fft below, consider making a minor tweak to the length to 
+        //  contain as many factors of two, tree and five as possible
+        int primeFactors = CountBasicPrimeFactors(convolutionGrid.length);
+        int nextPrimeFactors = CountBasicPrimeFactors(convolutionGrid.length + 1);
+        while (nextPrimeFactors > primeFactors)
+        {
+            convolutionGrid.length += 1;
+            primeFactors = nextPrimeFactors;
+            nextPrimeFactors = CountBasicPrimeFactors(convolutionGrid.length + 1);
+        }
+    }
 
     std::vector<double> uniformHighResReference;
     Resample(convertedHighResReference, convolutionGrid.Resolution(), uniformHighResReference);
