@@ -7,8 +7,8 @@ namespace MathFit
 {
     class CVector;
 }
-
-namespace Evaluation {
+namespace novac
+{
     /**
         The CReferenceData class holds information on the cross sections
         used in the fitting procedure. Each instance of this class holds

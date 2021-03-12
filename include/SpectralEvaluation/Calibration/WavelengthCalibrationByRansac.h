@@ -1,16 +1,16 @@
 #pragma once
 
 #include <vector>
+#include <limits>
 
 // ---------------------------------------------------------------------------------------------------------------------
 // - This header contains methods used to perform the wavelength calibration of a spectrometer using a ransac approach -
 // ---------------------------------------------------------------------------------------------------------------------
 
-class CSpectrum;
-
 namespace novac
 {
 
+class CSpectrum;
 struct SpectrumDataPoint;
 
 /// <summary>
@@ -98,7 +98,7 @@ struct CorrespondenceSelectionSettings
 /// <param name="measuredSpectrum">The measured spectrum of the correspondence.</param>
 /// <param name="theoreticalSpectrum">The theoretical spectrum of the correspondence.</param>
 /// </summary>
-void MeasureCorrespondenceError(novac::Correspondence& corr, const ::CSpectrum& measuredSpectrum, const ::CSpectrum& theoreticalSpectrum, const CorrespondenceSelectionSettings& settings);
+void MeasureCorrespondenceError(novac::Correspondence& corr, const CSpectrum& measuredSpectrum, const CSpectrum& theoreticalSpectrum, const CorrespondenceSelectionSettings& settings);
 
 struct RansacWavelengthCalibrationSettings;
 /// <summary>

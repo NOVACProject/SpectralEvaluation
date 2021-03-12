@@ -6,7 +6,7 @@
 // TODO: Remove
 #define MAX_N_REFERENCES 10
 
-namespace Evaluation
+namespace novac
 {
     enum FIT_TYPE
     {

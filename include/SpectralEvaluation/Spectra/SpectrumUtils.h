@@ -2,11 +2,10 @@
 
 #include <vector>
 
-class CSpectrum;
-
 namespace novac
 {
 
+class CSpectrum;
 
 // Simple structure used to represent a point in a spectrum
 struct SpectrumDataPoint

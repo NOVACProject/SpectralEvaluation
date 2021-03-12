@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+namespace novac
+{
 class CSpectrumInfo;
 
 struct SpectrometerModel
@@ -110,3 +112,5 @@ private:
 //  provided collection properties, based on the number of spectra measured and
 //  the spectrometer model.
 double FullDynamicRangeForSpectrum(const CSpectrumInfo& info);
+
+}

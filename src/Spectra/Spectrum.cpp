@@ -11,6 +11,8 @@
 #undef min
 #undef max
 
+namespace novac
+{
 CSpectrum::CSpectrum()
     : m_length(0)
 {
@@ -535,4 +537,6 @@ void Normalize(CSpectrum& spectrum)
     {
         spectrum.m_data[ii] = (spectrum.m_data[ii] - minValue) / (maxValue - minValue);
     }
+}
+
 }

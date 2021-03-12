@@ -3,6 +3,8 @@
 #include <SpectralEvaluation/GPSData.h>
 #include <SpectralEvaluation/DateTime.h>
 
+namespace novac
+{
 /** <b>CSpectrumInfo</b> is a class that contains all auxilliary information about
          a spectrum, such as exposure time, number of spectra averaged, time when the spectrum
          was collected and GPS-coordinates for where it was collected.
@@ -135,3 +137,4 @@ public:
     /** Set to true if the spectrum is read out as an average instead of a sum of consituent spectra. */
     bool m_average = false;
 };
+}

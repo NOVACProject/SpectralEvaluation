@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <SpectralEvaluation/Spectra/SpectrumInfo.h>
 
+using namespace novac;
+
 SpectrometerModel::PixelRange::PixelRange()
     : from(0), to(0)
 {

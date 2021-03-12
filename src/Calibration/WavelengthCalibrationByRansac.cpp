@@ -6,6 +6,9 @@
 #include <SpectralEvaluation/Spectra/SpectrumUtils.h>
 #include <SpectralEvaluation/VectorUtils.h>
 
+#undef min
+#undef max
+
 // TODO: Try to remove these
 #include <SpectralEvaluation/Fit/StandardFit.h>
 #include <SpectralEvaluation/Fit/StandardMetricFunction.h>
@@ -289,9 +292,9 @@ RansacWavelengthCalibrationResult& RansacWavelengthCalibrationResult::operator=(
 // ---------------------------------- Free functions used to select the correspondences ----------------------------------
 
 double MeasureCorrespondenceError(
-    const ::CSpectrum& measuredSpectrum,
+    const CSpectrum& measuredSpectrum,
     double pixelInMeasuredSpectrum,
-    const ::CSpectrum& fraunhoferSpectrum,
+    const CSpectrum& fraunhoferSpectrum,
     double pixelInFraunhoferSpectrum,
     const CorrespondenceSelectionSettings& settings)
 {

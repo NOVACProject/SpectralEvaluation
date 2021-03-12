@@ -6,7 +6,7 @@
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <cstring>
 
-namespace FileIo
+namespace novac
 {
     // @return the number of columns read.
     int ReadFromFile(FILE* f, const char* formatStr, double& col1, double& col2)
@@ -56,10 +56,10 @@ namespace FileIo
         return 0;
     }
 
-    bool ReadCrossSectionFromStdFile(const std::string& fullFilePath, Evaluation::CCrossSectionData& result, bool saveAsWavelength)
+    bool ReadCrossSectionFromStdFile(const std::string& fullFilePath, CCrossSectionData& result, bool saveAsWavelength)
     {
         CSpectrum spectrum;
-        if (!SpectrumIO::CSTDFile::ReadSpectrum(spectrum, fullFilePath))
+        if (!CSTDFile::ReadSpectrum(spectrum, fullFilePath))
         {
             return false;
         }
@@ -76,7 +76,7 @@ namespace FileIo
         return true;
     }
 
-    bool ReadCrossSectionFile(const std::string& fullFilePath, Evaluation::CCrossSectionData& result, bool saveAsWavelength)
+    bool ReadCrossSectionFile(const std::string& fullFilePath, CCrossSectionData& result, bool saveAsWavelength)
     {
         const std::string fileEnding = Right(fullFilePath, 4);
         if (EqualsIgnoringCase(fileEnding, ".std"))
@@ -137,7 +137,7 @@ namespace FileIo
         return true;
     }
 
-    bool SaveCrossSectionFile(const std::string& fullFilePath, const Evaluation::CCrossSectionData& data)
+    bool SaveCrossSectionFile(const std::string& fullFilePath, const CCrossSectionData& data)
     {
         if (data.m_crossSection.size() == 0 && data.m_waveLength.size() == 0)
         {
@@ -180,11 +180,11 @@ namespace FileIo
 
         if (EqualsIgnoringCase(fileEnding, ".std"))
         {
-            return SpectrumIO::CSTDFile::ReadSpectrum(result, fullFilePath);
+            return CSTDFile::ReadSpectrum(result, fullFilePath);
         }
         else if (EqualsIgnoringCase(fileEnding, ".txt"))
         {
-            return SpectrumIO::CTXTFile::ReadSpectrum(result, fullFilePath);
+            return CTXTFile::ReadSpectrum(result, fullFilePath);
         }
         return false; // unknown file format.
     }
