@@ -526,3 +526,13 @@ double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum)
     auto model = CSpectrometerDatabase::GetInstance().GetModel(spectrum.m_info.m_specModelName);
     return GetMaximumSaturationRatioOfSpectrum(spectrum, model.maximumIntensity);
 }
+
+void Normalize(CSpectrum& spectrum)
+{
+    const double maxValue = spectrum.MaxValue();
+    const double minValue = spectrum.MinValue();
+    for (long ii = 0; ii < spectrum.m_length; ++ii)
+    {
+        spectrum.m_data[ii] = (spectrum.m_data[ii] - minValue) / (maxValue - minValue);
+    }
+}

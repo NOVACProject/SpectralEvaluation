@@ -843,7 +843,7 @@ namespace MathFit
 		*
 		* @return	A reference to the given vector object, that will contain the result.
 		*/
-		CVector& Mul(CVector& mOperant)
+		CVector& Mul(CVector& mOperant) const
 		{
 			MATHFIT_ASSERT(mSizeX == mOperant.GetSize());
 

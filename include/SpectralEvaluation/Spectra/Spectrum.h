@@ -222,3 +222,6 @@ double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum, const Spec
     This uses the provided maximum possible intensity for one spectrum. */
 double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum, double maximumIntensity);
 
+/** Normalizes the intensity of the provided spectrum to the range [0, 1] */
+void Normalize(CSpectrum& spectrum);
+

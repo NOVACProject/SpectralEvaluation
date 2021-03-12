@@ -291,7 +291,7 @@ namespace MathFit
 		CVector& Attach(CVector& vSecond, bool bAutoRelease = true)
 		{
 			// first clear the old data
-			if(mData && mAutoRelease)
+			if(mData != nullptr && mAutoRelease)
 				delete mData;
 
 			// get the data pointer
@@ -511,9 +511,9 @@ namespace MathFit
 		*/
 		void SetSize(const int iNewSize)
 		{
-			if(iNewSize != mLength || !mData)
+			if(iNewSize != mLength || mData == nullptr)
 			{
-				if(mData != 0)
+				if(mData != nullptr)
 					delete mData;
 				ReleaseFloatPtr();
 				ReleaseDoublePtr();
@@ -1055,7 +1055,7 @@ namespace MathFit
 
 		void ReleaseFloatPtr()
 		{
-			if(mFloatPtr)
+			if(mFloatPtr != nullptr)
 				delete mFloatPtr;
 			mFloatPtr = nullptr;
 		}
@@ -1075,7 +1075,7 @@ namespace MathFit
 
 		void ReleaseDoublePtr()
 		{
-			if(mDoublePtr)
+			if(mDoublePtr != nullptr)
 				delete mDoublePtr;
 			mDoublePtr = nullptr;
 		}

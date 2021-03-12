@@ -294,6 +294,11 @@ namespace MathFit
 			return mParamsInternal;
 		}
 
+		const CVector& GetAllParameter() const
+		{
+			return mParamsInternal;
+		}
+
 		/**
 		* Sets the internal parameter vector.
 		*
