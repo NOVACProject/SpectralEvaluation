@@ -3,6 +3,8 @@
 #include <SpectralEvaluation/Defintions.h>
 #include <cmath>
 
+namespace novac
+{
 // The following functions are taken from the NovacProgram.
 //  Be sure to document further what is being done here.
 
@@ -111,4 +113,5 @@ void GetSunPosition(const CDateTime& gmtTime, double lat, double lon, double& SZ
 
     // Convert the azimuth to a value counted from the north and 
     SAZ = fmod(180.0 + sAzim, 360.0);
+}
 }

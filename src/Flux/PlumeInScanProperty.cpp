@@ -4,6 +4,9 @@
 #include <cstring>
 #include <sstream>
 
+namespace novac
+{
+
 template <class T> double Average(T array[], long nElements) {
     if (nElements <= 0)
         return 0.0;
@@ -193,7 +196,7 @@ bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std
     int nDataPointsToAverage = 5;
 
     // Check if there is a plume at all...
-    bool inPlume = FindPlume(scanAngles, phi, columns, columnErrors, badEvaluation, numPoints, plumeProperties, message);
+    bool inPlume = ::novac::FindPlume(scanAngles, phi, columns, columnErrors, badEvaluation, numPoints, plumeProperties, message);
     if (!inPlume) {
         plumeProperties.completeness = 0.0; // <-- no plume at all
         return false;
@@ -277,4 +280,6 @@ double CalculatePlumeOffset(const std::vector<double>& columns, const std::vecto
     FindNLowest(testColumns, N, m);
     const double avg = Average(m.data(), N);
     return avg;
+}
+
 }

@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace Evaluation
+namespace novac
 {
     // This struct is used to represent a ratio between two species
     struct Ratio

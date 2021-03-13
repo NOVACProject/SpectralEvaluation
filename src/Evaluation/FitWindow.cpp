@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-namespace Evaluation
+namespace novac
 {
 
 CFitWindow::CFitWindow(const CFitWindow &other)
@@ -188,7 +188,7 @@ void HighPassFilterReferences(CFitWindow& window)
         HighPassFilterReferences(c);
     }
 
-    if (window.fitType != Evaluation::FIT_HP_DIV && window.fitType != Evaluation::FIT_HP_SUB)
+    if (window.fitType != novac::FIT_HP_DIV && window.fitType != novac::FIT_HP_SUB)
     {
         return;
     }

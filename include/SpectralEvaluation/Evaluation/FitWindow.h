@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ReferenceFile.h"
+#include <SpectralEvaluation/Evaluation/ReferenceFile.h>
 #include <vector>
 
 // TODO: Remove

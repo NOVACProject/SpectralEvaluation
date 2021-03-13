@@ -15,7 +15,7 @@ namespace novac
 
     TEST_CASE("ScanFileHandler CheckScanFile", "[ScanFileHandler][IntegrationTests]")
     {
-        ::FileHandler::CScanFileHandler sut;
+        CScanFileHandler sut;
         std::string file = GetFileName();
         sut.CheckScanFile(file);
 
@@ -48,7 +48,7 @@ namespace novac
 
     TEST_CASE("ScanFileHandler GetSpectrumLength", "[ScanFileHandler][IntegrationTests]")
     {
-        ::FileHandler::CScanFileHandler sut;
+        CScanFileHandler sut;
         std::string file = GetFileName();
         sut.CheckScanFile(file);
 
@@ -60,7 +60,7 @@ namespace novac
 
     TEST_CASE("ScanFileHandler GetSpectrumNumInFile", "[ScanFileHandler][IntegrationTests]")
     {
-        ::FileHandler::CScanFileHandler sut;
+        CScanFileHandler sut;
         std::string file = GetFileName();
         sut.CheckScanFile(file);
 
@@ -72,7 +72,7 @@ namespace novac
 
     TEST_CASE("ScanFileHandler GetDark", "[ScanFileHandler][IntegrationTests]")
     {
-        ::FileHandler::CScanFileHandler sut;
+        CScanFileHandler sut;
         std::string file = GetFileName();
         sut.CheckScanFile(file);
 
@@ -88,7 +88,7 @@ namespace novac
 
     TEST_CASE("ScanFileHandler GetSky", "[ScanFileHandler][IntegrationTests]")
     {
-        ::FileHandler::CScanFileHandler sut;
+        CScanFileHandler sut;
         std::string file = GetFileName();
         sut.CheckScanFile(file);
 
@@ -104,7 +104,7 @@ namespace novac
 
     TEST_CASE("ScanFileHandler GetNextSpectrum", "[ScanFileHandler][IntegrationTests]")
     {
-        ::FileHandler::CScanFileHandler sut;
+        CScanFileHandler sut;
         std::string file = GetFileName();
         sut.CheckScanFile(file);
 

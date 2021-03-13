@@ -6,15 +6,15 @@
 #include "EvaluationResult.h"
 #include "../Fit/ReferenceSpectrumFunction.h"
 
-class CSpectrum;
-
 namespace MathFit
 {
 class CStandardFit;
 }
 
-namespace Evaluation
+namespace novac
 {
+class CSpectrum;
+
 /** The CEvaluationBase is the base class for all evaluation-classes
     in NovacProgram, NovacPPP and MobileDOAS and collects common elements and routines */
 class CEvaluationBase : public CBasicMath

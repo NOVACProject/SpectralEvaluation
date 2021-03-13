@@ -3,6 +3,8 @@
 #include <SpectralEvaluation/Calibration/InstrumentLineShape.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 
+using namespace novac;
+
 std::vector<double> CreatePixelToWavelengthMapping(double start, double stop, int size = 2048); // located elsewhere
 std::vector<double> CreateGaussian(double sigma, const std::vector<double>& x); // located elsewhere
 std::vector<double> CreateGaussian(double center, double sigma, const std::vector<double>& x); // located elsewhere
@@ -49,10 +51,10 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple Gaussian input re
         std::vector<double> spec = CreateGaussian(sigma, idealGaussian.m_wavelength);
         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
-        Calibration::GaussianLineShape result;
-        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+        GaussianLineShape result;
+        auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - sigma) < 0.005);
     }
 
@@ -62,10 +64,10 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple Gaussian input re
         std::vector<double> spec = CreateGaussian(sigma, idealGaussian.m_wavelength);
         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
-        Calibration::GaussianLineShape result;
-        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+        GaussianLineShape result;
+        auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - sigma) < 0.005);
     }
 
@@ -75,10 +77,10 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple Gaussian input re
         std::vector<double> spec = CreateGaussian(sigma, idealGaussian.m_wavelength);
         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
-        Calibration::GaussianLineShape result;
-        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+        GaussianLineShape result;
+        auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - sigma) < 0.005);
     }
 }
@@ -96,10 +98,10 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple not centered Gaus
         std::vector<double> spec = CreateGaussian(gaussianCenter, sigma, idealGaussian.m_wavelength);
         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
-        Calibration::GaussianLineShape result;
-        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+        GaussianLineShape result;
+        auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - sigma) < 0.005);
     }
 
@@ -109,10 +111,10 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple not centered Gaus
         std::vector<double> spec = CreateGaussian(gaussianCenter, sigma, idealGaussian.m_wavelength);
         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
-        Calibration::GaussianLineShape result;
-        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+        GaussianLineShape result;
+        auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - sigma) < 0.005);
     }
 
@@ -122,10 +124,10 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple not centered Gaus
         std::vector<double> spec = CreateGaussian(gaussianCenter, sigma, idealGaussian.m_wavelength);
         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
-        Calibration::GaussianLineShape result;
-        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+        GaussianLineShape result;
+        auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - sigma) < 0.005);
     }
 }
@@ -144,10 +146,10 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
         std::vector<double> spec = CreateAsymmetricGaussian(sigmaLeft, sigmaRight, idealGaussian.m_wavelength);
         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
-        Calibration::AsymmetricGaussianLineShape result;
-        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+        AsymmetricGaussianLineShape result;
+        auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
     }
@@ -159,10 +161,10 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
         std::vector<double> spec = CreateAsymmetricGaussian(sigmaLeft, sigmaRight, idealGaussian.m_wavelength);
         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
-        Calibration::AsymmetricGaussianLineShape result;
-        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+        AsymmetricGaussianLineShape result;
+        auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
     }
@@ -174,10 +176,10 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
         std::vector<double> spec = CreateAsymmetricGaussian(sigmaLeft, sigmaRight, idealGaussian.m_wavelength);
         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
-        Calibration::AsymmetricGaussianLineShape result;
-        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+        AsymmetricGaussianLineShape result;
+        auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
     }
@@ -189,10 +191,10 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
         std::vector<double> spec = CreateAsymmetricGaussian(sigmaLeft, sigmaRight, idealGaussian.m_wavelength);
         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
-        Calibration::AsymmetricGaussianLineShape result;
-        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+        AsymmetricGaussianLineShape result;
+        auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
     }
@@ -204,10 +206,10 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
         std::vector<double> spec = CreateAsymmetricGaussian(sigmaLeft, sigmaRight, idealGaussian.m_wavelength);
         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
-        Calibration::AsymmetricGaussianLineShape result;
-        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+        AsymmetricGaussianLineShape result;
+        auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
     }
@@ -228,10 +230,10 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
 //         std::vector<double> spec = CreateAsymmetricGaussian(gaussianCenter, sigmaLeft, sigmaRight, idealGaussian.m_wavelength);
 //         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 // 
-//         Calibration::AsymmetricGaussianLineShape result;
-//         auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+//         AsymmetricGaussianLineShape result;
+//         auto ret = FitInstrumentLineShape(idealGaussian, result);
 // 
-//         REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+//         REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
 //         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
 //         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
 //     }
@@ -243,10 +245,10 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
 //         std::vector<double> spec = CreateAsymmetricGaussian(gaussianCenter, sigmaLeft, sigmaRight, idealGaussian.m_wavelength);
 //         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 // 
-//         Calibration::AsymmetricGaussianLineShape result;
-//         auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+//         AsymmetricGaussianLineShape result;
+//         auto ret = FitInstrumentLineShape(idealGaussian, result);
 // 
-//         REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+//         REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
 //         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
 //         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
 //     }
@@ -258,10 +260,10 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
 //         std::vector<double> spec = CreateAsymmetricGaussian(gaussianCenter, sigmaLeft, sigmaRight, idealGaussian.m_wavelength);
 //         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 // 
-//         Calibration::AsymmetricGaussianLineShape result;
-//         auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+//         AsymmetricGaussianLineShape result;
+//         auto ret = FitInstrumentLineShape(idealGaussian, result);
 // 
-//         REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+//         REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
 //         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
 //         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
 //     }
@@ -273,10 +275,10 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
 //         std::vector<double> spec = CreateAsymmetricGaussian(gaussianCenter, sigmaLeft, sigmaRight, idealGaussian.m_wavelength);
 //         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 // 
-//         Calibration::AsymmetricGaussianLineShape result;
-//         auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+//         AsymmetricGaussianLineShape result;
+//         auto ret = FitInstrumentLineShape(idealGaussian, result);
 // 
-//         REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+//         REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
 //         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
 //         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
 //     }
@@ -288,10 +290,10 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
 //         std::vector<double> spec = CreateAsymmetricGaussian(gaussianCenter, sigmaLeft, sigmaRight, idealGaussian.m_wavelength);
 //         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 // 
-//         Calibration::AsymmetricGaussianLineShape result;
-//         auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+//         AsymmetricGaussianLineShape result;
+//         auto ret = FitInstrumentLineShape(idealGaussian, result);
 // 
-//         REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+//         REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
 //         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
 //         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
 //     }
@@ -311,10 +313,10 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple Gaussian in
         std::vector<double> spec = CreateGaussian(sigma, idealGaussian.m_wavelength);
         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
-        Calibration::SuperGaussianLineShape result;
-        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+        SuperGaussianLineShape result;
+        auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - sigma) < 0.005);
         REQUIRE(fabs(result.P - 2) < 0.0005);
     }
@@ -333,10 +335,10 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple not centere
         std::vector<double> spec = CreateGaussian(gaussianCenter, sigma, idealGaussian.m_wavelength);
         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
-        Calibration::SuperGaussianLineShape result;
-        auto ret = Calibration::FitInstrumentLineShape(idealGaussian, result);
+        SuperGaussianLineShape result;
+        auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - sigma) < 0.005);
         REQUIRE(fabs(result.P - 2) < 0.0005);
     }
@@ -379,29 +381,29 @@ TEST_CASE("FitInstrumentLineShape: Real SLF input returns reasonable fitted func
 
     SECTION("Asmmetric Gaussian")
     {
-        Calibration::AsymmetricGaussianLineShape result;
-        auto ret = Calibration::FitInstrumentLineShape(measuredSpectrum, result);
+        AsymmetricGaussianLineShape result;
+        auto ret = FitInstrumentLineShape(measuredSpectrum, result);
 
-        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigmaLeft - 0.20991) < 0.005);
         REQUIRE(fabs(result.sigmaRight - 0.25473) < 0.005);
     }
 
     SECTION("Symmetric Gaussian")
     {
-        Calibration::GaussianLineShape result;
-        auto ret = Calibration::FitInstrumentLineShape(measuredSpectrum, result);
+        GaussianLineShape result;
+        auto ret = FitInstrumentLineShape(measuredSpectrum, result);
 
-        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - 0.23295) < 0.005);
     }
 
     SECTION("Symmetric Super Gaussian")
     {
-        Calibration::SuperGaussianLineShape result;
-        auto ret = Calibration::FitInstrumentLineShape(measuredSpectrum, result);
+        SuperGaussianLineShape result;
+        auto ret = FitInstrumentLineShape(measuredSpectrum, result);
 
-        REQUIRE(ret == Calibration::ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - 0.249351) < 0.005);
         REQUIRE(fabs(result.P - 2.37497) < 0.0005);
     }

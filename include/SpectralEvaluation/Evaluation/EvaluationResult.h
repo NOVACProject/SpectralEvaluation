@@ -3,10 +3,10 @@
 #include <vector>
 #include "ReferenceFitResult.h"
 
-class CSpectrumInfo;
-
-namespace Evaluation
+namespace novac
 {
+
+class CSpectrumInfo;
 
 #define MARK_BAD_EVALUATION 0x0001
 #define MARK_DELETED 0x0002

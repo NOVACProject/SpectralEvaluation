@@ -21,7 +21,7 @@
 
 using namespace MathFit;
 
-namespace Evaluation
+namespace novac
 {
 CEvaluationBase::CEvaluationBase()
 {

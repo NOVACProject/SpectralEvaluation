@@ -7,7 +7,7 @@
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include <vector>
 
-namespace Evaluation
+namespace novac
 {
     class BasicScanEvaluationResult;
 
@@ -62,7 +62,7 @@ namespace Evaluation
             @return A vector with all the calculated quotients. The length of this vector
                 equals the number of reference-fit windows passed to 'SetupFitWindows' which must have been called before this.
             @return an empty vector if the evaluations fail. */
-        std::vector<Ratio> Run(FileHandler::CScanFileHandler& scan);
+        std::vector<Ratio> Run(CScanFileHandler& scan);
 
     private:
         /** The fit window against which the ratio will be calculated (typically SO2).
@@ -96,5 +96,5 @@ namespace Evaluation
     /** Calculates the average of the spectra with the given indices in the given scan. 
         @return the number of spectra averaged. */
     // TODO: Move to some other file?
-    int AverageSpectra(FileHandler::CScanFileHandler& scan, const std::vector<int>& indices, CSpectrum& result);
+    int AverageSpectra(CScanFileHandler& scan, const std::vector<int>& indices, CSpectrum& result);
 }
