@@ -29,12 +29,25 @@ CSpectrum::CSpectrum(const std::vector<double>& wavelength, const std::vector<do
     : m_length((long)spectralData.size()),
     m_wavelength{ begin(wavelength), end(wavelength) }
 {
-    memcpy(this->m_data, spectralData.data(), sizeof(double) * std::min(spectralData.size(), (size_t)MAX_SPECTRUM_LENGTH));
+    memcpy(this->m_data, spectralData.data(), sizeof(double)* std::min(spectralData.size(), (size_t)MAX_SPECTRUM_LENGTH));
+}
+
+CSpectrum::CSpectrum(const double* spectralData, size_t length)
+    : m_length((long)length)
+{
+    memcpy(this->m_data, spectralData, sizeof(double) * std::min(length, (size_t)MAX_SPECTRUM_LENGTH));
+}
+
+CSpectrum::CSpectrum(const double* wavelength, const double* spectralData, size_t length)
+    : m_length((long)length),
+    m_wavelength(wavelength, wavelength + length)
+{
+    memcpy(this->m_data, spectralData, sizeof(double) * std::min(length, (size_t)MAX_SPECTRUM_LENGTH));
 }
 
 CSpectrum::CSpectrum(const CSpectrum& other)
-    : m_length(other.m_length), 
-      m_info(other.m_info)
+    : m_length(other.m_length),
+    m_info(other.m_info)
 {
     memcpy(this->m_data, &other.m_data, sizeof(double) * MAX_SPECTRUM_LENGTH);
 
@@ -87,7 +100,7 @@ CSpectrum& CSpectrum::operator=(CSpectrum&& other)
     return *this;
 }
 
-int CSpectrum::AssertRange(long &fromPixel, long &toPixel) const
+int CSpectrum::AssertRange(long& fromPixel, long& toPixel) const
 {
     /* Check the input */
     assert(fromPixel >= 0 && toPixel >= 0);
@@ -146,7 +159,7 @@ double CSpectrum::AverageValue(long fromPixel, long toPixel) const
     return (avg / (double)(toPixel - fromPixel + 1));
 }
 
-int CSpectrum::Add(const CSpectrum &spec)
+int CSpectrum::Add(const CSpectrum& spec)
 {
     if (m_length != spec.m_length)
     {
@@ -173,7 +186,7 @@ int CSpectrum::Add(const double value)
     return PixelwiseOperation(value, &CSpectrum::Plus);
 }
 
-int CSpectrum::Sub(const CSpectrum &spec)
+int CSpectrum::Sub(const CSpectrum& spec)
 {
     return PixelwiseOperation(spec, &CSpectrum::Minus);
 }
@@ -182,7 +195,7 @@ int CSpectrum::Sub(const double value)
     return PixelwiseOperation(value, &CSpectrum::Minus);
 }
 
-int CSpectrum::Mult(const CSpectrum &spec)
+int CSpectrum::Mult(const CSpectrum& spec)
 {
     return PixelwiseOperation(spec, &CSpectrum::Multiply);
 }
@@ -191,7 +204,7 @@ int CSpectrum::Mult(const double value)
     return PixelwiseOperation(value, &CSpectrum::Multiply);
 }
 
-int CSpectrum::Div(const CSpectrum &spec)
+int CSpectrum::Div(const CSpectrum& spec)
 {
     return PixelwiseOperation(spec, &CSpectrum::Divide);
 }
@@ -201,7 +214,7 @@ int CSpectrum::Div(const double value)
 }
 
 // performes the supplied operation on all pixels in the two spectra
-int CSpectrum::PixelwiseOperation(const CSpectrum &spec, double f(double, double))
+int CSpectrum::PixelwiseOperation(const CSpectrum& spec, double f(double, double))
 {
     if (spec.m_length != m_length)
     {
@@ -320,7 +333,7 @@ void CSpectrum::Clear()
     m_info.m_stopTime = CDateTime();
 }
 
-int	CSpectrum::Split(CSpectrum *spec[MAX_CHANNEL_NUM]) const
+int	CSpectrum::Split(CSpectrum* spec[MAX_CHANNEL_NUM]) const
 {
     int i;
 
@@ -381,7 +394,7 @@ int	CSpectrum::Split(CSpectrum *spec[MAX_CHANNEL_NUM]) const
     return NSpectra;
 }
 
-int CSpectrum::GetInterlaceSteps(int channel, int &interlaceSteps)
+int CSpectrum::GetInterlaceSteps(int channel, int& interlaceSteps)
 {
     // if the spectrum is a mix of several spectra
     if (channel >= 129)
@@ -428,7 +441,7 @@ bool CSpectrum::InterpolateSpectrum()
     // Copy the data we have
     for (int k = 0; k < m_length; ++k)
     {
-        data[step*k + start] = m_data[k];
+        data[step * k + start] = m_data[k];
     }
 
     // Interpolate the data we don't have
@@ -455,7 +468,7 @@ bool CSpectrum::InterpolateSpectrum()
 }
 
 /** Interpolate the spectrum originating from the channel number 'channel' */
-bool CSpectrum::InterpolateSpectrum(CSpectrum &spec) const
+bool CSpectrum::InterpolateSpectrum(CSpectrum& spec) const
 {
     double	data[MAX_SPECTRUM_LENGTH];
     memset(data, 0, MAX_SPECTRUM_LENGTH * sizeof(double));
@@ -477,7 +490,7 @@ bool CSpectrum::InterpolateSpectrum(CSpectrum &spec) const
 
     // Copy the data we have
     for (int k = 0; k < m_length; ++k) {
-        data[step*k + start] = m_data[k];
+        data[step * k + start] = m_data[k];
     }
 
     // Interpolate the data we don't have

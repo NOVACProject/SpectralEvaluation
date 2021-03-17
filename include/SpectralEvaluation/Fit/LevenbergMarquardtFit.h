@@ -8,7 +8,7 @@
 #define LEVENBERGMARQUARDT_H_011206
 
 #include <float.h>
-#include "Minimizer.h"
+#include <SpectralEvaluation/Fit/Minimizer.h>
 
 #define STARTLAMBDA		0.01
 #define MINLAMBDA		1e-20

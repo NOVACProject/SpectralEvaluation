@@ -31,7 +31,7 @@ namespace MathFit
 //#define ROWMATRIX
 
 	// Vector
-#include "Vector.h"
+#include <SpectralEvaluation/Fit/Vector.h>
 
 	/**
 	* Exception indicating a size mismatch of two matrices.

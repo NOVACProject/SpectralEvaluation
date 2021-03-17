@@ -24,12 +24,21 @@ public:
     CSpectrum();
 
     /** Copies the contents of the spectral data into this new spectrum.
-        This will leave the m_info at default values */
+        This will leave the m_info at default values and m_wavelength empty */
     CSpectrum(const std::vector<double>& spectralData);
 
     /** Copies the contents of the spectral data into this new spectrum.
         This will leave the m_info at default values */
     CSpectrum(const std::vector<double>& wavelength, const std::vector<double>& spectralData);
+
+    /** Copies the contents of the spectral data into this new spectrum.
+        This will leave the m_info at default values and m_wavelength empty */
+    CSpectrum(const double* spectralData, size_t length);
+
+    /** Copies the contents of the spectral data into this new spectrum.
+        This will leave the m_info at default values.
+        The wavelength and spectralData must be pointers to arrays holding 'length' values or else memory corruption will occurr. */
+    CSpectrum(const double* wavelength, const double* spectralData, size_t length);
 
     // Copy operators
     CSpectrum(const CSpectrum& other);
