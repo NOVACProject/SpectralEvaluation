@@ -1,5 +1,5 @@
 #include <SpectralEvaluation/Evaluation/ReferenceFitResult.h>
 
-namespace Evaluation
+namespace novac
 {
 }

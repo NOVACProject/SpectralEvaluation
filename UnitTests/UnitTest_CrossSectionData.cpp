@@ -1,9 +1,11 @@
 #include "catch.hpp"
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 
+using namespace novac;
+
 TEST_CASE("Resample")
 {
-    Evaluation::CCrossSectionData sut;
+    novac::CCrossSectionData sut;
 
     SECTION("Same input and output - data is unchanged.")
     {
@@ -11,7 +13,7 @@ TEST_CASE("Resample")
         sut.m_crossSection = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0};
 
         std::vector<double> result;
-        Evaluation::Resample(sut, 1.0, result);
+        novac::Resample(sut, 1.0, result);
 
         REQUIRE(result.size() == sut.m_crossSection.size());
         REQUIRE(result[0] == Approx(sut.m_crossSection[0]));

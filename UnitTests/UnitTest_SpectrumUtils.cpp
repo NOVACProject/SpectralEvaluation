@@ -5,6 +5,7 @@
 
 std::vector<double> CreateGaussian(double center, double sigma, const std::vector<double>& x); // located elsewhere
 
+using namespace novac;
 
 // -------- Calculating the derivative --------
 TEST_CASE("Derivative", "[SpectrumUtils]")

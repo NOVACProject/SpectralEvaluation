@@ -1,5 +1,7 @@
 #pragma once
 
+namespace novac
+{
 class CDateTime;
 
 // --------------------------------------------------------------------
@@ -13,3 +15,4 @@ class CDateTime;
     The returned angles are in degrees. */
 void GetSunPosition(const CDateTime& gmtTime, double lat, double lon, double& SZA, double& SAZ);
 
+}

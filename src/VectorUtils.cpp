@@ -131,6 +131,56 @@ double Average(const std::vector<double>& values)
     return (sum / (double)values.size());
 }
 
+double MinOfAbsolutes(const std::vector<double>& values)
+{
+    if (values.size() == 0)
+    {
+        return 0.0;
+    }
+    if (values.size() == 1)
+    {
+        return values[0];
+    }
+
+    double minValue = std::abs(values[0]);
+    for (size_t ii = 1; ii < values.size(); ++ii)
+    {
+        minValue = std::min(minValue, std::abs(values[ii]));
+    }
+    return minValue;
+}
+
+double WeightedAverage(const std::vector<double>& values, const std::vector<double>& errors)
+{
+    if (values.size() != errors.size())
+    {
+        return 0.0;
+    }
+    if (values.size() == 0)
+    {
+        return 0.0;
+    }
+    if (values.size() == 1)
+    {
+        return values.front();
+    }
+
+    // in order to avoid some catastrophic cancellation here, extract the common order of magnitude for both the values and the errors and handle them separately
+    const double errorsFactor = MinOfAbsolutes(errors);
+
+    double sumOfValues = 0.0;
+    double sumOfErrors = 0.0;
+    for (size_t ii = 0; ii < values.size(); ++ii)
+    {
+        const double errorSquared = errors[ii] * errors[ii] / (errorsFactor * errorsFactor);
+
+        sumOfValues += values[ii] / errorSquared;
+        sumOfErrors += 1.0 / errorSquared;
+    }
+
+    return (sumOfValues / sumOfErrors);
+}
+
 void RemoveMean(std::vector<double>& values)
 {
     double mean = Average(values);

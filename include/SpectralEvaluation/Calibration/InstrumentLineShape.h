@@ -10,7 +10,6 @@ namespace novac
 
 class CSpectrum;
 
-
 // --------- Possible representations of instrument line shapes ---------
 // Symmetric gaussian line shape: exp(-x^2/(2 * sigma^2))
 struct GaussianLineShape

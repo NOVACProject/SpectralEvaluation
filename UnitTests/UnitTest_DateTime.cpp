@@ -2,6 +2,8 @@
 #include <SpectralEvaluation/DateTime.h>
 #include <time.h>
 
+using namespace novac;
+
 TEST_CASE("CDateTime - Default constructor - all values set to zero", "[DateTime]")
 {
     CDateTime sut;

@@ -69,7 +69,7 @@ namespace Doasis
         /// This method assumes the following preset values:
         /// * SZA: 90
         /// </remarks>
-        static CSpectrum CalcRamanSpectrum(const CSpectrum& specOrig, double fTemp, int iJMax, double fMixing)
+        static novac::CSpectrum CalcRamanSpectrum(const novac::CSpectrum& specOrig, double fTemp, int iJMax, double fMixing)
         {
             return CalcRamanSpectrum(specOrig, fTemp, iJMax, fMixing, 90);
         }
@@ -87,7 +87,7 @@ namespace Doasis
         /// * Mixing: 0.8
         /// * SZA: 90
         /// </remarks>
-        static CSpectrum CalcRamanSpectrum(const CSpectrum& specOrig, double fTemp, int iJMax)
+        static novac::CSpectrum CalcRamanSpectrum(const novac::CSpectrum& specOrig, double fTemp, int iJMax)
         {
             return CalcRamanSpectrum(specOrig, fTemp, iJMax, 0.8, 90);
         }
@@ -105,7 +105,7 @@ namespace Doasis
         /// * Mixing: 0.8
         /// * SZA: 90
         /// </remarks>
-        static CSpectrum CalcRamanSpectrum(const CSpectrum& specOrig, double fTemp)
+        static novac::CSpectrum CalcRamanSpectrum(const novac::CSpectrum& specOrig, double fTemp)
         {
             return CalcRamanSpectrum(specOrig, fTemp, 30, 0.8, 90);
         }
@@ -123,7 +123,7 @@ namespace Doasis
         /// * Mixing: 0.8
         /// * SZA: 90
         /// </remarks>
-        static CSpectrum CalcRamanSpectrum(const CSpectrum& specOrig)
+        static novac::CSpectrum CalcRamanSpectrum(const novac::CSpectrum& specOrig)
         {
             return CalcRamanSpectrum(specOrig, 250, 30, 0.8, 90);
         }
@@ -161,7 +161,7 @@ namespace Doasis
         /// <param name="fMixing">The mixing value of the Ring spectrum</param>
         /// <param name="fSZA">The SZA of the Ring spectrum</param>
         /// <returns>The Ring spectrum or <b>null</b> if the original spectrum has no wavelength information set.</returns>
-        static CSpectrum CalcRingSpectrum(CSpectrum& specOrig, double fTemp, int iJMax, double fMixing, double fSZA);
+        static novac::CSpectrum CalcRingSpectrum(novac::CSpectrum& specOrig, double fTemp, int iJMax, double fMixing, double fSZA);
 
         /// <summary>
         /// Calculates the Ring spectrum for a given spectrum.
@@ -181,7 +181,7 @@ namespace Doasis
         /// This method assumes the following preset values:
         /// * SZA: 90
         /// </remarks>
-        static CSpectrum CalcRingSpectrum(CSpectrum& specOrig, double fTemp, int iJMax, double fMixing)
+        static novac::CSpectrum CalcRingSpectrum(novac::CSpectrum& specOrig, double fTemp, int iJMax, double fMixing)
         {
             return CalcRingSpectrum(specOrig, fTemp, iJMax, fMixing, 90);
         }
@@ -204,7 +204,7 @@ namespace Doasis
         /// * Mixing: 0.8
         /// * SZA: 90
         /// </remarks>
-        static CSpectrum CalcRingSpectrum(CSpectrum& specOrig, double fTemp, int iJMax)
+        static novac::CSpectrum CalcRingSpectrum(novac::CSpectrum& specOrig, double fTemp, int iJMax)
         {
             return CalcRingSpectrum(specOrig, fTemp, iJMax, 0.8, 90);
         }
@@ -227,7 +227,7 @@ namespace Doasis
         /// * Mixing: 0.8
         /// * SZA: 90
         /// </remarks>
-        static CSpectrum CalcRingSpectrum(CSpectrum& specOrig, double fTemp)
+        static novac::CSpectrum CalcRingSpectrum(novac::CSpectrum& specOrig, double fTemp)
         {
             return CalcRingSpectrum(specOrig, fTemp, 30, 0.8, 90);
         }
@@ -250,7 +250,7 @@ namespace Doasis
         /// * Mixing: 0.8
         /// * SZA: 90
         /// </remarks>
-        static CSpectrum CalcRingSpectrum(CSpectrum& specOrig)
+        static novac::CSpectrum CalcRingSpectrum(novac::CSpectrum& specOrig)
         {
             return CalcRingSpectrum(specOrig, 250, 30, 0.8, 90);
         }
@@ -282,7 +282,7 @@ namespace Doasis
         /// <param name="fMixing">The mixing value of the Raman spectrum</param>
         /// <param name="fSZA">The SZA of the Raman spectrum</param>
         /// <returns>The Raman spectrum or <b>null</b> if the original spectrum has no wavelength information set.</returns>
-        static CSpectrum CalcRamanSpectrum(const CSpectrum& specOrig, double fTemp, int iJMax, double fMixing, double fSZA);
+        static novac::CSpectrum CalcRamanSpectrum(const novac::CSpectrum& specOrig, double fTemp, int iJMax, double fMixing, double fSZA);
 
     };
 }

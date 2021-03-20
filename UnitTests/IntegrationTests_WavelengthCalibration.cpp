@@ -18,7 +18,7 @@ std::string GetMercuryFileName()
 TEST_CASE("D2J2200 Mercury Spectrum", "[SpectrumUtils][InstrumentCalibration][IntegrationTest][MercurySpectrum]")
 {
     CSpectrum spectrum;
-    SpectrumIO::CTXTFile::ReadSpectrum(spectrum, GetMercuryFileName());
+    CTXTFile::ReadSpectrum(spectrum, GetMercuryFileName());
 
     SECTION("Find peak locates all mercury peaks")
     {
