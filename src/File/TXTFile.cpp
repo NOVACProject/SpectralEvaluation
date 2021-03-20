@@ -70,6 +70,10 @@ bool CTXTFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName)
     {
         spec.m_wavelength = std::vector<double>(begin(wavelengths), begin(wavelengths) + length);
     }
+    else
+    {
+        spec.m_wavelength.clear();
+    }
 
     // close the file before we return
     fclose(f);

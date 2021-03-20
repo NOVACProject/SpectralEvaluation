@@ -20,8 +20,15 @@ std::vector<double> GetPixelToWavelengthMappingFromFile(const std::string& clbFi
 {
     CSpectrum initialWavelengthCalibrationSpectrum;
     CTXTFile::ReadSpectrum(initialWavelengthCalibrationSpectrum, clbFile);
-    std::vector<double> pixelToWavelengthMapping{ initialWavelengthCalibrationSpectrum.m_data, initialWavelengthCalibrationSpectrum.m_data + initialWavelengthCalibrationSpectrum.m_length };
-    return pixelToWavelengthMapping;
+
+    if (initialWavelengthCalibrationSpectrum.m_wavelength.size() > 0)
+    {
+        return initialWavelengthCalibrationSpectrum.m_wavelength;
+    }
+    else
+    {
+        return std::vector<double> { initialWavelengthCalibrationSpectrum.m_data, initialWavelengthCalibrationSpectrum.m_data + initialWavelengthCalibrationSpectrum.m_length };
+    }
 }
 
 // --------------------------- FraunhoferSpectrumGeneration ---------------------------
