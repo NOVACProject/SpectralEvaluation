@@ -5,6 +5,7 @@
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <cstring>
+#include <sstream>
 
 namespace novac
 {
@@ -246,4 +247,38 @@ bool ReadSpectrum(const std::string& fullFilePath, CSpectrum& result)
     }
     return false; // unknown file format.
 }
+
+std::string EnsureFilenameHasSuffix(const std::string& fullFilePath, const std::string& defaultSuffix)
+{
+    if (fullFilePath.size() == 0)
+    {
+        return fullFilePath;
+    }
+
+    const size_t lastPeriod = fullFilePath.rfind('.');
+    if (lastPeriod == fullFilePath.npos)
+    {
+        // no period found
+        std::stringstream correctedFileName;
+        correctedFileName << fullFilePath << "." << defaultSuffix;
+        return correctedFileName.str();
+    }
+
+    const size_t lastForwardSlash = fullFilePath.rfind('\\');
+    const size_t lastBackwardSlash = fullFilePath.rfind('/');
+
+    if ((lastForwardSlash != fullFilePath.npos && lastPeriod > lastForwardSlash) ||
+        (lastBackwardSlash != fullFilePath.npos && lastPeriod > lastBackwardSlash))
+    {
+        return fullFilePath;
+    }
+    else
+    {
+        // no period found _after_ the last path-separator character. Add the suffix.
+        std::stringstream correctedFileName;
+        correctedFileName << fullFilePath << "." << defaultSuffix;
+        return correctedFileName.str();
+    }
+}
+
 }

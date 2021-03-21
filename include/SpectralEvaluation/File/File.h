@@ -32,4 +32,9 @@ bool SaveDataToFile(const std::string& fullFilePath, const std::vector<double>& 
 /** Attempts to read a CSpectrum from file. This can read .std or .txt data files */
 bool ReadSpectrum(const std::string& fullFilePath, CSpectrum& result);
 
+/** This is a helper method which makes sure that the provided filename contains a file suffix.
+    If no suffix exists, then the default suffix is appended.
+    NOTICE: the provided suffix should not start with a period. */
+std::string EnsureFilenameHasSuffix(const std::string& fullFilePath, const std::string& defaultSuffix);
+
 }
