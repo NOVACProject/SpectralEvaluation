@@ -70,6 +70,11 @@ struct CorrespondenceSelectionSettings
     size_t pixelRegionSizeForCorrespondenceErrorMeasurement = 20;
 
     /// <summary>
+    /// The maximum pixel error in the initial pixel-to-wavelength calibration guess.
+    /// </summary>
+    int maximumPixelDistanceForPossibleCorrespondence = 150;
+
+    /// <summary>
     /// The relative number of correspondences to select out of the total.
     /// 0.2 corresponds to selecting the 20% correspondences with the lowest error.
     /// </summary>
@@ -79,7 +84,7 @@ struct CorrespondenceSelectionSettings
     /// The first pixel to include in the calibration routine. 
     /// Often do the signal in the spectra decline at short wavelengths and this is a means to disregard points with low intensity.
     /// </summary>
-    size_t measuredPixelStart = 650; // TODO: Lower
+    size_t measuredPixelStart = 600; // TODO: Lower
 
     /// <summary>
     /// The last pixel to include in the calibration routine. 
@@ -118,7 +123,6 @@ std::vector<novac::Correspondence> ListPossibleCorrespondences(
     const CSpectrum& measuredSpectrum,
     const std::vector<novac::SpectrumDataPoint>& fraunhoferKeypoints,
     const CSpectrum& fraunhoferSpectrum,
-    const RansacWavelengthCalibrationSettings& ransacSettings,
     const CorrespondenceSelectionSettings& correspondenceSettings);
 
 
@@ -133,7 +137,6 @@ struct RansacWavelengthCalibrationSettings
     int numberOfRansacIterations = 500000;
     size_t sampleSize = 4; // the number of correspondences to select in one iteration - should really be (modelPolynomialOrder + 1)
     double inlierLimitInWavelength = 0.2; // how close a keypoint needs to be for it to be considered an inlier. In nm
-    int maximumPixelDistanceForPossibleCorrespondence = 150; // maximum pixel error in the initial clb file.
     bool refine = true;
 };
 

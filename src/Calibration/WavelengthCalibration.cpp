@@ -31,6 +31,25 @@ std::vector<double> GetPixelToWavelengthMappingFromFile(const std::string& clbFi
     }
 }
 
+/// <summary>
+/// Very special baseline removal where all points below the baseline are set to the baseline level.
+/// </summary>
+/// <param name="spectrum"></param>
+void RemoveBaseline(CSpectrum& spectrum)
+{
+    std::vector<double> spectrumValues(spectrum.m_data, spectrum.m_data + spectrum.m_length);
+    std::vector<double> lowestPoints;
+    FindNLowest(spectrumValues, 20, lowestPoints);
+    const double baseline = Average(lowestPoints);
+    for (long ii = 0; ii < spectrum.m_length; ++ii)
+    {
+        if (spectrum.m_data[ii] < baseline)
+        {
+            spectrum.m_data[ii] = baseline;
+        }
+    }
+}
+
 // --------------------------- FraunhoferSpectrumGeneration ---------------------------
 
 std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
@@ -102,8 +121,6 @@ bool MercuryCalibration(
     // List of known mercury lines, in nm(air)
     const std::vector<double> knownMercuryLines = { 284.7675, 302.1498, 312.5668, 313.1548, 313.1839, 365.0153, 365.4836, 366.3279, 398.3931, 404.6563, 435.8328 };
 
-
-
     return false;
 }
 
@@ -122,7 +139,7 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
     // TODO: Validation of the setup and incoming parameters!
 
     // Magic parameters...
-    const double minimumPeakIntensityInMeasuredSpectrum = 0.06; // in the normalized units, was 1000
+    const double minimumPeakIntensityInMeasuredSpectrum = 0.02; // in the normalized units, was 1000
     const double minimumPeakIntensityInFraunhoferReference = 0.01; // in the normalized units, was 600
     novac::RansacWavelengthCalibrationSettings ransacSettings; // Magic method parameters. These needs to be optimized...
     novac::CorrespondenceSelectionSettings correspondenceSelectionSettings; // Magic selection parameters...
@@ -130,8 +147,9 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
     // Setup
     novac::RansacWavelengthCalibrationSetup ransacCalibrationSetup{ ransacSettings };
 
-    // Start by normalizing the intensity of the measured spectrum, such that we can compare it to the fraunhofer spectrum.
+    // Start by removing any remaining baseline from the measuerd spectrum and normalizing the intensity of it, such that we can compare it to the fraunhofer spectrum.
     this->calibrationState.measuredSpectrum = std::make_unique<CSpectrum>(measuredSpectrum);
+    RemoveBaseline(*calibrationState.measuredSpectrum);
     Normalize(*calibrationState.measuredSpectrum);
 
     // Get the envelope of the measured spectrum (used to correct the shape of the fraunhofer spectrum to the detector sensitivity + optics absorption of the spectrometer)
@@ -156,7 +174,7 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
         novac::FindKeypointsInSpectrum(*calibrationState.fraunhoferSpectrum, minimumPeakIntensityInFraunhoferReference, calibrationState.fraunhoferKeypoints);
 
         // List all possible correspondences (with some filtering applied).
-        this->calibrationState.allCorrespondences = novac::ListPossibleCorrespondences(calibrationState.measuredKeypoints, *calibrationState.measuredSpectrum, calibrationState.fraunhoferKeypoints, *calibrationState.fraunhoferSpectrum, ransacSettings, correspondenceSelectionSettings);
+        this->calibrationState.allCorrespondences = novac::ListPossibleCorrespondences(calibrationState.measuredKeypoints, *calibrationState.measuredSpectrum, calibrationState.fraunhoferKeypoints, *calibrationState.fraunhoferSpectrum, correspondenceSelectionSettings);
 
         // The actual wavelength calibration by ransac
         auto startTime = std::chrono::steady_clock::now();
@@ -187,6 +205,9 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
         // This allows us to calculate the wavelength -> intensity mapping of the 
         // if (iterationIdx < numberOfIterations - 1)
         {
+            // Adjust the selection parameter for the maximum error in the wavelength calibration
+            correspondenceSelectionSettings.maximumPixelDistanceForPossibleCorrespondence = std::max(10, correspondenceSelectionSettings.maximumPixelDistanceForPossibleCorrespondence / 2);
+
             // Re-convolve the Fraunhofer spectrum to get it on the new pixel grid
             calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(result.pixelToWavelengthMapping, measuredInstrumentLineShape);
 

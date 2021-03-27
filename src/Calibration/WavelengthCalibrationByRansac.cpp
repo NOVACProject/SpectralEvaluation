@@ -316,7 +316,6 @@ std::vector<novac::Correspondence> ListPossibleCorrespondences(
     const CSpectrum& measuredSpectrum,
     const std::vector<novac::SpectrumDataPoint>& fraunhoferKeypoints,
     const CSpectrum& fraunhoferSpectrum,
-    const RansacWavelengthCalibrationSettings& ransacSettings,
     const CorrespondenceSelectionSettings& correspondenceSettings)
 {
     std::vector<novac::Correspondence> possibleCorrespondences;
@@ -328,7 +327,7 @@ std::vector<novac::Correspondence> ListPossibleCorrespondences(
             for (size_t jj = 0; jj < fraunhoferKeypoints.size(); jj++)
             {
                 if (measuredKeypoints[ii].type == fraunhoferKeypoints[jj].type &&
-                    std::abs(measuredKeypoints[ii].pixel - fraunhoferKeypoints[jj].pixel) <= ransacSettings.maximumPixelDistanceForPossibleCorrespondence)
+                    std::abs(measuredKeypoints[ii].pixel - fraunhoferKeypoints[jj].pixel) <= correspondenceSettings.maximumPixelDistanceForPossibleCorrespondence)
                 {
                     novac::Correspondence corr;
                     corr.measuredIdx = ii;
