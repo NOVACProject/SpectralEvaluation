@@ -43,7 +43,7 @@ std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
         solarCrossSection = std::make_unique<CCrossSectionData>();
         ReadCrossSectionFile(this->solarAtlasFile, *solarCrossSection);
 
-        for each (const auto & crossSectionOfAbsorber in this->crossSectionsToInclude)
+        for (const auto & crossSectionOfAbsorber : this->crossSectionsToInclude)
         {
             const std::string& path = crossSectionOfAbsorber.first;
             const double totalColumn = crossSectionOfAbsorber.second;

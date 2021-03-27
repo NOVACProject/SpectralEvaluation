@@ -34,7 +34,7 @@ IF(MSVC)
     target_compile_definitions(SpectralEvaluationTests PRIVATE -D_CRT_SECURE_NO_WARNINGS)
     target_compile_options(SpectralEvaluationTests PRIVATE /W4 /WX /sdl)
 ELSE()
-    target_compile_options(SpectralEvaluationTests PRIVATE -Wall -std=c++11)
+    target_compile_options(SpectralEvaluationTests PRIVATE -Wall -std=c++14)
 ENDIF()
 
 
