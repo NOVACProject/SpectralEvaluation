@@ -4,7 +4,7 @@
 #include <string>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 
-namespace Evaluation
+namespace novac
 {
     /* the options for the shift and squeeze */
     enum SHIFT_TYPE{

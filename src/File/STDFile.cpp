@@ -5,7 +5,7 @@
 #include <cstring>
 #include <cmath>
 
-namespace SpectrumIO
+namespace novac
 {
     /** Reads a spectrum from a STD-file */
     bool CSTDFile::ReadSpectrum(CSpectrum &spec, const std::string &fileName)

@@ -6,6 +6,9 @@
 #include <SpectralEvaluation/Spectra/SpectrumUtils.h>
 #include <SpectralEvaluation/VectorUtils.h>
 
+#undef min
+#undef max
+
 // TODO: Try to remove these
 #include <SpectralEvaluation/Fit/StandardFit.h>
 #include <SpectralEvaluation/Fit/StandardMetricFunction.h>
@@ -35,12 +38,12 @@ public:
 
     virtual MathFit::TFitData GetLinearBasisFunction(MathFit::TFitData /*fXValue*/, int /*iParamID*/, bool /*bFixedID*/) override
     {
-        throw std::exception("CVectorDataFunction::GetLinearBasisFunction is not implemented");
+        throw std::domain_error("CVectorDataFunction::GetLinearBasisFunction is not implemented");
     }
 
     virtual MathFit::TFitData GetValue(MathFit::TFitData /*fXValue*/) override
     {
-        throw std::exception("CVectorDataFunction::GetValue is not implemented");
+        throw std::domain_error("CVectorDataFunction::GetValue is not implemented");
     }
 
     virtual MathFit::CVector& GetValues(MathFit::CVector& vXValues, MathFit::CVector& vYTargetVector) override
@@ -61,7 +64,7 @@ public:
 
     virtual MathFit::TFitData GetSlope(MathFit::TFitData /*fXValue*/) override
     {
-        throw std::exception("CVectorDataFunction::GetSlope is not implemented");
+        throw std::domain_error("CVectorDataFunction::GetSlope is not implemented");
     }
 };
 
@@ -289,9 +292,9 @@ RansacWavelengthCalibrationResult& RansacWavelengthCalibrationResult::operator=(
 // ---------------------------------- Free functions used to select the correspondences ----------------------------------
 
 double MeasureCorrespondenceError(
-    const ::CSpectrum& measuredSpectrum,
+    const CSpectrum& measuredSpectrum,
     double pixelInMeasuredSpectrum,
-    const ::CSpectrum& fraunhoferSpectrum,
+    const CSpectrum& fraunhoferSpectrum,
     double pixelInFraunhoferSpectrum,
     const CorrespondenceSelectionSettings& settings)
 {
@@ -476,7 +479,7 @@ size_t CountInliers(
         double smallestDistance = std::numeric_limits<double>::max();
 
         const std::vector<Correspondence>& possibleCorrespondencesForThisKeypoint = possibleCorrespondences[keypointIdx];
-        for each (const Correspondence& corr in possibleCorrespondencesForThisKeypoint)
+        for (const Correspondence& corr : possibleCorrespondencesForThisKeypoint)
         {
             // Calculate the distance, in nm air, between the wavelength of this keypoint in the fraunhofer spectrum and the predicted wavelength of the measured keypoint
             const double pixelValue = corr.measuredValue;
@@ -619,7 +622,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
                 std::vector<double> wavelengths;
                 pixelValues.reserve(numberOfInliers);
                 wavelengths.reserve(numberOfInliers);
-                for each (const auto & corr in inlierCorrespondences)
+                for (const auto & corr : inlierCorrespondences)
                 {
                     pixelValues.push_back(corr.measuredValue);
                     wavelengths.push_back(corr.theoreticalValue);

@@ -6,6 +6,9 @@
 
 #include <vector>
 
+namespace novac
+{
+
 /** Finds the value of the provided vector at the given index by linear interpolation.
     @returns true if the interpolated could be found.
     @returns false if the given index is negative or larger than (values.size() - 1). */
@@ -32,3 +35,5 @@ bool TriLinearInterpolation(const std::vector<double>& values, const std::vector
     The vector of values is assumed to be sorted in either ascending or descending order.
     @return the index or NAN if the value could not be found. */
 double GetFractionalIndex(const std::vector<float>& values, double valueToFind);
+
+}

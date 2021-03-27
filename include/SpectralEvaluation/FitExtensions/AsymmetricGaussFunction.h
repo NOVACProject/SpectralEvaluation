@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "../Fit/ParamFunction.h"
+#include <SpectralEvaluation/Fit/ParamFunction.h>
 
 namespace MathFit
 {

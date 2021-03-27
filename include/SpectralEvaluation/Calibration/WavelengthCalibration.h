@@ -5,17 +5,16 @@
 #include <vector>
 #include <string>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
+#include <SpectralEvaluation/Spectra/SpectrumUtils.h>
 
 // ---------------------------------------------------------------------------------------------------------------
 // ----------- This header contains methods used to perform wavelength calibration of a spectrometer -------------
 // ---------------------------------------------------------------------------------------------------------------
 
-class CSpectrum;
-struct SpectrumDataPoint;
-
 namespace novac
 {
 
+class CSpectrum;
 struct SpectrumDataPoint;
 struct Correspondence;
 
@@ -93,7 +92,7 @@ public:
     /// <returns>The high resolution solar spectrum convolved with the measured slf and resample to the provided grid.</returns>
     std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
         const std::vector<double>& pixelToWavelengthMapping,
-        const ::Evaluation::CCrossSectionData& measuredInstrumentLineShape);
+        const novac::CCrossSectionData& measuredInstrumentLineShape);
 
 private:
     /// <summary>
@@ -109,7 +108,7 @@ private:
     /// <summary>
     /// The read in high resolution solar cross section, saved in order to reduce file-io time.
     /// </summary>
-    std::unique_ptr<Evaluation::CCrossSectionData> solarCrossSection;
+    std::unique_ptr<novac::CCrossSectionData> solarCrossSection;
 };
 
 
@@ -154,7 +153,7 @@ public:
     ///   high resolution fraunhofer spectrum assuming that the provided measured instrument line shape
     ///   is the correct line shape for the instrument.
     /// </summary>
-    SpectrometerCalibrationResult DoWavelengthCalibration(const CSpectrum& measuredSpectrum, const Evaluation::CCrossSectionData& measuredInstrumentLineShape);
+    SpectrometerCalibrationResult DoWavelengthCalibration(const CSpectrum& measuredSpectrum, const novac::CCrossSectionData& measuredInstrumentLineShape);
 
     /// <summary>
     /// Simple structure used to save the internal state of the wavelength calibration. For inspection and debugging

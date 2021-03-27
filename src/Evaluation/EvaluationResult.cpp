@@ -4,7 +4,7 @@
 #include <cstring>
 #include <cmath>
 
-namespace Evaluation
+namespace novac
 {
     CEvaluationResult::CEvaluationResult()
         :m_chiSquare(0.0), m_delta(0.0), m_stepNum(0)

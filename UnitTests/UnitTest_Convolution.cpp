@@ -3,6 +3,8 @@
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/VectorUtils.h>
 
+using namespace novac;
+
 std::vector<double> CreateGaussian(double sigma, int length = 19)
 {
     const int halfLength = (length / 2);
@@ -65,7 +67,7 @@ std::vector<double> CreatePixelToWavelengthMapping(double start, double stop, in
 TEST_CASE("CalculateFwhm returns correct value")
 {
     const double sigmaInPixels = 0.5;
-    Evaluation::CCrossSectionData slf;
+    CCrossSectionData slf;
     slf.m_waveLength = CreatePixelToWavelengthMapping(-2.0, +2.0, 43);
     slf.m_crossSection = CreateGaussian(sigmaInPixels, slf.m_waveLength);
 
@@ -77,13 +79,13 @@ TEST_CASE("CalculateFwhm returns correct value")
 
 TEST_CASE("Convolve returns expected output - simple input.", "[Convolve]")
 {
-    Evaluation::CCrossSectionData highResReference;
+    CCrossSectionData highResReference;
     highResReference.m_waveLength = CreatePixelToWavelengthMapping(200.0, 300.0, 1000); // 0.1 nm resolution
     highResReference.m_crossSection = std::vector<double>(1000, 0.0); // all-zeros
     highResReference.m_crossSection[500] = 1.0; // one spike
     REQUIRE(highResReference.m_crossSection.size() == highResReference.m_waveLength.size());
 
-    Evaluation::CCrossSectionData slf;
+    CCrossSectionData slf;
     const double slfSigma = 0.7;
     slf.m_waveLength = CreatePixelToWavelengthMapping(-2.0, +2.0, 41); // 0.1 nm resolution
     slf.m_crossSection = CreateGaussian(slfSigma, slf.m_waveLength);
@@ -111,7 +113,7 @@ TEST_CASE("Convolve returns expected output - simple input.", "[Convolve]")
         bool retVal = Convolve(slf, highResReference, result);
         REQUIRE(retVal == true);
 
-        Evaluation::CCrossSectionData resultingCrossSection;
+        CCrossSectionData resultingCrossSection;
         resultingCrossSection.m_crossSection = result;
         resultingCrossSection.m_waveLength = highResReference.m_waveLength;
 
@@ -144,7 +146,7 @@ TEST_CASE("ConvolveReference returns expected output - simple input", "[Convolve
 {
     std::vector<double> wavelMapping = CreatePixelToWavelengthMapping(278.0, 423.0, 2048);
 
-    Evaluation::CCrossSectionData highResReference;
+    CCrossSectionData highResReference;
     highResReference.m_waveLength = CreatePixelToWavelengthMapping(wavelMapping.front(), wavelMapping.back(), 8192);
     highResReference.m_crossSection = std::vector<double>(8192, 0.0); // all-zeros
 
@@ -152,7 +154,7 @@ TEST_CASE("ConvolveReference returns expected output - simple input", "[Convolve
     const int idxOfSpikeInHighResReference = 500;
     highResReference.m_crossSection[idxOfSpikeInHighResReference] = 1.0; // one spike
 
-    Evaluation::CCrossSectionData slf;
+    CCrossSectionData slf;
     const double slfSigma = 0.7;
     slf.m_waveLength = CreatePixelToWavelengthMapping(-2.0, +2.0, 41); // 0.1 nm resolution
     slf.m_crossSection = CreateGaussian(slfSigma, slf.m_waveLength);
@@ -186,7 +188,7 @@ TEST_CASE("ConvolveReference returns expected output - simple input", "[Convolve
         bool retVal = ConvolveReference(wavelMapping, slf, highResReference, result);
         REQUIRE(retVal == true);
 
-        Evaluation::CCrossSectionData resultingCrossSection;
+        CCrossSectionData resultingCrossSection;
         resultingCrossSection.m_crossSection = result;
         resultingCrossSection.m_waveLength = highResReference.m_waveLength;
 
@@ -226,7 +228,7 @@ TEST_CASE("ConvolveReference (FFT) returns expected output - simple input", "[Co
 {
     std::vector<double> wavelMapping = CreatePixelToWavelengthMapping(278.0, 423.0, 2048);
 
-    Evaluation::CCrossSectionData highResReference;
+    CCrossSectionData highResReference;
     highResReference.m_waveLength = CreatePixelToWavelengthMapping(wavelMapping.front(), wavelMapping.back(), 8192);
     highResReference.m_crossSection = std::vector<double>(8192, 0.0); // all-zeros
 
@@ -234,7 +236,7 @@ TEST_CASE("ConvolveReference (FFT) returns expected output - simple input", "[Co
     const int idxOfSpikeInHighResReference = 500;
     highResReference.m_crossSection[idxOfSpikeInHighResReference] = 1.0; // one spike
 
-    Evaluation::CCrossSectionData slf;
+    CCrossSectionData slf;
     const double slfSigma = 0.7;
     slf.m_waveLength = CreatePixelToWavelengthMapping(-2.0, +2.0, 41); // 0.1 nm resolution
     slf.m_crossSection = CreateGaussian(slfSigma, slf.m_waveLength);
@@ -267,11 +269,11 @@ TEST_CASE("ConvolveReference returns expected output - reference lambda_max < sp
 {
     std::vector<double> wavelMapping = CreatePixelToWavelengthMapping(278.0, 423.0, 2048);
 
-    Evaluation::CCrossSectionData highResReference;
+    CCrossSectionData highResReference;
     highResReference.m_waveLength = CreatePixelToWavelengthMapping(wavelMapping.front(), 350.0, 8192);
     highResReference.m_crossSection = std::vector<double>(8192, 1.0); // all-ones
 
-    Evaluation::CCrossSectionData slf;
+    CCrossSectionData slf;
     const double slfSigma = 0.7;
     slf.m_waveLength = CreatePixelToWavelengthMapping(-2.0, +2.0, 41); // 0.1 nm resolution
     slf.m_crossSection = CreateGaussian(slfSigma, slf.m_waveLength);

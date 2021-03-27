@@ -9,6 +9,8 @@
 #include "SpectrumInfo.h"
 #include <vector>
 
+namespace novac
+{
 struct SpectrometerModel;
 
 /**
@@ -22,15 +24,24 @@ public:
     CSpectrum();
 
     /** Copies the contents of the spectral data into this new spectrum.
-        This will leave the m_info at default values */
+        This will leave the m_info at default values and m_wavelength empty */
     CSpectrum(const std::vector<double>& spectralData);
 
     /** Copies the contents of the spectral data into this new spectrum.
         This will leave the m_info at default values */
     CSpectrum(const std::vector<double>& wavelength, const std::vector<double>& spectralData);
 
+    /** Copies the contents of the spectral data into this new spectrum.
+        This will leave the m_info at default values and m_wavelength empty */
+    CSpectrum(const double* spectralData, size_t length);
+
+    /** Copies the contents of the spectral data into this new spectrum.
+        This will leave the m_info at default values.
+        The wavelength and spectralData must be pointers to arrays holding 'length' values or else memory corruption will occurr. */
+    CSpectrum(const double* wavelength, const double* spectralData, size_t length);
+
     // Copy operators
-    CSpectrum(const CSpectrum &other);
+    CSpectrum(const CSpectrum& other);
     CSpectrum& operator=(const CSpectrum& other);
 
     // Move operators
@@ -79,7 +90,7 @@ public:
     /** Adds the provided spectrum to the current. This spectrum will afterwards
         contain the sum of the two spectra. Both spectra must have the same length.
         @return 1 if the spectra have different length. */
-    int Add(const CSpectrum &spec);
+    int Add(const CSpectrum& spec);
 
     /** Adds the provided constant to the current spectrum. All pixels in the current spectrum
         will be augmented by the provided constant 'value' */
@@ -88,7 +99,7 @@ public:
     /** Subtracts the provided spectrum from the current. This spectrum will afterwards
         contain the difference of the two spectra. Both spectra must have the same length.
         @return 1 if the spectra have different length. */
-    int Sub(const CSpectrum &spec);
+    int Sub(const CSpectrum& spec);
 
     /** Subtracts the provided constant from the current spectrum. All pixels in the current spectrum
         will be decreased by the provided constant 'value' */
@@ -97,7 +108,7 @@ public:
     /** Divides the current spectrum with the provided spectrum. All pixels in the current spectrum
         will be divided by the corresponding pixel in 'spec'. Both spectra must have the same length.
         @return 1 if the spectra have different length. */
-    int Div(const CSpectrum &spec);
+    int Div(const CSpectrum& spec);
 
     /** Divides the current spectrum with the provided constant. All pixels in the current spectrum
         will be divided by the provided constant 'value' */
@@ -106,7 +117,7 @@ public:
     /** Multiplies the current spectrum with the provided spectrum. All pixels in the current spectrum
         will be multiplied by the corresponding pixel in 'spec'. Both spectra must have the same length.
         @return 1 if the spectra have different length. */
-    int Mult(const CSpectrum &spec);
+    int Mult(const CSpectrum& spec);
 
     /** Multiplies the current spectrum with the provided constant. All pixels in the current spectrum
         will be multiplied by the provided constant 'value' */
@@ -134,7 +145,7 @@ public:
             @param spec2 - the spectrum to contain the spectrum from the first slave
             @param ... - the spectra to contain spectra form slave 2, 3, 4, etc...
             */
-    int	Split(CSpectrum *spec[MAX_CHANNEL_NUM]) const;
+    int	Split(CSpectrum* spec[MAX_CHANNEL_NUM]) const;
 
     /** Interpolate the spectrum originating from the channel number 'channel'
             to a full '2048' sized spectrum */
@@ -142,7 +153,7 @@ public:
 
     /** Interpolate the spectrum originating from the channel number 'channel'
             to a full '2048' sized spectrum. Output is saved in provided spectrum 'spec' */
-    bool InterpolateSpectrum(CSpectrum &spec) const;
+    bool InterpolateSpectrum(CSpectrum& spec) const;
 
     /** Retrieves the interlace step and the spectrometer channel (if a single)
         that the spectrum originates from.
@@ -152,7 +163,7 @@ public:
         @param interlaceSteps - the difference in pixel number between two
             adjacent data points in the spectrum. E.g. 2 if the spectrum contains
             every other pixel from the spectrometer. */
-    static int GetInterlaceSteps(int channel, int &interlaceSteps);
+    static int GetInterlaceSteps(int channel, int& interlaceSteps);
 
     /** Short-cut to getting the number of co-added spectra */
     inline long NumSpectra() const { return this->m_info.m_numSpec; }
@@ -179,7 +190,7 @@ public:
     inline float Compass() const { return this->m_info.m_compass; }
 
     /** Short-cut to getting the gps-data */
-    const CGPSData &GPS() const { return this->m_info.m_gps; }
+    const CGPSData& GPS() const { return this->m_info.m_gps; }
 
     /** Short-cut to getting the channel */
     unsigned char Channel() const { return this->m_info.m_channel; }
@@ -195,10 +206,10 @@ public:
 
 private:
     /** Asserts that the range [fromPixel, toPixel] (inclusive) is a valid range for this spectrum. */
-    int AssertRange(long &fromPixel, long &toPixel) const;
+    int AssertRange(long& fromPixel, long& toPixel) const;
 
     /** Performs the supplied function to every pixel in the two spectra */
-    int PixelwiseOperation(const CSpectrum &spec, double f(double, double));
+    int PixelwiseOperation(const CSpectrum& spec, double f(double, double));
 
     /** Performs the supplied function to every pixel in the current spectrum with the supplied constant */
     int PixelwiseOperation(const double value, double f(double, double));
@@ -206,11 +217,11 @@ private:
     static double Plus(double a, double b) { return a + b; }
     static double Minus(double a, double b) { return a - b; }
     static double Divide(double a, double b) { return a / b; }
-    static double Multiply(double a, double b) { return a*b; }
+    static double Multiply(double a, double b) { return a * b; }
 };
 
 /** @return the maximum saturation ratio of the provided spectrum, in the entire spectrum length.
-    This uses the device information in the spectrum header to create a spectrometer model 
+    This uses the device information in the spectrum header to create a spectrometer model
     information in order to retrieve the maximum possible intensity. */
 double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum);
 
@@ -225,3 +236,4 @@ double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum, double max
 /** Normalizes the intensity of the provided spectrum to the range [0, 1] */
 void Normalize(CSpectrum& spectrum);
 
+}

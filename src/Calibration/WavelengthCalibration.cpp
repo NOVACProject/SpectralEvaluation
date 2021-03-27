@@ -19,9 +19,16 @@ namespace novac
 std::vector<double> GetPixelToWavelengthMappingFromFile(const std::string& clbFile)
 {
     CSpectrum initialWavelengthCalibrationSpectrum;
-    SpectrumIO::CTXTFile::ReadSpectrum(initialWavelengthCalibrationSpectrum, clbFile);
-    std::vector<double> pixelToWavelengthMapping{ initialWavelengthCalibrationSpectrum.m_data, initialWavelengthCalibrationSpectrum.m_data + initialWavelengthCalibrationSpectrum.m_length };
-    return pixelToWavelengthMapping;
+    CTXTFile::ReadSpectrum(initialWavelengthCalibrationSpectrum, clbFile);
+
+    if (initialWavelengthCalibrationSpectrum.m_wavelength.size() > 0)
+    {
+        return initialWavelengthCalibrationSpectrum.m_wavelength;
+    }
+    else
+    {
+        return std::vector<double> { initialWavelengthCalibrationSpectrum.m_data, initialWavelengthCalibrationSpectrum.m_data + initialWavelengthCalibrationSpectrum.m_length };
+    }
 }
 
 /// <summary>
@@ -47,15 +54,15 @@ void RemoveBaseline(CSpectrum& spectrum)
 
 std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
     const std::vector<double>& pixelToWavelengthMapping,
-    const ::Evaluation::CCrossSectionData& measuredInstrumentLineShape)
+    const CCrossSectionData& measuredInstrumentLineShape)
 {
     // Get the high res solar spectrum
     if (this->solarCrossSection == nullptr)
     {
-        solarCrossSection = std::make_unique<Evaluation::CCrossSectionData>();
-        FileIo::ReadCrossSectionFile(this->solarAtlasFile, *solarCrossSection);
+        solarCrossSection = std::make_unique<CCrossSectionData>();
+        ReadCrossSectionFile(this->solarAtlasFile, *solarCrossSection);
 
-        for each (const auto & crossSectionOfAbsorber in this->crossSectionsToInclude)
+        for (const auto & crossSectionOfAbsorber : this->crossSectionsToInclude)
         {
             const std::string& path = crossSectionOfAbsorber.first;
             const double totalColumn = crossSectionOfAbsorber.second;
@@ -64,13 +71,13 @@ std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
             if (std::abs(totalColumn) > std::numeric_limits<double>::epsilon())
             {
                 // Get the high res ozone spectrum
-                Evaluation::CCrossSectionData crossSectionData;
-                FileIo::ReadCrossSectionFile(path, crossSectionData);
+                CCrossSectionData crossSectionData;
+                ReadCrossSectionFile(path, crossSectionData);
 
                 Mult(crossSectionData.m_crossSection, -totalColumn);
                 Exp(crossSectionData.m_crossSection);
                 std::vector<double> resampledOzoneCrossSection;
-                Evaluation::Resample(crossSectionData, solarCrossSection->m_waveLength, resampledOzoneCrossSection);
+                Resample(crossSectionData, solarCrossSection->m_waveLength, resampledOzoneCrossSection);
                 Mult(resampledOzoneCrossSection, solarCrossSection->m_crossSection);
             }
         }
@@ -79,7 +86,7 @@ std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
     // Generate a theoretical solar spectrum by convolving the high-res solar atlas with the measured slf
     auto startTime = std::chrono::steady_clock::now();
     std::vector<double> theoreticalFraunhoferSpectrumData;
-    ::Evaluation::ConvolveReference(pixelToWavelengthMapping, measuredInstrumentLineShape, *solarCrossSection, theoreticalFraunhoferSpectrumData, WavelengthConversion::VacuumToAir, ConvolutionMethod::Fft);
+    ConvolveReference(pixelToWavelengthMapping, measuredInstrumentLineShape, *solarCrossSection, theoreticalFraunhoferSpectrumData, WavelengthConversion::VacuumToAir, ConvolutionMethod::Fft);
     auto stopTime = std::chrono::steady_clock::now();
     std::cout << "Convolution of Fraunhofer Reference took " << std::chrono::duration_cast<std::chrono::milliseconds>(stopTime - startTime).count() << " ms" << std::endl;
 
@@ -127,7 +134,7 @@ WavelengthCalibrationSetup::WavelengthCalibrationSetup(const WavelengthCalibrati
 {
 }
 
-SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibration(const CSpectrum& measuredSpectrum, const Evaluation::CCrossSectionData& measuredInstrumentLineShape)
+SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibration(const CSpectrum& measuredSpectrum, const CCrossSectionData& measuredInstrumentLineShape)
 {
     // TODO: Validation of the setup and incoming parameters!
 

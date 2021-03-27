@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "../Fit/ParamFunction.h"
+#include <SpectralEvaluation/Fit/ParamFunction.h>
 
 namespace MathFit
 {
@@ -32,7 +32,8 @@ public:
     *
     * @param bNormAmp If TRUE the area under the function will always be one.
     */
-    CSuperGaussFunction(bool bNormAmp = false) : fSqrPI((TFitData)sqrt(2 * MATHFIT_PI))
+    CSuperGaussFunction(bool bNormAmp = false)
+        : fSqrPI((TFitData)sqrt(2 * MATHFIT_PI))
     {
         // set default parameters
         ResetNonlinearParameter();
@@ -150,7 +151,7 @@ public:
     virtual TFitData GetLinearBasisFunction(TFitData fXValue, int /*iParamID*/, bool /*bFixedID = true*/)
     {
         // get the function value without the scale factor
-        const TFitData val = std::pow( std::abs((fXValue - GetCenter()) / GetSigma()), GetPower());
+        const TFitData val = std::pow(std::abs((fXValue - GetCenter()) / GetSigma()), GetPower());
 
         return (TFitData)exp(-0.5 * val);
     }

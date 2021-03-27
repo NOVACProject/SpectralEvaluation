@@ -9,7 +9,7 @@
 #include <iostream>
 #include <assert.h>
 
-namespace Evaluation
+namespace novac
 {
 
 double CalculateFhwm(const CCrossSectionData& slf)
@@ -115,19 +115,19 @@ bool ConvolveReference(
     WavelengthConversion conversion)
 {
     CCrossSectionData pixelToWavelengthMapping;
-    if (!FileIo::ReadCrossSectionFile(pixelToWavelengthMappingFile, pixelToWavelengthMapping, true))
+    if (!ReadCrossSectionFile(pixelToWavelengthMappingFile, pixelToWavelengthMapping, true))
     {
         return false;
     }
 
     CCrossSectionData slf;
-    if (!FileIo::ReadCrossSectionFile(slfFile, slf))
+    if (!ReadCrossSectionFile(slfFile, slf))
     {
         return false;
     }
 
     CCrossSectionData highResReference;
-    if (!FileIo::ReadCrossSectionFile(highResReferenceFile, highResReference))
+    if (!ReadCrossSectionFile(highResReferenceFile, highResReference))
     {
         return false;
     }
@@ -174,13 +174,13 @@ bool ConvolveReferenceGaussian(
     WavelengthConversion conversion)
 {
     CCrossSectionData pixelToWavelengthMapping;
-    if (!FileIo::ReadCrossSectionFile(pixelToWavelengthMappingFile, pixelToWavelengthMapping, true))
+    if (!ReadCrossSectionFile(pixelToWavelengthMappingFile, pixelToWavelengthMapping, true))
     {
         return false;
     }
 
     CCrossSectionData highResReference;
-    if (!FileIo::ReadCrossSectionFile(highResReferenceFile, highResReference))
+    if (!ReadCrossSectionFile(highResReferenceFile, highResReference))
     {
         return false;
     }

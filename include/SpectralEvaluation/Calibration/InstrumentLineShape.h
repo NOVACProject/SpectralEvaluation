@@ -5,10 +5,10 @@
 // -- This header contains methods used to extract and characterize the instrument line shape of a spectrometer --
 // ---------------------------------------------------------------------------------------------------------------
 
-class CSpectrum;
-
-namespace Calibration
+namespace novac
 {
+
+class CSpectrum;
 
 // --------- Possible representations of instrument line shapes ---------
 // Symmetric gaussian line shape: exp(-x^2/(2 * sigma^2))

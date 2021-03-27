@@ -7,7 +7,7 @@
 #if !defined(STATVECTOR_H_010908) 
 #define STATVECTOR_H_010908
 
-#include "Vector.h"
+#include <SpectralEvaluation/Fit/Vector.h>
 
 namespace MathFit
 {

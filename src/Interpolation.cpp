@@ -1,6 +1,9 @@
 #include <SpectralEvaluation/Interpolation.h>
 #include <cmath>
 
+namespace novac
+{
+
 template<class T>
 bool LinearInterpolationT(const std::vector<T>& values, double index, double& result)
 {
@@ -140,4 +143,6 @@ double GetFractionalIndex(const std::vector<float>& values, double valueToFind)
 
     // not found
     return NAN; // not found.
+}
+
 }

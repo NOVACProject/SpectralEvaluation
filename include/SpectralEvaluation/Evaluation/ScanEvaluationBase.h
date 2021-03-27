@@ -2,19 +2,16 @@
 
 #include <string>
 
-class CSpectrum;
-namespace FileHandler
-{
-    class CScanFileHandler;
-}
 namespace Configuration
 {
-    struct CDarkSettings;
-    struct CSkySettings;
+struct CDarkSettings;
+struct CSkySettings;
 }
 
-namespace Evaluation
+namespace novac
 {
+    class CScanFileHandler;
+    class CSpectrum;
     class CEvaluationBase;
     class CFitWindow;
 
@@ -45,11 +42,11 @@ namespace Evaluation
             const CFitWindow &fitWindow,
             const Configuration::CDarkSettings& darkSettings,
             const Configuration::CSkySettings& skySettings,
-            FileHandler::CScanFileHandler& scan);
+            CScanFileHandler& scan);
 
         /** @return the index of the spectrum with the 'most suitable intensity for fitting', i.e. this is the 
             spectrum with the highest intensity which isn't (close to being) saturated. */
-        static int GetIndexOfSpectrumWithBestIntensity(const CFitWindow &fitWindow, FileHandler::CScanFileHandler& scan);
+        static int GetIndexOfSpectrumWithBestIntensity(const CFitWindow &fitWindow, CScanFileHandler& scan);
 
     protected:
         /** This is the lower edge of the fit region used in the last evaluation performed (in pixels). 
@@ -69,17 +66,17 @@ namespace Evaluation
         /** Retrieves the dark spectrum to use for the provided spectrum given the settings from the user.
             @return true on success.
             This will set m_lastErrorMessage if failed to get the spectrum. */
-        bool GetDark(FileHandler::CScanFileHandler& scan, const CSpectrum &spec, CSpectrum &dark, const Configuration::CDarkSettings* darkSettings);
+        bool GetDark(CScanFileHandler& scan, const CSpectrum &spec, CSpectrum &dark, const Configuration::CDarkSettings* darkSettings);
 
         /** This returns the sky spectrum that is to be used in the fitting.
             Which spectrum to be used is taken from the given settings.
             @return true on success. 
             This will set m_lastErrorMessage if failed to get the spectrum. */
-        bool GetSky(FileHandler::CScanFileHandler& scan, const Configuration::CSkySettings& settings, CSpectrum &sky);
+        bool GetSky(CScanFileHandler& scan, const Configuration::CSkySettings& settings, CSpectrum &sky);
 
         /** Creates a spectrum which is the average of all non-saturated and not-dark spectra in the given scan.
             @return true on successful spectrum creation. */
-        bool GetSkySpectrumFromAverageOfGoodSpectra(FileHandler::CScanFileHandler& scan, CSpectrum &sky) const;
+        bool GetSkySpectrumFromAverageOfGoodSpectra(CScanFileHandler& scan, CSpectrum &sky) const;
 
         /** Reads a 'sky' spectrum from file. This can read the 'sky' spectrum in one .pak
             file or one spectrum from a .std file.
@@ -88,3 +85,4 @@ namespace Evaluation
         bool GetSkySpectrumFromFile(const std::string& filename, CSpectrum& sky);
     };
 }
+

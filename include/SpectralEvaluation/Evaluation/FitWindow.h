@@ -1,12 +1,12 @@
 #pragma once
 
-#include "ReferenceFile.h"
+#include <SpectralEvaluation/Evaluation/ReferenceFile.h>
 #include <vector>
 
 // TODO: Remove
 #define MAX_N_REFERENCES 10
 
-namespace Evaluation
+namespace novac
 {
     enum FIT_TYPE
     {

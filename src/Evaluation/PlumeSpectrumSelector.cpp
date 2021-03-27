@@ -9,7 +9,7 @@
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 
-using namespace Evaluation;
+using namespace novac;
 
 std::string FormatDate(const CSpectrumInfo& spectrumInfo)
 {
@@ -26,7 +26,7 @@ std::string FormatTimestamp(const CDateTime& time)
 }
 
 void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
-    FileHandler::CScanFileHandler& originalScanFile,
+    CScanFileHandler& originalScanFile,
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& properties,
     int mainSpecieIndex,
@@ -87,7 +87,7 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
         spectrumOutputFileName << "_" << FormatTimestamp(skySpectrum.m_info.m_startTime);
         spectrumOutputFileName << "_0.pak";
 
-        SpectrumIO::CSpectrumIO spectrumWriter;
+        CSpectrumIO spectrumWriter;
         spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), referenceSpectrum, nullptr, 0, true);
         spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), darkSpectrum);
         spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), inPlumeSpectrum);
@@ -129,7 +129,7 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
 }
 
 void PlumeSpectrumSelector::SelectSpectra(
-    FileHandler::CScanFileHandler& scanFile,
+    CScanFileHandler& scanFile,
     const CSpectrum& darkSpectrum,
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& properties,
@@ -234,7 +234,7 @@ std::vector<size_t> PlumeSpectrumSelector::FindSpectraInPlume(
 }
 
 std::vector<size_t> PlumeSpectrumSelector::FindSpectraOutOfPlume(
-    FileHandler::CScanFileHandler& scanFile,
+    CScanFileHandler& scanFile,
     const CSpectrum& darkSpectrum,
     const BasicScanEvaluationResult& scanResult,
     const std::vector<size_t>& inPlumeProposal)
@@ -300,7 +300,7 @@ bool PlumeSpectrumSelector::SpectrumFulfillsIntensityRequirement(
 
 std::vector<size_t> PlumeSpectrumSelector::FilterSpectraUsingIntensity(
     const std::vector<size_t>& proposedIndices,
-    FileHandler::CScanFileHandler& scanFile,
+    CScanFileHandler& scanFile,
     const CSpectrum& darkSpectrum)
 {
     std::vector<size_t> result;

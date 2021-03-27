@@ -18,8 +18,8 @@
 #include <iostream>
 #include <algorithm>
 #include <math.h>
-#include "FitBasic.h"
-#include "FitException.h"
+#include <SpectralEvaluation/Fit/FitBasic.h>
+#include <SpectralEvaluation/Fit/FitException.h>
 
 #ifdef _MSC_VER
 #pragma warning (push, 3)

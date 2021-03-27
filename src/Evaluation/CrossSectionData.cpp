@@ -8,7 +8,7 @@
 #include <map>
 #include <mutex>
 
-namespace Evaluation
+namespace novac
 {
 
 static std::mutex s_crossSectionDatabase;

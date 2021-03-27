@@ -2,7 +2,7 @@
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Calibration/ReferenceSpectrumConvolution.h>
 
-namespace Evaluation
+namespace novac
 {
 
 CReferenceFile &CReferenceFile::operator=(const CReferenceFile &other)
@@ -168,7 +168,7 @@ int CReferenceFile::ConvolveReference()
 {
     m_data.reset(new CCrossSectionData());
 
-    if (!Evaluation::ConvolveReference(m_wavelengthCalibrationFile, m_slitFunctionFile, m_crossSectionFile, *m_data))
+    if (!::novac::ConvolveReference(m_wavelengthCalibrationFile, m_slitFunctionFile, m_crossSectionFile, *m_data))
     {
         m_data.reset();
         return 1;
