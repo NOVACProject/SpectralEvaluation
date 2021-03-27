@@ -167,7 +167,7 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
         novac::FindKeypointsInSpectrum(*calibrationState.fraunhoferSpectrum, minimumPeakIntensityInFraunhoferReference, calibrationState.fraunhoferKeypoints);
 
         // List all possible correspondences (with some filtering applied).
-        this->calibrationState.allCorrespondences = novac::ListPossibleCorrespondences(calibrationState.measuredKeypoints, *calibrationState.measuredSpectrum, calibrationState.fraunhoferKeypoints, *calibrationState.fraunhoferSpectrum, ransacSettings, correspondenceSelectionSettings);
+        this->calibrationState.allCorrespondences = novac::ListPossibleCorrespondences(calibrationState.measuredKeypoints, *calibrationState.measuredSpectrum, calibrationState.fraunhoferKeypoints, *calibrationState.fraunhoferSpectrum, correspondenceSelectionSettings);
 
         // The actual wavelength calibration by ransac
         auto startTime = std::chrono::steady_clock::now();
@@ -198,6 +198,9 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
         // This allows us to calculate the wavelength -> intensity mapping of the 
         // if (iterationIdx < numberOfIterations - 1)
         {
+            // Adjust the selection parameter for the maximum error in the wavelength calibration
+            correspondenceSelectionSettings.maximumPixelDistanceForPossibleCorrespondence = std::max(10, correspondenceSelectionSettings.maximumPixelDistanceForPossibleCorrespondence / 2);
+
             // Re-convolve the Fraunhofer spectrum to get it on the new pixel grid
             calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(result.pixelToWavelengthMapping, measuredInstrumentLineShape);
 
