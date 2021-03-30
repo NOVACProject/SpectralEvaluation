@@ -96,6 +96,14 @@ void Mult(std::vector<double>& values, double factor)
     }
 }
 
+void Invert(std::vector<double>& values)
+{
+    for (double& v : values)
+    {
+        v = 1.0 / v;
+    }
+}
+
 void Mult(const std::vector<double>& firstVector, std::vector<double>& secondVectorAndResult)
 {
     if (firstVector.size() != secondVectorAndResult.size())
@@ -357,17 +365,16 @@ double Centroid(const std::vector<double>& values)
         return 0.0;
     }
 
-    std::vector<double> compoundMass(values.size(), 0.0);
-    compoundMass[0] = values[0];
-
-    for (size_t ii = 1; ii < values.size(); ++ii)
+    double sumOfWeights = 0.0;
+    double weightedSum = 0.0;
+    for (size_t ii = 0; ii < values.size(); ++ii)
     {
-        compoundMass[ii] = compoundMass[ii - 1] + values[ii];
+        weightedSum += (double)(ii)*values[ii];
+        sumOfWeights += values[ii];
     }
+    const double centerOfMass = weightedSum / sumOfWeights;
 
-    const double totalMass = compoundMass.back();
-
-    return FindValue(compoundMass, 0.5 * totalMass, 0, compoundMass.size());
+    return centerOfMass;
 }
 
 double Resolution(const std::vector<double>& wavelGrid)

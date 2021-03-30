@@ -2,6 +2,7 @@
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Interpolation.h>
 #include <SpectralEvaluation/Evaluation/BasicMath.h>
+#include <SpectralEvaluation/VectorUtils.h>
 #include <cassert>
 #include <algorithm>
 
@@ -85,36 +86,38 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
             // Find a 'basis' region for the peak by locating the area around it where ddx2 is negative.
             size_t startIdx = ii;
             size_t endIdx = ii;
-            while (startIdx > 0 && ddx2[startIdx] < 0.0)
+            while (startIdx > 1 && ddx2[startIdx] < 0.0)
             {
                 --startIdx;
             }
-            while (endIdx < spectrum.m_length && ddx2[endIdx] < 0.0)
+            --startIdx;
+
+            while (endIdx < static_cast<size_t>(spectrum.m_length) - 1 && ddx2[endIdx] < 0.0)
             {
                 ++endIdx;
             }
+            ++endIdx;
 
             const double peakHeight = lowPassFilteredSpectrum[ii] - std::max(lowPassFilteredSpectrum[startIdx], lowPassFilteredSpectrum[endIdx]);
             const size_t peakWidth = endIdx - startIdx;
 
             if (peakHeight > minPeakHeight && peakWidth >= minPeakWidth)
             {
-                // do a small linear interpolation to find the location of the zero crossing more precisely
-                const double alpha = ddx[idxOfLastSignificantDerivativeSign] / (ddx[idxOfLastSignificantDerivativeSign] - ddx[ii]);
-                const double idx = (double)idxOfLastSignificantDerivativeSign + alpha * ((double)ii - (double)idxOfLastSignificantDerivativeSign);
-
-                assert(idx > (double)idxOfLastSignificantDerivativeSign && idx < (double)ii);
-
-                pt.pixel = idx;
+                // Get the centroid position of the peak
+                std::vector<double> peakValues{ lowPassFilteredSpectrum.data() + startIdx, lowPassFilteredSpectrum.data() + endIdx };
+                std::vector<double> normalizedPeak;
+                ::Normalize(peakValues, normalizedPeak);
+                const double centroid = Centroid(normalizedPeak);
+                pt.pixel = centroid + startIdx;
 
                 // extract the intensity of the spectrum at this fractional pixel point by linear interpolation
-                LinearInterpolation(spectrum.m_data, (size_t)spectrum.m_length, idx, pt.intensity);
+                LinearInterpolation(spectrum.m_data, (size_t)spectrum.m_length, pt.pixel, pt.intensity);
 
                 if (pt.intensity > minimumIntensity)
                 {
                     if (spectrum.m_wavelength.size() == (size_t)spectrum.m_length)
                     {
-                        LinearInterpolation(spectrum.m_wavelength, idx, pt.wavelength);
+                        LinearInterpolation(spectrum.m_wavelength, pt.pixel, pt.wavelength);
                     }
 
                     result.push_back(pt);
@@ -173,36 +176,43 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
             // Find a 'basis' region for the peak by locating the area around it where ddx2 is positive.
             size_t startIdx = ii;
             size_t endIdx = ii;
-            while (startIdx > 0 && ddx2[startIdx] > 0.0)
+            while (startIdx > 1 && ddx2[startIdx] > 0.0)
             {
                 --startIdx;
             }
-            while (endIdx < spectrum.m_length && ddx2[endIdx] > 0.0)
+            --startIdx;
+
+            while (endIdx < static_cast<size_t>(spectrum.m_length) - 1 && ddx2[endIdx] > 0.0)
             {
                 ++endIdx;
             }
+            ++endIdx;
 
             const double valleyDepth = std::min(lowPassFilteredSpectrum[startIdx], lowPassFilteredSpectrum[endIdx]) - lowPassFilteredSpectrum[ii];
             const size_t valleyWidth = endIdx - startIdx;
 
             if (valleyDepth > minValleyDepth && valleyWidth >= minValleyidth)
             {
-                // do a small linear interpolation to find the location of the zero crossing more precisely
-                const double alpha = ddx[idxOfLastSignificantDerivativeSign] / (ddx[idxOfLastSignificantDerivativeSign] - ddx[ii]);
-                const double idx = (double)idxOfLastSignificantDerivativeSign + alpha * ((double)ii - (double)idxOfLastSignificantDerivativeSign);
-
-                assert(idx > (double)idxOfLastSignificantDerivativeSign && idx < (double)ii);
-
-                pt.pixel = idx;
+                // Get the centroid position of the valley
+                std::vector<double> peakValues{ lowPassFilteredSpectrum.data() + startIdx, lowPassFilteredSpectrum.data() + endIdx };
+                std::vector<double> normalizedValley;
+                ::Normalize(peakValues, normalizedValley);
+                // Invert the valley to get a peak
+                for (size_t ii = 0; ii < normalizedValley.size(); ++ii)
+                {
+                    normalizedValley[ii] = 1.0 - normalizedValley[ii];
+                }
+                const double centroid = Centroid(normalizedValley);
+                pt.pixel = centroid + startIdx;
 
                 // extract the intensity of the spectrum at this fractional pixel point by linear interpolation
-                LinearInterpolation(spectrum.m_data, (size_t)spectrum.m_length, idx, pt.intensity);
+                LinearInterpolation(spectrum.m_data, (size_t)spectrum.m_length, pt.pixel, pt.intensity);
 
                 if (pt.intensity > minimumIntensity)
                 {
                     if (spectrum.m_wavelength.size() == (size_t)spectrum.m_length)
                     {
-                        LinearInterpolation(spectrum.m_wavelength, idx, pt.wavelength);
+                        LinearInterpolation(spectrum.m_wavelength, pt.pixel, pt.wavelength);
                     }
 
                     result.push_back(pt);
