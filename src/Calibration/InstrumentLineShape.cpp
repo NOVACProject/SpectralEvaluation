@@ -6,6 +6,7 @@
 #include <SpectralEvaluation/FitExtensions/AsymmetricGaussFunction.h>
 #include <SpectralEvaluation/FitExtensions/SuperGaussFunction.h>
 #include <SpectralEvaluation/Fit/CubicSplineFunction.h>
+#include <numeric>
 
 namespace novac
 {
@@ -40,62 +41,6 @@ ILF_RETURN_CODE FitFunction(MathFit::CVector& xData, MathFit::CVector& yData, T&
     }
 }
 
-void CreateInitialEstimate(const std::vector<double>& x, const std::vector<double>& y, MathFit::CGaussFunction& result)
-{
-    // Find the amplitude of the Gaussian
-    size_t idxOfMaximumAmplitude = 0;
-    double maximumAmplitude = y[0];
-    for (size_t ii = 1; ii < y.size(); ++ii)
-    {
-        if (y[ii] > maximumAmplitude)
-        {
-            maximumAmplitude = y[ii];
-            idxOfMaximumAmplitude = ii;
-        }
-    }
-    result.SetScale(maximumAmplitude);
-
-    if (idxOfMaximumAmplitude <= 2 || idxOfMaximumAmplitude >= y.size() - 2)
-    {
-        return; // the algorithm below will not work for this case, skip
-    }
-
-    // Estimate the Full Width at Half Maximum (FWHM) by finding the points where the amplitude has dropped by half
-    size_t halfAmplitudeLeft = idxOfMaximumAmplitude;
-    for (size_t ii = idxOfMaximumAmplitude - 1; ii > 1; --ii)
-    {
-        if (y[ii] < maximumAmplitude * 0.5)
-        {
-            halfAmplitudeLeft = ii;
-            break;
-        }
-    }
-    size_t halfAmplitudeRight = idxOfMaximumAmplitude;
-    for (size_t ii = idxOfMaximumAmplitude + 1; ii < y.size(); ++ii)
-    {
-        if (y[ii] < maximumAmplitude * 0.5)
-        {
-            halfAmplitudeRight = ii;
-            break;
-        }
-    }
-    const double fwhm = x[halfAmplitudeRight] - x[halfAmplitudeLeft];
-    const double estimatedSigma = fwhm / 2.35482;
-
-    result.SetSigma(estimatedSigma);
-
-    // Estimate the center as the center-of-mass of the entire dataset
-    double sumOfWeights = 0.0;
-    double weightedSum = 0.0;
-    for (size_t ii = 0; ii < y.size(); ++ii)
-    {
-        weightedSum += x[ii] * y[ii];
-        sumOfWeights += y[ii];
-    }
-    const double centerOfMass = weightedSum / sumOfWeights;
-    result.SetCenter(centerOfMass);
-}
-
 ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLineShape& result)
 {
     if (mercuryLine.m_length == 0)
@@ -110,15 +55,9 @@ ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLin
     std::vector<double> localX{ mercuryLine.m_wavelength };
     std::vector<double> localY{ mercuryLine.m_data, mercuryLine.m_data + mercuryLine.m_length };
 
-    const bool autoReleaseData = false;
-    MathFit::CVector xData{ &localX[0], mercuryLine.m_length, 1, autoReleaseData };
-    MathFit::CVector yData{ &localY[0], mercuryLine.m_length, 1, autoReleaseData };
-
-    // First create an initial estimation of the location, width and amplitude of the Gaussian
     MathFit::CGaussFunction gaussianToFit;
-    CreateInitialEstimate(localX, localY, gaussianToFit);
+    ILF_RETURN_CODE ret = FitGaussian(localX, localY, gaussianToFit);
 
-    ILF_RETURN_CODE ret = FitFunction(xData, yData, gaussianToFit);
     if (ret != ILF_RETURN_CODE::SUCCESS)
     {
         return ret;

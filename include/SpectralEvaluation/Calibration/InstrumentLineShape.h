@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <SpectralEvaluation/Math/FunctionFit.h>
 
 // ---------------------------------------------------------------------------------------------------------------
 // -- This header contains methods used to extract and characterize the instrument line shape of a spectrometer --
@@ -39,14 +40,6 @@ struct SuperGaussianLineShape
 
     // The exponent (P = 2.0 equals a 'regular' Gaussian)
     double P = 2.0;
-};
-
-enum class ILF_RETURN_CODE
-{
-    SUCCESS = 0,
-    FIT_FAILURE,
-    EMPTY_INPUT,
-    MISSING_WAVELENGTH_CALIBRATION
 };
 
 // Fits a symmetrical Gaussian line to an extract of a mercury spectrum containing only one (full) mercury line.

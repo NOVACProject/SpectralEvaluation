@@ -36,6 +36,9 @@ double SumOfSquaredDifferences(const std::vector<double>& a, const std::vector<d
 /** Multiplies all values in the provided vector with the provided factor */
 void Mult(std::vector<double>& values, double factor);
 
+/** Inverts all values in the provided vector */
+void Invert(std::vector<double>& values);
+
 /** Multiplies all values in the provided first vector with the corresponding value in the second vector.
     The results are stored in the second vector.
     @throws std::invalid_argument if the two vectors have different length. */
