@@ -198,9 +198,9 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
                 std::vector<double> normalizedValley;
                 ::Normalize(peakValues, normalizedValley);
                 // Invert the valley to get a peak
-                for (size_t ii = 0; ii < normalizedValley.size(); ++ii)
+                for (size_t jj = 0; jj < normalizedValley.size(); ++jj)
                 {
-                    normalizedValley[ii] = 1.0 - normalizedValley[ii];
+                    normalizedValley[jj] = 1.0 - normalizedValley[jj];
                 }
                 const double centroid = Centroid(normalizedValley);
                 pt.pixel = centroid + startIdx;
