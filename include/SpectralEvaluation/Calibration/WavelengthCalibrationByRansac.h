@@ -84,14 +84,14 @@ struct CorrespondenceSelectionSettings
     /// The first pixel to include in the calibration routine. 
     /// Often do the signal in the spectra decline at short wavelengths and this is a means to disregard points with low intensity.
     /// </summary>
-    size_t measuredPixelStart = 600; // TODO: Lower
+    size_t measuredPixelStart = 500;
 
     /// <summary>
     /// The last pixel to include in the calibration routine. 
     /// Often do the signal in the spectra decline at short wavelengths and this is a means to disregard points with low intensity.
     /// This must be larger than measuredPixelStart.
     /// </summary>
-    size_t measuredPixelStop = 2100; // TODO: Raise
+    size_t measuredPixelStop = 4095;
 };
 
 /// <summary>
