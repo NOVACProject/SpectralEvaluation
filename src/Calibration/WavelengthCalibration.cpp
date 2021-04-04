@@ -109,6 +109,7 @@ std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
     return theoreticalFraunhoferSpectrum;
 }
 
+#ifdef USE_DOAS_FIT
 std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrumMatching(
     const std::vector<double>& pixelToWavelengthMapping,
     const novac::CSpectrum& measuredSpectrum,
@@ -166,13 +167,6 @@ std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrumMa
                 fitWindow.ref[ii].m_data->m_crossSection,
                 WavelengthConversion::None,
                 ConvolutionMethod::Fft);
-
-            // DEBUG
-            {
-                std::stringstream filename;
-                filename << "D:/NOVAC/SpectrometerCalibration/Output/Convolution_Ref" << ii << ".xs";
-                novac::SaveCrossSectionFile(filename.str(), *(fitWindow.ref[ii].m_data));
-            }
 
             if (ii == 0)
             {
@@ -274,6 +268,8 @@ std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrumMa
         return GetFraunhoferSpectrum(pixelToWavelengthMapping, measuredInstrumentLineShape, absorbingCrossSection);
     }
 }
+
+#endif
 
 void FraunhoferSpectrumGeneration::ReadSolarCrossSection()
 {

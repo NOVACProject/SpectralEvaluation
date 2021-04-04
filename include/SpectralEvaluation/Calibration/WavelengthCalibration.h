@@ -99,6 +99,8 @@ public:
         const std::vector<double>& pixelToWavelengthMapping,
         const novac::CCrossSectionData& measuredInstrumentLineShape);
 
+#ifdef USE_DOAS_FIT
+
     /// <summary>
     /// Creates a Fraunhofer reference spectrum using the provided pixel-to-wavelength mapping and measured instrument line shape.
     ///     A DOAS fit is applied in order to determine the total columns of each high resolution cross section in this setup.
@@ -112,6 +114,8 @@ public:
         const std::vector<double>& pixelToWavelengthMapping,
         const novac::CSpectrum& measuredSpectrum,
         const novac::CCrossSectionData& measuredInstrumentLineShape);
+
+#endif // USE_DOAS_FIT
 
 private:
     /// <summary>
