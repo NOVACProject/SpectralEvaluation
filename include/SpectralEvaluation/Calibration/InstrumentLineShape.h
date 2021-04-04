@@ -45,9 +45,9 @@ struct SuperGaussianLineShape
 // Fits a symmetrical Gaussian line to an extract of a mercury spectrum containing only one (full) mercury line.
 // The measured spectrum needs to have a wavelength calibration
 // The measured spectrum needs to be dark corrected and corrected such that any offset has been removed
-ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLineShape& result);
-ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, AsymmetricGaussianLineShape& result);
-ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, SuperGaussianLineShape& result);
+FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLineShape& result);
+FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, AsymmetricGaussianLineShape& result);
+FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, SuperGaussianLineShape& result);
 
 /**  Calculates the value of the provided line shape on the provided x-axis grid
     The additional parameters required to calculate the value of the line shape are provided as additional parameters
@@ -66,6 +66,6 @@ enum class MercuryPeak
 
 // This takes a full measured (but dark corrected) mercury spectrum with a reasonably correct 
 // wavelength calibration, extracts the given mercury peak and fits a Gaussian line shape to this.
-ILF_RETURN_CODE GetInstrumentLineShape(const CSpectrum& fullMercurySpectrum, MercuryPeak peakToUse, GaussianLineShape& result);
+FUNCTION_FIT_RETURN_CODE GetInstrumentLineShape(const CSpectrum& fullMercurySpectrum, MercuryPeak peakToUse, GaussianLineShape& result);
 
 }

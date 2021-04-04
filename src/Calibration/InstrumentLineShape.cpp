@@ -12,7 +12,7 @@ namespace novac
 {
 
 template<class T>
-ILF_RETURN_CODE FitFunction(MathFit::CVector& xData, MathFit::CVector& yData, T& functionToFit)
+FUNCTION_FIT_RETURN_CODE FitFunction(MathFit::CVector& xData, MathFit::CVector& yData, T& functionToFit)
 {
     try
     {
@@ -27,38 +27,38 @@ ILF_RETURN_CODE FitFunction(MathFit::CVector& xData, MathFit::CVector& yData, T&
 
         if (!fit.Minimize())
         {
-            return ILF_RETURN_CODE::FIT_FAILURE;
+            return FUNCTION_FIT_RETURN_CODE::FIT_FAILURE;
         }
         fit.FinishMinimize();
 
-        return ILF_RETURN_CODE::SUCCESS;
+        return FUNCTION_FIT_RETURN_CODE::SUCCESS;
     }
     catch (MathFit::CFitException& e)
     {
         std::cout << "Fit failed: " << e.mMessage << std::endl;
 
-        return ILF_RETURN_CODE::SUCCESS;
+        return FUNCTION_FIT_RETURN_CODE::SUCCESS;
     }
 }
 
-ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLineShape& result)
+FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLineShape& result)
 {
     if (mercuryLine.m_length == 0)
     {
-        return ILF_RETURN_CODE::EMPTY_INPUT;
+        return FUNCTION_FIT_RETURN_CODE::EMPTY_INPUT;
     }
     else if (mercuryLine.m_wavelength.size() != mercuryLine.m_length)
     {
-        return ILF_RETURN_CODE::MISSING_WAVELENGTH_CALIBRATION;
+        return FUNCTION_FIT_RETURN_CODE::MISSING_WAVELENGTH_CALIBRATION;
     }
 
     std::vector<double> localX{ mercuryLine.m_wavelength };
     std::vector<double> localY{ mercuryLine.m_data, mercuryLine.m_data + mercuryLine.m_length };
 
     MathFit::CGaussFunction gaussianToFit;
-    ILF_RETURN_CODE ret = FitGaussian(localX, localY, gaussianToFit);
+    FUNCTION_FIT_RETURN_CODE ret = FitGaussian(localX, localY, gaussianToFit);
 
-    if (ret != ILF_RETURN_CODE::SUCCESS)
+    if (ret != FUNCTION_FIT_RETURN_CODE::SUCCESS)
     {
         return ret;
     }
@@ -66,19 +66,19 @@ ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, GaussianLin
     {
         result.sigma = gaussianToFit.GetSigma();
 
-        return ILF_RETURN_CODE::SUCCESS;
+        return FUNCTION_FIT_RETURN_CODE::SUCCESS;
     }
 }
 
-ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, AsymmetricGaussianLineShape& result)
+FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, AsymmetricGaussianLineShape& result)
 {
     if (mercuryLine.m_length == 0)
     {
-        return ILF_RETURN_CODE::EMPTY_INPUT;
+        return FUNCTION_FIT_RETURN_CODE::EMPTY_INPUT;
     }
     else if (mercuryLine.m_wavelength.size() != mercuryLine.m_length)
     {
-        return ILF_RETURN_CODE::MISSING_WAVELENGTH_CALIBRATION;
+        return FUNCTION_FIT_RETURN_CODE::MISSING_WAVELENGTH_CALIBRATION;
     }
 
     std::vector<double> localY{ mercuryLine.m_data, mercuryLine.m_data + mercuryLine.m_length };
@@ -100,8 +100,8 @@ ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, AsymmetricG
     gaussianToFit.SetSigmaLeft(simpleGaussian.GetSigma());
     gaussianToFit.SetSigmaRight(simpleGaussian.GetSigma());
 
-    ILF_RETURN_CODE ret = FitFunction(xData, yData, gaussianToFit);
-    if (ret != ILF_RETURN_CODE::SUCCESS)
+    FUNCTION_FIT_RETURN_CODE ret = FitFunction(xData, yData, gaussianToFit);
+    if (ret != FUNCTION_FIT_RETURN_CODE::SUCCESS)
     {
         return ret;
     }
@@ -110,19 +110,19 @@ ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, AsymmetricG
         result.sigmaLeft = gaussianToFit.GetSigmaLeft();
         result.sigmaRight = gaussianToFit.GetSigmaRight();
 
-        return ILF_RETURN_CODE::SUCCESS;
+        return FUNCTION_FIT_RETURN_CODE::SUCCESS;
     }
 }
 
-ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, SuperGaussianLineShape& result)
+FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, SuperGaussianLineShape& result)
 {
     if (mercuryLine.m_length == 0)
     {
-        return ILF_RETURN_CODE::EMPTY_INPUT;
+        return FUNCTION_FIT_RETURN_CODE::EMPTY_INPUT;
     }
     else if (mercuryLine.m_wavelength.size() != mercuryLine.m_length)
     {
-        return ILF_RETURN_CODE::MISSING_WAVELENGTH_CALIBRATION;
+        return FUNCTION_FIT_RETURN_CODE::MISSING_WAVELENGTH_CALIBRATION;
     }
 
     std::vector<double> localX{ mercuryLine.m_wavelength };
@@ -141,8 +141,8 @@ ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, SuperGaussi
     superGaussian.SetCenter(regularGaussian.GetCenter());
     superGaussian.SetSigma(regularGaussian.GetSigma());
 
-    ILF_RETURN_CODE ret = FitFunction(xData, yData, superGaussian);
-    if (ret != ILF_RETURN_CODE::SUCCESS)
+    FUNCTION_FIT_RETURN_CODE ret = FitFunction(xData, yData, superGaussian);
+    if (ret != FUNCTION_FIT_RETURN_CODE::SUCCESS)
     {
         return ret;
     }
@@ -151,7 +151,7 @@ ILF_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, SuperGaussi
         result.sigma = superGaussian.GetSigma();
         result.P = superGaussian.GetPower();
 
-        return ILF_RETURN_CODE::SUCCESS;
+        return FUNCTION_FIT_RETURN_CODE::SUCCESS;
     }
 }
 

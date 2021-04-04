@@ -54,7 +54,7 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple Gaussian input re
         GaussianLineShape result;
         auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - sigma) < 0.005);
     }
 
@@ -67,7 +67,7 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple Gaussian input re
         GaussianLineShape result;
         auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - sigma) < 0.005);
     }
 
@@ -80,7 +80,7 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple Gaussian input re
         GaussianLineShape result;
         auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - sigma) < 0.005);
     }
 }
@@ -101,7 +101,7 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple not centered Gaus
         GaussianLineShape result;
         auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - sigma) < 0.005);
     }
 
@@ -114,7 +114,7 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple not centered Gaus
         GaussianLineShape result;
         auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - sigma) < 0.005);
     }
 
@@ -127,7 +127,7 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple not centered Gaus
         GaussianLineShape result;
         auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - sigma) < 0.005);
     }
 }
@@ -149,7 +149,7 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
         AsymmetricGaussianLineShape result;
         auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
     }
@@ -164,7 +164,7 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
         AsymmetricGaussianLineShape result;
         auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
     }
@@ -179,7 +179,7 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
         AsymmetricGaussianLineShape result;
         auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
     }
@@ -194,7 +194,7 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
         AsymmetricGaussianLineShape result;
         auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
     }
@@ -209,7 +209,7 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
         AsymmetricGaussianLineShape result;
         auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigmaLeft - sigmaLeft) < 0.005);
         REQUIRE(fabs(result.sigmaRight - sigmaRight) < 0.005);
     }
@@ -316,7 +316,7 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple Gaussian in
         SuperGaussianLineShape result;
         auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - sigma) < 0.005);
         REQUIRE(fabs(result.P - 2) < 0.0005);
     }
@@ -338,7 +338,7 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple not centere
         SuperGaussianLineShape result;
         auto ret = FitInstrumentLineShape(idealGaussian, result);
 
-        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - sigma) < 0.005);
         REQUIRE(fabs(result.P - 2) < 0.0005);
     }
@@ -384,7 +384,7 @@ TEST_CASE("FitInstrumentLineShape: Real SLF input returns reasonable fitted func
         AsymmetricGaussianLineShape result;
         auto ret = FitInstrumentLineShape(measuredSpectrum, result);
 
-        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigmaLeft - 0.20991) < 0.005);
         REQUIRE(fabs(result.sigmaRight - 0.25473) < 0.005);
     }
@@ -394,7 +394,7 @@ TEST_CASE("FitInstrumentLineShape: Real SLF input returns reasonable fitted func
         GaussianLineShape result;
         auto ret = FitInstrumentLineShape(measuredSpectrum, result);
 
-        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - 0.23295) < 0.005);
     }
 
@@ -403,7 +403,7 @@ TEST_CASE("FitInstrumentLineShape: Real SLF input returns reasonable fitted func
         SuperGaussianLineShape result;
         auto ret = FitInstrumentLineShape(measuredSpectrum, result);
 
-        REQUIRE(ret == ILF_RETURN_CODE::SUCCESS);
+        REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
         REQUIRE(fabs(result.sigma - 0.249351) < 0.005);
         REQUIRE(fabs(result.P - 2.37497) < 0.0005);
     }

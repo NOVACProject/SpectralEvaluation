@@ -1,4 +1,5 @@
 #include <SpectralEvaluation/Math/FunctionFit.h>
+#include <SpectralEvaluation/Math/PolynomialFit.h>
 #include <SpectralEvaluation/Fit/StandardFit.h>
 #include <SpectralEvaluation/Fit/StandardMetricFunction.h>
 #include <SpectralEvaluation/Fit/GaussFunction.h>
@@ -11,7 +12,7 @@ namespace novac
 {
 
 template<class T>
-ILF_RETURN_CODE FitFunction(MathFit::CVector& xData, MathFit::CVector& yData, T& functionToFit)
+FUNCTION_FIT_RETURN_CODE FitFunction(MathFit::CVector& xData, MathFit::CVector& yData, T& functionToFit)
 {
     try
     {
@@ -26,19 +27,48 @@ ILF_RETURN_CODE FitFunction(MathFit::CVector& xData, MathFit::CVector& yData, T&
 
         if (!fit.Minimize())
         {
-            return ILF_RETURN_CODE::FIT_FAILURE;
+            return FUNCTION_FIT_RETURN_CODE::FIT_FAILURE;
         }
         fit.FinishMinimize();
 
-        return ILF_RETURN_CODE::SUCCESS;
+        return FUNCTION_FIT_RETURN_CODE::SUCCESS;
     }
     catch (MathFit::CFitException& e)
     {
         std::cout << "Fit failed: " << e.mMessage << std::endl;
 
-        return ILF_RETURN_CODE::SUCCESS;
+        return FUNCTION_FIT_RETURN_CODE::SUCCESS;
     }
 }
+
+// ------------------------- Polynomial function fitting -------------------------
+
+
+FUNCTION_FIT_RETURN_CODE FitPolynomial(int polynomialOrder, std::vector<double>& xData, std::vector<double>& yData, std::vector<double>& polynomialCoefficients)
+{
+    if (polynomialOrder < 0 || xData.size() < static_cast<size_t>(polynomialOrder + 1))
+    {
+        return FUNCTION_FIT_RETURN_CODE::INVALID_INPUT_DATA;
+    }
+    else if (xData.size() != yData.size())
+    {
+        return FUNCTION_FIT_RETURN_CODE::MISSING_WAVELENGTH_CALIBRATION;
+    }
+
+    PolynomialFit fit{ polynomialOrder };
+    if (fit.FitPolynomial(xData, yData, polynomialCoefficients))
+    {
+        return FUNCTION_FIT_RETURN_CODE::SUCCESS;
+    }
+    else
+    {
+        return FUNCTION_FIT_RETURN_CODE::FIT_FAILURE;
+    }
+}
+
+
+
+// ------------------------- Gaussian function fitting -------------------------
 
 void CreateInitialEstimate(const std::vector<double>& x, const std::vector<double>& y, MathFit::CGaussFunction& result)
 {
@@ -96,7 +126,7 @@ void CreateInitialEstimate(const std::vector<double>& x, const std::vector<doubl
     result.SetCenter(centerOfMass);
 }
 
-ILF_RETURN_CODE FitGaussian(std::vector<double>& x, std::vector<double>& y, MathFit::CGaussFunction& gaussian)
+FUNCTION_FIT_RETURN_CODE FitGaussian(std::vector<double>& x, std::vector<double>& y, MathFit::CGaussFunction& gaussian)
 {
     const bool autoReleaseData = false;
     MathFit::CVector xData{ &x[0], static_cast<int>(x.size()), 1, autoReleaseData };
@@ -108,7 +138,7 @@ ILF_RETURN_CODE FitGaussian(std::vector<double>& x, std::vector<double>& y, Math
     return FitFunction(xData, yData, gaussian);
 }
 
-ILF_RETURN_CODE FitGaussian(std::vector<double>& y, MathFit::CGaussFunction& gaussian)
+FUNCTION_FIT_RETURN_CODE FitGaussian(std::vector<double>& y, MathFit::CGaussFunction& gaussian)
 {
     std::vector<double> x;
     x.resize(y.size());
