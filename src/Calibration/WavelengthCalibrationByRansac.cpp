@@ -246,8 +246,7 @@ size_t CountInliers(
         Correspondence bestcorrespondence;
         double smallestDistance = std::numeric_limits<double>::max();
 
-        const std::vector<Correspondence>& possibleCorrespondencesForThisKeypoint = possibleCorrespondences[keypointIdx];
-        for (const Correspondence& corr : possibleCorrespondencesForThisKeypoint)
+        for (const Correspondence& corr : possibleCorrespondences[keypointIdx])
         {
             // Calculate the distance, in nm air, between the wavelength of this keypoint in the fraunhofer spectrum and the predicted wavelength of the measured keypoint
             const double pixelValue = corr.measuredValue;
