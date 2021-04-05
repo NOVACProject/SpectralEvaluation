@@ -142,6 +142,7 @@ struct RansacWavelengthCalibrationSettings
 
 struct RansacWavelengthCalibrationResult
 {
+    RansacWavelengthCalibrationResult();
     RansacWavelengthCalibrationResult(size_t polynomialOrder);
 
     RansacWavelengthCalibrationResult(const RansacWavelengthCalibrationResult& other);
@@ -193,6 +194,13 @@ public:
 private:
 
     RansacWavelengthCalibrationSettings settings;
+
+    /// <summary>
+    /// Runs a part of the ransac calibrations. Used for splitting up the total workload on multiple threads, each performing a small part of the operations.
+    /// </summary>
+    /// <param name="possibleCorrespondences"></param>
+    /// <returns>The best fitted model and the number of inliers.</returns>
+    RansacWavelengthCalibrationResult RunRansacCalibrations(const std::vector<Correspondence>& possibleCorrespondences, const std::vector<std::vector<Correspondence>>& possibleCorrespondencesOrderedByMeasuredKeypoint, int numberOfIterations) const;
 
 };
 

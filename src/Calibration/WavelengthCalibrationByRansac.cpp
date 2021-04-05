@@ -1,6 +1,7 @@
 #include <SpectralEvaluation/Calibration/WavelengthCalibrationByRansac.h>
 
 #include <iostream>
+#include <omp.h>
 #include <random>
 #include <set>
 #include <stdexcept>
@@ -16,6 +17,15 @@ namespace novac
 {
 
 // ---------------------------------- RansacWavelengthCalibrationResult ----------------------------------
+RansacWavelengthCalibrationResult::RansacWavelengthCalibrationResult() :
+    bestFittingModelCoefficients(41),
+    modelPolynomialOrder(3),
+    highestNumberOfInliers(0U),
+    smallestError(std::numeric_limits<double>::max()),
+    numberOfPossibleCorrelations(0U)
+{
+}
+
 RansacWavelengthCalibrationResult::RansacWavelengthCalibrationResult(size_t polynomialOrder) :
     bestFittingModelCoefficients(polynomialOrder + 1),
     modelPolynomialOrder(polynomialOrder),
@@ -331,36 +341,37 @@ std::vector<bool> ListInliers(const std::vector<Correspondence>& selectedValues,
     return result;
 }
 
-RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelengthCalibration(
-    const std::vector<Correspondence>& possibleCorrespondences)
+
+RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCalibrations(
+    const std::vector<Correspondence>& possibleCorrespondences,
+    const std::vector<std::vector<Correspondence>>& possibleCorrespondencesOrderedByMeasuredKeypoint,
+    int numberOfIterations) const
 {
+    std::random_device r;
+    std::mt19937 rnd{ r() };
+    PolynomialFit polyFit{ static_cast<int>(settings.modelPolynomialOrder) };
+
     RansacWavelengthCalibrationResult result(settings.modelPolynomialOrder);
     result.numberOfPossibleCorrelations = possibleCorrespondences.size();
     result.highestNumberOfInliers = 0U;
     result.smallestError = std::numeric_limits<double>::max();
 
-    const auto possibleCorrespondencesOrderedByMeasuredKeypoint = ArrangeByMeasuredKeypoint(possibleCorrespondences);
-
+    // variables in the loop, such that we don't have to recreate them every time
+    std::vector<double> selectedPixelValues(settings.sampleSize);
+    std::vector<double> selectedWavelengths(settings.sampleSize);
+    std::vector<double> suggestionForPolynomial;
     std::vector<Correspondence> selectedCorrespondences;
-    PolynomialFit polyFit{ static_cast<int>(settings.modelPolynomialOrder) };
 
-    // Seed with a real random value, if available
-    std::random_device r;
-    std::mt19937 rnd{ r() };
-
-    for (int iteration = 0; iteration < settings.numberOfRansacIterations; ++iteration)
+    for (int iteration = 0; iteration < numberOfIterations; ++iteration)
     {
         SelectMaybeInliers(settings.sampleSize, possibleCorrespondences, rnd, selectedCorrespondences);
 
         // Create a new (better?) model from these selected correspondences
-        std::vector<double> selectedPixelValues(settings.sampleSize);
-        std::vector<double> selectedWavelengths(settings.sampleSize);
         for (size_t ii = 0; ii < settings.sampleSize; ++ii)
         {
             selectedPixelValues[ii] = selectedCorrespondences[ii].measuredValue;
             selectedWavelengths[ii] = selectedCorrespondences[ii].theoreticalValue;
         }
-        std::vector<double> suggestionForPolynomial;
         if (!polyFit.FitPolynomial(selectedPixelValues, selectedWavelengths, suggestionForPolynomial))
         {
             std::cout << "Polynomial fit failed" << std::endl;
@@ -380,7 +391,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
                 std::vector<double> wavelengths;
                 pixelValues.reserve(numberOfInliers);
                 wavelengths.reserve(numberOfInliers);
-                for (const auto & corr : inlierCorrespondences)
+                for (const auto& corr : inlierCorrespondences)
                 {
                     pixelValues.push_back(corr.measuredValue);
                     wavelengths.push_back(corr.theoreticalValue);
@@ -395,7 +406,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
                 // recount the inliers
                 numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondencesOrderedByMeasuredKeypoint, settings.inlierLimitInWavelength, inlierCorrespondences, meanErrorOfModel);
 
-                std::cout << "Updating model at iteration " << iteration << ", new number of inliers is: " << numberOfInliers << ", mean error: " << meanErrorOfModel << std::endl;
+                // std::cout << "Updating model at iteration " << iteration << ", new number of inliers is: " << numberOfInliers << ", mean error: " << meanErrorOfModel << std::endl;
 
                 result.highestNumberOfInliers = numberOfInliers;
                 result.correspondenceIsInlier = ListInliers(inlierCorrespondences, possibleCorrespondences);
@@ -403,7 +414,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
             }
             else
             {
-                std::cout << "Updating model at iteration " << iteration << ", new number of inliers is: " << numberOfInliers << std::endl;
+                // std::cout << "Updating model at iteration " << iteration << ", new number of inliers is: " << numberOfInliers << std::endl;
 
                 result.bestFittingModelCoefficients = std::move(suggestionForPolynomial);
 
@@ -415,6 +426,47 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
     }
 
     return result;
+}
+
+int GetBestResult(const std::vector< RansacWavelengthCalibrationResult>& partialResults)
+{
+    int bestIdx = 0;
+    for (int ii = 1; ii < (int)partialResults.size(); ++ii)
+    {
+        if (partialResults[ii].highestNumberOfInliers > partialResults[bestIdx].highestNumberOfInliers ||
+            (partialResults[ii].highestNumberOfInliers == partialResults[bestIdx].highestNumberOfInliers && partialResults[ii].smallestError < partialResults[bestIdx].smallestError))
+        {
+            bestIdx = ii;
+        }
+    }
+
+    return bestIdx;
+}
+
+
+#define OPENMP_NUMBER_OF_THREADS 4
+
+RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelengthCalibration(
+    const std::vector<Correspondence>& possibleCorrespondences)
+{
+    const auto possibleCorrespondencesOrderedByMeasuredKeypoint = ArrangeByMeasuredKeypoint(possibleCorrespondences);
+    std::vector< RansacWavelengthCalibrationResult> partialResults;
+    partialResults.resize(OPENMP_NUMBER_OF_THREADS);
+
+    omp_set_num_threads(OPENMP_NUMBER_OF_THREADS);
+
+#pragma omp parallel for
+    for (int threadIdx = 0; threadIdx < OPENMP_NUMBER_OF_THREADS; ++threadIdx)
+    {
+        const int numberOfIterationsInThisThread = settings.numberOfRansacIterations / OPENMP_NUMBER_OF_THREADS;
+        partialResults[threadIdx] = RunRansacCalibrations(possibleCorrespondences, possibleCorrespondencesOrderedByMeasuredKeypoint, numberOfIterationsInThisThread);
+    }
+
+    // Combine the results of the threads results into one final result
+    const int bestResultIdx = GetBestResult(partialResults);
+    RansacWavelengthCalibrationResult finalResult = partialResults[bestResultIdx];
+
+    return finalResult;
 }
 
 }
