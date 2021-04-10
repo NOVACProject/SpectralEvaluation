@@ -10,6 +10,8 @@
 #include <SpectralEvaluation/Spectra/SpectrumUtils.h>
 #include <SpectralEvaluation/VectorUtils.h>
 
+#include <SpectralEvaluation/Evaluation/BasicMath.h>
+
 #undef min
 #undef max
 
@@ -86,6 +88,11 @@ std::vector<novac::Correspondence> ListPossibleCorrespondences(
     const CSpectrum& fraunhoferSpectrum,
     const CorrespondenceSelectionSettings& correspondenceSettings)
 {
+    // to reduce the impact of the noise present, we do a low-pass filtering of the measured spectrum first
+    std::unique_ptr<CSpectrum> lowPassFilteredSpectrum = std::make_unique<CSpectrum>(measuredSpectrum);
+    ::CBasicMath math;
+    math.LowPassBinomial(lowPassFilteredSpectrum->m_data, lowPassFilteredSpectrum->m_length, 5);
+
     std::vector<novac::Correspondence> possibleCorrespondences;
     std::vector<double> errors; // keep track of the errors, we will use this later to filter the correspondences
     for (size_t ii = 0; ii < measuredKeypoints.size(); ii++)
@@ -102,7 +109,7 @@ std::vector<novac::Correspondence> ListPossibleCorrespondences(
                     corr.measuredValue = measuredKeypoints[ii].pixel;
                     corr.theoreticalIdx = jj;
                     corr.theoreticalValue = fraunhoferKeypoints[jj].wavelength;
-                    corr.error = novac::MeasureCorrespondenceError(measuredSpectrum, measuredKeypoints[ii].pixel, fraunhoferSpectrum, fraunhoferKeypoints[jj].pixel, correspondenceSettings);
+                    corr.error = novac::MeasureCorrespondenceError(*lowPassFilteredSpectrum, measuredKeypoints[ii].pixel, fraunhoferSpectrum, fraunhoferKeypoints[jj].pixel, correspondenceSettings);
                     possibleCorrespondences.push_back(corr);
 
                     errors.push_back(corr.error);

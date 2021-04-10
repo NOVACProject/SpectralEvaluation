@@ -416,6 +416,7 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
                     const double apparentSensitivity = apparentSensitivitySpline.GetValue((MathFit::TFitData)calibrationState.fraunhoferSpectrum->m_wavelength[pixelIdx]);
                     calibrationState.fraunhoferSpectrum->m_data[pixelIdx] *= apparentSensitivity;
                 }
+                Normalize(*calibrationState.fraunhoferSpectrum);
             }
         }
     }
