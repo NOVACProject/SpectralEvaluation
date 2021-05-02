@@ -5,6 +5,8 @@
 #include <cstring>
 #include <cmath>
 
+#include <iostream>
+
 namespace novac
 {
 /** Reads a spectrum from a STD-file */
@@ -114,6 +116,9 @@ bool CSTDFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName)
         spec.m_info.m_startTime.month = (unsigned char)tmpInt2;
         spec.m_info.m_startTime.day = (unsigned char)tmpInt;
     }
+    spec.m_info.m_stopTime.year = spec.m_info.m_startTime.year;
+    spec.m_info.m_stopTime.month = spec.m_info.m_startTime.month;
+    spec.m_info.m_stopTime.day = spec.m_info.m_startTime.day;
 
     // 9. The starttime
     if (nullptr == fgets(buffer, bufSize, f))
@@ -208,15 +213,19 @@ bool CSTDFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName)
 
     // ----------- EXTENDED STD ------------------
     // - if the file is in the extended STD-format then we can continue here... -
-    char szLine[8192];
-    while (fgets(szLine, 8192, f))
-    {
+    constexpr char* elevationAngleStr = "ElevationAngle = ";
+    constexpr char* azimuthAngleStr = "AzimuthAngle = ";
+    constexpr char* temperatureStr = "Temperature = ";
+    constexpr char* wavelengthStr = "Wavelength = ";
 
+    std::vector<char> szLine(65535);
+    while (fgets(szLine.data(), (int)szLine.size(), f))
+    {
         // Read in scanAngle
-        if (nullptr != strstr(szLine, "ElevationAngle = "))
+        if (nullptr != strstr(szLine.data(), elevationAngleStr))
         {
-            char* pt = strstr(szLine, "ElevationAngle = ");
-            if (sscanf(pt + 17, "%lf", &tmpDbl) == 1)
+            char* pt = strstr(szLine.data(), elevationAngleStr);
+            if (sscanf(pt + strlen(elevationAngleStr), "%lf", &tmpDbl) == 1)
             {
                 if (fabs(tmpDbl) < 360.0)
                 {
@@ -226,10 +235,10 @@ bool CSTDFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName)
         }
 
         // Read in scanAngle2
-        if (nullptr != strstr(szLine, "AzimuthAngle = "))
+        if (nullptr != strstr(szLine.data(), azimuthAngleStr))
         {
-            char* pt = strstr(szLine, "AzimuthAngle = ");
-            if (sscanf(pt + 15, "%lf", &tmpDbl) == 1)
+            char* pt = strstr(szLine.data(), azimuthAngleStr);
+            if (sscanf(pt + strlen(azimuthAngleStr), "%lf", &tmpDbl) == 1)
             {
                 if (fabs(tmpDbl) < 360.0)
                 {
@@ -239,15 +248,35 @@ bool CSTDFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName)
         }
 
         // Read in the temperature
-        if (nullptr != strstr(szLine, "Temperature = "))
+        if (nullptr != strstr(szLine.data(), temperatureStr))
         {
-            char* pt = strstr(szLine, "Temperature = ");
-            if (sscanf(pt + 14, "%lf", &tmpDbl) == 1)
+            char* pt = strstr(szLine.data(), temperatureStr);
+            if (sscanf(pt + strlen(temperatureStr), "%lf", &tmpDbl) == 1)
             {
                 if (fabs(tmpDbl) < 100.0)
                 {
                     spec.m_info.m_temperature = (float)tmpDbl;
                 }
+            }
+        }
+
+        // Wavelength calibration
+        if (nullptr != strstr(szLine.data(), wavelengthStr))
+        {
+            char* pt = strstr(szLine.data(), wavelengthStr) + strlen(wavelengthStr);
+            if (nullptr != strstr(pt, "])"))
+            {
+                pt = strstr(pt, "])") + strlen("])");
+            }
+            // read array of space separated values
+            char* nextSeparator = pt;
+            while (nextSeparator != nullptr)
+            {
+                if (sscanf(nextSeparator, "%lf", &tmpDbl) == 1)
+                {
+                    spec.m_wavelength.push_back(tmpDbl);
+                }
+                nextSeparator = strstr(nextSeparator + 1, " ");
             }
         }
     }

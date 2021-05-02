@@ -27,7 +27,7 @@ TEST_CASE("D2J2200 Mercury Spectrum", "[SpectrumUtils][InstrumentCalibration][In
 
         FindPeaks(spectrum, minimumIntensity, result);
 
-        REQUIRE(10 == result.size());
+        REQUIRE(9 == result.size());
     }
 
     // SECTION("Do mercury calibration locates all relevant mercury peaks and creates wavelength calibration")

@@ -72,19 +72,19 @@ struct CorrespondenceSelectionSettings
     /// <summary>
     /// The maximum pixel error in the initial pixel-to-wavelength calibration guess.
     /// </summary>
-    int maximumPixelDistanceForPossibleCorrespondence = 150;
+    int maximumPixelDistanceForPossibleCorrespondence = 50; // 150; // 150 is good for Holuhraun measurement, whereas 50 works for Masaya
 
     /// <summary>
     /// The relative number of correspondences to select out of the total.
     /// 0.2 corresponds to selecting the 20% correspondences with the lowest error.
     /// </summary>
-    double percentageOfCorrespondencesToSelect = 0.2;
+    double percentageOfCorrespondencesToSelect = 0.5;
 
     /// <summary>
     /// The first pixel to include in the calibration routine. 
     /// Often do the signal in the spectra decline at short wavelengths and this is a means to disregard points with low intensity.
     /// </summary>
-    size_t measuredPixelStart = 500;
+    size_t measuredPixelStart = 200;
 
     /// <summary>
     /// The last pixel to include in the calibration routine. 

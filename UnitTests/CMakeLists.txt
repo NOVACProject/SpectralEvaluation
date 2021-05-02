@@ -9,6 +9,7 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/catch.hpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTest_ScanFileHandler.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTest_SpectrumIO.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_StdFile.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_WavelengthCalibration.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Air.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Convolution.cpp
