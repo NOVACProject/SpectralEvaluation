@@ -3,7 +3,6 @@
 #include <SpectralEvaluation/Interpolation.h>
 #include <SpectralEvaluation/Evaluation/BasicMath.h>
 #include <SpectralEvaluation/VectorUtils.h>
-#include <cassert>
 #include <algorithm>
 
 namespace novac
@@ -59,7 +58,7 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
 
     std::vector<double> lowPassFilteredSpectrum(spectrum.m_data, spectrum.m_data + spectrum.m_length);
     CBasicMath math;
-    math.LowPassBinomial(lowPassFilteredSpectrum.data(), spectrum.m_length, 3);
+    math.LowPassBinomial(lowPassFilteredSpectrum.data(), spectrum.m_length, 10);
 
     // Calculate the first and second order derivatives
     std::vector<double> ddx;
@@ -149,7 +148,7 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
 
     std::vector<double> lowPassFilteredSpectrum(spectrum.m_data, spectrum.m_data + spectrum.m_length);
     CBasicMath math;
-    math.LowPassBinomial(lowPassFilteredSpectrum.data(), spectrum.m_length, 3);
+    math.LowPassBinomial(lowPassFilteredSpectrum.data(), spectrum.m_length, 10);
 
     // Calculate the first and second order derivatives
     std::vector<double> ddx;
@@ -173,7 +172,7 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
         {
             SpectrumDataPoint pt;
 
-            // Find a 'basis' region for the peak by locating the area around it where ddx2 is positive.
+            // Find a 'basis' region for the valley by locating the area around it where ddx2 is positive.
             size_t startIdx = ii;
             size_t endIdx = ii;
             while (startIdx > 1 && ddx2[startIdx] > 0.0)
@@ -312,98 +311,8 @@ bool Derivative(const double* data, size_t dataLength, int order, std::vector<do
     }
 }
 
-struct Point
-{
-    Point(double xLocation, double yLocation)
-        : x(xLocation), y(yLocation)
-    {
-    }
-    double x;
-    double y;
-};
-
-// This is not an optimal way of calculating the envelope but does its job
-std::vector<Point> Reduce(const std::vector<Point>& selectedPoints, const double* const data)
-{
-    std::vector<Point> reducedPoints;
-    reducedPoints.push_back(selectedPoints[0]);
-    for (size_t ii = 1; ii < selectedPoints.size() - 1; ++ii)
-    {
-        // Draw a line from selectedPoints[ii - 1] to selectedPoints[ii + 1]. 
-        //  If this line goes _above_ all the intermediate points in the data then selectedPoints[ii] can be removed.
-        bool intersectsData = false;
-        const size_t startIdx = static_cast<size_t>(selectedPoints[ii - 1].x);
-        const size_t stopIdx = static_cast<size_t>(selectedPoints[ii + 1].x);
-        for (size_t pixelIdx = startIdx; pixelIdx < stopIdx; ++pixelIdx)
-        {
-            const double alpha = (pixelIdx - selectedPoints[ii - 1].x) / (selectedPoints[ii + 1].x - selectedPoints[ii - 1].x);
-            const double y = selectedPoints[ii - 1].y + alpha * (selectedPoints[ii + 1].y - selectedPoints[ii - 1].y) / (selectedPoints[ii + 1].x - selectedPoints[ii - 1].x);
-            if (y < data[pixelIdx])
-            {
-                intersectsData = true;
-                break;
-            }
-        }
-
-        if (intersectsData)
-        {
-            reducedPoints.push_back(selectedPoints[ii]);
-        }
-    }
-    reducedPoints.push_back(selectedPoints[selectedPoints.size() - 1]);
-
-    return reducedPoints;
-}
-
-
 bool GetEnvelope(const CSpectrum& spectrum, std::vector<double>& pixel, std::vector<double>& intensity)
 {
-    // Version 1. Selecting peaks
-    /* std::vector<Point> selectedPoints;
-
-    // Select all local maxima
-    for (size_t ii = 1; ii < static_cast<unsigned long long>(spectrum.m_length) - 1; ++ii)
-    {
-        if (spectrum.m_data[ii] >= spectrum.m_data[ii - 1] && spectrum.m_data[ii] > spectrum.m_data[ii + 1])
-        {
-            selectedPoints.push_back(Point{ static_cast<double>(ii), spectrum.m_data[ii] });
-        }
-    }
-
-    // Now reduce the points by seeing which point can be skipped by drawing a line from the point before and after (but don't remove the first and last point)
-    std::vector<Point> reducedPoints;
-    while (true)
-    {
-        reducedPoints = Reduce(selectedPoints, spectrum.m_data);
-
-        if (reducedPoints.size() < selectedPoints.size())
-        {
-            selectedPoints = reducedPoints;
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    pixel.clear();
-    intensity.clear();
-    pixel.reserve(selectedPoints.size());
-    intensity.reserve(selectedPoints.size());
-    // always include the first point
-    pixel.push_back(0);
-    intensity.push_back(spectrum.m_data[0]);
-    for (size_t ii = 1; ii < selectedPoints.size(); ++ii)
-    {
-        pixel.push_back(selectedPoints[ii].x);
-        intensity.push_back(selectedPoints[ii].y);
-    }
-    // always include the last point
-    pixel.push_back(static_cast<double>(spectrum.m_length) - 1);
-    intensity.push_back(spectrum.m_data[spectrum.m_length - 1]);
-
-    return true; */
-
     // Version 2. Selecting _all_ peaks and low pass filtering the resulting data
     pixel.clear();
     intensity.clear();
@@ -424,7 +333,6 @@ bool GetEnvelope(const CSpectrum& spectrum, std::vector<double>& pixel, std::vec
 
     // done.
     return true;
-
 }
 
 }
