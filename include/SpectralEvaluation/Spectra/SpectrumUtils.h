@@ -21,6 +21,12 @@ struct SpectrumDataPoint
 
     // A type enumerator, may be used to classify points
     int type = 0;
+
+    // An associated left point
+    double leftPixel = 0.0;
+
+    // An associated right point 
+    double rightPixel = 0.0;
 };
 
 /**
@@ -29,6 +35,7 @@ struct SpectrumDataPoint
  *  if this has a wavelength calibration then the resulting points will have a wavelength filled in.
  * @param minimumIntensity Only peaks with a maximum intensity above this value will be returned.
  * @param result Will on return be filled with the found peaks.
+ * The resulting points will have their leftPixel and rightPixel set to the points where the peak is judged to start.
 */
 void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<SpectrumDataPoint>& result);
 
@@ -38,6 +45,7 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
  *  if this has a wavelength calibration then the resulting points will have a wavelength filled in.
  * @param minimumIntensity Only valleys with a maximum intensity above this value will be returned.
  * @param result Will on return be filled with the found valleys.
+ * The resulting points will have their leftPixel and rightPixel set to the points where the valley is judged to start.
 */
 void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector<SpectrumDataPoint>& result);
 
@@ -47,6 +55,8 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
  *  if this has a wavelength calibration then the resulting points will have a wavelength filled in.
  * @param minimumIntensity Only keypoints with an intensity above this value will be returned.
  * @param result Will on return be filled with the found keypoints.
+ * The valleys found will have type set to -1 and peaks found will have type set to +1
+ * The result is sorted with increasing pixel values.
 */
 void FindKeypointsInSpectrum(const CSpectrum& spectrum, double minimumIntensity, std::vector<SpectrumDataPoint>& result);
 

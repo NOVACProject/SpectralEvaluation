@@ -69,6 +69,10 @@ namespace novac
             @return 0 on success
             @return non-zero value on fail */
         int ReadCrossSectionFile(const std::string &fileName);
+
+        /** Saves the contents of this cross section to file.
+            @return 0 on success. */
+        int SaveToFile(const std::string& filename) const;
     };
 
     /** Performs a high-pass filtering of this cross section file.

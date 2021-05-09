@@ -118,6 +118,8 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
                     {
                         LinearInterpolation(spectrum.m_wavelength, pt.pixel, pt.wavelength);
                     }
+                    pt.leftPixel = static_cast<double>(startIdx);
+                    pt.rightPixel = static_cast<double>(endIdx);
 
                     result.push_back(pt);
                 }
@@ -213,6 +215,8 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
                     {
                         LinearInterpolation(spectrum.m_wavelength, pt.pixel, pt.wavelength);
                     }
+                    pt.leftPixel = static_cast<double>(startIdx);
+                    pt.rightPixel = static_cast<double>(endIdx);
 
                     result.push_back(pt);
                 }

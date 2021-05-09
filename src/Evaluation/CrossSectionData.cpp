@@ -42,7 +42,7 @@ CCrossSectionData::CCrossSectionData(const CCrossSectionData& other, double star
     }
 }
 
-CCrossSectionData &CCrossSectionData::operator=(const CCrossSectionData &other)
+CCrossSectionData& CCrossSectionData::operator=(const CCrossSectionData& other)
 {
     this->m_crossSection = std::vector<double>(begin(other.m_crossSection), end(other.m_crossSection));
     this->m_waveLength = std::vector<double>(begin(other.m_waveLength), end(other.m_waveLength));
@@ -66,7 +66,7 @@ void CCrossSectionData::SetAt(int index, double wavel, double value)
     SetAtGrow(m_crossSection, index, value);
 }
 
-void CCrossSectionData::Set(double *wavelength, double *crossSection, unsigned long pointNum)
+void CCrossSectionData::Set(double* wavelength, double* crossSection, unsigned long pointNum)
 {
     if (nullptr == wavelength) throw std::invalid_argument("Cannot set the cross section data using a null wavelength data pointer.");
     if (nullptr == crossSection) throw std::invalid_argument("Cannot set the cross section data using a null data pointer.");
@@ -81,7 +81,7 @@ void CCrossSectionData::Set(double *wavelength, double *crossSection, unsigned l
     }
 }
 
-void CCrossSectionData::Set(double *crossSection, unsigned long pointNum)
+void CCrossSectionData::Set(double* crossSection, unsigned long pointNum)
 {
     m_waveLength.resize(pointNum);
     m_crossSection.resize(pointNum);
@@ -95,7 +95,7 @@ void CCrossSectionData::Set(double *crossSection, unsigned long pointNum)
     }
 }
 
-void CCrossSectionData::Set(MathFit::CVector &crossSection, unsigned long pointNum)
+void CCrossSectionData::Set(MathFit::CVector& crossSection, unsigned long pointNum)
 {
     m_waveLength.resize(pointNum);
     m_crossSection.resize(pointNum);
@@ -155,7 +155,7 @@ double CCrossSectionData::FindWavelength(double wavelength) const
     return -1.0; // nothing found
 }
 
-int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
+int CCrossSectionData::ReadCrossSectionFile(const std::string& fileName)
 {
     // if (s_readInCrossSections.find(fileName) != s_readInCrossSections.end())
     // {
@@ -234,6 +234,34 @@ int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
     return 0;
 }
 
+int CCrossSectionData::SaveToFile(const std::string& filename) const
+{
+    std::ofstream file;
+
+    file.open(filename, std::ios_base::out);
+    if (!file.is_open())
+    {
+        std::cout << "ERROR: Cannot open reference file: %s", filename.c_str();
+        return 1;
+    }
+
+    if (this->m_waveLength.size() > 0)
+    {
+        for (size_t ii = 0; ii < this->m_crossSection.size(); ++ii)
+        {
+            file << this->m_waveLength[ii] << "\t" << this->m_crossSection[ii] << std::endl;
+        }
+    }
+    else
+    {
+        for (size_t ii = 0; ii < this->m_crossSection.size(); ++ii)
+        {
+            file << this->m_crossSection[ii] << std::endl;
+        }
+    }
+
+    return 0;
+}
 
 int HighPassFilter(CCrossSectionData& crossSection, bool scaleToPpmm)
 {
@@ -272,7 +300,6 @@ int Multiply(CCrossSectionData& crossSection, double scalar)
     CBasicMath mathObject;
 
     mathObject.Mul(crossSection.m_crossSection.data(), (int)crossSection.m_crossSection.size(), scalar);
-
 
     return 0;
 }
