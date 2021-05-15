@@ -18,6 +18,12 @@ class CSpectrum;
 struct SpectrumDataPoint;
 struct Correspondence;
 
+enum class InstrumentLineshapeEstimationOption
+{
+    None = 0,
+    Gaussian,
+};
+
 /// <summary>
 /// This is the result of running the wavelength calibration routine.
 /// </summary>
@@ -35,7 +41,7 @@ struct SpectrometerCalibrationResult
 
     /// <summary>
     /// The estimation of the instrument line shape.
-    /// TODO: Set this!
+    /// This is only set if the instrument line shape is estimated in the 
     /// </summary>
     novac::CCrossSectionData estimatedInstrumentLineShape;
 };
@@ -46,6 +52,11 @@ struct WavelengthCalibrationSettings
     /// The intial estimate for the pixel to wavelength mapping.
     /// </summary>
     std::vector<double> initialPixelToWavelengthMapping;
+
+    /// <summary>
+    /// The initial estimate for the instrument line shape (measured or estimated).
+    /// </summary>
+    novac::CCrossSectionData initialInstrumentLineShape;
 
     /// <summary>
     /// The path to the high resolved solar atlas to be used.
@@ -60,6 +71,12 @@ struct WavelengthCalibrationSettings
     /// Only cross sections with a total column != 0 will be included.
     /// </summary>
     std::vector<std::pair<std::string, double>> crossSections;
+
+    /// <summary>
+    /// The option for how, and if, the instrument line shape should also be estimated 
+    /// during the wavelength calibration procedure.
+    /// </summary>
+    InstrumentLineshapeEstimationOption estimateInstrumentLineShape = InstrumentLineshapeEstimationOption::None;
 };
 
 /// <summary>
@@ -68,8 +85,6 @@ struct WavelengthCalibrationSettings
 /// Notice, if the file contains two columns then this will return the second!
 /// </summary>
 std::vector<double> GetPixelToWavelengthMappingFromFile(const std::string& clbFile);
-
-
 
 /**
  * @brief Performs a wavelength calibration of a spectrometer using a measured mercury spectrum.
@@ -96,8 +111,6 @@ bool MercuryCalibration(
     std::vector<SpectrumDataPoint>& foundPeaks,
     std::vector<double> pixelToWavelengthPolynomial);
 
-
-
 /// <summary>
 /// WavelengthCalibrationSetup is the setup of a calibration run
 ///     and contains all necessary elements to perform the calibration.
@@ -109,10 +122,10 @@ public:
 
     /// <summary>
     /// This performs the actual calibration of a measured spectrum against a 
-    ///   high resolution fraunhofer spectrum assuming that the provided measured instrument line shape
+    ///   high resolution fraunhofer spectrum assuming that the provided instrument line shape
     ///   is the correct line shape for the instrument.
     /// </summary>
-    SpectrometerCalibrationResult DoWavelengthCalibration(const CSpectrum& measuredSpectrum, const novac::CCrossSectionData& measuredInstrumentLineShape);
+    SpectrometerCalibrationResult DoWavelengthCalibration(const CSpectrum& measuredSpectrum);
 
     /// <summary>
     /// Simple structure used to save the internal state of the wavelength calibration. For inspection and debugging

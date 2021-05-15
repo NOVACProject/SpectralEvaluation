@@ -15,13 +15,25 @@ namespace novac
 class CSpectrum;
 class CCrossSectionData;
 
+class IFraunhoferSpectrumGenerator
+{
+public:
+    /// <summary>
+    /// Creates a Fraunhofer reference spectrum using the provided pixel-to-wavelength mapping and measured instrument line shape.
+    /// </summary>
+    /// <param name="pixelToWavelengthMapping">The wavelength (in nm air) for each pixel on the detector.</param>
+    /// <param name="measuredInstrumentLineShape">A measurement of the instrument line shape</param>
+    /// <returns>The high resolution solar spectrum convolved with the measured slf and resample to the provided grid.</returns>
+    virtual std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(const std::vector<double>& wavelengthCalibration, const novac::CCrossSectionData& ils) = 0;
+};
+
 /// <summary>
 /// This is a helper class for generating a Fraunhofer spectrum from a high resolved
 /// solar spectrum, a likewise high resolved ozone spectrum and a given instrument setup.
 /// Notice that this class will read in the high-resolved solar spectrum when needed (calling GetFraunhoferSpectrum)
 /// and will keep it in memory to save loading time. If memory is a consern, then make sure that this object gets destructed when no longer needed.
 /// </summary>
-class FraunhoferSpectrumGeneration
+class FraunhoferSpectrumGeneration : public IFraunhoferSpectrumGenerator
 {
 public:
     /// <summary>
@@ -40,15 +52,9 @@ public:
         }
     }
 
-    /// <summary>
-    /// Creates a Fraunhofer reference spectrum using the provided pixel-to-wavelength mapping and measured instrument line shape.
-    /// </summary>
-    /// <param name="pixelToWavelengthMapping">The wavelength (in nm air) for each pixel on the detector.</param>
-    /// <param name="measuredInstrumentLineShape">A measurement of the instrument line shape</param>
-    /// <returns>The high resolution solar spectrum convolved with the measured slf and resample to the provided grid.</returns>
-    std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
+    virtual std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
         const std::vector<double>& pixelToWavelengthMapping,
-        const novac::CCrossSectionData& measuredInstrumentLineShape);
+        const novac::CCrossSectionData& measuredInstrumentLineShape) override;
 
 #ifdef USE_DOAS_FIT
 

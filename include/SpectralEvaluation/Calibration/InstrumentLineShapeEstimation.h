@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 #include <string>
 
@@ -7,6 +8,7 @@ namespace novac
 {
 class CSpectrum;
 class CCrossSectionData;
+class IFraunhoferSpectrumGenerator;
 
 /// <summary>
 /// This is a helper class for estimating the instrument line shape of an instrument 
@@ -16,18 +18,25 @@ class CCrossSectionData;
 class InstrumentLineShapeEstimation
 {
 public:
-    InstrumentLineShapeEstimation(const std::string& highResolutionSolarAtlas, const std::vector<double>& pixelToWavelengthMapping)
-        : highResolutionSolarAtlas(highResolutionSolarAtlas), pixelToWavelengthMapping(pixelToWavelengthMapping)
+    InstrumentLineShapeEstimation(const std::vector<double>& initialPixelToWavelengthMapping)
+        : pixelToWavelengthMapping(initialPixelToWavelengthMapping)
     {
+    }
+
+    InstrumentLineShapeEstimation(const std::vector<double>& initialPixelToWavelengthMapping, const novac::CCrossSectionData& initialLineShape)
+        : pixelToWavelengthMapping(initialPixelToWavelengthMapping)
+    {
+        initialLineShapeEstimation = std::make_unique<novac::CCrossSectionData>(initialLineShape);
     }
 
     /// <summary>
     /// Creates a rough estimation of the instrument line shape as the Gaussian line shape which best fits to the measured spectrum.
+    /// If this->HasInitialLineShape() is true, then the initial estimation will be used.
     /// </summary>
     /// <param name="measuredSpectrum">A measured sky spectrum containing Fraunhofer lines</param>
     /// <param name="estimatedLineShape">Will on successful return be filled with the estimated line shape</param>
     /// <param name="gaussianWidth">Will on successful return be filled with the estimated FWHM of the line shape</param>
-    void EstimateInstrumentLineShape(const CSpectrum& measuredSpectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm);
+    void EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm);
 
     /// <summary>
     /// Sets the pixel to wavelength mapping for the spectrometer,
@@ -38,11 +47,29 @@ public:
         this->pixelToWavelengthMapping = newPixelToWavelengthMapping;
     }
 
-private:
-    const std::string highResolutionSolarAtlas;
+    /// <summary>
+    /// Sets initial estimation of the instrument line shape. Used as a starting point for the estimation routine.
+    /// </summary>
+    void UpdateInitialLineShape(const novac::CCrossSectionData& newInitialLineShape)
+    {
+        this->initialLineShapeEstimation = std::make_unique<novac::CCrossSectionData>(newInitialLineShape);
+    }
 
+    bool HasInitialLineShape() const;
+
+private:
+    /// <summary>
+    /// The assumed pixel-to-wavelength mapping for the device.
+    /// </summary>
     std::vector<double> pixelToWavelengthMapping;
 
+    /// <summary>
+    /// The initial, starting guess for the instrument line shape.
+    /// </summary>
+    std::unique_ptr<novac::CCrossSectionData> initialLineShapeEstimation;
+
     double GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum) const;
+
+    static double GetFwhm(const novac::CCrossSectionData& lineshape);
 };
 }

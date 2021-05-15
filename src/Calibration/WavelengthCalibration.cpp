@@ -5,6 +5,7 @@
 #include <SpectralEvaluation/Calibration/ReferenceSpectrumConvolution.h>
 #include <SpectralEvaluation/Calibration/WavelengthCalibrationByRansac.h>
 #include <SpectralEvaluation/Calibration/FraunhoferSpectrumGeneration.h>
+#include <SpectralEvaluation/Calibration/InstrumentLineShapeEstimation.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Evaluation/WavelengthFit.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
@@ -90,7 +91,7 @@ WavelengthCalibrationSetup::WavelengthCalibrationSetup(const WavelengthCalibrati
 {
 }
 
-SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibration(const CSpectrum& measuredSpectrum, const CCrossSectionData& measuredInstrumentLineShape)
+SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibration(const CSpectrum& measuredSpectrum)
 {
     // TODO: Validation of the setup and incoming parameters!
 
@@ -116,7 +117,7 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
 
     // Get the Fraunhofer spectrum
     novac::FraunhoferSpectrumGeneration fraunhoferSetup{ settings.highResSolarAtlas, settings.crossSections };
-    calibrationState.originalFraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(settings.initialPixelToWavelengthMapping, measuredInstrumentLineShape);
+    calibrationState.originalFraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(settings.initialPixelToWavelengthMapping, settings.initialInstrumentLineShape);
     // calibrationState.originalFraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrumMatching(settings.initialPixelToWavelengthMapping, *calibrationState.measuredSpectrum, measuredInstrumentLineShape);
     calibrationState.fraunhoferSpectrum = std::make_unique<CSpectrum>(*calibrationState.originalFraunhoferSpectrum); // create a copy which we can modify
 
@@ -162,12 +163,31 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
         // This allows us to calculate the wavelength -> intensity mapping of the 
         if (iterationIdx < numberOfIterations - 1)
         {
-            // Adjust the selection parameter for the maximum error in the wavelength calibration
+            // Adjust the selection parameter for the maximum error in the wavelength calibration such that the search space decreases for each iteration
             correspondenceSelectionSettings.maximumPixelDistanceForPossibleCorrespondence = std::max(10, correspondenceSelectionSettings.maximumPixelDistanceForPossibleCorrespondence / 2);
 
-            // Re-convolve the Fraunhofer spectrum to get it on the new pixel grid
-            calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(result.pixelToWavelengthMapping, measuredInstrumentLineShape);
-            // calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrumMatching(result.pixelToWavelengthMapping, *calibrationState.measuredSpectrum, measuredInstrumentLineShape);
+            if (this->settings.estimateInstrumentLineShape == InstrumentLineshapeEstimationOption::Gaussian)
+            {
+                InstrumentLineShapeEstimation ilsEstimator{ result.pixelToWavelengthMapping };
+                if (settings.initialInstrumentLineShape.GetSize() > 0)
+                {
+                    ilsEstimator.UpdateInitialLineShape(settings.initialInstrumentLineShape);
+                }
+
+                double lineShapeFwhm = 0.0;
+                ilsEstimator.EstimateInstrumentLineShape(fraunhoferSetup, *calibrationState.measuredSpectrum, result.estimatedInstrumentLineShape, lineShapeFwhm);
+
+                // TODO: Save the result !!
+
+                // Re-convolve the Fraunhofer spectrum to get it on the new pixel grid and with the new instrument line shape
+                calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(result.pixelToWavelengthMapping, result.estimatedInstrumentLineShape);
+            }
+            else
+            {
+                // Re-convolve the Fraunhofer spectrum to get it on the new pixel grid
+                calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(result.pixelToWavelengthMapping, settings.initialInstrumentLineShape);
+                // calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrumMatching(result.pixelToWavelengthMapping, *calibrationState.measuredSpectrum, measuredInstrumentLineShape);
+            }
 
             // Create a wavelength -> intensity spline using the new wavelength calibration and the envelope of the measured spectrum
             // TODO: Move to separate function

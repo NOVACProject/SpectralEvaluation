@@ -60,6 +60,44 @@ double Min(const std::vector<double>& values)
     return Min(values, idx);
 }
 
+std::pair<double, double> MinMax(const std::vector<double>& values)
+{
+    std::pair<size_t, size_t> idx;
+    return MinMax(values, idx);
+}
+
+std::pair<double, double> MinMax(const std::vector<double>& values, std::pair<size_t, size_t>& idx)
+{
+    if (values.size() == 0)
+    {
+        idx.first = 0U;
+        idx.second = 0U;
+        return std::pair<double, double>(0.0, 0.0);
+    }
+
+    double minValue = values[0];
+    double maxValue = values[1];
+    size_t minIdx = 0U;
+    size_t maxIdx = 0U;
+    for (size_t ii = 1; ii < values.size(); ++ii)
+    {
+        if (values[ii] < minValue)
+        {
+            minValue = values[ii];
+            minIdx = ii;
+        }
+        else if (values[ii] > maxValue)
+        {
+            maxValue = values[ii];
+            maxIdx = ii;
+        }
+    }
+
+    idx.first = minIdx;
+    idx.second = maxIdx;
+    return std::pair<double, double>(minValue, maxValue);
+}
+
 double Sum(const std::vector<double>& values)
 {
     double sum = 0.0;

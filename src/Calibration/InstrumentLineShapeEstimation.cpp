@@ -12,7 +12,12 @@ namespace novac
 {
 /// --------------------------- Estimating the instrument line shape --------------------------------
 
-void InstrumentLineShapeEstimation::EstimateInstrumentLineShape(const CSpectrum& spectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm)
+static double GaussianSigmaToFwhm(double sigma)
+{
+    return sigma * 2.0 * std::sqrt(2.0 * std::log(2.0));
+}
+
+void InstrumentLineShapeEstimation::EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& spectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm)
 {
     // Prepare a high-pass filtered version of the measured spectrum, removing all baseline
     CBasicMath math;
@@ -25,13 +30,18 @@ void InstrumentLineShapeEstimation::EstimateInstrumentLineShape(const CSpectrum&
     const double medianMeasKeypointDistanceInWavelength = medianPixelDistanceInMeas * pixelDistanceFromInitialCalibration;
 
     // Guess for a gaussian line shape and create a convolved solar spectrum with this setup
-    std::vector<std::pair<std::string, double>> noCrossSections;
-    FraunhoferSpectrumGeneration fraunhoferSpectrumGen{ this->highResolutionSolarAtlas, noCrossSections };
-
-    double estimatedGaussianSigma = medianMeasKeypointDistanceInWavelength;
-    double lowerSigmaLimit = medianMeasKeypointDistanceInWavelength * 0.1;
+    double estimatedGaussianSigma;
+    if (this->HasInitialLineShape())
+    {
+        estimatedGaussianSigma = GetFwhm(*this->initialLineShapeEstimation) / GaussianSigmaToFwhm(1.0);
+    }
+    else
+    {
+        estimatedGaussianSigma = medianMeasKeypointDistanceInWavelength;
+    }
+    double lowerSigmaLimit = estimatedGaussianSigma * 0.1;
     double medianPixelDistanceAtLowerSigmaLimit = std::numeric_limits<double>::max();
-    double upperSigmaLimit = 10.0 * medianMeasKeypointDistanceInWavelength;
+    double upperSigmaLimit = 10.0 * estimatedGaussianSigma;
     double medianPixelDistanceAtUpperSigmaLimit = 0.0;
 
     // Find an upper and a lower limit for the Gaussian sigma by pure search
@@ -115,7 +125,12 @@ void InstrumentLineShapeEstimation::EstimateInstrumentLineShape(const CSpectrum&
     std::cout << "Final instrument line shape estimation gave Gaussian sigma of: " << estimatedGaussianSigma << std::endl;
 
     // Calculate the FWHM of the gaussian as well
-    fwhm = estimatedGaussianSigma * 2.0 * std::sqrt(2.0 * std::log(2.0));
+    fwhm = GaussianSigmaToFwhm(estimatedGaussianSigma);
+}
+
+bool InstrumentLineShapeEstimation::HasInitialLineShape() const
+{
+    return this->initialLineShapeEstimation != nullptr && this->initialLineShapeEstimation->GetSize() > 0;
 }
 
 double InstrumentLineShapeEstimation::GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum) const
@@ -144,4 +159,39 @@ double InstrumentLineShapeEstimation::GetMedianKeypointDistanceFromSpectrum(cons
 
     return medianPixelDistance;
 }
+
+double InstrumentLineShapeEstimation::GetFwhm(const novac::CCrossSectionData& lineshape)
+{
+    if (lineshape.m_crossSection.size() <= 1)
+    {
+        // empty input
+        return 0.0;
+    }
+
+    std::pair<size_t, size_t> minMaxIdx;
+    const auto minMax = MinMax(lineshape.m_crossSection, minMaxIdx);
+
+    // Set a threshold which is half the maximum value.
+    const double threshold = minMax.first + 0.5 * (minMax.second - minMax.first);
+
+    // from the center (position of maximum value, get the point to the left and to the right where the lineshape crosses the threshold.
+    const double leftIdx = FindValue(lineshape.m_crossSection, threshold, 0U, minMaxIdx.second);
+    const double rightIdx = FindValue(lineshape.m_crossSection, threshold, minMaxIdx.second, lineshape.m_crossSection.size());
+
+    if (leftIdx < 0.0 || rightIdx < leftIdx)
+    {
+        return 0.0;
+    }
+
+    if (lineshape.m_waveLength.size() > 0)
+    {
+        // convert index to wavelength
+        return std::abs(GetAt(lineshape.m_waveLength, rightIdx) - GetAt(lineshape.m_waveLength, leftIdx));
+    }
+    else
+    {
+        return (rightIdx - leftIdx);
+    }
+}
+
 }

@@ -24,6 +24,15 @@ double Min(const std::vector<double>& values, size_t& idx);
     If values.size() == 0 then 0.0 is returned. */
 double Min(const std::vector<double>& values);
 
+/** @return the minimum _and_ maximum value in the provided vector.
+    If values.size() == 0 then (0.0, 0.0) is returned. */
+std::pair<double, double> MinMax(const std::vector<double>& values);
+
+/** @return the minimum _and_ maximum value in the provided vector.
+    @param idx will be filled with the index where the minimum and maximum values are found.
+    If values.size() == 0 then (0.0, 0.0) is returned. */
+std::pair<double, double> MinMax(const std::vector<double>& values, std::pair<size_t, size_t>& idx);
+
 /** @return the sum of all the given values
     If values.size() == 0 then 0.0 is returned. */
 double Sum(const std::vector<double>& values);
@@ -90,7 +99,7 @@ void NormalizeArea(const std::vector<double>& input, std::vector<double>& output
     If input.size() == 0 then output.size() will also be zero. */
 void NormalizeArea(const std::vector<double>& input, double xStep, std::vector<double>& output);
 
-/** Finds the (fractiona) index where the values in the provided vector crosses the y='valueToFind' line
+/** Finds the (fractional) index where the values in the provided vector crosses the y='valueToFind' line
     in the index-range [startIdx, stopIdx[.
      Returns -1.0 if the value cannot be found OR startIdx >= stopIdx OR startIdx >= values.size() */
 double FindValue(const std::vector<double>& values, double valueToFind, size_t startIdx, size_t stopIdx);
