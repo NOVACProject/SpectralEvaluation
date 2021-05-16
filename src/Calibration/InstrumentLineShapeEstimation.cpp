@@ -37,11 +37,11 @@ void InstrumentLineShapeEstimation::EstimateInstrumentLineShape(IFraunhoferSpect
     }
     else
     {
-        estimatedGaussianSigma = medianMeasKeypointDistanceInWavelength;
+        estimatedGaussianSigma = medianMeasKeypointDistanceInWavelength / GaussianSigmaToFwhm(1.0);
     }
-    double lowerSigmaLimit = estimatedGaussianSigma * 0.1;
+    double lowerSigmaLimit = estimatedGaussianSigma * 0.25;
     double medianPixelDistanceAtLowerSigmaLimit = std::numeric_limits<double>::max();
-    double upperSigmaLimit = 10.0 * estimatedGaussianSigma;
+    double upperSigmaLimit = 4.0 * estimatedGaussianSigma;
     double medianPixelDistanceAtUpperSigmaLimit = 0.0;
 
     // Find an upper and a lower limit for the Gaussian sigma by pure search
