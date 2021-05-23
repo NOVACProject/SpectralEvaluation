@@ -18,6 +18,17 @@ class IFraunhoferSpectrumGenerator;
 class InstrumentLineShapeEstimation
 {
 public:
+
+    /// <summary>
+    /// A helper structure to describe the internal state of this estimator
+    /// </summary>
+    struct LineShapeEstimationState
+    {
+        double medianPixelDistanceInMeas = 0.0;
+
+        std::vector<std::pair<double, double>> attempts;
+    };
+
     InstrumentLineShapeEstimation(const std::vector<double>& initialPixelToWavelengthMapping)
         : pixelToWavelengthMapping(initialPixelToWavelengthMapping)
     {
@@ -36,7 +47,8 @@ public:
     /// <param name="measuredSpectrum">A measured sky spectrum containing Fraunhofer lines</param>
     /// <param name="estimatedLineShape">Will on successful return be filled with the estimated line shape</param>
     /// <param name="gaussianWidth">Will on successful return be filled with the estimated FWHM of the line shape</param>
-    void EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm);
+    /// <returns>A structure showing how the result was achieved</returns>
+    LineShapeEstimationState EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm);
 
     /// <summary>
     /// Sets the pixel to wavelength mapping for the spectrometer,
@@ -68,7 +80,22 @@ private:
     /// </summary>
     std::unique_ptr<novac::CCrossSectionData> initialLineShapeEstimation;
 
-    double GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum) const;
+    /// <summary>
+    /// The first pixel to include when checking the properties of the spectrum. 
+    /// Often do the signal in the spectra decline at short wavelengths and this is a means to disregard points with low intensity.
+    /// TODO: Settable or adaptable to input
+    /// </summary>
+    const size_t measuredPixelStart = 1000;
+
+    /// <summary>
+    /// The last pixel to include when checking the properties of the spectrum. 
+    /// Often do the signal in the spectra decline at long wavelengths and this is a means to disregard points with low intensity.
+    /// This must be larger than measuredPixelStart.
+    /// TODO: Settable or adaptable to input
+    /// </summary>
+    const size_t measuredPixelStop = 4095;
+
+    double GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum, const std::string& spectrumName) const;
 
     static double GetFwhm(const novac::CCrossSectionData& lineshape);
 };
