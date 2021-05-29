@@ -41,7 +41,8 @@ struct SpectrometerCalibrationResult
 
     /// <summary>
     /// The estimation of the instrument line shape.
-    /// This is only set if the instrument line shape is estimated in the 
+    /// This is only set if the instrument line shape is set to be estimated 
+    //  in the process, otherwise this is empty
     /// </summary>
     novac::CCrossSectionData estimatedInstrumentLineShape;
 };
@@ -86,30 +87,38 @@ struct WavelengthCalibrationSettings
 /// </summary>
 std::vector<double> GetPixelToWavelengthMappingFromFile(const std::string& clbFile);
 
+/// <summary>
+/// This is a helper structure used to extract the internal state of the pixel-to-wavelength calibration
+/// of a spectrometer from a measured mercury spectrum.
+/// </summary>
+struct MercurySpectrumCalibrationState
+{
+    /// <summary>
+    /// This lists all the peaks found in the mercury spectrum (defined in pixels)
+    /// </summary>
+    std::vector<SpectrumDataPoint> peaks;
+};
+
 /**
  * @brief Performs a wavelength calibration of a spectrometer using a measured mercury spectrum.
  *  This will identify the peaks in the measured spectrum and fit a polynomial to them such that the
  *  pixel-to-wavelength mapping for the entire spectrum can be calculated.
  * @param measuredMercurySpectrum The measured spectrum
- * @param polynomialOrder The order of the polynomial to fit.
+ * @param polynomialOrder The order of the polynomial to fit (in the range 1-3).
  * @param minimumWavelength The initial guess for the shortest wavelength present in the spectrum.
  *  This will be used to constrain the identification of the mercury lines.
  * @param maximumWavelength The initial guess for the longest wavelenght present in the spectrum.
  *  This will be used to constrain the identification of the mercury lines.
- * @param foundPeaks Will on successful return be filled with the location and wavelength of the
- *  successfully identified mercury lines.
- * @param pixelToWavelengthPolynomial The final pixel-to-wavelength mapping polynomial.
- *  This will have (polynomialOrder + 1) coefficients and store the 0:th order coefficient first.
- * @return True if the calibration was successful.
- * TODO: Figure out if this is actually used anywhere. If not then this could probably be removed.
-*/
+ * @param result Will on successful return be filled with the resulting pixel-to-wavelength calibration.
+ * @param state If not null, then this will be filled with information on how the calibration did perform.
+ * @return True if the calibration was successful. */
 bool MercuryCalibration(
     const CSpectrum& measuredMercurySpectrum,
     int polynomialOrder,
     double minimumWavelength,
     double maximumWavelength,
-    std::vector<SpectrumDataPoint>& foundPeaks,
-    std::vector<double> pixelToWavelengthPolynomial);
+    SpectrometerCalibrationResult& result,
+    MercurySpectrumCalibrationState* state = nullptr);
 
 /// <summary>
 /// WavelengthCalibrationSetup is the setup of a calibration run

@@ -53,20 +53,21 @@ void RemoveBaseline(CSpectrum& spectrum)
     }
 }
 
+// --------------------------------------- Performing a pixel-to-wavelength calibration from a measured mercury spectrum ---------------------------------------
 
 bool MercuryCalibration(
     const CSpectrum& measuredMercurySpectrum,
     int polynomialOrder,
     double minimumWavelength,
     double maximumWavelength,
-    std::vector<SpectrumDataPoint>& /*foundPeaks*/,
-    std::vector<double> pixelToWavelengthPolynomial)
+    SpectrometerCalibrationResult& result,
+    MercurySpectrumCalibrationState* state)
 {
     if (measuredMercurySpectrum.m_length < 50)
     {
         return false;
     }
-    else if (polynomialOrder < 0 || polynomialOrder > 5)
+    else if (polynomialOrder < 1 || polynomialOrder > 3)
     {
         return false;
     }
@@ -76,9 +77,62 @@ bool MercuryCalibration(
     }
 
     // List of known mercury lines, in nm(air)
-    const std::vector<double> knownMercuryLines = { 284.7675, 302.1498, 312.5668, 313.1548, 313.1839, 365.0153, 365.4836, 366.3279, 398.3931, 404.6563, 435.8328 };
+    const std::vector<double> knownMercuryLines = { 
+        253.652,  296.7280, 
+        302.1498, 312.5668, 313.1548, 313.1839, 334.148, 365.0153, 365.4836, 366.3279, 398.3931, 
+        404.6563, 407.783, 435.8328, 
+        546.074, 576.960, 579.066 };
 
-    return false;
+    // Find the peaks of the spectrum
+    std::vector<novac::SpectrumDataPoint> measuredPeaks;
+    FindEmissionLines(measuredMercurySpectrum, measuredPeaks);
+
+    // Try to figure out which known mercury line corresponds to which measured peak
+    std::vector<Correspondence> correspondences;
+    const double initialWavelengthTolerance = 50.0; // ok with relatively high limit here
+    for (size_t measIdx = 0; measIdx < measuredPeaks.size(); ++measIdx)
+    {
+        const double initialWavelengthOfPeak = minimumWavelength + measuredPeaks[measIdx].pixel * (maximumWavelength - minimumWavelength) / (double)(measuredMercurySpectrum.m_length - 1);
+
+        for (size_t lineIdx = 0; lineIdx < knownMercuryLines.size(); ++lineIdx)
+        {
+            if (std::abs(initialWavelengthOfPeak - knownMercuryLines[lineIdx]) < initialWavelengthTolerance)
+            {
+                novac::Correspondence corr;
+                corr.measuredIdx = measIdx;
+                corr.measuredValue = measuredPeaks[measIdx].pixel;
+                corr.theoreticalIdx = lineIdx;
+                corr.theoreticalValue = knownMercuryLines[lineIdx];
+                corr.error = 0.0; // we don't have an estimate for the error here, just yet at least
+
+                correspondences.push_back(corr);
+            }
+        }
+    }
+
+    // Run the calibration using Ransac
+    RansacWavelengthCalibrationSettings calibrationSettings;
+    calibrationSettings.modelPolynomialOrder = polynomialOrder;
+    calibrationSettings.numberOfRansacIterations = 500000;
+    calibrationSettings.numberOfThreads = 1;
+    RansacWavelengthCalibrationSetup calibrationSetup{ calibrationSettings };
+
+    auto ransacResult = calibrationSetup.DoWavelengthCalibration(correspondences);
+
+    // Save the result
+    result.pixelToWavelengthMappingCoefficients = ransacResult.bestFittingModelCoefficients;
+    result.pixelToWavelengthMapping = std::vector<double>(measuredMercurySpectrum.m_length);
+    for (size_t pixelIdx = 0; pixelIdx < static_cast<size_t>(measuredMercurySpectrum.m_length); ++pixelIdx)
+    {
+        result.pixelToWavelengthMapping[pixelIdx] = PolynomialValueAt(ransacResult.bestFittingModelCoefficients, pixelIdx);
+    }
+
+    if (nullptr != state)
+    {
+        state->peaks = measuredPeaks;
+    }
+
+    return true;
 }
 
 

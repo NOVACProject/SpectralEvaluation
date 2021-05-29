@@ -363,17 +363,18 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCal
     result.smallestError = std::numeric_limits<double>::max();
 
     // variables in the loop, such that we don't have to recreate them every time
-    std::vector<double> selectedPixelValues(settings.sampleSize);
-    std::vector<double> selectedWavelengths(settings.sampleSize);
+    const size_t ransacSampleSize = (settings.sampleSize > 0) ? settings.sampleSize : (settings.modelPolynomialOrder + 1);
+    std::vector<double> selectedPixelValues(ransacSampleSize);
+    std::vector<double> selectedWavelengths(ransacSampleSize);
     std::vector<double> suggestionForPolynomial;
     std::vector<Correspondence> selectedCorrespondences;
 
     for (int iteration = 0; iteration < numberOfIterations; ++iteration)
     {
-        SelectMaybeInliers(settings.sampleSize, possibleCorrespondences, rnd, selectedCorrespondences);
+        SelectMaybeInliers(ransacSampleSize, possibleCorrespondences, rnd, selectedCorrespondences);
 
         // Create a new (better?) model from these selected correspondences
-        for (size_t ii = 0; ii < settings.sampleSize; ++ii)
+        for (size_t ii = 0; ii < ransacSampleSize; ++ii)
         {
             selectedPixelValues[ii] = selectedCorrespondences[ii].measuredValue;
             selectedWavelengths[ii] = selectedCorrespondences[ii].theoreticalValue;
@@ -450,21 +451,24 @@ int GetBestResult(const std::vector< RansacWavelengthCalibrationResult>& partial
 }
 
 
-#define OPENMP_NUMBER_OF_THREADS 4
+constexpr int OPENMP_DEFAULT_NUMBER_OF_THREADS = 4;
+constexpr size_t OPENMP_MAX_NUMBER_OF_THREADS = 64LLU;
 
 RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelengthCalibration(
     const std::vector<Correspondence>& possibleCorrespondences)
 {
     const auto possibleCorrespondencesOrderedByMeasuredKeypoint = ArrangeByMeasuredKeypoint(possibleCorrespondences);
     std::vector< RansacWavelengthCalibrationResult> partialResults;
-    partialResults.resize(OPENMP_NUMBER_OF_THREADS);
 
-    omp_set_num_threads(OPENMP_NUMBER_OF_THREADS);
+    const int numberOfThreads = (settings.numberOfThreads > 0) ? static_cast<int>(std::min(settings.numberOfThreads, OPENMP_MAX_NUMBER_OF_THREADS)) : OPENMP_DEFAULT_NUMBER_OF_THREADS;
+
+    partialResults.resize(numberOfThreads);
+    omp_set_num_threads(numberOfThreads);
 
 #pragma omp parallel for
-    for (int threadIdx = 0; threadIdx < OPENMP_NUMBER_OF_THREADS; ++threadIdx)
+    for (int threadIdx = 0; threadIdx < numberOfThreads; ++threadIdx)
     {
-        const int numberOfIterationsInThisThread = settings.numberOfRansacIterations / OPENMP_NUMBER_OF_THREADS;
+        const int numberOfIterationsInThisThread = settings.numberOfRansacIterations / numberOfThreads;
         partialResults[threadIdx] = RunRansacCalibrations(possibleCorrespondences, possibleCorrespondencesOrderedByMeasuredKeypoint, numberOfIterationsInThisThread);
     }
 

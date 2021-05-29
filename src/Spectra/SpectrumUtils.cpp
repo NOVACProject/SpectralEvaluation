@@ -266,6 +266,22 @@ void FindKeypointsInSpectrum(const CSpectrum& spectrum, double minimumIntensity,
     std::sort(begin(result), end(result), [](const SpectrumDataPoint& p1, const SpectrumDataPoint& p2) { return p1.pixel < p2.pixel; });
 }
 
+void FindEmissionLines(const CSpectrum& spectrum, std::vector<SpectrumDataPoint>& result)
+{
+    std::vector<double> spectrumValues{ spectrum.m_data, spectrum.m_data + spectrum.m_length };
+    double median = Median(spectrumValues); // if we assume tha there are a small number of narrow peaks, the the median will be a just slightly above the spectrum baseline
+
+    FindPeaks(spectrum, 1.5 * median, result);
+
+    if (result.size() == 0)
+    {
+        return;
+    }
+
+    // TODO: Improve the result by removing the found peaks from the median. This gives a better baseline estimate.
+
+}
+
 bool Derivative(const double* data, size_t dataLength, std::vector<double>& result)
 {
     if (data == nullptr || dataLength < 3 || dataLength > 1024 * 1024) // check such that the data isn't unreasonably large
