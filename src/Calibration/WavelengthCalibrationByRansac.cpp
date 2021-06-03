@@ -201,10 +201,14 @@ double PolynomialValueAt(const std::vector<double>& coefficients, double x)
     return result;
 }
 
-// Hard coded polynomial calculation for order = 3
 inline double CalculateValueAt(const std::vector<double>& coefficients, double x)
 {
-    return coefficients[0] + x * (coefficients[1] + x * (coefficients[2] + x * coefficients[3]));
+    double value = coefficients.back();
+    for (size_t ii = 1; ii < coefficients.size(); ++ii)
+    {
+        value = x * value + coefficients[coefficients.size() - ii - 1];
+    }
+    return value;
 }
 
 int FindCorrespondenceWithTheoreticalIdx(const std::vector<Correspondence>& allEntries, size_t theoreticalIdxOfEntryToFind)
@@ -382,6 +386,12 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCal
         if (!polyFit.FitPolynomial(selectedPixelValues, selectedWavelengths, suggestionForPolynomial))
         {
             std::cout << "Polynomial fit failed" << std::endl;
+            continue;
+        }
+        else if (PolynomialValueAt(suggestionForPolynomial, 0) > PolynomialValueAt(suggestionForPolynomial, (double)(settings.detectorSize - 1)) ||
+            PolynomialValueAt(suggestionForPolynomial, settings.detectorSize * 0.5) > PolynomialValueAt(suggestionForPolynomial, (double)(settings.detectorSize - 1)))
+        {
+            std::cout << "Found polynomial is not monotonous, skipping" << std::endl;
             continue;
         }
 

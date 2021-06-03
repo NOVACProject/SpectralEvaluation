@@ -141,7 +141,12 @@ struct RansacWavelengthCalibrationSettings
     /// The number of correspondences to select in one iteration.
     /// Default (0) corresponds to (modelPolynomialOrder + 1)
     /// </summary>
-    size_t sampleSize = 0; 
+    size_t sampleSize = 0;
+
+    /// <summary>
+    /// The number of pixels on the detector which generated this spectrum
+    /// </summary>
+    size_t detectorSize = 2048;
 
     /// <summary>
     /// how close a keypoint needs to be for it to be considered an inlier. In nm

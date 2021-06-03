@@ -27,6 +27,9 @@ struct SpectrumDataPoint
 
     // An associated right point 
     double rightPixel = 0.0;
+
+    // True if this is a flat-top region (indication of saturation)
+    bool flatTop = false;
 };
 
 /**
