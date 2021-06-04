@@ -281,4 +281,58 @@ std::string EnsureFilenameHasSuffix(const std::string& fullFilePath, const std::
     }
 }
 
+bool SaveInstrumentCalibration(const std::string& fullFilePath, const CSpectrum& instrumentLineShape, const std::vector<double>& pixelToWavelengthMapping)
+{
+    if (instrumentLineShape.m_length == 0 || instrumentLineShape.m_wavelength.size() == 0)
+    {
+        return false; // cannot save an empty reference.
+    }
+
+    FILE* f = fopen(fullFilePath.c_str(), "w");
+    if (nullptr == f)
+    {
+        return false;
+    }
+    fprintf(f, "{\n");
+
+    {
+        fprintf(f, "\t\"InstrumentLineShape\": {\n");
+
+        fprintf(f, "\t\t\"Wavelength\" : [");
+        for (size_t ii = 0; ii < instrumentLineShape.m_length - 1; ++ii)
+        {
+            fprintf(f, "%.9lf, ", instrumentLineShape.m_wavelength[ii]);
+        }
+        fprintf(f, "%.9lf", instrumentLineShape.m_wavelength[instrumentLineShape.m_length - 1]);
+        fprintf(f, "],\n");
+
+        fprintf(f, "\t\t\"Intensity\" : [");
+        for (size_t ii = 0; ii < instrumentLineShape.m_length - 1; ++ii)
+        {
+            fprintf(f, "%.9lf, ", instrumentLineShape.m_data[ii]);
+        }
+        fprintf(f, "%.9lf]},\n", instrumentLineShape.m_data[instrumentLineShape.m_length - 1]);
+    }
+
+    {
+        fprintf(f, "\t\"PixelToWavelengthMapping\": [");
+        for (size_t ii = 0; ii < pixelToWavelengthMapping.size() - 1; ++ii)
+        {
+            fprintf(f, "%.9lf, ", pixelToWavelengthMapping[ii]);
+        }
+        fprintf(f, "%.9lf]\n", pixelToWavelengthMapping.back());
+    }
+
+    fprintf(f, "}\n");
+    fclose(f);
+    return true;
+}
+
+bool ReadInstrumentCalibration(const std::string& fullFilePath, CSpectrum& instrumentLineShape, std::vector<double>& pixelToWavelengthMapping)
+{
+
+    return false;
+}
+
+
 }

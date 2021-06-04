@@ -37,4 +37,13 @@ bool ReadSpectrum(const std::string& fullFilePath, CSpectrum& result);
     NOTICE: the provided suffix should not start with a period. */
 std::string EnsureFilenameHasSuffix(const std::string& fullFilePath, const std::string& defaultSuffix);
 
+/** Saves the full instrument calibration data to a single file, including the sampled
+    instrument line shape and the pixel to wavelength mapping. */
+bool SaveInstrumentCalibration(const std::string& fullFilePath, const CSpectrum& instrumentLineShape, const std::vector<double>& pixelToWavelengthMapping);
+
+/** Reads a saved instrument line shape and pixel-to-wavelength mapping from an instrument calibration file. 
+    @return true on success. */
+bool ReadInstrumentCalibration(const std::string& fullFilePath, CSpectrum& instrumentLineShape, std::vector<double>& pixelToWavelengthMapping);
+
+
 }

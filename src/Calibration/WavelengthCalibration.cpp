@@ -138,7 +138,8 @@ bool MercuryCalibration(
         double wavelength;
         double intensity;
     };
-    std::vector<emissionLine> knownMercuryLines = {
+
+    const std::vector<emissionLine> knownMercuryLines = {
         emissionLine(365.4836, 1.00),
         emissionLine(313.1839, 0.90),
         emissionLine(404.6563, 0.47),
@@ -182,7 +183,7 @@ bool MercuryCalibration(
     // Construct a model by assuming that the N strongest peaks in the measured are the N strongest known mercury peaks.
     std::vector<double> initialCalibration;
     bool initialCalibrationSuccess = false;
-    if(numberOfSaturatedPeaks == 0)
+    if (numberOfSaturatedPeaks == 0)
     {
         std::vector<double> pixels;
         std::vector<double> wavelengths;
@@ -239,6 +240,11 @@ bool MercuryCalibration(
     RansacWavelengthCalibrationSetup calibrationSetup{ calibrationSettings };
 
     auto ransacResult = calibrationSetup.DoWavelengthCalibration(correspondences);
+
+    if (ransacResult.highestNumberOfInliers == 0)
+    {
+        return false;
+    }
 
     // Save the result
     result.pixelToWavelengthMappingCoefficients = ransacResult.bestFittingModelCoefficients;
