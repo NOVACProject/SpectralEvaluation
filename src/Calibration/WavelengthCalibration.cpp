@@ -201,8 +201,8 @@ bool MercuryCalibration(
 
     // Try to figure out which known mercury line corresponds to which measured peak
     std::vector<Correspondence> correspondences;
-    const double initialWavelengthTolerance = initialCalibrationSuccess ? 10.0 : 50.0;
-    const double relativePositionTolerance = (numberOfSaturatedPeaks > 0) ? 0.5 : 0.25;
+    const double initialWavelengthTolerance = initialCalibrationSuccess ? 10.0 : 100.0;
+    const double relativePositionTolerance = (numberOfSaturatedPeaks == 0) ? 0.25 : 0.5;
     for (size_t measIdx = 0; measIdx < sortedPeaks.size(); ++measIdx)
     {
         const double initialWavelengthOfPeak = initialCalibrationSuccess ? PolynomialValueAt(initialCalibration, sortedPeaks[measIdx].pixel) : minimumWavelength + sortedPeaks[measIdx].pixel * (maximumWavelength - minimumWavelength) / (double)(measuredMercurySpectrum.m_length - 1);
