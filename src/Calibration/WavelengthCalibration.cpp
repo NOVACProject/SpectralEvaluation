@@ -142,6 +142,7 @@ bool MercuryCalibration(
     const std::vector<emissionLine> knownMercuryLines = {
         emissionLine(365.4836, 1.00),
         emissionLine(313.1839, 0.90),
+        emissionLine(312.5668, 0.70),
         emissionLine(404.6563, 0.47),
         emissionLine(296.7280, 0.41),
         emissionLine(366.3279, 0.16),
@@ -183,7 +184,7 @@ bool MercuryCalibration(
     // Construct a model by assuming that the N strongest peaks in the measured are the N strongest known mercury peaks.
     std::vector<double> initialCalibration;
     bool initialCalibrationSuccess = false;
-    if (numberOfSaturatedPeaks == 0)
+    /* if (numberOfSaturatedPeaks == 0)
     {
         std::vector<double> pixels;
         std::vector<double> wavelengths;
@@ -197,7 +198,7 @@ bool MercuryCalibration(
 
         PolynomialFit polyFit{ static_cast<int>(polynomialOrder) };
         initialCalibrationSuccess = polyFit.FitPolynomial(pixels, wavelengths, initialCalibration);
-    }
+    } */
 
     // Try to figure out which known mercury line corresponds to which measured peak
     std::vector<Correspondence> correspondences;
