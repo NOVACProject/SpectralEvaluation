@@ -388,11 +388,18 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCal
             std::cout << "Polynomial fit failed" << std::endl;
             continue;
         }
-        else if (PolynomialValueAt(suggestionForPolynomial, 0) > PolynomialValueAt(suggestionForPolynomial, (double)(settings.detectorSize - 1)) ||
-            PolynomialValueAt(suggestionForPolynomial, settings.detectorSize * 0.5) > PolynomialValueAt(suggestionForPolynomial, (double)(settings.detectorSize - 1)))
+
         {
-            std::cout << "Found polynomial is not monotonous, skipping" << std::endl;
-            continue;
+            const double firstValue = PolynomialValueAt(suggestionForPolynomial, 0);
+            const double midpointValue = PolynomialValueAt(suggestionForPolynomial, settings.detectorSize * 0.5);
+            const double lastValue = PolynomialValueAt(suggestionForPolynomial, (double)(settings.detectorSize - 1));
+
+            if (firstValue > lastValue || firstValue > midpointValue || midpointValue > lastValue)
+            {
+                // This is not strictly a test for monotonically increasing function, just sampling. But it's fast and that is the main point here.
+                std::cout << "Found polynomial is not monotonically increasing, skipping" << std::endl;
+                continue;
+            }
         }
 
         // Evaluate if this suggested polynomial fits better than the guess we already have by counting how many of the 
