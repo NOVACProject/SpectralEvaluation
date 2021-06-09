@@ -282,7 +282,15 @@ WavelengthCalibrationSetup::WavelengthCalibrationSetup(const WavelengthCalibrati
 
 SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibration(const CSpectrum& measuredSpectrum)
 {
-    // TODO: Validation of the setup and incoming parameters!
+    if (settings.initialPixelToWavelengthMapping.size() != measuredSpectrum.m_length)
+    {
+        throw std::invalid_argument("The initial pixel to wavelength mapping must have as many points as the measured spectrum.");
+    }
+    else if (settings.initialInstrumentLineShape.GetSize() < 10)
+    {
+        throw std::invalid_argument("The initial instrument line shape must not be empty.");
+    }
+    // TODO: More validation of the setup and incoming parameters!
 
     // Magic parameters...
     const double minimumPeakIntensityInMeasuredSpectrum = 0.02; // in the normalized units, was 1000
@@ -322,6 +330,10 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
 
         // List all possible correspondences (with some filtering applied).
         this->calibrationState.allCorrespondences = novac::ListPossibleCorrespondences(calibrationState.measuredKeypoints, *calibrationState.measuredSpectrum, calibrationState.fraunhoferKeypoints, *calibrationState.fraunhoferSpectrum, correspondenceSelectionSettings);
+        if (this->calibrationState.allCorrespondences.size() <= ransacSettings.modelPolynomialOrder)
+        {
+            throw std::exception("Wavelength calibration failed, no possible correspondences were found.");
+        }
 
         // The actual wavelength calibration by ransac
         auto startTime = std::chrono::steady_clock::now();

@@ -366,7 +366,7 @@ bool SaveInstrumentCalibration(const std::string& fullFilePath, const CSpectrum&
 /// <summary>
 /// Parses one line of data containing values separated by the given separator character
 /// </summary>
-std::vector<double> ParseDataList(const std::string& dataList, char separatorChar = ';')
+std::vector<double> ParseDataList(const std::string& dataList, const char* separatorChar = ";" )
 {
     std::vector<double> result;
 
@@ -394,7 +394,7 @@ std::vector<double> ParseDataList(const std::string& dataList, char separatorCha
         {
             result.push_back(tmpDbl);
         }
-        nextElement = strstr(nextElement + 1, &separatorChar);
+        nextElement = strstr(nextElement + 1, separatorChar);
         if (nextElement == nullptr)
         {
             break;
