@@ -41,7 +41,8 @@ struct SpectrometerCalibrationResult
 
     /// <summary>
     /// The estimation of the instrument line shape.
-    /// This is only set if the instrument line shape is estimated in the 
+    /// This is only set if the instrument line shape is set to be estimated 
+    //  in the process, otherwise this is empty
     /// </summary>
     novac::CCrossSectionData estimatedInstrumentLineShape;
 };
@@ -101,7 +102,6 @@ std::vector<double> GetPixelToWavelengthMappingFromFile(const std::string& clbFi
  * @param pixelToWavelengthPolynomial The final pixel-to-wavelength mapping polynomial.
  *  This will have (polynomialOrder + 1) coefficients and store the 0:th order coefficient first.
  * @return True if the calibration was successful.
- * TODO: Figure out if this is actually used anywhere. If not then this could probably be removed.
 */
 bool MercuryCalibration(
     const CSpectrum& measuredMercurySpectrum,

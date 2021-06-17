@@ -58,14 +58,4 @@ std::vector<double> SampleInstrumentLineShape(const GaussianLineShape& lineShape
 std::vector<double> SampleInstrumentLineShape(const AsymmetricGaussianLineShape& lineShape, const std::vector<double>& x, double center, double amplitude, double baseline = 0.0);
 std::vector<double> SampleInstrumentLineShape(const SuperGaussianLineShape& lineShape, const std::vector<double>& x, double center, double amplitude, double baseline = 0.0);
 
-
-enum class MercuryPeak
-{
-    Hg302nm = 0
-};
-
-// This takes a full measured (but dark corrected) mercury spectrum with a reasonably correct 
-// wavelength calibration, extracts the given mercury peak and fits a Gaussian line shape to this.
-FUNCTION_FIT_RETURN_CODE GetInstrumentLineShape(const CSpectrum& fullMercurySpectrum, MercuryPeak peakToUse, GaussianLineShape& result);
-
 }
