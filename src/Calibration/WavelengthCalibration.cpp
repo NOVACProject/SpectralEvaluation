@@ -120,14 +120,26 @@ bool MercuryCalibration(
 {
     if (measuredMercurySpectrum.m_length < 50)
     {
+        if (state != nullptr)
+        {
+            state->errorMessage = "To short measured spectrum, at least 50 data poins is needed";
+        }
         return false;
     }
     else if (polynomialOrder < 1 || polynomialOrder > 3)
     {
+        if (state != nullptr)
+        {
+            state->errorMessage = "Polynomial order must be between 1 and 3 inclusive";
+        }
         return false;
     }
     else if (maximumWavelength < minimumWavelength)
     {
+        if (state != nullptr)
+        {
+            state->errorMessage = "Bad initial wavelength range provided, maximum wavelength must be larger than the minimum wavelength";
+        }
         return false;
     }
 
@@ -163,7 +175,10 @@ bool MercuryCalibration(
 
     if (measuredPeaks.size() < polynomialOrder + 1)
     {
-        // TODO: Set the state here?
+        if (state != nullptr)
+        {
+            state->errorMessage = "No emission lines could be found";
+        }
         return false;
     }
 
@@ -183,30 +198,14 @@ bool MercuryCalibration(
 
     // Construct a model by assuming that the N strongest peaks in the measured are the N strongest known mercury peaks.
     std::vector<double> initialCalibration;
-    bool initialCalibrationSuccess = false;
-    /* if (numberOfSaturatedPeaks == 0)
-    {
-        std::vector<double> pixels;
-        std::vector<double> wavelengths;
-        for (size_t ii = 0; ii < 5; ++ii)
-        {
-            pixels.push_back(sortedPeaks[ii].pixel);
-            wavelengths.push_back(knownMercuryLines[ii].wavelength);
-        }
-        std::sort(begin(pixels), end(pixels));
-        std::sort(begin(wavelengths), end(wavelengths));
-
-        PolynomialFit polyFit{ static_cast<int>(polynomialOrder) };
-        initialCalibrationSuccess = polyFit.FitPolynomial(pixels, wavelengths, initialCalibration);
-    } */
 
     // Try to figure out which known mercury line corresponds to which measured peak
     std::vector<Correspondence> correspondences;
-    const double initialWavelengthTolerance = initialCalibrationSuccess ? 10.0 : 100.0;
+    const double initialWavelengthTolerance = 100.0;
     const double relativePositionTolerance = (numberOfSaturatedPeaks == 0) ? 0.25 : 0.5;
     for (size_t measIdx = 0; measIdx < sortedPeaks.size(); ++measIdx)
     {
-        const double initialWavelengthOfPeak = initialCalibrationSuccess ? PolynomialValueAt(initialCalibration, sortedPeaks[measIdx].pixel) : minimumWavelength + sortedPeaks[measIdx].pixel * (maximumWavelength - minimumWavelength) / (double)(measuredMercurySpectrum.m_length - 1);
+        const double initialWavelengthOfPeak = minimumWavelength + sortedPeaks[measIdx].pixel * (maximumWavelength - minimumWavelength) / (double)(measuredMercurySpectrum.m_length - 1);
         const double positionInList = measIdx / (double)sortedPeaks.size();
 
         for (size_t lineIdx = 0; lineIdx < knownMercuryLines.size(); ++lineIdx)
@@ -244,6 +243,10 @@ bool MercuryCalibration(
 
     if (ransacResult.highestNumberOfInliers == 0)
     {
+        if (state != nullptr)
+        {
+            state->errorMessage = "Wavelength calibration failed";
+        }
         return false;
     }
 

@@ -97,6 +97,11 @@ struct MercurySpectrumCalibrationState
     /// This lists all the peaks found in the mercury spectrum (defined in pixels)
     /// </summary>
     std::vector<SpectrumDataPoint> peaks;
+
+    /// <summary>
+    /// If the Mercury calibration failed, then this will be filled in with the reason why
+    /// </summary>
+    std::string errorMessage;
 };
 
 /**

@@ -231,38 +231,46 @@ int FindCorrespondenceWithTheoreticalIdx(const std::vector<Correspondence>& allE
 /// <param name="possibleCorrespondences"></param>
 /// <param name="toleranceInWavelength"></param>
 /// <param name="inlier">Will on return be filled with the found inliers. inlier.size() == return value</param>
-/// <param name="averageError"></param>
-/// <returns></returns>
+/// <param name="averageError">Will on return be filled with an error estimate describing how well the inliers fit to the model</param>
+/// <param name="isMonotonic">Will on return be set to 'true' if the polynomial is jugded to be monotonically increasing with pixel</param>
+/// <returns>The number of inliers found</returns>
 size_t CountInliers(
     const std::vector<double>& polynomialCoefficients,
     const std::vector<std::vector<Correspondence>>& possibleCorrespondences,
     double toleranceInWavelength,
     std::vector<Correspondence>& inlier,
-    double& averageError)
+    double& averageError,
+    bool& isMonotonic)
 {
-    // Version 2. Order the correspondences by the measured keypoint they belong to and only select one correspondence per keypoint
+    // Order the correspondences by the measured keypoint they belong to and only select one correspondence per keypoint
     averageError = 0.0;
     inlier.clear();
     inlier.reserve(100); // guess for the upper bound
     std::vector<double> distances;
     distances.reserve(100); // guess for the upper bound.
-    for (size_t keypointIdx = 0; keypointIdx < possibleCorrespondences.size(); ++keypointIdx)
+    std::vector<std::pair<double, double>> pixelToWavelengthMappings; // the mapping evaluated at the measured keypoints
+    pixelToWavelengthMappings.resize(possibleCorrespondences.size());
+
+    for (size_t measuredKeypointIdx = 0; measuredKeypointIdx < possibleCorrespondences.size(); ++measuredKeypointIdx)
     {
-        if (possibleCorrespondences[keypointIdx].size() == 0)
+        if (possibleCorrespondences[measuredKeypointIdx].size() == 0)
         {
             continue;
         }
 
+        // These correspondeces all have the same measured value, use that to only calculate the wavelength value once
+        const double pixelValue = possibleCorrespondences[measuredKeypointIdx][0].measuredValue;
+        const double predictedWavelength = CalculateValueAt(polynomialCoefficients, pixelValue);
+        pixelToWavelengthMappings[measuredKeypointIdx].first = pixelValue;
+        pixelToWavelengthMappings[measuredKeypointIdx].second = predictedWavelength;
+
         // Find the best possible correspondence for this measured keypoint.
         Correspondence bestcorrespondence;
         double smallestDistance = std::numeric_limits<double>::max();
-
-        for (const Correspondence& corr : possibleCorrespondences[keypointIdx])
+        for (const Correspondence& corr : possibleCorrespondences[measuredKeypointIdx])
         {
             // Calculate the distance, in nm air, between the wavelength of this keypoint in the fraunhofer spectrum and the predicted wavelength of the measured keypoint
-            const double pixelValue = corr.measuredValue;
             const double wavelength = corr.theoreticalValue;
-            const double predictedWavelength = CalculateValueAt(polynomialCoefficients, pixelValue);
             const double distance = std::abs(predictedWavelength - wavelength); // in nm air
 
             if (distance < toleranceInWavelength && distance < smallestDistance)
@@ -301,6 +309,18 @@ size_t CountInliers(
     }
 
     averageError /= (double)inlier.size();
+
+    // Determine if the mapping is monotonically increasing
+    std::sort(begin(pixelToWavelengthMappings), end(pixelToWavelengthMappings), [](const std::pair<double, double>& a, const std::pair<double, double>& b) { return a.first < b.first; });
+    isMonotonic = true;
+    for (size_t ii = 1; ii < pixelToWavelengthMappings.size(); ++ii)
+    {
+        if (pixelToWavelengthMappings[ii].second < pixelToWavelengthMappings[ii - 1].second)
+        {
+            isMonotonic = false;
+            break;
+        }
+    }
 
     return inlier.size();
 }
@@ -406,8 +426,12 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCal
         //  possible correspondences fits with the provided model.
         std::vector<Correspondence> inlierCorrespondences;
         double meanErrorOfModel = 0.0;
-        size_t numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondencesOrderedByMeasuredKeypoint, settings.inlierLimitInWavelength, inlierCorrespondences, meanErrorOfModel);
-        if (iteration == 0 || numberOfInliers > result.highestNumberOfInliers || (numberOfInliers == result.highestNumberOfInliers && meanErrorOfModel < result.smallestError))
+        bool isMonotonicallyIncreasing = true;
+        size_t numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondencesOrderedByMeasuredKeypoint, settings.inlierLimitInWavelength, inlierCorrespondences, meanErrorOfModel, isMonotonicallyIncreasing);
+
+        if (iteration == 0 ||
+            (numberOfInliers > result.highestNumberOfInliers && isMonotonicallyIncreasing) ||
+            (numberOfInliers == result.highestNumberOfInliers && isMonotonicallyIncreasing && meanErrorOfModel < result.smallestError))
         {
             if (settings.refine && numberOfInliers > settings.modelPolynomialOrder)
             {
@@ -428,7 +452,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCal
                 }
 
                 // recount the inliers
-                numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondencesOrderedByMeasuredKeypoint, settings.inlierLimitInWavelength, inlierCorrespondences, meanErrorOfModel);
+                numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondencesOrderedByMeasuredKeypoint, settings.inlierLimitInWavelength, inlierCorrespondences, meanErrorOfModel, isMonotonicallyIncreasing);
 
                 // std::cout << "Updating model at iteration " << iteration << ", new number of inliers is: " << numberOfInliers << ", mean error: " << meanErrorOfModel << std::endl;
 
