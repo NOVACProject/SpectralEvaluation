@@ -96,7 +96,11 @@ private:
     const size_t measuredPixelStop = 4095;
 
     double GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum, const std::string& spectrumName) const;
-
-    static double GetFwhm(const novac::CCrossSectionData& lineshape);
 };
+
+/// <summary>
+/// Estimates the Full Width at Half Maximum of a given lineshape function.
+/// </summary>
+double GetFwhm(const novac::CCrossSectionData& lineshape);
+
 }

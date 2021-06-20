@@ -1,4 +1,5 @@
 #include <SpectralEvaluation/Calibration/ReferenceSpectrumConvolution.h>
+#include <SpectralEvaluation/Calibration/InstrumentLineShapeEstimation.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Fit/CubicSplineFunction.h>
 #include <SpectralEvaluation/File/File.h>
@@ -325,30 +326,46 @@ bool ConvolveReference(
     Convert(highResReference, conversion, convertedHighResReference);
 
     // We need to make sure we work on the correct resolution, the highest possible to get the most accurate results.
-    const double resolutionOfSlf = Resolution(slf.m_waveLength);
-    const double maximumAllowedResolution = 0.2 * resolutionOfSlf; // do not use more than 5 points per pixel of the SLF
+    const double fwhmOfSlf = GetFwhm(slf);
+    const double minimumAllowedResolution = 0.05 * fwhmOfSlf; // do use at least 50 points per FWHM of the SLF
+    const double maximumAllowedResolution = 0.01 * fwhmOfSlf; // do not use more than 100 points per FWHM of the SLF
     const double resolutionOfReference = Resolution(convertedHighResReference.m_waveLength);
-    const double highestResolution = std::max(std::min(resolutionOfReference, resolutionOfSlf), maximumAllowedResolution);
+    const double highestResolution = std::max(std::min(resolutionOfReference, maximumAllowedResolution), minimumAllowedResolution);
 
     // Resample the convertedHighResReference to be on a uniform grid.
     // Study the SLF and the reference to see which has the highest resolution and take that.
     UniformGrid convolutionGrid;
     convolutionGrid.minValue = convertedHighResReference.m_waveLength.front();
     convolutionGrid.maxValue = convertedHighResReference.m_waveLength.back();
-    convolutionGrid.length = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / highestResolution);
 
     if (method == ConvolutionMethod::Fft)
     {
-        // for the sake of efficiency of the fft below, consider making a minor tweak to the length to 
-        //  contain as many factors of two, tree and five as possible
-        int primeFactors = CountBasicPrimeFactors(convolutionGrid.length);
-        int nextPrimeFactors = CountBasicPrimeFactors(convolutionGrid.length + 1);
-        while (nextPrimeFactors > primeFactors)
+        // for the sake of efficiency of the fft below, find the length which contain as many factors of two, tree and five as possible
+        //  while still being between minimumAllowedResolution and maximumAllowedResolution.
+        const size_t minimumLength = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / minimumAllowedResolution);
+        const size_t maximumLength = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / maximumAllowedResolution);
+
+        size_t length = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / highestResolution);
+        size_t optimumLength = length;
+        int optimumNumberOfPrimeFactors = CountBasicPrimeFactors(length);
+
+        while (length < maximumLength)
         {
-            convolutionGrid.length += 1;
-            primeFactors = nextPrimeFactors;
-            nextPrimeFactors = CountBasicPrimeFactors(convolutionGrid.length + 1);
+            ++length;
+            const int primeFactors = CountBasicPrimeFactors(length);
+
+            if (primeFactors > optimumNumberOfPrimeFactors)
+            {
+                optimumNumberOfPrimeFactors = primeFactors;
+                optimumLength = length;
+            }
         }
+        convolutionGrid.length = optimumLength;
+    }
+    else
+    {
+        // Use the highest resolution
+        convolutionGrid.length = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / highestResolution);
     }
 
     std::vector<double> uniformHighResReference;

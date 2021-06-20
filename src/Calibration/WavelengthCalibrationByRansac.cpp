@@ -142,6 +142,19 @@ std::vector<novac::Correspondence> ListPossibleCorrespondences(
 }
 
 // ---------------------------------- Free functions used to run the calibration ----------------------------------
+bool Contains(const std::vector<size_t>& data, size_t value)
+{
+    for (size_t v : data)
+    {
+        if (v == value)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void SelectMaybeInliers(size_t number, const std::vector<Correspondence>& allCorrespondences, std::mt19937& randomGenerator, std::vector<Correspondence>& result)
 {
     if (number == allCorrespondences.size())
@@ -157,24 +170,27 @@ void SelectMaybeInliers(size_t number, const std::vector<Correspondence>& allCor
     result.resize(number);
     std::uniform_int_distribution<size_t> uniform_dist(0, allCorrespondences.size() - 1);
 
-    // "Randomly" select correspondences with the following restrictions
-    //  1) A given measured or theoretical point must not be present twice in the selected result
-    std::set<size_t> selectedIndices;
-    std::set<size_t> selecedMeasuredPoints;
-    std::set<size_t> selecedTheoreticalPoints;
+    // "Randomly" select correspondences with the restriction that:
+    //  a given measured or theoretical point must not be present twice in the selected result
+    std::vector<size_t> selectedIndices;
+    selectedIndices.reserve(number);
+    std::vector<size_t> selecedMeasuredPoints;
+    selecedMeasuredPoints.reserve(number);
+    std::vector<size_t> selecedTheoreticalPoints;
+    selecedTheoreticalPoints.reserve(number);
+
     while (selectedIndices.size() < number)
     {
         const size_t suggestedIdx = uniform_dist(randomGenerator);
 
-        if (selecedMeasuredPoints.find(allCorrespondences[suggestedIdx].measuredIdx) == selecedMeasuredPoints.end() &&
-            selecedTheoreticalPoints.find(allCorrespondences[suggestedIdx].theoreticalIdx) == selecedTheoreticalPoints.end())
+        if (!Contains(selecedMeasuredPoints, allCorrespondences[suggestedIdx].measuredIdx) &&
+            !Contains(selecedTheoreticalPoints, allCorrespondences[suggestedIdx].theoreticalIdx))
         {
-            selecedMeasuredPoints.insert(allCorrespondences[suggestedIdx].measuredIdx);
-            selecedTheoreticalPoints.insert(allCorrespondences[suggestedIdx].theoreticalIdx);
-            selectedIndices.insert(suggestedIdx);
+            selecedMeasuredPoints.push_back(allCorrespondences[suggestedIdx].measuredIdx);
+            selecedTheoreticalPoints.push_back(allCorrespondences[suggestedIdx].theoreticalIdx);
+            selectedIndices.push_back(suggestedIdx);
         }
     }
-
 
     size_t resultIdx = 0;
     for (size_t idx : selectedIndices)

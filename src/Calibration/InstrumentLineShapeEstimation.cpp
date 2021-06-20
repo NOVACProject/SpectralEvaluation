@@ -288,7 +288,7 @@ double InstrumentLineShapeEstimation::GetMedianKeypointDistanceFromSpectrum(cons
     }
 }
 
-double InstrumentLineShapeEstimation::GetFwhm(const novac::CCrossSectionData& lineshape)
+double GetFwhm(const novac::CCrossSectionData& lineshape)
 {
     if (lineshape.m_crossSection.size() <= 1)
     {
