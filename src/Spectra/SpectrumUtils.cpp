@@ -121,6 +121,12 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
                     pt.leftPixel = static_cast<double>(startIdx);
                     pt.rightPixel = static_cast<double>(endIdx);
 
+                    const int nearestPixel = (int)std::round(pt.pixel);
+                    if (ddx2[nearestPixel + 1] + -2.0 * ddx2[nearestPixel] + ddx2[nearestPixel - 1] < 0.0) // third derivative is negative
+                    {
+                        pt.flatTop = true;
+                    }
+
                     result.push_back(pt);
                 }
             }
@@ -264,6 +270,41 @@ void FindKeypointsInSpectrum(const CSpectrum& spectrum, double minimumIntensity,
     }
 
     std::sort(begin(result), end(result), [](const SpectrumDataPoint& p1, const SpectrumDataPoint& p2) { return p1.pixel < p2.pixel; });
+}
+
+// TODO: Move
+double Average(const double* data, size_t size)
+{
+    double sum = data[0];
+    for (size_t ii = 1; ii < size; ++ii)
+    {
+        sum += data[ii];
+    }
+    return sum / (double)size;
+}
+
+void FindEmissionLines(const CSpectrum& spectrum, std::vector<SpectrumDataPoint>& result)
+{
+    // Find the 10% lowest values and use these as a baseline
+    // if we assume tha there are a small number of narrow peaks, then this will be a relatively ok level for the baseline
+    std::vector<double> spectrumValues{ spectrum.m_data, spectrum.m_data + spectrum.m_length };
+    std::sort(begin(spectrumValues), end(spectrumValues));
+
+    const size_t length = spectrum.m_length / 10;
+    const double baseline = Average(spectrumValues.data(), length);
+    const double maximumIntensity = spectrumValues.back(); // the vector is now sorted in increasing order, the maximum value is in the back.
+
+    const double threshold = baseline + 0.02 * (maximumIntensity - baseline);
+
+    FindPeaks(spectrum, threshold, result);
+
+    if (result.size() == 0)
+    {
+        return;
+    }
+
+    // TODO: Improve in some way?
+
 }
 
 bool Derivative(const double* data, size_t dataLength, std::vector<double>& result)

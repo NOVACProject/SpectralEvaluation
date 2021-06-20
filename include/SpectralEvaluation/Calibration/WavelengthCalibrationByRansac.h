@@ -134,10 +134,33 @@ double PolynomialValueAt(const std::vector<double>& coefficients, double x);
 struct RansacWavelengthCalibrationSettings
 {
     size_t modelPolynomialOrder = 3;
+
     int numberOfRansacIterations = 500000;
-    size_t sampleSize = 4; // the number of correspondences to select in one iteration - should really be (modelPolynomialOrder + 1)
-    double inlierLimitInWavelength = 0.2; // how close a keypoint needs to be for it to be considered an inlier. In nm
+
+    /// <summary>
+    /// The number of correspondences to select in one iteration.
+    /// Default (0) corresponds to (modelPolynomialOrder + 1)
+    /// </summary>
+    size_t sampleSize = 0;
+
+    /// <summary>
+    /// The number of pixels on the detector which generated this spectrum
+    /// </summary>
+    size_t detectorSize = 2048;
+
+    /// <summary>
+    /// how close a keypoint needs to be for it to be considered an inlier. In nm
+    /// </summary>
+    double inlierLimitInWavelength = 0.2;
+
     bool refine = true;
+
+    /// <summary>
+    /// The number of threads to divide the work up into.
+    /// Special value: 0 corresponds to automatic.
+    /// Default is 0
+    /// </summary>
+    size_t numberOfThreads = 0;
 };
 
 struct RansacWavelengthCalibrationResult

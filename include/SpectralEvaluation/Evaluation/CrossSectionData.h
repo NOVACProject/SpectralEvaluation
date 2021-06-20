@@ -9,6 +9,8 @@ namespace MathFit
 }
 namespace novac
 {
+    class CSpectrum;
+
     /**
         The CReferenceData class holds information on the cross sections
         used in the fitting procedure. Each instance of this class holds
@@ -24,6 +26,9 @@ namespace novac
 
         /** Creates a copy of a range of another cross section */
         CCrossSectionData(const CCrossSectionData& other, double startWavelength, double endWavelength);
+
+        /** Converts a CSpectrum to a CCrossSectionData */
+        CCrossSectionData(const CSpectrum& spectrum);
 
         CCrossSectionData &operator=(const CCrossSectionData &other);
 

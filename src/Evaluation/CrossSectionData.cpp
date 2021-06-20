@@ -3,6 +3,7 @@
 #include <SpectralEvaluation/Fit/Vector.h>
 #include <SpectralEvaluation/Fit/CubicSplineFunction.h>
 #include <SpectralEvaluation/Spectra/Grid.h>
+#include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <fstream>
 #include <numeric>
 #include <map>
@@ -40,6 +41,12 @@ CCrossSectionData::CCrossSectionData(const CCrossSectionData& other, double star
         }
         this->m_waveLength = std::vector<double>(begin(other.m_waveLength) + start, begin(other.m_waveLength) + stop);
     }
+}
+
+CCrossSectionData::CCrossSectionData(const CSpectrum& spectrum)
+    : m_crossSection(spectrum.m_data, spectrum.m_data + spectrum.m_length),
+    m_waveLength(begin(spectrum.m_wavelength), end(spectrum.m_wavelength))
+{
 }
 
 CCrossSectionData& CCrossSectionData::operator=(const CCrossSectionData& other)

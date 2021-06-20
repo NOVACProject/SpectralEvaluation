@@ -6,6 +6,7 @@
 #include <SpectralEvaluation/Spectra/SpectrumUtils.h>
 #include <SpectralEvaluation/VectorUtils.h>
 
+#include <algorithm>
 #include <memory>
 
 // TODO: REMOVE

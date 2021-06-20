@@ -6,6 +6,7 @@
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <cstring>
 #include <sstream>
+#include <fstream>
 
 namespace novac
 {
@@ -279,6 +280,168 @@ std::string EnsureFilenameHasSuffix(const std::string& fullFilePath, const std::
         correctedFileName << fullFilePath << "." << defaultSuffix;
         return correctedFileName.str();
     }
+}
+
+std::string GetFileExtension(const std::string& fullFilePath)
+{
+    if (fullFilePath.size() == 0)
+    {
+        return fullFilePath;
+    }
+
+    const size_t lastPeriod = fullFilePath.rfind('.');
+    if (lastPeriod == fullFilePath.npos)
+    {
+        // no period found, hence no suffix
+        return std::string();
+    }
+
+    const size_t lastForwardSlash = fullFilePath.rfind('\\');
+    const size_t lastBackwardSlash = fullFilePath.rfind('/');
+
+    if ((lastForwardSlash != fullFilePath.npos && lastPeriod > lastForwardSlash) ||
+        (lastBackwardSlash != fullFilePath.npos && lastPeriod > lastBackwardSlash))
+    {
+        return fullFilePath.substr(lastPeriod, fullFilePath.size() - lastPeriod);
+    }
+    else
+    {
+        // no period found _after_ the last path-separator character, hence no suffix
+        return std::string();
+    }
+
+}
+
+
+bool SaveInstrumentCalibration(const std::string& fullFilePath, const CSpectrum& instrumentLineShape, const std::vector<double>& pixelToWavelengthMapping)
+{
+    if (instrumentLineShape.m_length == 0 || instrumentLineShape.m_wavelength.size() == 0)
+    {
+        return false; // cannot save an empty reference.
+    }
+
+    FILE* f = fopen(fullFilePath.c_str(), "w");
+    if (nullptr == f)
+    {
+        return false;
+    }
+
+    fprintf(f, "<InstrumentCalibration>\n");
+    {
+        fprintf(f, "<InstrumentLineShape>\n");
+
+        fprintf(f, "\t<Wavelength>[");
+        fprintf(f, "%.9lf", instrumentLineShape.m_wavelength[0]);
+        for (size_t ii = 1; ii < instrumentLineShape.m_length; ++ii)
+        {
+            fprintf(f, ";%.9lf", instrumentLineShape.m_wavelength[ii]);
+        }
+        fprintf(f, "]</Wavelength>\n");
+
+        fprintf(f, "\t<Intensity>[");
+        fprintf(f, "%.9lf", instrumentLineShape.m_data[0]);
+        for (size_t ii = 1; ii < instrumentLineShape.m_length; ++ii)
+        {
+            fprintf(f, ";%.9lf", instrumentLineShape.m_data[ii]);
+        }
+        fprintf(f, "]</Intensity>\n");
+
+        fprintf(f, "</InstrumentLineShape>\n");
+    }
+
+    {
+        fprintf(f, "<PixelToWavelengthMapping>[");
+        fprintf(f, "%.9lf", pixelToWavelengthMapping[0]);
+        for (size_t ii = 1; ii < pixelToWavelengthMapping.size(); ++ii)
+        {
+            fprintf(f, ";%.9lf", pixelToWavelengthMapping[ii]);
+        }
+        fprintf(f, "]</PixelToWavelengthMapping>\n");
+    }
+    fprintf(f, "</InstrumentCalibration>\n");
+    fclose(f);
+    return true;
+}
+
+/// <summary>
+/// Parses one line of data containing values separated by the given separator character
+/// </summary>
+std::vector<double> ParseDataList(const std::string& dataList, const char* separatorChar = ";" )
+{
+    std::vector<double> result;
+
+    size_t start = dataList.find("[");
+    if (start == dataList.npos)
+    {
+        return result;
+    }
+    start += 1;
+
+    const size_t end = dataList.find("]", start);
+    if (end == dataList.npos || end <= start)
+    {
+        return result;
+    }
+
+    const std::string dataSection = dataList.substr(start, end - start);
+
+    // read array of delimiter separated values
+    const char* nextElement = dataSection.data();
+    while (nextElement != nullptr)
+    {
+        double tmpDbl = 0.0;
+        if (sscanf(nextElement, "%lf", &tmpDbl) == 1)
+        {
+            result.push_back(tmpDbl);
+        }
+        nextElement = strstr(nextElement + 1, separatorChar);
+        if (nextElement == nullptr)
+        {
+            break;
+        }
+        nextElement += 1;
+    }
+
+    return result;
+}
+
+bool ReadInstrumentCalibration(const std::string& fullFilePath, CSpectrum& instrumentLineShape, std::vector<double>& pixelToWavelengthMapping)
+{
+    std::ifstream f{ fullFilePath, std::ios::in };
+    if (!f.is_open())
+    {
+        return false;
+    }
+
+    // rudimentary xml parsing without using an external library
+    std::string lineFromFile;
+    while (std::getline(f, lineFromFile))
+    {
+        if (lineFromFile.size() < 3)
+        {
+            continue;
+        }
+
+        if (lineFromFile.find("<Wavelength>") != lineFromFile.npos)
+        {
+            instrumentLineShape.m_wavelength = ParseDataList(lineFromFile);
+            continue;
+        }
+        else if (lineFromFile.find("<Intensity>") != lineFromFile.npos)
+        {
+            const auto intensity = ParseDataList(lineFromFile);
+            std::copy(begin(intensity), end(intensity), instrumentLineShape.m_data);
+            instrumentLineShape.m_length = static_cast<long>(intensity.size());
+            continue;
+        }
+        else if (lineFromFile.find("<PixelToWavelengthMapping>") != lineFromFile.npos)
+        {
+            pixelToWavelengthMapping = ParseDataList(lineFromFile);
+            continue;
+        }
+    }
+
+    return true;
 }
 
 }
