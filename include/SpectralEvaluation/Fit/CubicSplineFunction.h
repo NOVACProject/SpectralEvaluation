@@ -1,7 +1,7 @@
 #if !defined(CUBICSPLINEFUNCTION_H_020817)
 #define CUBICSPLINEFUNCTION_H_020817
 
-#include "Function.h"
+#include <SpectralEvaluation/Fit/Function.h>
 
 namespace MathFit
 {

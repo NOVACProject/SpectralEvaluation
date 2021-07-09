@@ -1,6 +1,8 @@
 #include "catch.hpp"
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 
+using namespace novac;
+
 struct PlumeMeasurement
 {
     std::vector<double> scanAngles;

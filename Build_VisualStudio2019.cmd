@@ -1,5 +1,5 @@
 REM Start by clearing out the 'cache'
-rmdir build
+rmdir /s /q build
 mkdir build
 cd build
 

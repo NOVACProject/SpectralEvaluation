@@ -1,6 +1,7 @@
 #include <SpectralEvaluation/VectorUtils.h>
 #include <algorithm>
 #include <cmath>
+#include <stdexcept>
 #include <assert.h>
 
 double Max(const std::vector<double>& values, size_t& idx)
@@ -62,12 +63,58 @@ double Min(const std::vector<double>& values)
 double Sum(const std::vector<double>& values)
 {
     double sum = 0.0;
-    for(size_t ii = 0; ii < values.size(); ++ii)
+    for (size_t ii = 0; ii < values.size(); ++ii)
     {
         sum += values[ii];
     }
-    
+
     return sum;
+}
+
+double SumOfSquaredDifferences(const std::vector<double>& a, const std::vector<double>& b)
+{
+    if (a.size() != b.size())
+    {
+        return -1.0;
+    }
+
+    double sum = 0.0;
+    for (size_t ii = 0; ii < a.size(); ++ii)
+    {
+        const double diff = a[ii] - b[ii];
+        sum += diff * diff;
+    }
+
+    return sum;
+}
+
+void Mult(std::vector<double>& values, double factor)
+{
+    for (double& v : values)
+    {
+        v *= factor;
+    }
+}
+
+void Mult(const std::vector<double>& firstVector, std::vector<double>& secondVectorAndResult)
+{
+    if (firstVector.size() != secondVectorAndResult.size())
+    {
+        throw std::invalid_argument("In multiplication, the first and the second vector must have equal length");
+    }
+
+    for (size_t ii = 0; ii < firstVector.size(); ++ii)
+    {
+        secondVectorAndResult[ii] = firstVector[ii] * secondVectorAndResult[ii];
+    }
+}
+
+void Exp(std::vector<double>& values)
+{
+    for (double& v : values)
+    {
+        v = std::exp(v);
+    }
 }
 
 double Average(const std::vector<double>& values)
@@ -84,6 +131,88 @@ double Average(const std::vector<double>& values)
     return (sum / (double)values.size());
 }
 
+double MinOfAbsolutes(const std::vector<double>& values)
+{
+    if (values.size() == 0)
+    {
+        return 0.0;
+    }
+    if (values.size() == 1)
+    {
+        return values[0];
+    }
+
+    double minValue = std::abs(values[0]);
+    for (size_t ii = 1; ii < values.size(); ++ii)
+    {
+        minValue = std::min(minValue, std::abs(values[ii]));
+    }
+    return minValue;
+}
+
+double WeightedAverage(const std::vector<double>& values, const std::vector<double>& errors)
+{
+    if (values.size() != errors.size())
+    {
+        return 0.0;
+    }
+    if (values.size() == 0)
+    {
+        return 0.0;
+    }
+    if (values.size() == 1)
+    {
+        return values.front();
+    }
+
+    // in order to avoid some catastrophic cancellation here, extract the common order of magnitude for both the values and the errors and handle them separately
+    const double errorsFactor = MinOfAbsolutes(errors);
+
+    double sumOfValues = 0.0;
+    double sumOfErrors = 0.0;
+    for (size_t ii = 0; ii < values.size(); ++ii)
+    {
+        const double errorSquared = errors[ii] * errors[ii] / (errorsFactor * errorsFactor);
+
+        sumOfValues += values[ii] / errorSquared;
+        sumOfErrors += 1.0 / errorSquared;
+    }
+
+    return (sumOfValues / sumOfErrors);
+}
+
+void RemoveMean(std::vector<double>& values)
+{
+    double mean = Average(values);
+    for (double& value : values)
+    {
+        value -= mean;
+    }
+}
+
+double Median(std::vector<double>& values)
+{
+    if (values.size() == 0)
+    {
+        return 0.0;
+    }
+    else if (values.size() == 1)
+    {
+        return values[0];
+    }
+    std::sort(begin(values), end(values));
+
+    const size_t midpointIndex = (values.size() >> 1);
+    if (values.size() % 2 == 0)
+    {
+        return 0.5 * (values[midpointIndex] + values[midpointIndex + 1]);
+    }
+    else
+    {
+        return values[midpointIndex];
+    }
+}
+
 double Area(const std::vector<double>& values, double xStep)
 {
     if (values.size() < 2)
@@ -94,7 +223,7 @@ double Area(const std::vector<double>& values, double xStep)
     double sum = 0.0;
     for (size_t ii = 1; ii < values.size(); ++ii)
     {
-        sum += (values[ii] + values[ii-1]);
+        sum += (values[ii] + values[ii - 1]);
     }
 
     sum *= 0.5 * xStep;
@@ -140,7 +269,7 @@ void NormalizeArea(const std::vector<double>& input, std::vector<double>& output
         return;
     }
 
-    const double minValue    = Min(input);
+    const double minValue = Min(input);
     const double sumOfValues = Sum(input) - minValue * input.size();
 
     for (size_t ii = 0; ii < input.size(); ++ii)
@@ -207,7 +336,7 @@ double GetAt(const std::vector<double>& values, double idx)
     {
         return 0.0;
     }
-    if (idx >(double)(values.size() - 1))
+    if (idx > (double)(values.size() - 1))
     {
         return 0.0;
     }
@@ -233,7 +362,7 @@ double Centroid(const std::vector<double>& values)
 
     for (size_t ii = 1; ii < values.size(); ++ii)
     {
-        compoundMass[ii] = compoundMass[ii-1] + values[ii];
+        compoundMass[ii] = compoundMass[ii - 1] + values[ii];
     }
 
     const double totalMass = compoundMass.back();

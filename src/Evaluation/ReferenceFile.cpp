@@ -1,8 +1,8 @@
 #include <SpectralEvaluation/Evaluation/ReferenceFile.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
-#include <SpectralEvaluation/Spectra/ReferenceSpectrumConvolution.h>
+#include <SpectralEvaluation/Calibration/ReferenceSpectrumConvolution.h>
 
-namespace Evaluation
+namespace novac
 {
 
 CReferenceFile &CReferenceFile::operator=(const CReferenceFile &other)
@@ -22,6 +22,7 @@ CReferenceFile &CReferenceFile::operator=(const CReferenceFile &other)
     this->m_squeezeValue = other.m_squeezeValue;
     this->m_squeezeMaxValue = other.m_squeezeMaxValue;
     this->m_isFiltered = other.m_isFiltered;
+    this->m_include = other.m_include;
 
     if (other.m_data != nullptr)
     {
@@ -48,6 +49,7 @@ CReferenceFile &CReferenceFile::operator=(CReferenceFile&& other)
     this->m_squeezeValue = other.m_squeezeValue;
     this->m_squeezeMaxValue = other.m_squeezeMaxValue;
     this->m_isFiltered = other.m_isFiltered;
+    this->m_include = other.m_include;
 
     if (other.m_data != nullptr)
     {
@@ -58,11 +60,12 @@ CReferenceFile &CReferenceFile::operator=(CReferenceFile&& other)
 }
 
 CReferenceFile::CReferenceFile(const CReferenceFile& other)
-    : m_path(other.m_path),
+    : m_specieName(other.m_specieName),
+    m_path(other.m_path),
     m_crossSectionFile(other.m_crossSectionFile),
     m_slitFunctionFile(other.m_slitFunctionFile),
     m_wavelengthCalibrationFile(other.m_wavelengthCalibrationFile),
-    m_specieName(other.m_specieName),
+    m_gasFactor(other.m_gasFactor),
     m_columnOption(other.m_columnOption),
     m_columnValue(other.m_columnValue),
     m_columnMaxValue(other.m_columnMaxValue),
@@ -72,7 +75,8 @@ CReferenceFile::CReferenceFile(const CReferenceFile& other)
     m_squeezeOption(other.m_squeezeOption),
     m_squeezeValue(other.m_squeezeValue),
     m_squeezeMaxValue(other.m_squeezeMaxValue),
-    m_isFiltered(other.m_isFiltered)
+    m_isFiltered(other.m_isFiltered),
+    m_include(other.m_include)
 {
     if (other.m_data != nullptr)
     {
@@ -81,11 +85,12 @@ CReferenceFile::CReferenceFile(const CReferenceFile& other)
 }
 
 CReferenceFile::CReferenceFile(CReferenceFile&& other)
-    : m_path(other.m_path),
+    : m_specieName(other.m_specieName),
+    m_path(other.m_path),
     m_crossSectionFile(other.m_crossSectionFile),
     m_slitFunctionFile(other.m_slitFunctionFile),
     m_wavelengthCalibrationFile(other.m_wavelengthCalibrationFile),
-    m_specieName(other.m_specieName),
+    m_gasFactor(other.m_gasFactor),
     m_columnOption(other.m_columnOption),
     m_columnValue(other.m_columnValue),
     m_columnMaxValue(other.m_columnMaxValue),
@@ -95,7 +100,8 @@ CReferenceFile::CReferenceFile(CReferenceFile&& other)
     m_squeezeOption(other.m_squeezeOption),
     m_squeezeValue(other.m_squeezeValue),
     m_squeezeMaxValue(other.m_squeezeMaxValue),
-    m_isFiltered(other.m_isFiltered)
+    m_isFiltered(other.m_isFiltered),
+    m_include(other.m_include)
 {
     if (other.m_data != nullptr)
     {
@@ -162,7 +168,7 @@ int CReferenceFile::ConvolveReference()
 {
     m_data.reset(new CCrossSectionData());
 
-    if (!Evaluation::ConvolveReference(m_wavelengthCalibrationFile, m_slitFunctionFile, m_crossSectionFile, *m_data))
+    if (!::novac::ConvolveReference(m_wavelengthCalibrationFile, m_slitFunctionFile, m_crossSectionFile, *m_data))
     {
         m_data.reset();
         return 1;

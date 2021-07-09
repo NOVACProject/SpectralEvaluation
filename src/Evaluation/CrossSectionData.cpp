@@ -8,7 +8,7 @@
 #include <map>
 #include <mutex>
 
-namespace Evaluation
+namespace novac
 {
 
 static std::mutex s_crossSectionDatabase;
@@ -19,8 +19,8 @@ CCrossSectionData::CCrossSectionData()
 }
 
 CCrossSectionData::CCrossSectionData(const CCrossSectionData& other)
-    : m_crossSection(begin(other.m_crossSection), end(other.m_crossSection)),
-    m_waveLength(begin(other.m_waveLength), end(other.m_waveLength))
+    : m_waveLength(begin(other.m_waveLength), end(other.m_waveLength)),
+    m_crossSection(begin(other.m_crossSection), end(other.m_crossSection))
 {
 }
 
@@ -186,6 +186,14 @@ int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
     {
         fileRef.getline(tmpBuffer.data(), maxSize);
 
+        // Ignore empty-lines and lines starting with a comment character
+        if (strlen(tmpBuffer.data()) == 0 ||
+            tmpBuffer[0] == ';' ||
+            tmpBuffer[0] == '#')
+        {
+            continue;
+        }
+
         // this construction enables us to read files with both one or two columns
         double fValue1 = 0.0;
         double fValue2 = 0.0;
@@ -312,6 +320,38 @@ void Resample(const CCrossSectionData& slf, double resolution, std::vector<doubl
         else
         {
             resampledSlf[ii] = 0.0;
+        }
+    }
+}
+
+void Resample(const CCrossSectionData& crossSection, const std::vector<double>& newGrid, std::vector<double>& result)
+{
+    const double newXMin = newGrid.front();
+    const double newXMax = newGrid.back();
+    const double oldXMin = crossSection.m_waveLength.front();
+    const double oldXMax = crossSection.m_waveLength.back();
+
+    std::vector<double> xCopy(begin(crossSection.m_waveLength), end(crossSection.m_waveLength)); // a non-const local copy
+    std::vector<double> yCopy(begin(crossSection.m_crossSection), end(crossSection.m_crossSection)); // a non-const local copy
+    MathFit::CVector slfX(xCopy.data(), (int)xCopy.size(), 1, false);
+    MathFit::CVector slfY(yCopy.data(), (int)yCopy.size(), 1, false);
+
+    // Create a spline from the slit-function.
+    MathFit::CCubicSplineFunction spline(slfX, slfY);
+
+    // do the resampling...
+    result.resize(newGrid.size());
+    for (size_t ii = 0; ii < newGrid.size(); ++ii)
+    {
+        const double x = newGrid[ii];
+
+        if (x >= oldXMin && x <= oldXMax)
+        {
+            result[ii] = spline.GetValue(x);
+        }
+        else
+        {
+            result[ii] = 0.0;
         }
     }
 }

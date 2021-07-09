@@ -3,7 +3,7 @@
 #include <SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h>
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 
-using namespace Evaluation;
+using namespace novac;
 
 TEST_CASE("IsSuitableScanForRatioEvaluation", "[RatioEvaluation][IsSuitableScanForRatioEvaluation]")
 {

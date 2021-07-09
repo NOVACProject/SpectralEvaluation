@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace Evaluation
+namespace novac
 {
     /** CReferenceFitResult is a class to store the evaluated parameters of a 
         reference file  from evaluating a spectrum */

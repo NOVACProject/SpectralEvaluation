@@ -9,9 +9,9 @@
 #if !defined(FUNCTION_H_011206)
 #define FUNCTION_H_011206
 
-#include "Vector.h"
-#include "Matrix.h"
-#include "DataSet.h"
+#include <SpectralEvaluation/Fit/Vector.h>
+#include <SpectralEvaluation/Fit/Matrix.h>
+#include <SpectralEvaluation/Fit/DataSet.h>
 
 #if _MSC_VER > 1000
 #pragma once

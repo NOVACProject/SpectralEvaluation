@@ -7,7 +7,7 @@
 #if !defined(STANDARDMETRIC_H_011206)
 #define STANDARDMETRIC_H_011206
 
-#include "ParamFunction.h"
+#include <SpectralEvaluation/Fit/ParamFunction.h>
 
 #if _MSC_VER > 1000
 #pragma once

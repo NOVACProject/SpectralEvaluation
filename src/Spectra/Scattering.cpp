@@ -359,12 +359,12 @@ namespace Doasis
         return vRingSpec;
     }
 
-    CSpectrum Scattering::CalcRingSpectrum(CSpectrum& specOrig, double fTemp, int iJMax, double fMixing, double fSZA)
+    novac::CSpectrum Scattering::CalcRingSpectrum(novac::CSpectrum& specOrig, double fTemp, int iJMax, double fMixing, double fSZA)
     {
         // if there is no wavelength information, we can't get the spectrum
         if (!specOrig.IsWavelengthValid())
         {
-            return CSpectrum();
+            return novac::CSpectrum();
         }
 
         // CVector vRing = CalcRingSpectrum(specOrig.Wavelength.ToVector(), specOrig.Intensity.ToVector(), fTemp, iJMax, fMixing, fSZA);
@@ -372,7 +372,7 @@ namespace Doasis
         CVector intensity(specOrig.m_data, specOrig.m_length, 1, false);
         CVector vRing = CalcRingSpectrum(wavelength, intensity, fTemp, iJMax, fMixing, fSZA);
 
-        CSpectrum specRing;
+        novac::CSpectrum specRing;
         specRing.m_length = vRing.GetSize();
         memcpy(specRing.m_data, vRing.GetSafePtr(), vRing.GetSize() * sizeof(double));
         specRing.m_wavelength = std::vector<double>(begin(specOrig.m_wavelength), end(specOrig.m_wavelength));

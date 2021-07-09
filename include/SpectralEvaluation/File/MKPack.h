@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace SpectrumIO
+namespace novac
 {
 #define hdr_version 5
 

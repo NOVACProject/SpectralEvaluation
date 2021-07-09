@@ -4,6 +4,9 @@
 #include <string>
 #include <SpectralEvaluation/StringUtils.h>
 
+namespace novac
+{
+
 CDateTime::CDateTime(const CDateTime &t2)
     : year(t2.year), month(t2.month), day(t2.day), hour(t2.hour), minute(t2.minute), second(t2.second), millisecond(t2.millisecond)
 {
@@ -407,7 +410,7 @@ int	DayNr(const unsigned short day[3]) {
     d.year = day[2];
     d.month = (unsigned char)day[1];
     d.day = (unsigned char)day[0];
-    return DayNr(d);
+    return novac::DayNr(d);
 }
 
 int	DayNr(const CDateTime &day) {
@@ -473,3 +476,4 @@ void SplitToHourMinuteSecond(const int time, int &hours, int &minutes, int &seco
     seconds = time % 60;
 }
 
+}

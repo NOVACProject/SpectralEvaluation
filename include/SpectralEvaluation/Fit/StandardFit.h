@@ -7,10 +7,10 @@
 #if !defined(STANDARDFIT_H_020317)
 #define STANDARDFIT_H_020317
 
-#include "Fit.h"
-#include "LeastSquareFit.h"
-#include "LevenbergMarquardtFit.h"
-#include "ParamFunction.h"
+#include <SpectralEvaluation/Fit/Fit.h>
+#include <SpectralEvaluation/Fit/LeastSquareFit.h>
+#include <SpectralEvaluation/Fit/LevenbergMarquardtFit.h>
+#include <SpectralEvaluation/Fit/ParamFunction.h>
 
 namespace MathFit
 {

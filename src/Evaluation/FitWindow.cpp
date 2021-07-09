@@ -4,25 +4,27 @@
 
 #include <iostream>
 
-namespace Evaluation
+namespace novac
 {
 
 CFitWindow::CFitWindow(const CFitWindow &other)
-    : channel(other.channel),
+    : fitLow(other.fitLow),
     fitHigh(other.fitHigh),
-    fitLow(other.fitLow),
-    fitType(other.fitType),
-    shiftSky(other.shiftSky),
-    interlaceStep(other.interlaceStep),
-    name(other.name),
+    channel(other.channel),
     nRef(other.nRef),
+    fraunhoferRef(other.fraunhoferRef),
     polyOrder(other.polyOrder),
     includeIntensitySpacePolyominal(other.includeIntensitySpacePolyominal),
     ringCalculation(other.ringCalculation),
-    UV(other.UV),
     specLength(other.specLength),
     startChannel(other.startChannel),
-    fraunhoferRef(other.fraunhoferRef),
+    name(other.name),
+    fitType(other.fitType),
+    shiftSky(other.shiftSky),
+    skyShift(other.skyShift),
+    skySqueeze(other.skySqueeze),
+    interlaceStep(other.interlaceStep),
+    UV(other.UV),
     findOptimalShift(other.findOptimalShift),
     child(begin(other.child), end(other.child))
 {
@@ -33,21 +35,23 @@ CFitWindow::CFitWindow(const CFitWindow &other)
 }
 
 CFitWindow::CFitWindow(CFitWindow&& other)
-    : channel(other.channel),
+    : fitLow(other.fitLow),
     fitHigh(other.fitHigh),
-    fitLow(other.fitLow),
-    fitType(other.fitType),
-    shiftSky(other.shiftSky),
-    interlaceStep(other.interlaceStep),
-    name(other.name),
+    channel(other.channel),
     nRef(other.nRef),
+    fraunhoferRef(other.fraunhoferRef),
     polyOrder(other.polyOrder),
     includeIntensitySpacePolyominal(other.includeIntensitySpacePolyominal),
     ringCalculation(other.ringCalculation),
-    UV(other.UV),
     specLength(other.specLength),
     startChannel(other.startChannel),
-    fraunhoferRef(other.fraunhoferRef),
+    name(other.name),
+    fitType(other.fitType),
+    shiftSky(other.shiftSky),
+    skyShift(other.skyShift),
+    skySqueeze(other.skySqueeze),
+    interlaceStep(other.interlaceStep),
+    UV(other.UV),
     findOptimalShift(other.findOptimalShift),
     child(begin(other.child), end(other.child))
 {
@@ -64,6 +68,8 @@ CFitWindow &CFitWindow::operator=(const CFitWindow &other)
     this->fitLow = other.fitLow;
     this->fitType = other.fitType;
     this->shiftSky = other.shiftSky;
+    this->skyShift = other.skyShift;
+    this->skySqueeze = other.skySqueeze;
     this->interlaceStep = other.interlaceStep;
     this->name = other.name;
     this->nRef = other.nRef;
@@ -91,6 +97,8 @@ CFitWindow &CFitWindow::operator=(CFitWindow&& other)
     this->fitLow = other.fitLow;
     this->fitType = other.fitType;
     this->shiftSky = other.shiftSky;
+    this->skyShift = other.skyShift;
+    this->skySqueeze = other.skySqueeze;
     this->interlaceStep = other.interlaceStep;
     this->name = std::move(other.name);
     this->nRef = other.nRef;
@@ -180,7 +188,7 @@ void HighPassFilterReferences(CFitWindow& window)
         HighPassFilterReferences(c);
     }
 
-    if (window.fitType != Evaluation::FIT_HP_DIV && window.fitType != Evaluation::FIT_HP_SUB)
+    if (window.fitType != novac::FIT_HP_DIV && window.fitType != novac::FIT_HP_SUB)
     {
         return;
     }
