@@ -110,6 +110,122 @@ bool AnyLineIsSaturated(const CSpectrum& measuredSpectrum, const std::vector<nov
 
 // --------------------------------------- Performing a pixel-to-wavelength calibration from a measured mercury spectrum ---------------------------------------
 
+bool IsInlier(size_t measuredIdx, const std::vector<Correspondence>& allCorrespondences, const std::vector<bool>& correspondenceIsInlier)
+{
+    for (size_t correspondenceIdx = 0; correspondenceIdx < allCorrespondences.size(); ++correspondenceIdx)
+    {
+        if (correspondenceIsInlier[correspondenceIdx] && allCorrespondences[correspondenceIdx].measuredIdx == measuredIdx)
+        {
+            return true;
+        }
+    }
+
+    return false; // not found
+}
+
+size_t FindPeakWithPixel(double pixel, const std::vector<novac::SpectrumDataPoint>& measuredPeaks)
+{
+    size_t closestPeak = 0;
+    double closestDistance = std::numeric_limits<double>::max();
+
+    for (size_t peakIdx = 0; peakIdx < measuredPeaks.size(); ++peakIdx)
+    {
+        const double distance = std::abs(pixel - measuredPeaks[peakIdx].pixel);
+        if (distance < 0.001)
+        {
+            return peakIdx; // no doubt
+        }
+        if (distance < closestDistance)
+        {
+            closestDistance = distance;
+            closestPeak = peakIdx;
+        }
+    }
+
+    return closestPeak;
+}
+
+// Try to figure out which known mercury line corresponds to which measured peak, listing possible correspondences
+std::vector<Correspondence> ListMercurySpectrumCorrespondences(
+    const std::vector<novac::SpectrumDataPoint>& measuredPeaks,
+    const std::vector<double>& initialPixelToWavelength,
+    double initialWavelengthTolerance)
+{
+    // Figure out how many points are saturated (if any)
+    // sortedPeaks is the emission lines sorted in decreasing intensity
+    std::vector<novac::SpectrumDataPoint> sortedPeaks{ begin(measuredPeaks), end(measuredPeaks) };
+    std::sort(begin(sortedPeaks), end(sortedPeaks), [](const novac::SpectrumDataPoint& a, const novac::SpectrumDataPoint& b) {return a.intensity > b.intensity; });
+    const double maximumMeasuredIntensity = sortedPeaks[0].intensity;
+
+    int numberOfSaturatedPeaks = 0;
+    for (size_t ii = 0; ii < sortedPeaks.size(); ++ii)
+    {
+        if (sortedPeaks[ii].flatTop && sortedPeaks[ii].intensity > 0.8 * maximumMeasuredIntensity)
+        {
+            ++numberOfSaturatedPeaks;
+        }
+    }
+
+    // List of known, strong mercury lines, in nm(air)
+    struct emissionLine
+    {
+        emissionLine(double w, double s) : wavelength(w), intensity(s) { }
+        double wavelength;
+        double intensity;
+    };
+
+    const std::vector<emissionLine> knownMercuryLines = {
+        emissionLine(365.4836, 1.00),
+        emissionLine(313.1839, 0.90),
+        emissionLine(312.5668, 0.70),
+        emissionLine(404.6563, 0.47),
+        emissionLine(296.7280, 0.41),
+        emissionLine(366.3279, 0.16),
+        emissionLine(302.1498, 0.08),
+        emissionLine(289.4,    0.04),
+        emissionLine(334.148,  0.04),
+        emissionLine(407.783,  0.03)
+    };
+    /* More known lines, could be added later if needed:
+        253.652,  296.7280,
+        302.1498, 312.5668, 313.1548, 313.1839, 334.148, 365.0153, 365.4836, 366.3279, 398.3931,
+        404.6563, 407.783, 435.8328,
+        546.074, 576.960, 579.066 };
+    */
+
+    std::vector<Correspondence> correspondences;
+    const double relativePositionTolerance = (numberOfSaturatedPeaks == 0) ? 0.25 : 0.5;
+    for (size_t sortedPeaksIdx = 0; sortedPeaksIdx < sortedPeaks.size(); ++sortedPeaksIdx)
+    {
+        double initialWavelengthOfPeak = 0.0;
+        if (!novac::LinearInterpolation(initialPixelToWavelength, sortedPeaks[sortedPeaksIdx].pixel, initialWavelengthOfPeak))
+        {
+            continue;
+        }
+        const double positionInList = sortedPeaksIdx / (double)sortedPeaks.size();
+
+        for (size_t lineIdx = 0; lineIdx < knownMercuryLines.size(); ++lineIdx)
+        {
+            const double linePositionInList = (lineIdx / (double)knownMercuryLines.size());
+
+            if (std::abs(initialWavelengthOfPeak - knownMercuryLines[lineIdx].wavelength) < initialWavelengthTolerance &&
+                std::abs(positionInList - linePositionInList) < relativePositionTolerance)
+            {
+                novac::Correspondence corr;
+                corr.measuredIdx = FindPeakWithPixel(sortedPeaks[sortedPeaksIdx].pixel, measuredPeaks);
+                corr.measuredValue = sortedPeaks[sortedPeaksIdx].pixel;
+                corr.theoreticalIdx = lineIdx;
+                corr.theoreticalValue = knownMercuryLines[lineIdx].wavelength;
+                corr.error = std::abs(positionInList - linePositionInList);
+
+                correspondences.push_back(corr);
+            }
+        }
+    }
+
+    return correspondences;
+}
+
 bool MercuryCalibration(
     const CSpectrum& measuredMercurySpectrum,
     int polynomialOrder,
@@ -142,33 +258,7 @@ bool MercuryCalibration(
         return false;
     }
 
-    // List of known, strong mercury lines, in nm(air)
-    struct emissionLine
-    {
-        emissionLine(double w, double s) : wavelength(w), intensity(s) { }
-        double wavelength;
-        double intensity;
-    };
-
-    const std::vector<emissionLine> knownMercuryLines = {
-        emissionLine(365.4836, 1.00),
-        emissionLine(313.1839, 0.90),
-        emissionLine(312.5668, 0.70),
-        emissionLine(404.6563, 0.47),
-        emissionLine(296.7280, 0.41),
-        emissionLine(366.3279, 0.16),
-        emissionLine(302.1498, 0.08),
-        emissionLine(289.4,    0.04),
-        emissionLine(334.148,  0.04),
-        emissionLine(407.783,  0.03)
-    };
-    /* More known lines :
-        253.652,  296.7280,
-        302.1498, 312.5668, 313.1548, 313.1839, 334.148, 365.0153, 365.4836, 366.3279, 398.3931,
-        404.6563, 407.783, 435.8328,
-        546.074, 576.960, 579.066 }; */
-
-        // Find the peaks of the spectrum
+    // measuredPeaks is the emission lines of the spectrum, sorted in increasing pixel order
     std::vector<novac::SpectrumDataPoint> measuredPeaks;
     FindEmissionLines(measuredMercurySpectrum, measuredPeaks);
 
@@ -176,63 +266,18 @@ bool MercuryCalibration(
     {
         if (state != nullptr)
         {
-            state->errorMessage = "No emission lines could be found";
+            state->errorMessage = "Not enough emission lines could be found";
         }
         return false;
-    }
-
-    // Figure out how many points are saturated (if any)
-    std::vector<novac::SpectrumDataPoint> sortedPeaks{ begin(measuredPeaks), end(measuredPeaks) };
-    std::sort(begin(sortedPeaks), end(sortedPeaks), [](const novac::SpectrumDataPoint& a, const novac::SpectrumDataPoint& b) {return a.intensity > b.intensity; });
-    const double maximumMeasuredIntensity = sortedPeaks[0].intensity;
-
-    int numberOfSaturatedPeaks = 0;
-    for (size_t ii = 0; ii < sortedPeaks.size(); ++ii)
-    {
-        if (sortedPeaks[ii].flatTop && sortedPeaks[ii].intensity > 0.8 * maximumMeasuredIntensity)
-        {
-            ++numberOfSaturatedPeaks;
-        }
-    }
-
-    // Try to figure out which known mercury line corresponds to which measured peak
-    std::vector<Correspondence> correspondences;
-    const double initialWavelengthTolerance = 100.0;
-    const double relativePositionTolerance = (numberOfSaturatedPeaks == 0) ? 0.25 : 0.5;
-    for (size_t measIdx = 0; measIdx < sortedPeaks.size(); ++measIdx)
-    {
-        double initialWavelengthOfPeak = 0.0;
-        if (!novac::LinearInterpolation(initialPixelToWavelength, sortedPeaks[measIdx].pixel, initialWavelengthOfPeak))
-        {
-            continue;
-        }
-        const double positionInList = measIdx / (double)sortedPeaks.size();
-
-        for (size_t lineIdx = 0; lineIdx < knownMercuryLines.size(); ++lineIdx)
-        {
-            const double linePositionInList = (lineIdx / (double)knownMercuryLines.size());
-
-            if (std::abs(initialWavelengthOfPeak - knownMercuryLines[lineIdx].wavelength) < initialWavelengthTolerance &&
-                std::abs(positionInList - linePositionInList) < relativePositionTolerance)
-            {
-                novac::Correspondence corr;
-                corr.measuredIdx = measIdx;
-                corr.measuredValue = sortedPeaks[measIdx].pixel;
-                corr.theoreticalIdx = lineIdx;
-                corr.theoreticalValue = knownMercuryLines[lineIdx].wavelength;
-                corr.error = std::abs(positionInList - linePositionInList);
-
-                correspondences.push_back(corr);
-            }
-        }
     }
 
     // Run the calibration using Ransac
     RansacWavelengthCalibrationSettings calibrationSettings;
     calibrationSettings.modelPolynomialOrder = polynomialOrder;
     calibrationSettings.numberOfRansacIterations = 50000;
-    calibrationSettings.inlierLimitInWavelength = 0.01;
+    calibrationSettings.inlierLimitInWavelength = 0.1;
     calibrationSettings.detectorSize = static_cast<size_t>(measuredMercurySpectrum.m_length);
+    calibrationSettings.refine = false;
 
 #ifdef DEBUG
     calibrationSettings.numberOfThreads = 4; // auto
@@ -242,16 +287,38 @@ bool MercuryCalibration(
 
     RansacWavelengthCalibrationSetup calibrationSetup{ calibrationSettings };
 
-    const auto ransacResult = calibrationSetup.DoWavelengthCalibration(correspondences);
+    double initialWavelengthTolerance = 10.0; //< allowed tolerance in the initial calibration
+    novac::RansacWavelengthCalibrationResult ransacResult;
+    std::vector<Correspondence> correspondences;
 
-    if (ransacResult.highestNumberOfInliers == 0)
+    while (true)
     {
-        if (state != nullptr)
+        // Try to figure out which known mercury line corresponds to which measured peak, listing possible correspondences
+        correspondences = ListMercurySpectrumCorrespondences(measuredPeaks, initialPixelToWavelength, initialWavelengthTolerance);
+
+        // Do the calibration
+        ransacResult = calibrationSetup.DoWavelengthCalibration(correspondences);
+
+        // Check if the calibration succeeded.
+        if (ransacResult.highestNumberOfInliers > 0)
         {
-            state->errorMessage = "Wavelength calibration failed";
+            // we're done
+            break;
+        }
+
+        // Increase the tolerance and attempt again.
+        initialWavelengthTolerance *= 3.0;
+
+        if (initialWavelengthTolerance > 100.0)
+        {
+            // Time to give up..
+            if (state != nullptr)
+            {
+                state->errorMessage = "Wavelength calibration failed";
+            }
+            return false;
+        }
     }
-        return false;
-}
 
     // Save the result
     result.pixelToWavelengthMappingCoefficients = ransacResult.bestFittingModelCoefficients;
@@ -263,14 +330,16 @@ bool MercuryCalibration(
 
     if (nullptr != state)
     {
+        // Extract the measured peaks which we have identified in the measured spectrum (and the ones we haven't identified)
         // Remap the points from the (possible) wavelength calibration of the measured spectrum to
-        //  our own (home brewn) pixel-to-wavelength calibration.
-        for (auto& peak : measuredPeaks)
+        //  our freshly produced pixel-to-wavelength calibration.
+        state->peaks.clear();
+        for (size_t ii = 0; ii < measuredPeaks.size(); ++ii)
         {
-            novac::LinearInterpolation(result.pixelToWavelengthMapping, peak.pixel, peak.wavelength);
-        }
+            novac::LinearInterpolation(result.pixelToWavelengthMapping, measuredPeaks[ii].pixel, measuredPeaks[ii].wavelength);
 
-        state->peaks = measuredPeaks;
+            state->peaks.push_back(measuredPeaks[ii]);
+        }
     }
 
     return true;

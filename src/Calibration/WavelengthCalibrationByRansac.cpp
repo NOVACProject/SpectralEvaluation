@@ -3,6 +3,7 @@
 #include <iostream>
 #include <omp.h>
 #include <random>
+#include <complex>
 #include <set>
 #include <stdexcept>
 #include <SpectralEvaluation/Math/PolynomialFit.h>
@@ -409,6 +410,33 @@ std::vector<bool> ListInliers(const std::vector<Correspondence>& selectedValues,
     return result;
 }
 
+bool FindRoots(const std::vector<double>& polynomial, std::vector<std::complex<double>>& roots)
+{
+    if (polynomial.size() <= 1)
+    {
+        roots.clear();
+        return true;
+    }
+    else if (polynomial.size() == 2)
+    {
+        roots.resize(1);
+        roots[0] = -polynomial[0] / polynomial[1];
+        return true;
+    }
+    else if (polynomial.size() == 3)
+    {
+        roots.resize(2);
+        const std::complex<double> q = polynomial[0] / polynomial[2];
+        const std::complex<double> p = 0.5 * polynomial[1] / polynomial[2];
+        roots[0] = -p + std::sqrt(p * p - q);
+        roots[1] = -p - std::sqrt(p * p - q);
+        return true;
+    }
+    else
+    {
+        return false; // unsupported order of polynomial (so far)
+    }
+}
 
 RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCalibrations(
     const std::vector<Correspondence>& possibleCorrespondences,
@@ -429,6 +457,8 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCal
     std::vector<double> selectedPixelValues(ransacSampleSize);
     std::vector<double> selectedWavelengths(ransacSampleSize);
     std::vector<double> suggestionForPolynomial;
+    std::vector<double> polynomialDerivative;
+    std::vector<std::complex<double>> polynomialRoots;
     std::vector<Correspondence> selectedCorrespondences;
 
     for (int iteration = 0; iteration < numberOfIterations; ++iteration)
@@ -448,15 +478,49 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCal
         }
 
         {
-            const double firstValue = PolynomialValueAt(suggestionForPolynomial, 0);
-            const double midpointValue = PolynomialValueAt(suggestionForPolynomial, settings.detectorSize * 0.5);
-            const double lastValue = PolynomialValueAt(suggestionForPolynomial, (double)(settings.detectorSize - 1));
-
-            if (firstValue > lastValue || firstValue > midpointValue || midpointValue > lastValue)
+            // Attempt to check if the polynomial is monotonically increasing by checking that the derivative is always positive
+            //  this is done by checking that it is positive at the first value and does not change sign anywhere.
+            polynomialDerivative.resize(settings.modelPolynomialOrder);
+            for (size_t orderIdx = 1; orderIdx <= settings.modelPolynomialOrder; ++orderIdx)
             {
-                // This is not strictly a test for monotonically increasing function, just sampling. But it's fast and that is the main point here.
-                // std::cout << "Found polynomial is not monotonically increasing, skipping" << std::endl;
+                polynomialDerivative[orderIdx - 1] = suggestionForPolynomial[orderIdx] * orderIdx;
+            }
+
+            if (PolynomialValueAt(polynomialDerivative, 0.0) < 0.0)
+            {
+                // Derivative is negative at the first point
                 continue;
+            }
+            if (FindRoots(polynomialDerivative, polynomialRoots))
+            {
+                bool hasRootInInterval = false;
+                for (const auto& root : polynomialRoots)
+                {
+                    if (root.real() > 0.0 && root.real() < settings.detectorSize)
+                    {
+                        hasRootInInterval = true;
+                        break;
+                    }
+                }
+
+                if (hasRootInInterval)
+                {
+                    continue;
+                }
+            }
+            else
+            {
+                // root-checking failed, sample the polynomial instead
+                const double firstValue = PolynomialValueAt(suggestionForPolynomial, 0);
+                const double midpointValue = PolynomialValueAt(suggestionForPolynomial, settings.detectorSize * 0.5);
+                const double lastValue = PolynomialValueAt(suggestionForPolynomial, (double)(settings.detectorSize - 1));
+
+                if (firstValue > lastValue || firstValue > midpointValue || midpointValue > lastValue)
+                {
+                    // This is not strictly a test for monotonically increasing function, just sampling. But it's fast and that is the main point here.
+                    // std::cout << "Found polynomial is not monotonically increasing, skipping" << std::endl;
+                    continue;
+                }
             }
         }
 
@@ -473,7 +537,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCal
             (numberOfInliers == result.highestNumberOfInliers && isMonotonicallyIncreasing && inlierPixelSpan > result.largestPixelSpan) ||
             (numberOfInliers == result.highestNumberOfInliers && isMonotonicallyIncreasing && std::abs(inlierPixelSpan - result.largestPixelSpan) < 0.1 && meanErrorOfModel < result.smallestError))
         {
-            if (settings.refine && numberOfInliers > settings.modelPolynomialOrder)
+            if (settings.refine && numberOfInliers > settings.modelPolynomialOrder + 1)
             {
                 std::vector<double> pixelValues;
                 std::vector<double> wavelengths;
