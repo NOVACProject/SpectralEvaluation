@@ -190,6 +190,9 @@ struct RansacWavelengthCalibrationResult
     /** The smallest error in the model, by using the inliers */
     double smallestError = std::numeric_limits<double>::max();
 
+    /** The largest pixel span over which there are inliers in this model */
+    double largestPixelSpan = 0.0;
+
     /** The total number of possible correlations, the maximum number for 'highestNumberOfInliers' */
     size_t numberOfPossibleCorrelations = 0U;
 };

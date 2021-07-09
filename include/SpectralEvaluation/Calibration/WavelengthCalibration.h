@@ -110,9 +110,7 @@ struct MercurySpectrumCalibrationState
  *  pixel-to-wavelength mapping for the entire spectrum can be calculated.
  * @param measuredMercurySpectrum The measured spectrum
  * @param polynomialOrder The order of the polynomial to fit (in the range 1-3).
- * @param minimumWavelength The initial guess for the shortest wavelength present in the spectrum.
- *  This will be used to constrain the identification of the mercury lines.
- * @param maximumWavelength The initial guess for the longest wavelenght present in the spectrum.
+ * @param initialPixelToWavelength The initial guess for the pixel to wavelength calibration of the spectrum,
  *  This will be used to constrain the identification of the mercury lines.
  * @param result Will on successful return be filled with the resulting pixel-to-wavelength calibration.
  * @param state If not null, then this will be filled with information on how the calibration did perform.
@@ -120,8 +118,7 @@ struct MercurySpectrumCalibrationState
 bool MercuryCalibration(
     const CSpectrum& measuredMercurySpectrum,
     int polynomialOrder,
-    double minimumWavelength,
-    double maximumWavelength,
+    const std::vector<double>& initialPixelToWavelength,
     SpectrometerCalibrationResult& result,
     MercurySpectrumCalibrationState* state = nullptr);
 

@@ -423,3 +423,15 @@ double Resolution(const std::vector<double>& wavelGrid)
 
     return (maxValue - minValue) / (double)(wavelGrid.size() - 1);
 }
+
+std::vector<double> GenerateVector(double minValue, double maxValue, size_t length)
+{
+    std::vector<double> result;
+    result.resize(length);
+    for (size_t ii = 0; ii < length; ++ii)
+    {
+        result[ii] = minValue + (maxValue - minValue) * static_cast<double>(ii) / static_cast<double>(length - 1);
+    }
+    return result;
+}
+

@@ -112,3 +112,7 @@ double GetAt(const std::vector<double>& values, double idx);
 /** @return the average resolution of the provided wavelength grid.
     This is the average delta lambda between two neigboring pixels. */
 double Resolution(const std::vector<double>& wavelGrid);
+
+/** Generates a linear mapping from minValue to maxValue with 'length' values. */
+std::vector<double> GenerateVector(double minValue, double maxValue, size_t length);
+

@@ -113,8 +113,7 @@ bool AnyLineIsSaturated(const CSpectrum& measuredSpectrum, const std::vector<nov
 bool MercuryCalibration(
     const CSpectrum& measuredMercurySpectrum,
     int polynomialOrder,
-    double minimumWavelength,
-    double maximumWavelength,
+    const std::vector<double>& initialPixelToWavelength,
     SpectrometerCalibrationResult& result,
     MercurySpectrumCalibrationState* state)
 {
@@ -134,11 +133,11 @@ bool MercuryCalibration(
         }
         return false;
     }
-    else if (maximumWavelength < minimumWavelength)
+    else if (initialPixelToWavelength.size() != static_cast<size_t>(measuredMercurySpectrum.m_length))
     {
         if (state != nullptr)
         {
-            state->errorMessage = "Bad initial wavelength range provided, maximum wavelength must be larger than the minimum wavelength";
+            state->errorMessage = "Bad initial wavelength range provided, the length of the mapping must match the length of the measured spectrum";
         }
         return false;
     }
@@ -173,7 +172,7 @@ bool MercuryCalibration(
     std::vector<novac::SpectrumDataPoint> measuredPeaks;
     FindEmissionLines(measuredMercurySpectrum, measuredPeaks);
 
-    if (measuredPeaks.size() < polynomialOrder + 1)
+    if (measuredPeaks.size() < static_cast<size_t>(polynomialOrder) + 1)
     {
         if (state != nullptr)
         {
@@ -196,16 +195,17 @@ bool MercuryCalibration(
         }
     }
 
-    // Construct a model by assuming that the N strongest peaks in the measured are the N strongest known mercury peaks.
-    std::vector<double> initialCalibration;
-
     // Try to figure out which known mercury line corresponds to which measured peak
     std::vector<Correspondence> correspondences;
     const double initialWavelengthTolerance = 100.0;
     const double relativePositionTolerance = (numberOfSaturatedPeaks == 0) ? 0.25 : 0.5;
     for (size_t measIdx = 0; measIdx < sortedPeaks.size(); ++measIdx)
     {
-        const double initialWavelengthOfPeak = minimumWavelength + sortedPeaks[measIdx].pixel * (maximumWavelength - minimumWavelength) / (double)(measuredMercurySpectrum.m_length - 1);
+        double initialWavelengthOfPeak = 0.0;
+        if (!novac::LinearInterpolation(initialPixelToWavelength, sortedPeaks[measIdx].pixel, initialWavelengthOfPeak))
+        {
+            continue;
+        }
         const double positionInList = measIdx / (double)sortedPeaks.size();
 
         for (size_t lineIdx = 0; lineIdx < knownMercuryLines.size(); ++lineIdx)
@@ -231,6 +231,9 @@ bool MercuryCalibration(
     RansacWavelengthCalibrationSettings calibrationSettings;
     calibrationSettings.modelPolynomialOrder = polynomialOrder;
     calibrationSettings.numberOfRansacIterations = 50000;
+    calibrationSettings.inlierLimitInWavelength = 0.01;
+    calibrationSettings.detectorSize = static_cast<size_t>(measuredMercurySpectrum.m_length);
+
 #ifdef DEBUG
     calibrationSettings.numberOfThreads = 4; // auto
 #else
@@ -239,16 +242,16 @@ bool MercuryCalibration(
 
     RansacWavelengthCalibrationSetup calibrationSetup{ calibrationSettings };
 
-    auto ransacResult = calibrationSetup.DoWavelengthCalibration(correspondences);
+    const auto ransacResult = calibrationSetup.DoWavelengthCalibration(correspondences);
 
     if (ransacResult.highestNumberOfInliers == 0)
     {
         if (state != nullptr)
         {
             state->errorMessage = "Wavelength calibration failed";
-        }
-        return false;
     }
+        return false;
+}
 
     // Save the result
     result.pixelToWavelengthMappingCoefficients = ransacResult.bestFittingModelCoefficients;
@@ -261,7 +264,7 @@ bool MercuryCalibration(
     if (nullptr != state)
     {
         // Remap the points from the (possible) wavelength calibration of the measured spectrum to
-        //  our own (home brewn) pixel-to-wavelength calibration.   
+        //  our own (home brewn) pixel-to-wavelength calibration.
         for (auto& peak : measuredPeaks)
         {
             novac::LinearInterpolation(result.pixelToWavelengthMapping, peak.pixel, peak.wavelength);

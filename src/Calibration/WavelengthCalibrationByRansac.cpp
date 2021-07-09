@@ -341,6 +341,28 @@ size_t CountInliers(
     return inlier.size();
 }
 
+/// <summary>
+/// Calculates and returns the measured pixel-distance between the correspondence with the smallest 
+/// measured pixel and the correspondence with the largest measured pixel.
+/// </summary>
+double MeasurePixelSpan(const std::vector<Correspondence>& correspondences)
+{
+    if (correspondences.size() == 0)
+    {
+        return 0.0;
+    }
+    double minPixel = correspondences[0].measuredValue;
+    double maxPixel = correspondences[0].measuredValue;
+
+    for (size_t ii = 1; ii < correspondences.size(); ++ii)
+    {
+        minPixel = std::min(minPixel, correspondences[ii].measuredValue);
+        maxPixel = std::max(maxPixel, correspondences[ii].measuredValue);
+    }
+
+    return (maxPixel - minPixel);
+}
+
 // ---------------------------------- RansacWavelengthCalibrationSetup ----------------------------------
 RansacWavelengthCalibrationSetup::RansacWavelengthCalibrationSetup(RansacWavelengthCalibrationSettings calibrationSettings) :
     settings(calibrationSettings)
@@ -444,10 +466,12 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCal
         double meanErrorOfModel = 0.0;
         bool isMonotonicallyIncreasing = true;
         size_t numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondencesOrderedByMeasuredKeypoint, settings.inlierLimitInWavelength, inlierCorrespondences, meanErrorOfModel, isMonotonicallyIncreasing);
+        const double inlierPixelSpan = MeasurePixelSpan(inlierCorrespondences);
 
         if (iteration == 0 ||
             (numberOfInliers > result.highestNumberOfInliers && isMonotonicallyIncreasing) ||
-            (numberOfInliers == result.highestNumberOfInliers && isMonotonicallyIncreasing && meanErrorOfModel < result.smallestError))
+            (numberOfInliers == result.highestNumberOfInliers && isMonotonicallyIncreasing && inlierPixelSpan > result.largestPixelSpan) ||
+            (numberOfInliers == result.highestNumberOfInliers && isMonotonicallyIncreasing && std::abs(inlierPixelSpan - result.largestPixelSpan) < 0.1 && meanErrorOfModel < result.smallestError))
         {
             if (settings.refine && numberOfInliers > settings.modelPolynomialOrder)
             {
@@ -475,6 +499,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCal
                 result.highestNumberOfInliers = numberOfInliers;
                 result.correspondenceIsInlier = ListInliers(inlierCorrespondences, possibleCorrespondences);
                 result.smallestError = meanErrorOfModel;
+                result.largestPixelSpan = MeasurePixelSpan(inlierCorrespondences);
             }
             else
             {
@@ -485,6 +510,8 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCal
                 result.highestNumberOfInliers = numberOfInliers;
                 result.correspondenceIsInlier = ListInliers(inlierCorrespondences, possibleCorrespondences);
                 result.smallestError = meanErrorOfModel;
+                result.largestPixelSpan = inlierPixelSpan;
+
             }
         }
     }
