@@ -189,7 +189,7 @@ std::vector<Correspondence> ListMercurySpectrumCorrespondences(
     /* More known lines, could be added later if needed:
         253.652,  296.7280,
         302.1498, 312.5668, 313.1548, 313.1839, 334.148, 365.0153, 365.4836, 366.3279, 398.3931,
-        404.6563, 407.783, 435.8328,
+        404.6563, 407.783, 433.92, 434.75, 435.84
         546.074, 576.960, 579.066 };
     */
 

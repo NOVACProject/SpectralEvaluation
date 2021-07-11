@@ -9,6 +9,12 @@
 
 namespace novac
 {
+constexpr char* elevationAngleStr = "ElevationAngle = ";
+constexpr char* azimuthAngleStr = "AzimuthAngle = ";
+constexpr char* temperatureStr = "Temperature = ";
+constexpr char* wavelengthStr = "Wavelength = ";
+
+
 /** Reads a spectrum from a STD-file */
 bool CSTDFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName)
 {
@@ -213,10 +219,6 @@ bool CSTDFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName)
 
     // ----------- EXTENDED STD ------------------
     // - if the file is in the extended STD-format then we can continue here... -
-    constexpr char* elevationAngleStr = "ElevationAngle = ";
-    constexpr char* azimuthAngleStr = "AzimuthAngle = ";
-    constexpr char* temperatureStr = "Temperature = ";
-    constexpr char* wavelengthStr = "Wavelength = ";
 
     std::vector<char> szLine(65535);
     while (fgets(szLine.data(), (int)szLine.size(), f))
@@ -363,6 +365,18 @@ bool CSTDFile::WriteSpectrum(const CSpectrum& spec, const std::string& fileName,
 
     if (extendedFormat)
     {
+        if (spec.m_wavelength.size() == static_cast<size_t>(spec.m_length))
+        {
+            // DOASIS Specific format of wavelength data
+            fprintf(f, wavelengthStr);
+            fprintf(f, "(System.Double[%ld])", spec.m_length);
+            for (size_t ii = 0; ii < static_cast<size_t>(spec.m_length - 1); ++ii)
+            {
+                fprintf(f, "%lf ", spec.m_wavelength[ii]);
+            }
+            fprintf(f, "%lf\n", spec.m_wavelength.back());
+        }
+
         fprintf(f, "Author = \"\"\n");
         fprintf(f, "Average = %.2lf\n", spec.AverageValue());
         fprintf(f, "AzimuthAngle = 0\n");
