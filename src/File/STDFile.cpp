@@ -14,8 +14,6 @@ constexpr char* azimuthAngleStr = "AzimuthAngle = ";
 constexpr char* temperatureStr = "Temperature = ";
 constexpr char* wavelengthStr = "Wavelength = ";
 
-
-/** Reads a spectrum from a STD-file */
 bool CSTDFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName)
 {
     FILE* f = fopen(fileName.c_str(), "r");
@@ -299,23 +297,19 @@ bool CSTDFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName)
     return true;
 }
 
-bool CSTDFile::WriteSpectrum(const CSpectrum* spec, const std::string& fileName, int extendedFormat)
-{
-    return WriteSpectrum(*spec, fileName, extendedFormat);
-}
-
-bool CSTDFile::WriteSpectrum(const CSpectrum& spec, const std::string& fileName, int extendedFormat)
+/// <summary>
+/// Writes the mandatory part of the STD file to the provided (opened) file handle.
+/// </summary>
+/// <param name="spec">The spectrum data to save</param>
+/// <param name="fileName">The name of the file we're saving</param>
+/// <param name="f">An already opened file handle to which the data will be saved.</param>
+void WriteBasicData(const CSpectrum& spec, const std::string& fileName, FILE* f)
 {
     const CSpectrumInfo& info = spec.m_info;
-    FILE* f = fopen(fileName.c_str(), "w");
-    if (f == nullptr)
-        return false;
-
-    int i;
 
     fprintf(f, "GDBGMNUP\n1\n");
     fprintf(f, "%ld\n", spec.m_length);
-    for (i = 0; i < spec.m_length; ++i)
+    for (long i = 0; i < spec.m_length; ++i)
     {
         if (fabs(spec.m_data[i] - floor(spec.m_data[i])) > 1e-9)
         {
@@ -362,60 +356,128 @@ bool CSTDFile::WriteSpectrum(const CSpectrum& spec, const std::string& fileName,
     fprintf(f, "SITE %s\n", info.m_name.c_str());
     fprintf(f, "LONGITUDE %.6lf\n", info.m_gps.m_longitude);
     fprintf(f, "LATITUDE %.6lf\n", info.m_gps.m_latitude);
+}
+
+/// <summary>
+/// Writes the extended (DOASIS specific) part of the STD file to the provided (opened) file handle
+/// </summary>
+/// <param name="spec">The spectrum data to save</param>
+/// <param name="fileName">The name of the file we're saving</param>
+/// <param name="f">An already opened file handle to which the data will be saved.</param>
+void WriteExtendedData(const CSpectrum& spec, const std::string& fileName, const CSTDFile::ExtendedFormatInformation& extendedInformation, FILE* f)
+{
+    const CSpectrumInfo& info = spec.m_info;
+
+    if (spec.m_wavelength.size() == static_cast<size_t>(spec.m_length))
+    {
+        // DOASIS Specific format of wavelength data
+        fprintf(f, wavelengthStr);
+        fprintf(f, "(System.Double[%ld])", spec.m_length);
+        for (size_t ii = 0; ii < static_cast<size_t>(spec.m_length - 1); ++ii)
+        {
+            fprintf(f, "%lf ", spec.m_wavelength[ii]);
+        }
+        fprintf(f, "%lf\n", spec.m_wavelength.back());
+    }
+
+    if (extendedInformation.calibrationPolynomial.size() > 0)
+    {
+        fprintf(f, "CalibPolynomialOrder = %lld\n", extendedInformation.calibrationPolynomial.size() - 1);
+
+        fprintf(f, "CalibPolynomial = ");
+        fprintf(f, "(System.Double[%lld])", extendedInformation.calibrationPolynomial.size());
+        for (size_t ii = 0; ii < extendedInformation.calibrationPolynomial.size() - 1; ++ii)
+        {
+            fprintf(f, "%.9g ", extendedInformation.calibrationPolynomial[ii]);
+        }
+        fprintf(f, "%.9g\n", extendedInformation.calibrationPolynomial.back());
+    }
+
+    fprintf(f, "Author = \"\"\n");
+    fprintf(f, "Average = %.2lf\n", spec.AverageValue());
+    fprintf(f, "AzimuthAngle = 0\n");
+    fprintf(f, "Delta = 0\n");
+    fprintf(f, "DeltaRel = 0\n");
+    fprintf(f, "Deviation = 0\n");
+    fprintf(f, "Device = \"\"\n");
+    fprintf(f, "ElevationAngle = %.2lf\n", info.m_scanAngle);
+    fprintf(f, "ExposureTime = %ld\n", info.m_exposureTime);
+    fprintf(f, "FileName = %s\n", fileName.c_str());
+    fprintf(f, "FitHigh = 0\n");
+    fprintf(f, "FitLow = 0\n");
+    fprintf(f, "Gain = 0\n");
+    fprintf(f, "IntegrationMethod = Sum\n");
+    fprintf(f, "Latitude = %.6lf\n", info.m_gps.m_latitude);
+    fprintf(f, "LightPath = 0\n");
+    fprintf(f, "LightSource = \"\"\n");
+    fprintf(f, "Longitude = %.6lf\n", info.m_gps.m_longitude);
+    fprintf(f, "Marker = %lf\n", extendedInformation.Marker);
+    fprintf(f, "MathHigh = %ld\n", spec.m_length - 1);
+    fprintf(f, "MathLow = 0\n");
+    fprintf(f, "Max = %.3lf\n", spec.MaxValue());
+    fprintf(f, "MaxChannel = %ld\n", extendedInformation.MaxChannel >= 0 ? extendedInformation.MaxChannel : spec.m_length);
+    fprintf(f, "Min = %.3lf\n", spec.MinValue());
+    fprintf(f, "MinChannel = %ld\n", extendedInformation.MinChannel >= 0 ? extendedInformation.MinChannel : 0);
+    fprintf(f, "MultiChannelCounter = 0\n");
+    fprintf(f, "Name = \"%s\"\n", info.m_name.c_str());
+    fprintf(f, "NumScans = %ld\n", info.m_numSpec);
+    fprintf(f, "OpticalDensity = 0\n");
+    fprintf(f, "OpticalDensityCenter = %ld\n", spec.m_length / 2);
+    fprintf(f, "OpticalDensityLeft = 0\n");
+    fprintf(f, "OpticalDensityRight = %ld\n", spec.m_length - 1);
+    fprintf(f, "Pressure = 0\n");
+    fprintf(f, "Remark = \"\"\n");
+    fprintf(f, "ScanGeometry = 0\n"); //(DoasCore.Math.ScanGeometry)SAZ: 137.41237083135 SZA: 31.5085943481828 LAZ: 298.523110145623 LAZ: 129.285101310559 Date: 1/5/2007 10:35:07 Lat.: 0 Lon.: 0\n");
+    fprintf(f, "ScanMax = 0\n");
+    fprintf(f, "Temperature = %.2f\n", info.m_temperature);
+    fprintf(f, "Variance = 0\n");
+
+    for (const auto& prop : extendedInformation.additionalProperties)
+    {
+        fprintf(f, "%s = %s\n", prop.first.c_str(), prop.second.c_str());
+    }
+}
+
+bool CSTDFile::WriteSpectrum(const CSpectrum* spec, const std::string& fileName, int extendedFormat)
+{
+    return WriteSpectrum(*spec, fileName, extendedFormat);
+}
+
+bool CSTDFile::WriteSpectrum(const CSpectrum& spec, const std::string& fileName, int extendedFormat)
+{
+    FILE* f = fopen(fileName.c_str(), "w");
+    if (f == nullptr)
+    {
+        return false;
+    }
+
+    WriteBasicData(spec, fileName, f);
 
     if (extendedFormat)
     {
-        if (spec.m_wavelength.size() == static_cast<size_t>(spec.m_length))
-        {
-            // DOASIS Specific format of wavelength data
-            fprintf(f, wavelengthStr);
-            fprintf(f, "(System.Double[%ld])", spec.m_length);
-            for (size_t ii = 0; ii < static_cast<size_t>(spec.m_length - 1); ++ii)
-            {
-                fprintf(f, "%lf ", spec.m_wavelength[ii]);
-            }
-            fprintf(f, "%lf\n", spec.m_wavelength.back());
-        }
-
-        fprintf(f, "Author = \"\"\n");
-        fprintf(f, "Average = %.2lf\n", spec.AverageValue());
-        fprintf(f, "AzimuthAngle = 0\n");
-        fprintf(f, "Delta = 0\n");
-        fprintf(f, "DeltaRel = 0\n");
-        fprintf(f, "Deviation = 0\n");
-        fprintf(f, "Device = \"\"\n");
-        fprintf(f, "ElevationAngle = %.2lf\n", info.m_scanAngle);
-        fprintf(f, "ExposureTime = %ld\n", info.m_exposureTime);
-        fprintf(f, "FileName = %s\n", fileName.c_str());
-        fprintf(f, "FitHigh = 0\n");
-        fprintf(f, "FitLow = 0\n");
-        fprintf(f, "Gain = 0\n");
-        fprintf(f, "IntegrationMethod = Sum\n");
-        fprintf(f, "Latitude = %.6lf\n", info.m_gps.m_latitude);
-        fprintf(f, "LightPath = 0\n");
-        fprintf(f, "LightSource = \"\"\n");
-        fprintf(f, "Longitude = %.6lf\n", info.m_gps.m_longitude);
-        fprintf(f, "Marker = %ld\n", spec.m_length / 2);
-        fprintf(f, "MathHigh = %ld\n", spec.m_length - 1);
-        fprintf(f, "MathLow = 0\n");
-        fprintf(f, "Max = %.3lf\n", spec.MaxValue());
-        fprintf(f, "MaxChannel = %ld\n", spec.m_length);
-        fprintf(f, "Min = %.3lf\n", spec.MinValue());
-        fprintf(f, "MinChannel = 0\n");
-        fprintf(f, "MultiChannelCounter = 0\n");
-        fprintf(f, "Name = \"%s\"\n", info.m_name.c_str());
-        fprintf(f, "NumScans = %ld\n", info.m_numSpec);
-        fprintf(f, "OpticalDensity = 0\n");
-        fprintf(f, "OpticalDensityCenter = %ld\n", spec.m_length / 2);
-        fprintf(f, "OpticalDensityLeft = 0\n");
-        fprintf(f, "OpticalDensityRight = %ld\n", spec.m_length - 1);
-        fprintf(f, "Pressure = 0\n");
-        fprintf(f, "Remark = \"\"\n");
-        fprintf(f, "ScanGeometry = 0\n"); //(DoasCore.Math.ScanGeometry)SAZ: 137.41237083135 SZA: 31.5085943481828 LAZ: 298.523110145623 LAZ: 129.285101310559 Date: 1/5/2007 10:35:07 Lat.: 0 Lon.: 0\n");
-        fprintf(f, "ScanMax = 0\n");
-        fprintf(f, "Temperature = %.2f\n", info.m_temperature);
-        fprintf(f, "Variance = 0\n");
+        CSTDFile::ExtendedFormatInformation defaultExt;
+        defaultExt.Marker = spec.m_length / 2.0;
+        defaultExt.MinChannel = 0;
+        defaultExt.MaxChannel = spec.m_length;
+        WriteExtendedData(spec, fileName, defaultExt, f);
     }
+
+    fclose(f);
+
+    return true;
+}
+
+bool CSTDFile::WriteSpectrum(const CSpectrum& spec, const std::string& fileName, const CSTDFile::ExtendedFormatInformation& extendedInformation)
+{
+    FILE* f = fopen(fileName.c_str(), "w");
+    if (f == nullptr)
+    {
+        return false;
+    }
+
+    WriteBasicData(spec, fileName, f);
+
+    WriteExtendedData(spec, fileName, extendedInformation, f);
 
     fclose(f);
 
