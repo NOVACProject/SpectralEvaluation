@@ -412,8 +412,8 @@ void WriteExtendedData(const CSpectrum& spec, const std::string& fileName, const
     fprintf(f, "LightSource = \"\"\n");
     fprintf(f, "Longitude = %.6lf\n", info.m_gps.m_longitude);
     fprintf(f, "Marker = %lf\n", extendedInformation.Marker);
-    fprintf(f, "MathHigh = %ld\n", spec.m_length - 1);
-    fprintf(f, "MathLow = 0\n");
+    fprintf(f, "MathHigh = %ld\n", extendedInformation.MathHigh >= 0 ? extendedInformation.MathHigh : spec.m_length);
+    fprintf(f, "MathLow = %ld\n", extendedInformation.MathLow >= 0 ? extendedInformation.MathLow : 0);
     fprintf(f, "Max = %.3lf\n", spec.MaxValue());
     fprintf(f, "MaxChannel = %ld\n", extendedInformation.MaxChannel >= 0 ? extendedInformation.MaxChannel : spec.m_length);
     fprintf(f, "Min = %.3lf\n", spec.MinValue());
@@ -459,6 +459,8 @@ bool CSTDFile::WriteSpectrum(const CSpectrum& spec, const std::string& fileName,
         defaultExt.Marker = spec.m_length / 2.0;
         defaultExt.MinChannel = 0;
         defaultExt.MaxChannel = spec.m_length;
+        defaultExt.MathLow = 0;
+        defaultExt.MathHigh = spec.m_length;
         WriteExtendedData(spec, fileName, defaultExt, f);
     }
 

@@ -25,6 +25,12 @@ public:
         // The maximum pixel to display. If negative then the spectrum-length will be used
         int MaxChannel = -1;
 
+        // The minimum pixel in the math region
+        int MathLow = 0;
+
+        // The maximum pixel in the math region. If negative then the spectrum-length will be used
+        int MathHigh = -1;
+
         // If set, then the provided calibration will be written to the file as well.
         // This should be stored with the 0th order coefficient first, followed by the 1st order coefficient, etc
         std::vector<double> calibrationPolynomial;

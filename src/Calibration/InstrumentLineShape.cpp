@@ -65,6 +65,7 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, Ga
     else
     {
         result.sigma = gaussianToFit.GetSigma();
+        result.center = gaussianToFit.GetCenter();
 
         return FUNCTION_FIT_RETURN_CODE::SUCCESS;
     }
@@ -150,6 +151,7 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, Su
     {
         result.sigma = superGaussian.GetSigma();
         result.P = superGaussian.GetPower();
+        result.center = superGaussian.GetCenter();
 
         return FUNCTION_FIT_RETURN_CODE::SUCCESS;
     }

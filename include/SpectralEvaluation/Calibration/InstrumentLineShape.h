@@ -18,6 +18,9 @@ struct GaussianLineShape
     // The width parameter
     double sigma = 0.0;
 
+    // The center location
+    double center = 0.0;
+
     double Fwhm() const { return sigma * 2.35482; }
 };
 
@@ -40,6 +43,9 @@ struct SuperGaussianLineShape
 
     // The exponent (P = 2.0 equals a 'regular' Gaussian)
     double P = 2.0;
+
+    // The center location
+    double center = 0.0;
 };
 
 // Fits a symmetrical Gaussian line to an extract of a mercury spectrum containing only one (full) mercury line.
