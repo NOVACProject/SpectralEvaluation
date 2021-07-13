@@ -14,8 +14,80 @@ constexpr char* azimuthAngleStr = "AzimuthAngle = ";
 constexpr char* temperatureStr = "Temperature = ";
 constexpr char* wavelengthStr = "Wavelength = ";
 
+constexpr char* MarkerStr = "Marker = ";
+constexpr char* MathLowStr = "MathLow = ";
+constexpr char* MathHighStr = "MathHigh = ";
+constexpr char* MinChannelStr = "MinChannel = ";
+constexpr char* MaxChannelStr = "MaxChannel = ";
+constexpr char* CalibPolynomialOrderStr = "CalibPolynomialOrder = ";
+constexpr char* CalibPolynomialStr = "CalibPolynomial = ";
+
+bool AttemptParseDouble(const std::vector<char>& stringToParse, char* propertyName, double& value)
+{
+    if (nullptr != strstr(stringToParse.data(), propertyName))
+    {
+        const char* pt = strstr(stringToParse.data(), propertyName);
+        if (sscanf(pt + strlen(propertyName), "%lf", &value) == 1)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool AttemptParseInt(const std::vector<char>& stringToParse, char* propertyName, int& value)
+{
+    if (nullptr != strstr(stringToParse.data(), propertyName))
+    {
+        const char* pt = strstr(stringToParse.data(), propertyName);
+        if (sscanf(pt + strlen(propertyName), "%d", &value) == 1)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool AttemptParseVector(const std::vector<char>& stringToParse, char* propertyName, std::vector<double>& values)
+{
+    if (nullptr != strstr(stringToParse.data(), propertyName))
+    {
+        const char* pt = strstr(stringToParse.data(), propertyName) + strlen(propertyName);
+        if (nullptr != strstr(pt, "])"))
+        {
+            pt = strstr(pt, "])") + strlen("])");
+        }
+        // read array of space separated values
+        const char* nextSeparator = pt;
+        double temporaryDouble = 0.0;
+        while (nextSeparator != nullptr)
+        {
+            if (sscanf(nextSeparator, "%lf", &temporaryDouble) == 1)
+            {
+                values.push_back(temporaryDouble);
+            }
+            nextSeparator = strstr(nextSeparator + 1, " ");
+        }
+
+        return values.size() > 0;
+    }
+
+    return false;
+}
+
 bool CSTDFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName)
 {
+    CSTDFile::ExtendedFormatInformation extendedInformation;
+    return ReadSpectrum(spec, fileName, extendedInformation);
+}
+
+bool CSTDFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName, CSTDFile::ExtendedFormatInformation& extendedInformation)
+{
+    extendedInformation.Clear();
+    spec.m_wavelength.clear();
+
     FILE* f = fopen(fileName.c_str(), "r");
     if (f == nullptr)
     {
@@ -222,62 +294,70 @@ bool CSTDFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName)
     while (fgets(szLine.data(), (int)szLine.size(), f))
     {
         // Read in scanAngle
-        if (nullptr != strstr(szLine.data(), elevationAngleStr))
+        if (AttemptParseDouble(szLine, elevationAngleStr, tmpDbl))
         {
-            char* pt = strstr(szLine.data(), elevationAngleStr);
-            if (sscanf(pt + strlen(elevationAngleStr), "%lf", &tmpDbl) == 1)
+            if (std::abs(tmpDbl) < 360.0)
             {
-                if (fabs(tmpDbl) < 360.0)
-                {
-                    spec.m_info.m_scanAngle = (float)tmpDbl;
-                }
+                spec.m_info.m_scanAngle = (float)tmpDbl;
             }
+            continue;
         }
 
         // Read in scanAngle2
-        if (nullptr != strstr(szLine.data(), azimuthAngleStr))
+        if (AttemptParseDouble(szLine, azimuthAngleStr, tmpDbl))
         {
-            char* pt = strstr(szLine.data(), azimuthAngleStr);
-            if (sscanf(pt + strlen(azimuthAngleStr), "%lf", &tmpDbl) == 1)
+            if (std::abs(tmpDbl) < 360.0)
             {
-                if (fabs(tmpDbl) < 360.0)
-                {
-                    spec.m_info.m_scanAngle2 = (float)tmpDbl;
-                }
+                spec.m_info.m_scanAngle2 = (float)tmpDbl;
             }
+            continue;
         }
 
-        // Read in the temperature
-        if (nullptr != strstr(szLine.data(), temperatureStr))
+        if (AttemptParseDouble(szLine, temperatureStr, tmpDbl))
         {
-            char* pt = strstr(szLine.data(), temperatureStr);
-            if (sscanf(pt + strlen(temperatureStr), "%lf", &tmpDbl) == 1)
+            if (std::abs(tmpDbl) < 100.0)
             {
-                if (fabs(tmpDbl) < 100.0)
-                {
-                    spec.m_info.m_temperature = (float)tmpDbl;
-                }
+                spec.m_info.m_temperature = (float)tmpDbl;
             }
+            continue;
+        }
+
+        if (AttemptParseDouble(szLine, MarkerStr, tmpDbl))
+        {
+            extendedInformation.Marker = tmpDbl;
+            continue;
+        }
+        else if (AttemptParseInt(szLine, MathLowStr, tmpInt))
+        {
+            extendedInformation.MathLow = tmpInt;
+            continue;
+        }
+        else if (AttemptParseInt(szLine, MathHighStr, tmpInt))
+        {
+            extendedInformation.MathHigh = tmpInt;
+            continue;
+        }
+        else if (AttemptParseInt(szLine, MinChannelStr, tmpInt))
+        {
+            extendedInformation.MinChannel = tmpInt;
+            continue;
+        }
+        else if (AttemptParseInt(szLine, MaxChannelStr, tmpInt))
+        {
+            extendedInformation.MaxChannel = tmpInt;
+            continue;
+        }
+
+        // Calibration polynomial
+        if (AttemptParseVector(szLine, CalibPolynomialStr, extendedInformation.calibrationPolynomial))
+        {
+            continue;
         }
 
         // Wavelength calibration
-        if (nullptr != strstr(szLine.data(), wavelengthStr))
+        if (AttemptParseVector(szLine, wavelengthStr, spec.m_wavelength))
         {
-            char* pt = strstr(szLine.data(), wavelengthStr) + strlen(wavelengthStr);
-            if (nullptr != strstr(pt, "])"))
-            {
-                pt = strstr(pt, "])") + strlen("])");
-            }
-            // read array of space separated values
-            char* nextSeparator = pt;
-            while (nextSeparator != nullptr)
-            {
-                if (sscanf(nextSeparator, "%lf", &tmpDbl) == 1)
-                {
-                    spec.m_wavelength.push_back(tmpDbl);
-                }
-                nextSeparator = strstr(nextSeparator + 1, " ");
-            }
+            continue;
         }
     }
 
@@ -289,9 +369,13 @@ bool CSTDFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName)
     // If the intensity is saved in the ddmm.mmmm - format (which is what
     //	the gps-reciever sends out), convert it to the dd.dddddd format
     if (fabs(spec.m_info.m_gps.m_latitude) > 180)
+    {
         spec.m_info.m_gps.m_latitude = CGPSData::DoubleToAngle(spec.m_info.m_gps.m_latitude);
+    }
     if (fabs(spec.m_info.m_gps.m_longitude) > 180)
+    {
         spec.m_info.m_gps.m_longitude = CGPSData::DoubleToAngle(spec.m_info.m_gps.m_longitude);
+    }
 
     fclose(f);
     return true;
@@ -382,7 +466,7 @@ void WriteExtendedData(const CSpectrum& spec, const std::string& fileName, const
 
     if (extendedInformation.calibrationPolynomial.size() > 0)
     {
-        fprintf(f, "CalibPolynomialOrder = %lld\n", extendedInformation.calibrationPolynomial.size() - 1);
+        fprintf(f, "%s %lld\n", CalibPolynomialOrderStr, extendedInformation.calibrationPolynomial.size() - 1);
 
         fprintf(f, "CalibPolynomial = ");
         fprintf(f, "(System.Double[%lld])", extendedInformation.calibrationPolynomial.size());
@@ -411,13 +495,13 @@ void WriteExtendedData(const CSpectrum& spec, const std::string& fileName, const
     fprintf(f, "LightPath = 0\n");
     fprintf(f, "LightSource = \"\"\n");
     fprintf(f, "Longitude = %.6lf\n", info.m_gps.m_longitude);
-    fprintf(f, "Marker = %lf\n", extendedInformation.Marker);
-    fprintf(f, "MathHigh = %ld\n", extendedInformation.MathHigh >= 0 ? extendedInformation.MathHigh : spec.m_length);
-    fprintf(f, "MathLow = %ld\n", extendedInformation.MathLow >= 0 ? extendedInformation.MathLow : 0);
+    fprintf(f, "%s %lf\n", MarkerStr, extendedInformation.Marker);
+    fprintf(f, "%s %ld\n", MathHighStr, extendedInformation.MathHigh >= 0 ? extendedInformation.MathHigh : spec.m_length);
+    fprintf(f, "%s %ld\n", MathLowStr, extendedInformation.MathLow >= 0 ? extendedInformation.MathLow : 0);
     fprintf(f, "Max = %.3lf\n", spec.MaxValue());
-    fprintf(f, "MaxChannel = %ld\n", extendedInformation.MaxChannel >= 0 ? extendedInformation.MaxChannel : spec.m_length);
+    fprintf(f, "%s %ld\n", MaxChannelStr, extendedInformation.MaxChannel >= 0 ? extendedInformation.MaxChannel : spec.m_length);
     fprintf(f, "Min = %.3lf\n", spec.MinValue());
-    fprintf(f, "MinChannel = %ld\n", extendedInformation.MinChannel >= 0 ? extendedInformation.MinChannel : 0);
+    fprintf(f, "%s %ld\n", MinChannelStr, extendedInformation.MinChannel >= 0 ? extendedInformation.MinChannel : 0);
     fprintf(f, "MultiChannelCounter = 0\n");
     fprintf(f, "Name = \"%s\"\n", info.m_name.c_str());
     fprintf(f, "NumScans = %ld\n", info.m_numSpec);

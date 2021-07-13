@@ -37,11 +37,26 @@ public:
 
         // Listing of any additional (non-default) properties to write to the file
         std::vector<std::pair<std::string, std::string>> additionalProperties;
+
+        void Clear()
+        {
+            this->Marker = 0.0;
+            this->MinChannel = 0;
+            this->MaxChannel = -1;
+            this->MathLow = 0;
+            this->MathHigh = -1;
+            this->calibrationPolynomial.clear();
+            this->additionalProperties.clear();
+        }
     };
 
     /** Reads a spectrum from a STD-file.
         @return true if the reading succeeds, else returns false. */
     static bool ReadSpectrum(CSpectrum& spec, const std::string& fileName);
+
+    /** Reads a spectrum from a STD-file, also reading in the extended information.
+        @return true if the reading succeeds, else returns false. */
+    static bool ReadSpectrum(CSpectrum& spec, const std::string& fileName, ExtendedFormatInformation& extendedInformation);
 
     /** Writes a spectrum to a STD-file.
         @return true if the writing succeeds, else returns false. */

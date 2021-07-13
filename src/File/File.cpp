@@ -4,6 +4,7 @@
 #include <SpectralEvaluation/File/TXTFile.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/Interpolation.h>
 #include <cstring>
 #include <sstream>
 #include <fstream>
@@ -309,9 +310,7 @@ std::string GetFileExtension(const std::string& fullFilePath)
         // no period found _after_ the last path-separator character, hence no suffix
         return std::string();
     }
-
 }
-
 
 bool SaveInstrumentCalibration(const std::string& fullFilePath, const CSpectrum& instrumentLineShape, const std::vector<double>& pixelToWavelengthMapping)
 {
@@ -363,82 +362,40 @@ bool SaveInstrumentCalibration(const std::string& fullFilePath, const CSpectrum&
     return true;
 }
 
-/// <summary>
-/// Parses one line of data containing values separated by the given separator character
-/// </summary>
-std::vector<double> ParseDataList(const std::string& dataList, const char* separatorChar = ";" )
-{
-    std::vector<double> result;
-
-    size_t start = dataList.find("[");
-    if (start == dataList.npos)
-    {
-        return result;
-    }
-    start += 1;
-
-    const size_t end = dataList.find("]", start);
-    if (end == dataList.npos || end <= start)
-    {
-        return result;
-    }
-
-    const std::string dataSection = dataList.substr(start, end - start);
-
-    // read array of delimiter separated values
-    const char* nextElement = dataSection.data();
-    while (nextElement != nullptr)
-    {
-        double tmpDbl = 0.0;
-        if (sscanf(nextElement, "%lf", &tmpDbl) == 1)
-        {
-            result.push_back(tmpDbl);
-        }
-        nextElement = strstr(nextElement + 1, separatorChar);
-        if (nextElement == nullptr)
-        {
-            break;
-        }
-        nextElement += 1;
-    }
-
-    return result;
-}
-
 bool ReadInstrumentCalibration(const std::string& fullFilePath, CSpectrum& instrumentLineShape, std::vector<double>& pixelToWavelengthMapping)
 {
-    std::ifstream f{ fullFilePath, std::ios::in };
-    if (!f.is_open())
+    CSTDFile::ExtendedFormatInformation extendedFormatInformation;
+
+    CSpectrum tmpSpectrum;
+    if (!CSTDFile::ReadSpectrum(tmpSpectrum, fullFilePath, extendedFormatInformation))
     {
         return false;
     }
 
-    // rudimentary xml parsing without using an external library
-    std::string lineFromFile;
-    while (std::getline(f, lineFromFile))
+    if (extendedFormatInformation.MaxChannel <= extendedFormatInformation.MinChannel ||
+        tmpSpectrum.m_wavelength.size() != tmpSpectrum.m_length)
     {
-        if (lineFromFile.size() < 3)
-        {
-            continue;
-        }
+        // not a correct format of the data
+        return false;
+    }
 
-        if (lineFromFile.find("<Wavelength>") != lineFromFile.npos)
-        {
-            instrumentLineShape.m_wavelength = ParseDataList(lineFromFile);
-            continue;
-        }
-        else if (lineFromFile.find("<Intensity>") != lineFromFile.npos)
-        {
-            const auto intensity = ParseDataList(lineFromFile);
-            std::copy(begin(intensity), end(intensity), instrumentLineShape.m_data);
-            instrumentLineShape.m_length = static_cast<long>(intensity.size());
-            continue;
-        }
-        else if (lineFromFile.find("<PixelToWavelengthMapping>") != lineFromFile.npos)
-        {
-            pixelToWavelengthMapping = ParseDataList(lineFromFile);
-            continue;
-        }
+    // assign the output data
+    pixelToWavelengthMapping = tmpSpectrum.m_wavelength;
+    instrumentLineShape.m_info = tmpSpectrum.m_info;
+    instrumentLineShape.m_length = extendedFormatInformation.MaxChannel - extendedFormatInformation.MinChannel;
+    memcpy(instrumentLineShape.m_data, tmpSpectrum.m_data + extendedFormatInformation.MinChannel, instrumentLineShape.m_length * sizeof(double));
+
+    // Differentiate the wavelength wrt the peak
+    instrumentLineShape.m_wavelength = std::vector<double>(begin(tmpSpectrum.m_wavelength) + extendedFormatInformation.MinChannel, begin(tmpSpectrum.m_wavelength) + extendedFormatInformation.MaxChannel);
+
+    double centerWavelength = 0.0;
+    if (!novac::LinearInterpolation(tmpSpectrum.m_wavelength, extendedFormatInformation.Marker, centerWavelength))
+    {
+        return false;
+    }
+    for (double& lambda : instrumentLineShape.m_wavelength)
+    {
+        lambda -= centerWavelength;
     }
 
     return true;
