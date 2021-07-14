@@ -6,11 +6,11 @@
 #include <SpectralEvaluation/Spectra/SpectrumUtils.h>
 #include <SpectralEvaluation/VectorUtils.h>
 
+#undef min
+#undef max
+
 #include <algorithm>
 #include <memory>
-
-// TODO: REMOVE
-// #include <fstream>
 
 namespace novac
 {
@@ -168,7 +168,7 @@ double InstrumentLineShapeEstimation::GetMedianKeypointDistanceFromSpectrum(cons
     {
         // Version 2, getting the median distance between zero crossings of the spectrum in the region [measuredPixelStart, measuredPixelStop]
         // start by normalizing the data by removing the median value
-        const size_t length = std::min(spectrum.m_length - this->measuredPixelStart, this->measuredPixelStop - this->measuredPixelStart);
+        const size_t length = std::min(static_cast<size_t>(spectrum.m_length - this->measuredPixelStart), this->measuredPixelStop - this->measuredPixelStart);
         std::vector<double> normalizedData{ spectrum.m_data + this->measuredPixelStart, spectrum.m_data + this->measuredPixelStart + length };
         std::vector<double> copyOfData{ begin(normalizedData), end(normalizedData) };
         auto median = Median(copyOfData);

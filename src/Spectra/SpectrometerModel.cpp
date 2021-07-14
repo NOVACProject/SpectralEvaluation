@@ -3,7 +3,8 @@
 #include <algorithm>
 #include <SpectralEvaluation/Spectra/SpectrumInfo.h>
 
-using namespace novac;
+namespace novac
+{
 
 SpectrometerModel::PixelRange::PixelRange()
     : from(0), to(0)
@@ -175,4 +176,6 @@ double FullDynamicRangeForSpectrum(const CSpectrumInfo& info)
         // the number of co-added spectra can sometimes be wrongly set to zero. Handle this case as well...
         return (long)(model.maximumIntensity * (info.m_peakIntensity / model.maximumIntensity));
     }
+}
+
 }
