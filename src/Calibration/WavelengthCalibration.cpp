@@ -203,22 +203,34 @@ std::vector<Correspondence> ListMercurySpectrumCorrespondences(
             continue;
         }
         const double positionInList = sortedPeaksIdx / (double)sortedPeaks.size();
+        int nofKnownLinesAssociated = 0;
+        double wavelengthTolerance = initialWavelengthTolerance;
 
-        for (size_t lineIdx = 0; lineIdx < knownMercuryLines.size(); ++lineIdx)
+        while (nofKnownLinesAssociated == 0 && wavelengthTolerance < 100.0)
         {
-            const double linePositionInList = (lineIdx / (double)knownMercuryLines.size());
-
-            if (std::abs(initialWavelengthOfPeak - knownMercuryLines[lineIdx].wavelength) < initialWavelengthTolerance &&
-                std::abs(positionInList - linePositionInList) < relativePositionTolerance)
+            for (size_t lineIdx = 0; lineIdx < knownMercuryLines.size(); ++lineIdx)
             {
-                novac::Correspondence corr;
-                corr.measuredIdx = FindPeakWithPixel(sortedPeaks[sortedPeaksIdx].pixel, measuredPeaks);
-                corr.measuredValue = sortedPeaks[sortedPeaksIdx].pixel;
-                corr.theoreticalIdx = lineIdx;
-                corr.theoreticalValue = knownMercuryLines[lineIdx].wavelength;
-                corr.error = std::abs(positionInList - linePositionInList);
+                const double linePositionInList = (lineIdx / (double)knownMercuryLines.size());
 
-                correspondences.push_back(corr);
+                if (std::abs(initialWavelengthOfPeak - knownMercuryLines[lineIdx].wavelength) < wavelengthTolerance &&
+                    std::abs(positionInList - linePositionInList) < relativePositionTolerance)
+                {
+                    novac::Correspondence corr;
+                    corr.measuredIdx = FindPeakWithPixel(sortedPeaks[sortedPeaksIdx].pixel, measuredPeaks);
+                    corr.measuredValue = sortedPeaks[sortedPeaksIdx].pixel;
+                    corr.theoreticalIdx = lineIdx;
+                    corr.theoreticalValue = knownMercuryLines[lineIdx].wavelength;
+                    corr.error = std::abs(positionInList - linePositionInList);
+
+                    correspondences.push_back(corr);
+
+                    ++nofKnownLinesAssociated;
+                }
+            }
+
+            if (nofKnownLinesAssociated == 0)
+            {
+                wavelengthTolerance += 10.0;
             }
         }
     }
