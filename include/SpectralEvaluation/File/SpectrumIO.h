@@ -14,8 +14,7 @@ class CSpectrumIO
 {
 public:
     CSpectrumIO();
-    ~CSpectrumIO();
-
+ 
     static const int ERROR_NO_ERROR = 0;
     static const int ERROR_EOF = 1;
     static const int ERROR_COULD_NOT_OPEN_FILE = 2;

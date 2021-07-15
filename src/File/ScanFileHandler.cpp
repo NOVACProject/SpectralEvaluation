@@ -1,6 +1,5 @@
 #include <SpectralEvaluation/File/ScanFileHandler.h>
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
-#include <SpectralEvaluation/Spectra/Spectrum.h>
 
 #ifdef _MSC_VER
 #pragma warning (push, 4)

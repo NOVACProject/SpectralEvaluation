@@ -22,10 +22,6 @@ CSpectrumIO::CSpectrumIO(void)
     this->m_lastError = ERROR_NO_ERROR;
 }
 
-CSpectrumIO::~CSpectrumIO()
-{
-}
-
 int CSpectrumIO::CountSpectra(const std::string& fileName) {
     std::uint32_t specNum = 0;
     int headerSize;
