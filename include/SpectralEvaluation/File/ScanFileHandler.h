@@ -1,9 +1,8 @@
 #pragma once
 
-#include "SpectrumIO.h"
+#include <vector>
 #include <SpectralEvaluation/DateTime.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
-#include <vector>
 
 namespace novac
 {

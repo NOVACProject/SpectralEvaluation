@@ -1,4 +1,5 @@
 #include <SpectralEvaluation/File/ScanFileHandler.h>
+#include <SpectralEvaluation/File/SpectrumIO.h>
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 
 #ifdef _MSC_VER

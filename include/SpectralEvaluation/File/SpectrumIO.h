@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MKPack.h"
+#include <SpectralEvaluation/File/MKPack.h>
 #include <string>
 
 namespace novac
