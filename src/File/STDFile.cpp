@@ -9,20 +9,20 @@
 
 namespace novac
 {
-constexpr char* elevationAngleStr = "ElevationAngle = ";
-constexpr char* azimuthAngleStr = "AzimuthAngle = ";
-constexpr char* temperatureStr = "Temperature = ";
-constexpr char* wavelengthStr = "Wavelength = ";
+constexpr const char* elevationAngleStr = "ElevationAngle = ";
+constexpr const char* azimuthAngleStr = "AzimuthAngle = ";
+constexpr const char* temperatureStr = "Temperature = ";
+constexpr const char* wavelengthStr = "Wavelength = ";
 
-constexpr char* MarkerStr = "Marker = ";
-constexpr char* MathLowStr = "MathLow = ";
-constexpr char* MathHighStr = "MathHigh = ";
-constexpr char* MinChannelStr = "MinChannel = ";
-constexpr char* MaxChannelStr = "MaxChannel = ";
-constexpr char* CalibPolynomialOrderStr = "CalibPolynomialOrder = ";
-constexpr char* CalibPolynomialStr = "CalibPolynomial = ";
+constexpr const char* MarkerStr = "Marker = ";
+constexpr const char* MathLowStr = "MathLow = ";
+constexpr const char* MathHighStr = "MathHigh = ";
+constexpr const char* MinChannelStr = "MinChannel = ";
+constexpr const char* MaxChannelStr = "MaxChannel = ";
+constexpr const char* CalibPolynomialOrderStr = "CalibPolynomialOrder = ";
+constexpr const char* CalibPolynomialStr = "CalibPolynomial = ";
 
-bool AttemptParseDouble(const std::vector<char>& stringToParse, char* propertyName, double& value)
+bool AttemptParseDouble(const std::vector<char>& stringToParse, const char* propertyName, double& value)
 {
     if (nullptr != strstr(stringToParse.data(), propertyName))
     {
@@ -36,7 +36,7 @@ bool AttemptParseDouble(const std::vector<char>& stringToParse, char* propertyNa
     return false;
 }
 
-bool AttemptParseInt(const std::vector<char>& stringToParse, char* propertyName, int& value)
+bool AttemptParseInt(const std::vector<char>& stringToParse, const char* propertyName, int& value)
 {
     if (nullptr != strstr(stringToParse.data(), propertyName))
     {
@@ -50,7 +50,7 @@ bool AttemptParseInt(const std::vector<char>& stringToParse, char* propertyName,
     return false;
 }
 
-bool AttemptParseVector(const std::vector<char>& stringToParse, char* propertyName, std::vector<double>& values)
+bool AttemptParseVector(const std::vector<char>& stringToParse, const char* propertyName, std::vector<double>& values)
 {
     if (nullptr != strstr(stringToParse.data(), propertyName))
     {
@@ -497,11 +497,11 @@ void WriteExtendedData(const CSpectrum& spec, const std::string& fileName, const
     fprintf(f, "Longitude = %.6lf\n", info.m_gps.m_longitude);
     fprintf(f, "%s %lf\n", MarkerStr, extendedInformation.Marker);
     fprintf(f, "%s %ld\n", MathHighStr, extendedInformation.MathHigh >= 0 ? extendedInformation.MathHigh : spec.m_length);
-    fprintf(f, "%s %ld\n", MathLowStr, extendedInformation.MathLow >= 0 ? extendedInformation.MathLow : 0);
+    fprintf(f, "%s %d\n", MathLowStr, extendedInformation.MathLow >= 0 ? extendedInformation.MathLow : 0);
     fprintf(f, "Max = %.3lf\n", spec.MaxValue());
     fprintf(f, "%s %ld\n", MaxChannelStr, extendedInformation.MaxChannel >= 0 ? extendedInformation.MaxChannel : spec.m_length);
     fprintf(f, "Min = %.3lf\n", spec.MinValue());
-    fprintf(f, "%s %ld\n", MinChannelStr, extendedInformation.MinChannel >= 0 ? extendedInformation.MinChannel : 0);
+    fprintf(f, "%s %d\n", MinChannelStr, extendedInformation.MinChannel >= 0 ? extendedInformation.MinChannel : 0);
     fprintf(f, "MultiChannelCounter = 0\n");
     fprintf(f, "Name = \"%s\"\n", info.m_name.c_str());
     fprintf(f, "NumScans = %ld\n", info.m_numSpec);

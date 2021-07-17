@@ -3,7 +3,9 @@
 #include <SpectralEvaluation/Interpolation.h>
 #include <SpectralEvaluation/Evaluation/BasicMath.h>
 #include <SpectralEvaluation/VectorUtils.h>
+
 #include <algorithm>
+#include <cmath>
 
 namespace novac
 {

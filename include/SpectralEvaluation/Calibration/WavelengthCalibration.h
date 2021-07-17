@@ -80,6 +80,19 @@ struct WavelengthCalibrationSettings
     InstrumentLineshapeEstimationOption estimateInstrumentLineShape = InstrumentLineshapeEstimationOption::None;
 };
 
+class WavelengthCalibrationFailureException : public std::exception
+{
+private:
+    const char* const m_msg = "";
+
+public:
+    WavelengthCalibrationFailureException(const char* msg) :
+        m_msg(msg)
+    {}
+
+    const char* what() const noexcept override final { return m_msg; }
+};
+
 /// <summary>
 /// Reads the pixel-to-wavelength mapping from a .clb calibration 
 ///     data file which is expected to contain a single column of data.
@@ -135,6 +148,8 @@ public:
     /// This performs the actual calibration of a measured spectrum against a 
     ///   high resolution fraunhofer spectrum assuming that the provided instrument line shape
     ///   is the correct line shape for the instrument.
+    /// @throws std::invalid_argument if any of the incoming parameters is invalid.
+    /// @throws WavelengthCalibrationFailureException if the calibration fails.
     /// </summary>
     SpectrometerCalibrationResult DoWavelengthCalibration(const CSpectrum& measuredSpectrum);
 

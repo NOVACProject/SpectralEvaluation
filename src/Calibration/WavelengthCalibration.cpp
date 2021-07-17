@@ -419,7 +419,7 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
         this->calibrationState.allCorrespondences = novac::ListPossibleCorrespondences(calibrationState.measuredKeypoints, *calibrationState.measuredSpectrum, calibrationState.fraunhoferKeypoints, *calibrationState.fraunhoferSpectrum, correspondenceSelectionSettings);
         if (this->calibrationState.allCorrespondences.size() <= ransacSettings.modelPolynomialOrder)
         {
-            throw std::exception("Wavelength calibration failed, no possible correspondences were found.");
+            throw WavelengthCalibrationFailureException("Wavelength calibration failed, no possible correspondences were found.");
         }
 
         // The actual wavelength calibration by ransac

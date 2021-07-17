@@ -4,6 +4,7 @@
 #include <cstdio>
 
 #include <SpectralEvaluation/Evaluation/PlumeSpectrumSelector.h>
+#include <SpectralEvaluation/File/SpectrumIO.h>
 #include <SpectralEvaluation/File/ScanFileHandler.h>
 #include <SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h>
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
