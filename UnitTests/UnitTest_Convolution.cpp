@@ -260,7 +260,7 @@ TEST_CASE("ConvolveReference (FFT) returns expected output - simple input", "[Co
 
         // The two vectors should be identical
         REQUIRE(resultFromFft.size() == resultFromDirectConv.size());
-        REQUIRE(std::abs(SumOfSquaredDifferences(resultFromFft, resultFromDirectConv)) < std::numeric_limits<float>::epsilon());
+        REQUIRE(std::abs(SumOfSquaredDifferences(resultFromFft, resultFromDirectConv)) < 1e-6);
     }
 }
 
