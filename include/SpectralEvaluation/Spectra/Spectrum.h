@@ -12,6 +12,7 @@
 namespace novac
 {
 struct SpectrometerModel;
+class CCrossSectionData;
 
 /**
 <b>CSpectrum</b> is an implementation of a spectrum.
@@ -39,6 +40,9 @@ public:
         This will leave the m_info at default values.
         The wavelength and spectralData must be pointers to arrays holding 'length' values or else memory corruption will occurr. */
     CSpectrum(const double* wavelength, const double* spectralData, size_t length);
+
+    /** Converts a CCrossSectionData to a CSpectrum. Notice that this will not fill in m_info. */
+    CSpectrum(const CCrossSectionData& crossSection);
 
     // Copy operators
     CSpectrum(const CSpectrum& other);

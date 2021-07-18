@@ -1,5 +1,6 @@
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
+#include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 
 #include <algorithm>
 
@@ -43,6 +44,13 @@ CSpectrum::CSpectrum(const double* wavelength, const double* spectralData, size_
     m_wavelength(wavelength, wavelength + length)
 {
     memcpy(this->m_data, spectralData, sizeof(double) * std::min(length, (size_t)MAX_SPECTRUM_LENGTH));
+}
+
+CSpectrum::CSpectrum(const CCrossSectionData& crossSection)
+    : m_length((long)crossSection.m_crossSection.size()),
+    m_wavelength{ begin(crossSection.m_waveLength), end(crossSection.m_waveLength) }
+{
+    memcpy(this->m_data, crossSection.m_crossSection.data(), sizeof(double)* std::min(crossSection.m_crossSection.size(), (size_t)MAX_SPECTRUM_LENGTH));
 }
 
 CSpectrum::CSpectrum(const CSpectrum& other)
