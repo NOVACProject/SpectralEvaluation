@@ -46,7 +46,15 @@ ScanEvaluationBase::~ScanEvaluationBase()
 bool ScanEvaluationBase::GetDark(CScanFileHandler& scan, const CSpectrum& spec, CSpectrum& dark, const Configuration::CDarkSettings* darkSettings)
 {
     // Using DarkSpectrum.h
-    return ::novac::GetDark(scan, spec, *darkSettings, dark, m_lastErrorMessage);
+    if (darkSettings == nullptr)
+    {
+        Configuration::CDarkSettings defaultDarkSettings;
+        return ::novac::GetDark(scan, spec, defaultDarkSettings, dark, m_lastErrorMessage);
+    }
+    else
+    {
+        return ::novac::GetDark(scan, spec, *darkSettings, dark, m_lastErrorMessage);
+    }
 }
 
 bool ScanEvaluationBase::GetSky(CScanFileHandler& scan, const Configuration::CSkySettings& settings, CSpectrum& sky)
