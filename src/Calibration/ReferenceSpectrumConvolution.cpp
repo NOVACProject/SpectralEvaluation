@@ -354,7 +354,7 @@ bool ConvolveReference(
             ++length;
             const int primeFactors = CountBasicPrimeFactors(length);
 
-            if (primeFactors > optimumNumberOfPrimeFactors)
+            if (primeFactors / (double)length > optimumNumberOfPrimeFactors / (double)optimumLength)
             {
                 optimumNumberOfPrimeFactors = primeFactors;
                 optimumLength = length;
