@@ -279,26 +279,23 @@ bool Convolve(
     return true;
 }
 
-// Small helper method, counts how many factors of 2, 3 and 5 which makes up the provided number
-int CountBasicPrimeFactors(size_t number)
+// Small helper method, returns the remainder after as many
+//  factors of 2, 3 and 5 as possible have been removed.
+size_t GetNonReduciblePrime(size_t number)
 {
-    int count = 0;
     while (number % 2 == 0)
     {
-        ++count;
         number /= 2;
     }
     while (number % 3 == 0)
     {
-        ++count;
         number /= 3;
     }
     while (number % 5 == 0)
     {
-        ++count;
         number /= 5;
     }
-    return count;
+    return number;
 }
 
 
@@ -327,7 +324,7 @@ bool ConvolveReference(
 
     // We need to make sure we work on the correct resolution, the highest possible to get the most accurate results.
     const double fwhmOfSlf = GetFwhm(slf);
-    const double minimumAllowedResolution = 0.05 * fwhmOfSlf; // do use at least 50 points per FWHM of the SLF
+    const double minimumAllowedResolution = 0.02 * fwhmOfSlf; // do use at least 50 points per FWHM of the SLF
     const double maximumAllowedResolution = 0.01 * fwhmOfSlf; // do not use more than 100 points per FWHM of the SLF
     const double resolutionOfReference = Resolution(convertedHighResReference.m_waveLength);
     const double highestResolution = std::max(std::min(resolutionOfReference, maximumAllowedResolution), minimumAllowedResolution);
@@ -340,24 +337,25 @@ bool ConvolveReference(
 
     if (method == ConvolutionMethod::Fft)
     {
-        // for the sake of efficiency of the fft below, find the length which contain as many factors of two, tree and five as possible
+        // For the sake of efficiency of the fft below, find the length which contain as many factors of two, tree and five as possible
         //  while still being between minimumAllowedResolution and maximumAllowedResolution.
+        // This is done by finding the smallest length for which the remainder after removing all 2, 3 and 5 prime factors is minimal (usually one).
         const size_t minimumLength = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / minimumAllowedResolution);
         const size_t maximumLength = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / maximumAllowedResolution);
 
-        size_t length = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / highestResolution);
-        size_t optimumLength = length;
-        int optimumNumberOfPrimeFactors = CountBasicPrimeFactors(length);
+        size_t testLength = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / highestResolution);
+        size_t optimumLength = testLength;
+        size_t optimumRemainder = GetNonReduciblePrime(testLength);
 
-        while (length < maximumLength)
+        while (testLength < maximumLength)
         {
-            ++length;
-            const int primeFactors = CountBasicPrimeFactors(length);
+            ++testLength;
+            const size_t remainder = GetNonReduciblePrime(testLength);
 
-            if (primeFactors / (double)length > optimumNumberOfPrimeFactors / (double)optimumLength)
+            if (remainder < optimumRemainder)
             {
-                optimumNumberOfPrimeFactors = primeFactors;
-                optimumLength = length;
+                optimumRemainder = remainder;
+                optimumLength = testLength;
             }
         }
         convolutionGrid.length = optimumLength;
