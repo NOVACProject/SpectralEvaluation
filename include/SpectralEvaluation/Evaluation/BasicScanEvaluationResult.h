@@ -4,7 +4,7 @@
 #include "EvaluationResult.h"
 #include "../Spectra/SpectrumInfo.h"
 
-namespace Evaluation
+namespace novac
 {
     /** An instance of the class BasicScanEvaluationResult contains a minimal amount of information
         regarding the evaluation of a full scan using one fit-window.

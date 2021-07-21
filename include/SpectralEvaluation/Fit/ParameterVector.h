@@ -7,9 +7,9 @@
 #if !defined(PARAMETERVECTOR_H_20020209)
 #define PARAMETERVECTOR_H_20020209
 
-#include "Vector.h"
-#include "Matrix.h"
-#include "ParameterLinkItem.h"
+#include <SpectralEvaluation/Fit/Vector.h>
+#include <SpectralEvaluation/Fit/Matrix.h>
+#include <SpectralEvaluation/Fit/ParameterLinkItem.h>
 
 namespace MathFit
 {
@@ -290,6 +290,11 @@ namespace MathFit
 		* @return	A reference to the internal parameter vector.
 		*/
 		CVector& GetAllParameter()
+		{
+			return mParamsInternal;
+		}
+
+		const CVector& GetAllParameter() const
 		{
 			return mParamsInternal;
 		}

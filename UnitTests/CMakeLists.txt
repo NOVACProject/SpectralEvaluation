@@ -9,16 +9,23 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/catch.hpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTest_ScanFileHandler.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTest_SpectrumIO.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_StdFile.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_WavelengthCalibration.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Air.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Convolution.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_CrossSectionData.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_DateTime.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Evaluation.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Fft.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FindPlume.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitExtensions.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitWindow.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_InstrumentLineShape.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_RatioEvaluation.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_SpectrumUtils.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Utils.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_VectorUtils.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_WavelengthCalibration.cpp
 )
 
 target_include_directories(SpectralEvaluationTests PRIVATE ${SPECTRALEVAUATION_INCLUDE_DIRS})
@@ -28,7 +35,7 @@ IF(MSVC)
     target_compile_definitions(SpectralEvaluationTests PRIVATE -D_CRT_SECURE_NO_WARNINGS)
     target_compile_options(SpectralEvaluationTests PRIVATE /W4 /WX /sdl)
 ELSE()
-    target_compile_options(SpectralEvaluationTests PRIVATE -Wall -std=c++11)
+    target_compile_options(SpectralEvaluationTests PRIVATE -Wall -std=c++14)
 ENDIF()
 
 

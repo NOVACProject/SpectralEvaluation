@@ -3,12 +3,13 @@
 #include <SpectralEvaluation/Fit/Vector.h>
 #include <SpectralEvaluation/Fit/CubicSplineFunction.h>
 #include <SpectralEvaluation/Spectra/Grid.h>
+#include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <fstream>
 #include <numeric>
 #include <map>
 #include <mutex>
 
-namespace Evaluation
+namespace novac
 {
 
 static std::mutex s_crossSectionDatabase;
@@ -19,8 +20,8 @@ CCrossSectionData::CCrossSectionData()
 }
 
 CCrossSectionData::CCrossSectionData(const CCrossSectionData& other)
-    : m_crossSection(begin(other.m_crossSection), end(other.m_crossSection)),
-    m_waveLength(begin(other.m_waveLength), end(other.m_waveLength))
+    : m_waveLength(begin(other.m_waveLength), end(other.m_waveLength)),
+    m_crossSection(begin(other.m_crossSection), end(other.m_crossSection))
 {
 }
 
@@ -42,7 +43,13 @@ CCrossSectionData::CCrossSectionData(const CCrossSectionData& other, double star
     }
 }
 
-CCrossSectionData &CCrossSectionData::operator=(const CCrossSectionData &other)
+CCrossSectionData::CCrossSectionData(const CSpectrum& spectrum)
+    : m_crossSection(spectrum.m_data, spectrum.m_data + spectrum.m_length),
+    m_waveLength(begin(spectrum.m_wavelength), end(spectrum.m_wavelength))
+{
+}
+
+CCrossSectionData& CCrossSectionData::operator=(const CCrossSectionData& other)
 {
     this->m_crossSection = std::vector<double>(begin(other.m_crossSection), end(other.m_crossSection));
     this->m_waveLength = std::vector<double>(begin(other.m_waveLength), end(other.m_waveLength));
@@ -66,7 +73,7 @@ void CCrossSectionData::SetAt(int index, double wavel, double value)
     SetAtGrow(m_crossSection, index, value);
 }
 
-void CCrossSectionData::Set(double *wavelength, double *crossSection, unsigned long pointNum)
+void CCrossSectionData::Set(double* wavelength, double* crossSection, unsigned long pointNum)
 {
     if (nullptr == wavelength) throw std::invalid_argument("Cannot set the cross section data using a null wavelength data pointer.");
     if (nullptr == crossSection) throw std::invalid_argument("Cannot set the cross section data using a null data pointer.");
@@ -81,7 +88,7 @@ void CCrossSectionData::Set(double *wavelength, double *crossSection, unsigned l
     }
 }
 
-void CCrossSectionData::Set(double *crossSection, unsigned long pointNum)
+void CCrossSectionData::Set(double* crossSection, unsigned long pointNum)
 {
     m_waveLength.resize(pointNum);
     m_crossSection.resize(pointNum);
@@ -95,7 +102,7 @@ void CCrossSectionData::Set(double *crossSection, unsigned long pointNum)
     }
 }
 
-void CCrossSectionData::Set(MathFit::CVector &crossSection, unsigned long pointNum)
+void CCrossSectionData::Set(MathFit::CVector& crossSection, unsigned long pointNum)
 {
     m_waveLength.resize(pointNum);
     m_crossSection.resize(pointNum);
@@ -155,7 +162,7 @@ double CCrossSectionData::FindWavelength(double wavelength) const
     return -1.0; // nothing found
 }
 
-int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
+int CCrossSectionData::ReadCrossSectionFile(const std::string& fileName)
 {
     // if (s_readInCrossSections.find(fileName) != s_readInCrossSections.end())
     // {
@@ -185,6 +192,14 @@ int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
     while (!fileRef.eof())
     {
         fileRef.getline(tmpBuffer.data(), maxSize);
+
+        // Ignore empty-lines and lines starting with a comment character
+        if (strlen(tmpBuffer.data()) == 0 ||
+            tmpBuffer[0] == ';' ||
+            tmpBuffer[0] == '#')
+        {
+            continue;
+        }
 
         // this construction enables us to read files with both one or two columns
         double fValue1 = 0.0;
@@ -226,6 +241,34 @@ int CCrossSectionData::ReadCrossSectionFile(const std::string &fileName)
     return 0;
 }
 
+int CCrossSectionData::SaveToFile(const std::string& filename) const
+{
+    std::ofstream file;
+
+    file.open(filename, std::ios_base::out);
+    if (!file.is_open())
+    {
+        std::cout << "ERROR: Cannot open reference file: %s", filename.c_str();
+        return 1;
+    }
+
+    if (this->m_waveLength.size() > 0)
+    {
+        for (size_t ii = 0; ii < this->m_crossSection.size(); ++ii)
+        {
+            file << this->m_waveLength[ii] << "\t" << this->m_crossSection[ii] << std::endl;
+        }
+    }
+    else
+    {
+        for (size_t ii = 0; ii < this->m_crossSection.size(); ++ii)
+        {
+            file << this->m_crossSection[ii] << std::endl;
+        }
+    }
+
+    return 0;
+}
 
 int HighPassFilter(CCrossSectionData& crossSection, bool scaleToPpmm)
 {
@@ -264,7 +307,6 @@ int Multiply(CCrossSectionData& crossSection, double scalar)
     CBasicMath mathObject;
 
     mathObject.Mul(crossSection.m_crossSection.data(), (int)crossSection.m_crossSection.size(), scalar);
-
 
     return 0;
 }
@@ -312,6 +354,38 @@ void Resample(const CCrossSectionData& slf, double resolution, std::vector<doubl
         else
         {
             resampledSlf[ii] = 0.0;
+        }
+    }
+}
+
+void Resample(const CCrossSectionData& crossSection, const std::vector<double>& newGrid, std::vector<double>& result)
+{
+    const double newXMin = newGrid.front();
+    const double newXMax = newGrid.back();
+    const double oldXMin = crossSection.m_waveLength.front();
+    const double oldXMax = crossSection.m_waveLength.back();
+
+    std::vector<double> xCopy(begin(crossSection.m_waveLength), end(crossSection.m_waveLength)); // a non-const local copy
+    std::vector<double> yCopy(begin(crossSection.m_crossSection), end(crossSection.m_crossSection)); // a non-const local copy
+    MathFit::CVector slfX(xCopy.data(), (int)xCopy.size(), 1, false);
+    MathFit::CVector slfY(yCopy.data(), (int)yCopy.size(), 1, false);
+
+    // Create a spline from the slit-function.
+    MathFit::CCubicSplineFunction spline(slfX, slfY);
+
+    // do the resampling...
+    result.resize(newGrid.size());
+    for (size_t ii = 0; ii < newGrid.size(); ++ii)
+    {
+        const double x = newGrid[ii];
+
+        if (x >= oldXMin && x <= oldXMax)
+        {
+            result[ii] = spline.GetValue(x);
+        }
+        else
+        {
+            result[ii] = 0.0;
         }
     }
 }

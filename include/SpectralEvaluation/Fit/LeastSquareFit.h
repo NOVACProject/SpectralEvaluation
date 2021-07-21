@@ -7,7 +7,7 @@
 #if !defined(LEASTSQUARE_H_011206)
 #define LEASTSQUARE_H_011206
 
-#include "Minimizer.h"
+#include <SpectralEvaluation/Fit/Minimizer.h>
 
 #if _MSC_VER > 1000
 #pragma once

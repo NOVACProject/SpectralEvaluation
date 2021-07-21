@@ -2,9 +2,11 @@
 #include <SpectralEvaluation/Evaluation/FitWindow.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 
+using namespace novac;
+
 TEST_CASE("FitWindow - Default constructor", "[CFitWindow]")
 {
-    Evaluation::CFitWindow sut;
+    CFitWindow sut;
 
     SECTION("No references are defined")
     {
@@ -13,9 +15,9 @@ TEST_CASE("FitWindow - Default constructor", "[CFitWindow]")
     }
 }
 
-Evaluation::CCrossSectionData* CreateCrossSection(int startValue)
+CCrossSectionData* CreateCrossSection(int startValue)
 {
-    Evaluation::CCrossSectionData* obj = new Evaluation::CCrossSectionData();
+    CCrossSectionData* obj = new CCrossSectionData();
 
     for (int k = 0; k < 100; ++k)
     {
@@ -28,19 +30,19 @@ Evaluation::CCrossSectionData* CreateCrossSection(int startValue)
 
 TEST_CASE("FitWindow - Copy constructor", "[CFitWindow]")
 {
-    Evaluation::CFitWindow original;
+    CFitWindow original;
 
     SECTION("Original has no references, then no references are copied.")
     {
         REQUIRE(original.nRef == 0);
         REQUIRE(original.ref[0].m_data == nullptr);
 
-        Evaluation::CReferenceFile ref1;
+        CReferenceFile ref1;
         ref1.m_specieName = "SO2";
         ref1.m_path = "C:/Novac/So2.txt";
         ref1.m_data.reset(CreateCrossSection(1));
         
-        Evaluation::CReferenceFile ref2;
+        CReferenceFile ref2;
         ref2.m_specieName = "O3";
         ref2.m_path = "C:/Novac/O3.txt";
         ref2.m_data.reset(CreateCrossSection(2));
@@ -49,7 +51,7 @@ TEST_CASE("FitWindow - Copy constructor", "[CFitWindow]")
         original.ref[1] = ref2;
         original.nRef = 2;
 
-        Evaluation::CFitWindow copy{original};
+        CFitWindow copy{original};
 
         REQUIRE(copy.nRef == 2);
         REQUIRE(copy.ref[0].m_data != nullptr);

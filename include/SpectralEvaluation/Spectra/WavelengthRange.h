@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Evaluation
+namespace novac
 {
 
 struct WavelengthRange

@@ -7,8 +7,8 @@
 #if !defined(MINIMIZER_H_011206)
 #define MINIMIZER_H_011206
 
-#include "StatisticVector.h"
-#include "ParamFunction.h"
+#include <SpectralEvaluation/Fit/StatisticVector.h>
+#include <SpectralEvaluation/Fit/ParamFunction.h>
 
 #if _MSC_VER > 1000
 #pragma once

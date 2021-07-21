@@ -9,10 +9,10 @@
 #if !defined(PARAMFUNCTION_H_011206)
 #define PARAMFUNCTION_H_011206
 
-#include "Vector.h"
-#include "Matrix.h"
-#include "Function.h"
-#include "ParameterVector.h"
+#include <SpectralEvaluation/Fit/Vector.h>
+#include <SpectralEvaluation/Fit/Matrix.h>
+#include <SpectralEvaluation/Fit/Function.h>
+#include <SpectralEvaluation/Fit/ParameterVector.h>
 
 #if _MSC_VER > 1000
 #pragma once

@@ -9,7 +9,7 @@ namespace novac
 
     TEST_CASE("SpectrumIO CountSpectra", "[SpectrumIO][IntegrationTests]")
     {
-        SpectrumIO::CSpectrumIO sut;
+        CSpectrumIO sut;
         int number = sut.CountSpectra(GetFileName());
 
         REQUIRE(53 == number);
@@ -17,7 +17,7 @@ namespace novac
 
     TEST_CASE("MKZYhdr Alignment is correct", "[MKZYhdr]")
     {
-        SpectrumIO::MKZYhdr sut;
+        MKZYhdr sut;
 
         REQUIRE((size_t)&sut.flag - (size_t)&sut.ident == 51);
         REQUIRE((size_t)&sut.date - (size_t)&sut.ident == 52);
@@ -32,9 +32,9 @@ namespace novac
 
     TEST_CASE("SpectrumIO ReadSpectrum can parse MKZY header of first spectrum from file", "[SpectrumIO][MKZY][IntegrationTests]")
     {
-        SpectrumIO::CSpectrumIO sut;
+        CSpectrumIO sut;
         CSpectrum ignoredSpectrum;
-        SpectrumIO::MKZYhdr header;
+        MKZYhdr header;
         int headerSize = 0;
         int returnValue = sut.ReadSpectrum(GetFileName(), 0, ignoredSpectrum, (char*)&header, sizeof(header), &headerSize);
 
@@ -56,7 +56,7 @@ namespace novac
 
     TEST_CASE("SpectrumIO ReadSpectrum can read first spectrum from file", "[SpectrumIO][ReadSpectrum][IntegrationTests]")
     {
-        SpectrumIO::CSpectrumIO sut;
+        CSpectrumIO sut;
         CSpectrum spectrum;
         int returnValue = sut.ReadSpectrum(GetFileName(), 0, spectrum);
 

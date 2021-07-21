@@ -1,7 +1,11 @@
 #include <SpectralEvaluation/Interpolation.h>
 #include <cmath>
 
-bool LinearInterpolation(const std::vector<float>& values, double index, double& result)
+namespace novac
+{
+
+template<class T>
+bool LinearInterpolationT(const std::vector<T>& values, double index, double& result)
 {
     const size_t ii = (size_t)std::floor(index);
 
@@ -14,6 +18,46 @@ bool LinearInterpolation(const std::vector<float>& values, double index, double&
     result = values[ii] * (1.0 - alpha) + values[ii + 1] * alpha;
     return true;
 }
+
+template<class T>
+bool LinearInterpolationT(const T* values, size_t length, double index, double& result)
+{
+    if (values == nullptr || length < 3)
+    {
+        return false; // no data
+    }
+
+    const size_t ii = (size_t)std::floor(index);
+
+    if (ii >= length - 2)
+    {
+        return false; // not found.
+    }
+
+    const double alpha = index - (double)ii;
+    result = values[ii] * (1.0 - alpha) + values[ii + 1] * alpha;
+    return true;
+}
+
+
+bool LinearInterpolation(const std::vector<double>& values, double index, double& result)
+{
+    return LinearInterpolationT<double>(values, index, result);
+}
+bool LinearInterpolation(const std::vector<float>& values, double index, double& result)
+{
+    return LinearInterpolationT<float>(values, index, result);
+}
+
+bool LinearInterpolation(const float* values, size_t length, double index, double& result)
+{
+    return LinearInterpolationT<float>(values, length, index, result);
+}
+bool LinearInterpolation(const double* values, size_t length, double index, double& result)
+{
+    return LinearInterpolationT<double>(values, length, index, result);
+}
+
 
 double Stdev(const std::vector<double>& values, double average)
 {
@@ -99,4 +143,6 @@ double GetFractionalIndex(const std::vector<float>& values, double valueToFind)
 
     // not found
     return NAN; // not found.
+}
+
 }

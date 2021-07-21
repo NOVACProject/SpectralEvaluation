@@ -31,7 +31,7 @@ namespace MathFit
 //#define ROWMATRIX
 
 	// Vector
-#include "Vector.h"
+#include <SpectralEvaluation/Fit/Vector.h>
 
 	/**
 	* Exception indicating a size mismatch of two matrices.
@@ -843,7 +843,7 @@ namespace MathFit
 		*
 		* @return	A reference to the given vector object, that will contain the result.
 		*/
-		CVector& Mul(CVector& mOperant)
+		CVector& Mul(CVector& mOperant) const
 		{
 			MATHFIT_ASSERT(mSizeX == mOperant.GetSize());
 

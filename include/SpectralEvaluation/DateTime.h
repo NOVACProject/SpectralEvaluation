@@ -3,6 +3,9 @@
 #ifndef DATETIME_H
 #define DATETIME_H
 
+namespace novac
+{
+
 class CDateTime
 {
 public:
@@ -100,5 +103,6 @@ double JulianDay(const CDateTime &utcTime);
 /** Splits a time, given in seconds since midnight to hour, minutes and seconds */
 void SplitToHourMinuteSecond(const int time, int &hours, int &minutes, int &seconds);
 
+}
 
 #endif

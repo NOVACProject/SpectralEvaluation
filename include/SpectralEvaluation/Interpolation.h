@@ -6,10 +6,20 @@
 
 #include <vector>
 
+namespace novac
+{
+
 /** Finds the value of the provided vector at the given index by linear interpolation.
     @returns true if the interpolated could be found.
     @returns false if the given index is negative or larger than (values.size() - 1). */
 bool LinearInterpolation(const std::vector<float>& values, double index, double& result);
+bool LinearInterpolation(const std::vector<double>& values, double index, double& result);
+
+/** Finds the value of the provided data array at the given index by linear interpolation.
+    @returns true if the interpolated could be found.
+    @returns false if the given index is negative or larger than (length - 1). */
+bool LinearInterpolation(const float* values, size_t length, double index, double& result);
+bool LinearInterpolation(const double* values, size_t length, double index, double& result);
 
 /** Performs a tri-linear interpolation to find the value with the index {index[0], index[1], index[2]}
     in the three dimensional data matrix. The 'values' vector is a flattened three dimensional data
@@ -25,3 +35,5 @@ bool TriLinearInterpolation(const std::vector<double>& values, const std::vector
     The vector of values is assumed to be sorted in either ascending or descending order.
     @return the index or NAN if the value could not be found. */
 double GetFractionalIndex(const std::vector<float>& values, double valueToFind);
+
+}

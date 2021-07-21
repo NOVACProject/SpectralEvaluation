@@ -1,7 +1,8 @@
 #include <SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h>
 #include <SpectralEvaluation/StringUtils.h>
 
-using namespace Evaluation;
+namespace novac
+{
 
 int BasicScanEvaluationResult::GetSpecieIndex(const char* specieName) const
 {
@@ -44,4 +45,5 @@ std::vector<double> GetColumns(const BasicScanEvaluationResult& result, int spec
     }
 
     return columns;
+}
 }

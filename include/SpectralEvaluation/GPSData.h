@@ -2,6 +2,9 @@
 
 #include <string>
 
+namespace novac
+{
+
 /** CGPSData represents a location on the Earth */
 class CGPSData
 {
@@ -11,10 +14,10 @@ public:
     /** Make a new CGPSData object with the supplied latitude, longitude and altitude */
     CGPSData(double lat, double lon, double alt);
 
-    CGPSData(const CGPSData &gps2);
-    CGPSData &operator=(const CGPSData &gps2);
+    CGPSData(const CGPSData& gps2);
+    CGPSData& operator=(const CGPSData& gps2);
 
-    bool operator==(const CGPSData &gps2) const;
+    bool operator==(const CGPSData& gps2) const;
 
     ~CGPSData() = default;
 
@@ -44,7 +47,8 @@ public:
     /** The name given to this location */
     std::string m_name;
 
-    CNamedLocation(const CNamedLocation &gps2);
-    CNamedLocation &operator=(const CNamedLocation &gps2);
+    CNamedLocation(const CNamedLocation& gps2);
+    CNamedLocation& operator=(const CNamedLocation& gps2);
 
 };
+}

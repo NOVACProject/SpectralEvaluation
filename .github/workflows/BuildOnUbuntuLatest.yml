@@ -1,0 +1,24 @@
+name: C/C++ [Ubuntu]
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run CMake to Create Project Files
+      run: cmake -G "Unix Makefiles" .
+    - name: Build
+      run: make
+    - name: List Files
+      run: ls bin/
+    - name: Run Tests
+      run: cd ./bin; ./SpectralEvaluationTests
+      
