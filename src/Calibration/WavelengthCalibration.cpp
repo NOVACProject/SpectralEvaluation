@@ -270,9 +270,12 @@ bool MercuryCalibration(
         return false;
     }
 
-    // measuredPeaks is the emission lines of the spectrum, sorted in increasing pixel order
+    // measuredPeaks is the emission lines of the spectrum, sorted in increasing pixel order.
+    // TODO: Since we are now able to remove not fully resolved spectrum peaks (setting the last flag here to 'false')
+    //  then we should also be able to improve the fitting below by only using fully-resolved peaks (and also getting info
+    //  on which peaks have been removed (e.g. by calling FindEmissionLines twice, once with 'true' and once with 'false')
     std::vector<novac::SpectrumDataPoint> measuredPeaks;
-    FindEmissionLines(measuredMercurySpectrum, measuredPeaks);
+    FindEmissionLines(measuredMercurySpectrum, measuredPeaks, true);
 
     if (measuredPeaks.size() < static_cast<size_t>(polynomialOrder) + 1)
     {
@@ -377,18 +380,18 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
     {
         throw std::invalid_argument("The initial instrument line shape must not be empty.");
     }
-    // TODO: More validation of the setup and incoming parameters!
+    // TODO: More validation of the setup and incoming parameters?
 
     // Magic parameters...
-    const double minimumPeakIntensityInMeasuredSpectrum = 0.02; // in the normalized units, was 1000
-    const double minimumPeakIntensityInFraunhoferReference = 0.01; // in the normalized units, was 600
+    const double minimumPeakIntensityInMeasuredSpectrum = 0.02; // in the normalized units.
+    const double minimumPeakIntensityInFraunhoferReference = 0.01; // in the normalized units.
     novac::RansacWavelengthCalibrationSettings ransacSettings; // Magic method parameters. These needs to be optimized...
     novac::CorrespondenceSelectionSettings correspondenceSelectionSettings; // Magic selection parameters...
 
     // Setup
     novac::RansacWavelengthCalibrationSetup ransacCalibrationSetup{ ransacSettings };
 
-    // Start by removing any remaining baseline from the measuerd spectrum and normalizing the intensity of it, such that we can compare it to the fraunhofer spectrum.
+    // Start by removing any remaining baseline from the measured spectrum and normalizing the intensity of it, such that we can compare it to the fraunhofer spectrum.
     this->calibrationState.measuredSpectrum = std::make_unique<CSpectrum>(measuredSpectrum);
     RemoveBaseline(*calibrationState.measuredSpectrum);
     Normalize(*calibrationState.measuredSpectrum);
