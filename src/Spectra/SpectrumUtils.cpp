@@ -385,7 +385,7 @@ void FindEmissionLines(const CSpectrum& spectrum, std::vector<SpectrumDataPoint>
                 }
             }
 
-            if (!PeakIsFullyResolved(spectrum, result[peakIdx]))
+            if (result[peakIdx].flatTop || !PeakIsFullyResolved(spectrum, result[peakIdx]))
             {
                 result[peakIdx].type = SpectrumDataPointType::UnresolvedPeak;
                 continue;
