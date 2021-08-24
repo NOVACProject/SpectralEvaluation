@@ -107,9 +107,15 @@ std::vector<double> GetPixelToWavelengthMappingFromFile(const std::string& clbFi
 struct MercurySpectrumCalibrationState
 {
     /// <summary>
-    /// This lists all the peaks found in the mercury spectrum (defined in pixels)
+    /// This lists all the peaks found in the mercury spectrum (defined in pixels).
     /// </summary>
     std::vector<SpectrumDataPoint> peaks;
+
+    /// <summary>
+    /// This is a list of peaks found in the spectrum but for which we didn't find a
+    /// suitable emission line in the theoretical spectrum, or the line seems to be not fully resolved.
+    /// </summary>
+    std::vector<SpectrumDataPoint> rejectedPeaks;
 
     /// <summary>
     /// If the Mercury calibration failed, then this will be filled in with the reason why

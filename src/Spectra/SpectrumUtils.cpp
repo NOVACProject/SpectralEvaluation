@@ -261,13 +261,13 @@ void FindKeypointsInSpectrum(const CSpectrum& spectrum, double minimumIntensity,
 
     for (SpectrumDataPoint& pt : valleys)
     {
-        pt.type = -1;
+        pt.type = SpectrumDataPointType::Valley;
         result.push_back(pt);
     }
 
     for (SpectrumDataPoint& pt : peaks)
     {
-        pt.type = +1;
+        pt.type = SpectrumDataPointType::Peak;
         result.push_back(pt);
     }
 
@@ -303,7 +303,7 @@ bool PeakIsFullyResolved(const CSpectrum& spectrum, const SpectrumDataPoint& poi
 
     CBasicMath math;
     std::vector<double> lowPassFilteredSpectrum(spectrum.m_data + leftPixel, spectrum.m_data + rightPixel);
-    math.LowPassBinomial(lowPassFilteredSpectrum.data(), cutOutLength, 10);
+    math.LowPassBinomial(lowPassFilteredSpectrum.data(), static_cast<int>(cutOutLength), 10);
 
     std::vector<double> ddx2;
     if (!Derivative(lowPassFilteredSpectrum.data(), cutOutLength, 2, ddx2))
@@ -329,6 +329,22 @@ bool PeakIsFullyResolved(const CSpectrum& spectrum, const SpectrumDataPoint& poi
     return (numberOfZeroCrossings < 3);
 }
 
+std::vector<SpectrumDataPoint> FilterByType(const std::vector<SpectrumDataPoint>& input, SpectrumDataPointType typeToFind)
+{
+    std::vector<SpectrumDataPoint> result;
+    result.reserve(input.size());
+
+    for each (auto point in input)
+    {
+        if (point.type == typeToFind)
+        {
+            result.push_back(point);
+        }
+    }
+
+    return result;
+}
+
 void FindEmissionLines(const CSpectrum& spectrum, std::vector<SpectrumDataPoint>& result, bool includeNotClearlyResolvedLines)
 {
     // Find the 10% lowest values and use these as a baseline
@@ -350,10 +366,8 @@ void FindEmissionLines(const CSpectrum& spectrum, std::vector<SpectrumDataPoint>
     }
 
     // Filter out not fully resolved emission lines.
-    if (!includeNotClearlyResolvedLines)
     {
         const size_t distance = 3; // Minimum distance between two peaks (in terms of peak-half-width) for a peak to be judged to be isolated.
-        std::vector<SpectrumDataPoint> clearedResultList;
         for (size_t peakIdx = 0; peakIdx < result.size(); ++peakIdx)
         {
             if (peakIdx < result.size() - 1)
@@ -363,7 +377,9 @@ void FindEmissionLines(const CSpectrum& spectrum, std::vector<SpectrumDataPoint>
                 if (result[peakIdx].pixel + distance * thisRightWidth >=
                     result[peakIdx + 1].pixel - distance * nextLeftWidth)
                 {
-                    // This peak overlaps the next one. Skip both.
+                    // This peak overlaps the next one. Both are unresolved
+                    result[peakIdx].type = SpectrumDataPointType::UnresolvedPeak;
+                    result[peakIdx + 1].type = SpectrumDataPointType::UnresolvedPeak;
                     ++peakIdx;
                     continue;
                 }
@@ -371,14 +387,19 @@ void FindEmissionLines(const CSpectrum& spectrum, std::vector<SpectrumDataPoint>
 
             if (!PeakIsFullyResolved(spectrum, result[peakIdx]))
             {
+                result[peakIdx].type = SpectrumDataPointType::UnresolvedPeak;
                 continue;
             }
 
             // all tests passed, the peak seems good.
-            clearedResultList.push_back(result[peakIdx]);
+            result[peakIdx].type = SpectrumDataPointType::Peak;
         }
 
-        result = clearedResultList; // swap the lists
+        if (!includeNotClearlyResolvedLines)
+        {
+            // Extract only the fully resolved peaks.
+            result = FilterByType(result, SpectrumDataPointType::Peak);
+        }
     }
 }
 
