@@ -20,7 +20,8 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FindPlume.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitExtensions.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitWindow.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_InstrumentLineShape.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitInstrumentLineShapeFunction.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_InstrumentLineShapeEstimation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_RatioEvaluation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_SpectrumUtils.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Utils.cpp

@@ -91,7 +91,7 @@ InstrumentLineShapeEstimation::LineShapeEstimationState InstrumentLineShapeEstim
         std::cout << "Gaussian width: " << upperSigmaLimit << " gives keypoint distance: " << medianPixelDistanceAtUpperSigmaLimit << std::endl;
         state.attempts.push_back(std::pair<double, double>{upperSigmaLimit, medianPixelDistanceAtUpperSigmaLimit});
 
-        if (std::isnan(medianPixelDistanceAtUpperSigmaLimit))
+        if (std::isnan(medianPixelDistanceAtUpperSigmaLimit) || std::abs(medianPixelDistanceAtUpperSigmaLimit) < 0.1 )
         {
             upperSigmaLimit /= 2.0;
             medianPixelDistanceAtUpperSigmaLimit = 0.0;
@@ -169,8 +169,9 @@ double InstrumentLineShapeEstimation::GetMedianKeypointDistanceFromSpectrum(cons
     {
         // Version 2, getting the median distance between zero crossings of the spectrum in the region [measuredPixelStart, measuredPixelStop]
         // start by normalizing the data by removing the median value
-        const size_t length = std::min(static_cast<size_t>(spectrum.m_length - this->measuredPixelStart), this->measuredPixelStop - this->measuredPixelStart);
-        std::vector<double> normalizedData{ spectrum.m_data + this->measuredPixelStart, spectrum.m_data + this->measuredPixelStart + length };
+        const size_t start = (spectrum.m_length < this->measuredPixelStart) ? (spectrum.m_length / 10) : this->measuredPixelStart;
+        const size_t length = (spectrum.m_length < this->measuredPixelStart) ? (spectrum.m_length - 2 * start) : std::min(static_cast<size_t>(spectrum.m_length - this->measuredPixelStart), this->measuredPixelStop - this->measuredPixelStart);
+        std::vector<double> normalizedData{ spectrum.m_data + start, spectrum.m_data + start + length };
         std::vector<double> copyOfData{ begin(normalizedData), end(normalizedData) };
         auto median = Median(copyOfData);
         for (size_t ii = 0; ii < normalizedData.size(); ++ii)

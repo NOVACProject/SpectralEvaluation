@@ -43,6 +43,7 @@ public:
     /// <summary>
     /// Creates a rough estimation of the instrument line shape as the Gaussian line shape which best fits to the measured spectrum.
     /// If this->HasInitialLineShape() is true, then the initial estimation will be used.
+    /// This method has the advantage that the wavelength calibration does not have to be very accurate, but does take quite a few iterations to succeed.
     /// </summary>
     /// <param name="measuredSpectrum">A measured sky spectrum containing Fraunhofer lines</param>
     /// <param name="estimatedLineShape">Will on successful return be filled with the estimated line shape</param>

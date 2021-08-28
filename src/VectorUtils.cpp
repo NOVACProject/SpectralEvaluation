@@ -355,7 +355,7 @@ double FindValue(const std::vector<double>& values, double valueToFind, size_t s
 
     stopIdx = std::min(stopIdx, values.size());
 
-    for (size_t idx = startIdx + 1; idx < stopIdx; ++idx)
+    for (size_t idx = startIdx + 1; idx <= stopIdx; ++idx)
     {
         const double lastValue = values[idx - 1];
         const double thisValue = values[idx];
