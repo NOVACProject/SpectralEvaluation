@@ -49,7 +49,7 @@ public:
     /// <param name="estimatedLineShape">Will on successful return be filled with the estimated line shape</param>
     /// <param name="gaussianWidth">Will on successful return be filled with the estimated FWHM of the line shape</param>
     /// <returns>A structure showing how the result was achieved</returns>
-    LineShapeEstimationState EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm);
+    LineShapeEstimationState EstimateInstrumentLineShapeFromKeypointDistance(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm);
 
     /// <summary>
     /// Sets the pixel to wavelength mapping for the spectrometer,

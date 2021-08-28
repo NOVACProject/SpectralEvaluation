@@ -76,10 +76,7 @@ TEST_CASE("GetFwhm returns correct value", "[InstrumentLineShapeEstimation]")
     }
 }
 
-// GetFwhm
-
-
-TEST_CASE("EstimateInstrumentLineShape (basic input function): Simple Gaussian input returns correct fitted function", "[InstrumentLineShapeEstimation]")
+TEST_CASE("EstimateInstrumentLineShapeFromKeypointDistance (basic input function): Simple Gaussian input returns correct fitted function", "[InstrumentLineShapeEstimation]")
 {
     std::vector<double> pixelToWavelengthMapping = GeneratePixelToWavelengthMapping(330.0, 350.0, 0.05);
     InstrumentLineShapeEstimation sut{ pixelToWavelengthMapping };
@@ -98,7 +95,7 @@ TEST_CASE("EstimateInstrumentLineShape (basic input function): Simple Gaussian i
         // Act
         CCrossSectionData estimatedLineShape;
         double estimatedFwhm = 0.0;
-        sut.EstimateInstrumentLineShape(fraunhoferSpectrumGenerator, *measuredSpectrum, estimatedLineShape, estimatedFwhm);
+        sut.EstimateInstrumentLineShapeFromKeypointDistance(fraunhoferSpectrumGenerator, *measuredSpectrum, estimatedLineShape, estimatedFwhm);
 
         // Assert
         REQUIRE(fabs(actualFwhm - estimatedFwhm) < 0.10 * actualFwhm); // 10% margin
@@ -115,7 +112,7 @@ TEST_CASE("EstimateInstrumentLineShape (basic input function): Simple Gaussian i
         // Act
         CCrossSectionData estimatedLineShape;
         double estimatedFwhm = 0.0;
-        sut.EstimateInstrumentLineShape(fraunhoferSpectrumGenerator, *measuredSpectrum, estimatedLineShape, estimatedFwhm);
+        sut.EstimateInstrumentLineShapeFromKeypointDistance(fraunhoferSpectrumGenerator, *measuredSpectrum, estimatedLineShape, estimatedFwhm);
 
         // Assert
         REQUIRE(fabs(actualFwhm - estimatedFwhm) < 0.10 * actualFwhm); // 10% margin
@@ -132,7 +129,7 @@ TEST_CASE("EstimateInstrumentLineShape (basic input function): Simple Gaussian i
         // Act
         CCrossSectionData estimatedLineShape;
         double estimatedFwhm = 0.0;
-        sut.EstimateInstrumentLineShape(fraunhoferSpectrumGenerator, *measuredSpectrum, estimatedLineShape, estimatedFwhm);
+        sut.EstimateInstrumentLineShapeFromKeypointDistance(fraunhoferSpectrumGenerator, *measuredSpectrum, estimatedLineShape, estimatedFwhm);
 
         // Assert
         REQUIRE(fabs(actualFwhm - estimatedFwhm) < 0.10 * actualFwhm); // 10% margin

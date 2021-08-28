@@ -22,7 +22,7 @@ static double GaussianSigmaToFwhm(double sigma)
     return sigma * 2.0 * std::sqrt(2.0 * std::log(2.0));
 }
 
-InstrumentLineShapeEstimation::LineShapeEstimationState InstrumentLineShapeEstimation::EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& spectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm)
+InstrumentLineShapeEstimation::LineShapeEstimationState InstrumentLineShapeEstimation::EstimateInstrumentLineShapeFromKeypointDistance(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& spectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm)
 {
     // Prepare a high-pass filtered version of the measured spectrum, removing all baseline
     CBasicMath math;

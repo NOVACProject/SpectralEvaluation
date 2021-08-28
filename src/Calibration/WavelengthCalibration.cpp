@@ -493,7 +493,7 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
                 }
 
                 double lineShapeFwhm = 0.0;
-                ilsEstimator.EstimateInstrumentLineShape(fraunhoferSetup, *calibrationState.measuredSpectrum, result.estimatedInstrumentLineShape, lineShapeFwhm);
+                ilsEstimator.EstimateInstrumentLineShapeFromKeypointDistance(fraunhoferSetup, *calibrationState.measuredSpectrum, result.estimatedInstrumentLineShape, lineShapeFwhm);
 
                 // TODO: Save the result !!
 
