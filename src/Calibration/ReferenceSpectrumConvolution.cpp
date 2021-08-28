@@ -324,6 +324,11 @@ bool ConvolveReference(
 
     // We need to make sure we work on the correct resolution, the highest possible to get the most accurate results.
     const double fwhmOfSlf = GetFwhm(slf);
+    if (fwhmOfSlf < std::numeric_limits<float>::epsilon())
+    {
+        std::cout << " Error in call to 'ConvolveReference', the estimated fwhm of the instrument line shape is zero." << std::endl;
+        return false;
+    }
     const double minimumAllowedResolution = 0.02 * fwhmOfSlf; // do use at least 50 points per FWHM of the SLF
     const double maximumAllowedResolution = 0.01 * fwhmOfSlf; // do not use more than 100 points per FWHM of the SLF
     const double resolutionOfReference = Resolution(convertedHighResReference.m_waveLength);

@@ -31,6 +31,54 @@ std::string GetSolarAtlasFileName()
 #endif // _MSC_VER
 }
 
+TEST_CASE("GetFwhm returns correct value", "[InstrumentLineShapeEstimation]")
+{
+    SECTION("Correct Fwhm of Gaussian with actual fwhm of 0.5 nm")
+    {
+        const double actualFwhm = 0.5;
+        const double gaussianSigma = GaussianFwhmToSigma(actualFwhm);
+        CCrossSectionData actualnstrumentLineShape;
+        CreateGaussian(gaussianSigma, 0.1 * actualFwhm, actualnstrumentLineShape);
+
+        // Act
+        const double estimatedFwhm = GetFwhm(actualnstrumentLineShape);
+
+        // Assert
+        REQUIRE(fabs(actualFwhm - estimatedFwhm) < 0.1 * actualFwhm); // 1% margin
+    }
+
+    SECTION("Correct Fwhm of Gaussian with actual fwhm of 0.01 nm")
+    {
+        const double actualFwhm = 0.01;
+        const double gaussianSigma = GaussianFwhmToSigma(actualFwhm);
+        CCrossSectionData actualnstrumentLineShape;
+        CreateGaussian(gaussianSigma, 0.1 * actualFwhm, actualnstrumentLineShape);
+
+        // Act
+        const double estimatedFwhm = GetFwhm(actualnstrumentLineShape);
+
+        // Assert
+        REQUIRE(fabs(actualFwhm - estimatedFwhm) < 0.1 * actualFwhm); // 1% margin
+    }
+
+    SECTION("Correct Fwhm of badly sampled Gaussian with actual fwhm of 0.5 nm")
+    {
+        const double actualFwhm = 0.5;
+        const double gaussianSigma = GaussianFwhmToSigma(actualFwhm);
+        CCrossSectionData actualnstrumentLineShape;
+        CreateGaussian(gaussianSigma, actualFwhm, actualnstrumentLineShape);
+
+        // Act
+        const double estimatedFwhm = GetFwhm(actualnstrumentLineShape);
+
+        // Assert
+        REQUIRE(fabs(actualFwhm - estimatedFwhm) < 0.1 * actualFwhm); // 1% margin
+    }
+}
+
+// GetFwhm
+
+
 TEST_CASE("EstimateInstrumentLineShape (basic input function): Simple Gaussian input returns correct fitted function", "[InstrumentLineShapeEstimation]")
 {
     std::vector<double> pixelToWavelengthMapping = GeneratePixelToWavelengthMapping(330.0, 350.0, 0.05);
