@@ -11,6 +11,7 @@ set(SPECTRUM_EVALUATION_HEADERS
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/FitParameter.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/FitWindow.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/CrossSectionData.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/DoasFit.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/PlumeSpectrumSelector.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/Ratio.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Evaluation/RatioEvaluation.h
@@ -29,6 +30,7 @@ set(SPECTRUM_EVALUATION_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/EvaluationResult.cpp
     ${CMAKE_CURRENT_LIST_DIR}/FitWindow.cpp
     ${CMAKE_CURRENT_LIST_DIR}/CrossSectionData.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/DoasFit.cpp
     ${CMAKE_CURRENT_LIST_DIR}/PlumeSpectrumSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/RatioEvaluation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ReferenceFile.cpp

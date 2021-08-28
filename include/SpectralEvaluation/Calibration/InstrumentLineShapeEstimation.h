@@ -9,47 +9,14 @@ namespace novac
 class CSpectrum;
 class CCrossSectionData;
 class IFraunhoferSpectrumGenerator;
+class DoasFit;
 
 /// <summary>
-/// This is a helper class for estimating the instrument line shape of an instrument 
-/// using a measured spectrum with a (reasonably well known) pixel-to-wavelength calibration.
-/// 
+/// Abstract base class for the different instrument line shape estimators.
 /// </summary>
 class InstrumentLineShapeEstimation
 {
 public:
-
-    /// <summary>
-    /// A helper structure to describe the internal state of this estimator
-    /// </summary>
-    struct LineShapeEstimationState
-    {
-        double medianPixelDistanceInMeas = 0.0;
-
-        std::vector<std::pair<double, double>> attempts;
-    };
-
-    InstrumentLineShapeEstimation(const std::vector<double>& initialPixelToWavelengthMapping)
-        : pixelToWavelengthMapping(initialPixelToWavelengthMapping)
-    {
-    }
-
-    InstrumentLineShapeEstimation(const std::vector<double>& initialPixelToWavelengthMapping, const novac::CCrossSectionData& initialLineShape)
-        : pixelToWavelengthMapping(initialPixelToWavelengthMapping)
-    {
-        initialLineShapeEstimation = std::make_unique<novac::CCrossSectionData>(initialLineShape);
-    }
-
-    /// <summary>
-    /// Creates a rough estimation of the instrument line shape as the Gaussian line shape which best fits to the measured spectrum.
-    /// If this->HasInitialLineShape() is true, then the initial estimation will be used.
-    /// This method has the advantage that the wavelength calibration does not have to be very accurate, but does take quite a few iterations to succeed.
-    /// </summary>
-    /// <param name="measuredSpectrum">A measured sky spectrum containing Fraunhofer lines</param>
-    /// <param name="estimatedLineShape">Will on successful return be filled with the estimated line shape</param>
-    /// <param name="gaussianWidth">Will on successful return be filled with the estimated FWHM of the line shape</param>
-    /// <returns>A structure showing how the result was achieved</returns>
-    LineShapeEstimationState EstimateInstrumentLineShapeFromKeypointDistance(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm);
 
     /// <summary>
     /// Sets the pixel to wavelength mapping for the spectrometer,
@@ -70,7 +37,19 @@ public:
 
     bool HasInitialLineShape() const;
 
-private:
+protected:
+
+    InstrumentLineShapeEstimation(const std::vector<double>& initialPixelToWavelengthMapping)
+        : pixelToWavelengthMapping(initialPixelToWavelengthMapping)
+    {
+    }
+
+    InstrumentLineShapeEstimation(const std::vector<double>& initialPixelToWavelengthMapping, const novac::CCrossSectionData& initialLineShape)
+        : pixelToWavelengthMapping(initialPixelToWavelengthMapping)
+    {
+        initialLineShapeEstimation = std::make_unique<novac::CCrossSectionData>(initialLineShape);
+    }
+
     /// <summary>
     /// The assumed pixel-to-wavelength mapping for the device.
     /// </summary>
@@ -80,7 +59,48 @@ private:
     /// The initial, starting guess for the instrument line shape.
     /// </summary>
     std::unique_ptr<novac::CCrossSectionData> initialLineShapeEstimation;
+};
 
+/// <summary>
+/// This is a helper class for estimating the instrument line shape of an instrument 
+/// using a measured spectrum with a (reasonably well known) pixel-to-wavelength calibration
+/// by measuring the distance between keypoints in the meaured and synthetic spectra.
+/// </summary>
+class InstrumentLineShapeEstimationFromKeypointDistance : public InstrumentLineShapeEstimation
+{
+public:
+    /// <summary>
+    /// A helper structure to describe the internal state of this estimator
+    /// </summary>
+    struct LineShapeEstimationState
+    {
+        double medianPixelDistanceInMeas = 0.0;
+
+        std::vector<std::pair<double, double>> attempts;
+    };
+
+    InstrumentLineShapeEstimationFromKeypointDistance(const std::vector<double>& initialPixelToWavelengthMapping)
+        : InstrumentLineShapeEstimation(initialPixelToWavelengthMapping)
+    {
+    }
+
+    InstrumentLineShapeEstimationFromKeypointDistance(const std::vector<double>& initialPixelToWavelengthMapping, const novac::CCrossSectionData& initialLineShape)
+        : InstrumentLineShapeEstimation(initialPixelToWavelengthMapping, initialLineShape)
+    {
+    }
+
+    /// <summary>
+    /// Creates a rough estimation of the instrument line shape as the Gaussian line shape which best fits to the measured spectrum.
+    /// If this->HasInitialLineShape() is true, then the initial estimation will be used.
+    /// This method has the advantage that the wavelength calibration does not have to be very accurate, but does take quite a few iterations to succeed.
+    /// </summary>
+    /// <param name="measuredSpectrum">A measured sky spectrum containing Fraunhofer lines</param>
+    /// <param name="estimatedLineShape">Will on successful return be filled with the estimated line shape</param>
+    /// <param name="gaussianWidth">Will on successful return be filled with the estimated FWHM of the line shape</param>
+    /// <returns>A structure showing how the result was achieved</returns>
+    LineShapeEstimationState EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm);
+
+private:
     /// <summary>
     /// The first pixel to include when checking the properties of the spectrum. 
     /// Often do the signal in the spectra decline at short wavelengths and this is a means to disregard points with low intensity.
@@ -97,6 +117,30 @@ private:
     const size_t measuredPixelStop = 4095;
 
     double GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum, const std::string& spectrumName) const;
+};
+
+
+/// <summary>
+/// This is a helper class for estimating the instrument line shape of an instrument
+/// using a measured spectrum with a well known pixel-to-wavelength calibration by
+/// pseudo-absorbers representing the error in measured instrument line shape into a DOAS evaluation.
+/// </summary>
+class InstrumentLineshapeEstimationFromDoas : public InstrumentLineShapeEstimation
+{
+public:
+
+    InstrumentLineshapeEstimationFromDoas(const std::vector<double>& initialPixelToWavelengthMapping, const novac::CCrossSectionData& initialLineShape)
+        : InstrumentLineShapeEstimation(initialPixelToWavelengthMapping, initialLineShape)
+    {
+    }
+
+    /// <summary>
+    /// Estimates the instrument line shape by fitting a Super Gaussian to the measured spectrum
+    /// </summary>
+    /// <returns></returns>
+    /// <throws>std::invalid_argument if the initial line shape hasn't been provided (for now at least).</throws>
+    bool EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum);
+
 };
 
 /// <summary>

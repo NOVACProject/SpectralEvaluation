@@ -1,5 +1,6 @@
 #include <SpectralEvaluation/Calibration/InstrumentLineShape.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Fit/StandardFit.h>
 #include <SpectralEvaluation/Fit/StandardMetricFunction.h>
 #include <SpectralEvaluation/Fit/GaussFunction.h>
@@ -157,6 +158,49 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, Su
     }
 }
 
+// TODO: Merge with overload above!
+FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CCrossSectionData& mercuryLine, SuperGaussianLineShape& result)
+{
+    if (mercuryLine.GetSize() == 0)
+    {
+        return FUNCTION_FIT_RETURN_CODE::EMPTY_INPUT;
+    }
+    else if (mercuryLine.m_waveLength.size() != mercuryLine.GetSize())
+    {
+        return FUNCTION_FIT_RETURN_CODE::MISSING_WAVELENGTH_CALIBRATION;
+    }
+
+    std::vector<double> localX{ mercuryLine.m_waveLength };
+    std::vector<double> localY{ mercuryLine.m_crossSection.data(), mercuryLine.m_crossSection.data() + mercuryLine.GetSize() };
+
+    const bool autoReleaseData = false;
+    MathFit::CVector xData{ &localX[0], static_cast<int>(mercuryLine.GetSize()), 1, autoReleaseData };
+    MathFit::CVector yData{ &localY[0], static_cast<int>(mercuryLine.GetSize()), 1, autoReleaseData };
+
+    // First create an initial estimation of the location, width and amplitude of the Gaussian
+    MathFit::CGaussFunction regularGaussian;
+    CreateInitialEstimate(localX, localY, regularGaussian);
+
+    // Copy the relevant parameters from the regular Gaussian and proceed with fitting the super-gaussian
+    MathFit::CSuperGaussFunction superGaussian;
+    superGaussian.SetCenter(regularGaussian.GetCenter());
+    superGaussian.SetSigma(regularGaussian.GetSigma());
+
+    FUNCTION_FIT_RETURN_CODE ret = FitFunction(xData, yData, superGaussian);
+    if (ret != FUNCTION_FIT_RETURN_CODE::SUCCESS)
+    {
+        return ret;
+    }
+    else
+    {
+        result.sigma = superGaussian.GetSigma();
+        result.P = superGaussian.GetPower();
+        result.center = superGaussian.GetCenter();
+
+        return FUNCTION_FIT_RETURN_CODE::SUCCESS;
+    }
+}
+
 template<class T>
 std::vector<double> GetFunctionValues(T& function, const std::vector<double>& x, double baseline = 0.0)
 {
@@ -202,6 +246,79 @@ std::vector<double> SampleInstrumentLineShape(const SuperGaussianLineShape& line
     return GetFunctionValues(superGauss, x, baseline);
 }
 
+std::vector<double> PartialDerivative(const GaussianLineShape& lineShape, const std::vector<double>& x)
+{
+    const double center = 0.0;
+    const double amplitude = 1.0;
+    const double baseline = 0.0;
+    const double delta = 0.01;
+
+    MathFit::CGaussFunction originalLineShape;
+    originalLineShape.SetCenter(center);
+    originalLineShape.SetSigma(lineShape.sigma + delta);
+    originalLineShape.SetScale(amplitude);
+    const auto x0 = GetFunctionValues(originalLineShape, x, baseline);
+
+    MathFit::CGaussFunction modifiedLineShape;
+    modifiedLineShape.SetCenter(center);
+    modifiedLineShape.SetSigma(lineShape.sigma + delta);
+    modifiedLineShape.SetScale(amplitude);
+    const auto x1 = GetFunctionValues(modifiedLineShape, x, baseline);
+
+    std::vector<double> result;
+    result.resize(x0.size());
+
+    for (size_t ii = 0; ii < result.size(); ++ii)
+    {
+        result[ii] = (x1[ii] - x0[ii]) / delta;
+    }
+
+    return result;
+}
+
+std::vector<double> PartialDerivative(const SuperGaussianLineShape& lineShape, const std::vector<double>& x, int parameter)
+{
+    const double center = 0.0;
+    const double amplitude = 1.0;
+    const double baseline = 0.0;
+    const double delta = 0.005;
+
+    MathFit::CSuperGaussFunction originalLineShape;
+    originalLineShape.SetCenter(center);
+    if (parameter == 0)
+    {
+        originalLineShape.SetSigma(lineShape.sigma + delta);
+    }
+    else
+    {
+        originalLineShape.SetPower(lineShape.P + delta);
+    }
+    originalLineShape.SetScale(amplitude);
+    const auto x0 = GetFunctionValues(originalLineShape, x, baseline);
+
+    MathFit::CSuperGaussFunction modifiedLineShape;
+    modifiedLineShape.SetCenter(center);
+    if (parameter == 0)
+    {
+        modifiedLineShape.SetSigma(lineShape.sigma - delta);
+    }
+    else
+    {
+        modifiedLineShape.SetPower(lineShape.P - delta);
+    }
+    modifiedLineShape.SetScale(amplitude);
+    const auto x1 = GetFunctionValues(modifiedLineShape, x, baseline);
+
+    std::vector<double> result;
+    result.resize(x0.size());
+
+    for (size_t ii = 0; ii < result.size(); ++ii)
+    {
+        result[ii] = (x1[ii] - x0[ii]) / (2.0 * delta);
+    }
+
+    return result;
+}
 
 }
 

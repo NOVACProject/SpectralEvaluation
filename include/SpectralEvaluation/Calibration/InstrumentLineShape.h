@@ -10,6 +10,7 @@ namespace novac
 {
 
 class CSpectrum;
+class CCrossSectionData;
 
 // --------- Possible representations of instrument line shapes ---------
 // Symmetric gaussian line shape: exp(-x^2/(2 * sigma^2))
@@ -38,7 +39,7 @@ struct AsymmetricGaussianLineShape
 // Symmetric super-gaussian line shape: exp(-0.5 * [x/sigma]^P)
 struct SuperGaussianLineShape
 {
-    // The width parameter
+    // The width parameter (w)
     double sigma = 0.0;
 
     // The exponent (P = 2.0 equals a 'regular' Gaussian)
@@ -55,6 +56,8 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, Ga
 FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, AsymmetricGaussianLineShape& result);
 FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, SuperGaussianLineShape& result);
 
+FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CCrossSectionData& mercuryLine, SuperGaussianLineShape& result);
+
 /**  Calculates the value of the provided line shape on the provided x-axis grid
     The additional parameters required to calculate the value of the line shape are provided as additional parameters
     @param center The x-axis value around which the line shape should be centered
@@ -63,5 +66,12 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, Su
 std::vector<double> SampleInstrumentLineShape(const GaussianLineShape& lineShape, const std::vector<double>& x, double center, double amplitude, double baseline = 0.0);
 std::vector<double> SampleInstrumentLineShape(const AsymmetricGaussianLineShape& lineShape, const std::vector<double>& x, double center, double amplitude, double baseline = 0.0);
 std::vector<double> SampleInstrumentLineShape(const SuperGaussianLineShape& lineShape, const std::vector<double>& x, double center, double amplitude, double baseline = 0.0);
+
+/** Calculates the partial derivative with respect to the 'sigma' parameter of the provided Gaussian line shape using finite difference. */
+std::vector<double> PartialDerivative(const GaussianLineShape& lineShape, const std::vector<double>& x);
+
+/** Calculates the partial derivative with respect to the given parameter of the provided super Gaussian line shape using finite difference.
+    @param parameter 0 corresponds to partial derivative with respect to 'sigma'. 1 corresponds to partial derivative wrt 'P'. */
+std::vector<double> PartialDerivative(const SuperGaussianLineShape& lineShape, const std::vector<double>& x, int parameter);
 
 }

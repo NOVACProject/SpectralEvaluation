@@ -486,14 +486,14 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
 
             if (this->settings.estimateInstrumentLineShape == InstrumentLineshapeEstimationOption::Gaussian)
             {
-                InstrumentLineShapeEstimation ilsEstimator{ result.pixelToWavelengthMapping };
+                InstrumentLineShapeEstimationFromKeypointDistance ilsEstimator{ result.pixelToWavelengthMapping };
                 if (settings.initialInstrumentLineShape.GetSize() > 0)
                 {
                     ilsEstimator.UpdateInitialLineShape(settings.initialInstrumentLineShape);
                 }
 
                 double lineShapeFwhm = 0.0;
-                ilsEstimator.EstimateInstrumentLineShapeFromKeypointDistance(fraunhoferSetup, *calibrationState.measuredSpectrum, result.estimatedInstrumentLineShape, lineShapeFwhm);
+                ilsEstimator.EstimateInstrumentLineShape(fraunhoferSetup, *calibrationState.measuredSpectrum, result.estimatedInstrumentLineShape, lineShapeFwhm);
 
                 // TODO: Save the result !!
 
