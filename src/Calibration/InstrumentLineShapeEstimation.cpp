@@ -339,6 +339,10 @@ double GetFwhm(const novac::CCrossSectionData& lineshape)
     }
 }
 
+inline bool IsZero(double value)
+{
+    return std::abs(value) < std::numeric_limits<double>::epsilon();
+}
 
 
 /// --------------------------------------------------------------------------------------------------
@@ -375,6 +379,8 @@ bool InstrumentLineshapeEstimationFromDoas::EstimateInstrumentLineShape(IFraunho
     auto superGaussianLineShape = std::make_unique<novac::CCrossSectionData>();
     superGaussianLineShape->m_waveLength = this->initialLineShapeEstimation->m_waveLength;
     superGaussianLineShape->m_crossSection = SampleInstrumentLineShape(parameterizedLineShape, this->initialLineShapeEstimation->m_waveLength, 0.0, 1.0);
+    NormalizeArea(superGaussianLineShape->m_crossSection, superGaussianLineShape->m_crossSection);
+    const double fwhm = GetFwhm(*superGaussianLineShape);
 
     auto currentFraunhoferSpectrum = fraunhoferSpectrumGen.GetFraunhoferSpectrum(this->pixelToWavelengthMapping, *superGaussianLineShape);
 
@@ -389,34 +395,44 @@ bool InstrumentLineshapeEstimationFromDoas::EstimateInstrumentLineShape(IFraunho
     doasFitSetup.ref[0].m_columnValue = 1.0;
     doasFitSetup.ref[0].m_squeezeOption = novac::SHIFT_FIX;
     doasFitSetup.ref[0].m_squeezeValue = 1.0;
-    doasFitSetup.ref[0].m_shiftOption = novac::SHIFT_FIX;
+    doasFitSetup.ref[0].m_shiftOption = novac::SHIFT_FREE;
     doasFitSetup.ref[0].m_shiftValue = 0.0;
 
     // 2. Include the pseudo-absorbers derived from the derivative of the instrument-line-shape function.
 
     for (int parameterIdx = 0; parameterIdx < 2; ++parameterIdx)
     {
-        std::unique_ptr<novac::CCrossSectionData> diffSampledLineShape = std::make_unique<novac::CCrossSectionData>();
+        auto diffSampledLineShape = std::make_unique<novac::CCrossSectionData>();
         diffSampledLineShape->m_waveLength = this->initialLineShapeEstimation->m_waveLength;
         diffSampledLineShape->m_crossSection = PartialDerivative(parameterizedLineShape, superGaussianLineShape->m_waveLength, parameterIdx);
 
-        auto diffFraunhofer = fraunhoferSpectrumGen.GetFraunhoferSpectrum(this->pixelToWavelengthMapping, *diffSampledLineShape);
+        auto diffFraunhofer = fraunhoferSpectrumGen.GetDifferentialFraunhoferSpectrum(this->pixelToWavelengthMapping, *diffSampledLineShape, fwhm);
 
-        for (size_t ii = 0; ii < diffSampledLineShape->m_crossSection.size(); ++ii)
+        auto pseudoAbsorber = std::make_unique<novac::CCrossSectionData>();
+        pseudoAbsorber->m_crossSection.resize(currentFraunhoferSpectrum->m_length);
+        pseudoAbsorber->m_waveLength = std::vector<double>(begin(this->pixelToWavelengthMapping), end(this->pixelToWavelengthMapping));
+        for (size_t ii = 0; ii < pseudoAbsorber->m_crossSection.size(); ++ii)
         {
-            diffSampledLineShape->m_crossSection[ii] = diffFraunhofer->m_data[ii] / currentFraunhoferSpectrum->m_data[ii];
+            pseudoAbsorber->m_crossSection[ii] = IsZero(currentFraunhoferSpectrum->m_data[ii]) ? 0.0 : diffFraunhofer->m_data[ii] / currentFraunhoferSpectrum->m_data[ii];
         }
 
-        doasFitSetup.ref[doasFitSetup.nRef].m_data = std::move(diffSampledLineShape);
+        if (parameterIdx == 0)
+        {
+            novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/PseudoAbsorberSpectrum0.txt", pseudoAbsorber->m_crossSection);
+        }
+        else
+        {
+            novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/PseudoAbsorberSpectrum1.txt", pseudoAbsorber->m_crossSection);
+        }
+
+        doasFitSetup.ref[doasFitSetup.nRef].m_data = std::move(pseudoAbsorber);
         doasFitSetup.ref[doasFitSetup.nRef].m_columnOption = novac::SHIFT_FREE;
         doasFitSetup.ref[doasFitSetup.nRef].m_columnValue = 1.0;
         doasFitSetup.ref[doasFitSetup.nRef].m_squeezeOption = novac::SHIFT_FIX;
         doasFitSetup.ref[doasFitSetup.nRef].m_squeezeValue = 1.0;
-        doasFitSetup.ref[doasFitSetup.nRef].m_shiftOption = novac::SHIFT_FIX;
+        doasFitSetup.ref[doasFitSetup.nRef].m_shiftOption = novac::SHIFT_LINK;
         doasFitSetup.ref[doasFitSetup.nRef].m_shiftValue = 0.0;
         doasFitSetup.nRef += 1;
-
-        novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/PseudoAbsorberSpectrum.txt", filteredFraunhoferSpectrum);
     }
 
     DoasFit doas;

@@ -305,7 +305,9 @@ bool ConvolveReference(
     const CCrossSectionData& highResReference,
     std::vector<double>& result,
     WavelengthConversion conversion,
-    ConvolutionMethod method)
+    ConvolutionMethod method,
+    double fwhmOfInstrumentLineShape,
+    bool normalizeSlf)
 {
     if (slf.m_waveLength.size() != slf.m_crossSection.size())
     {
@@ -323,14 +325,17 @@ bool ConvolveReference(
     Convert(highResReference, conversion, convertedHighResReference);
 
     // We need to make sure we work on the correct resolution, the highest possible to get the most accurate results.
-    const double fwhmOfSlf = GetFwhm(slf);
-    if (fwhmOfSlf < std::numeric_limits<float>::epsilon())
+    if (fwhmOfInstrumentLineShape < std::numeric_limits<float>::epsilon())
+    {
+        fwhmOfInstrumentLineShape = GetFwhm(slf);
+    }
+    if (fwhmOfInstrumentLineShape < std::numeric_limits<float>::epsilon())
     {
         std::cout << " Error in call to 'ConvolveReference', the estimated fwhm of the instrument line shape is zero." << std::endl;
         return false;
     }
-    const double minimumAllowedResolution = 0.02 * fwhmOfSlf; // do use at least 50 points per FWHM of the SLF
-    const double maximumAllowedResolution = 0.01 * fwhmOfSlf; // do not use more than 100 points per FWHM of the SLF
+    const double minimumAllowedResolution = 0.02 * fwhmOfInstrumentLineShape; // do use at least 50 points per FWHM of the SLF
+    const double maximumAllowedResolution = 0.01 * fwhmOfInstrumentLineShape; // do not use more than 100 points per FWHM of the SLF
     const double resolutionOfReference = Resolution(convertedHighResReference.m_waveLength);
     const double highestResolution = std::max(std::min(resolutionOfReference, maximumAllowedResolution), minimumAllowedResolution);
 
@@ -381,8 +386,15 @@ bool ConvolveReference(
 
     // To preserve the energy, we need to normalize the slit-function to the range [0->1]
     std::vector<double> normalizedSlf;
-    NormalizeArea(resampledSlf, normalizedSlf);
-    assert(normalizedSlf.size() == resampledSlf.size());
+    if (normalizeSlf)
+    {
+        NormalizeArea(resampledSlf, normalizedSlf);
+        assert(normalizedSlf.size() == resampledSlf.size());
+    }
+    else
+    {
+        normalizedSlf = resampledSlf;
+    }
 
     const size_t refSize = uniformHighResReference.size();
     const size_t coreSize = normalizedSlf.size();

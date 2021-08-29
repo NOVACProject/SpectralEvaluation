@@ -7,6 +7,7 @@
 #include <SpectralEvaluation/FitExtensions/AsymmetricGaussFunction.h>
 #include <SpectralEvaluation/FitExtensions/SuperGaussFunction.h>
 #include <SpectralEvaluation/Fit/CubicSplineFunction.h>
+#include <SpectralEvaluation/VectorUtils.h>
 #include <numeric>
 
 namespace novac
@@ -276,6 +277,17 @@ std::vector<double> PartialDerivative(const GaussianLineShape& lineShape, const 
     return result;
 }
 
+void Setup(MathFit::CSuperGaussFunction& functionToModify, const SuperGaussianLineShape& functionToCopy)
+{
+    const double center = 0.0;
+    const double amplitude = 1.0;
+
+    functionToModify.SetCenter(center);
+    functionToModify.SetSigma(functionToCopy.sigma);
+    functionToModify.SetPower(functionToCopy.P);
+    functionToModify.SetScale(amplitude);
+}
+
 std::vector<double> PartialDerivative(const SuperGaussianLineShape& lineShape, const std::vector<double>& x, int parameter)
 {
     const double center = 0.0;
@@ -284,37 +296,29 @@ std::vector<double> PartialDerivative(const SuperGaussianLineShape& lineShape, c
     const double delta = 0.005;
 
     MathFit::CSuperGaussFunction originalLineShape;
-    originalLineShape.SetCenter(center);
-    if (parameter == 0)
-    {
-        originalLineShape.SetSigma(lineShape.sigma + delta);
-    }
-    else
-    {
-        originalLineShape.SetPower(lineShape.P + delta);
-    }
-    originalLineShape.SetScale(amplitude);
-    const auto x0 = GetFunctionValues(originalLineShape, x, baseline);
+    Setup(originalLineShape, lineShape);
+    auto x0 = GetFunctionValues(originalLineShape, x, baseline);
+    NormalizeArea(x0, x0);
 
-    MathFit::CSuperGaussFunction modifiedLineShape;
-    modifiedLineShape.SetCenter(center);
+    MathFit::CSuperGaussFunction forwardLineShape;
+    Setup(originalLineShape, lineShape);
     if (parameter == 0)
     {
-        modifiedLineShape.SetSigma(lineShape.sigma - delta);
+        forwardLineShape.SetSigma(lineShape.sigma + delta);
     }
     else
     {
-        modifiedLineShape.SetPower(lineShape.P - delta);
+        forwardLineShape.SetPower(lineShape.P + delta);
     }
-    modifiedLineShape.SetScale(amplitude);
-    const auto x1 = GetFunctionValues(modifiedLineShape, x, baseline);
+    auto xF = GetFunctionValues(forwardLineShape, x, baseline);
+    NormalizeArea(xF, xF);
 
     std::vector<double> result;
     result.resize(x0.size());
 
     for (size_t ii = 0; ii < result.size(); ++ii)
     {
-        result[ii] = (x1[ii] - x0[ii]) / (2.0 * delta);
+        result[ii] = (xF[ii] - x0[ii]) / (delta);
     }
 
     return result;
