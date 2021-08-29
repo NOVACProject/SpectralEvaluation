@@ -10,6 +10,7 @@ class CSpectrum;
 class CCrossSectionData;
 class IFraunhoferSpectrumGenerator;
 class DoasFit;
+struct SuperGaussianLineShape;
 
 /// <summary>
 /// Abstract base class for the different instrument line shape estimators.
@@ -140,6 +141,19 @@ public:
     /// <returns></returns>
     /// <throws>std::invalid_argument if the initial line shape hasn't been provided (for now at least).</throws>
     bool EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum);
+
+private:
+
+    struct LineShapeUpdate
+    {
+        double residualSize = 0.0;
+        std::vector<double> parameterDelta;
+    };
+
+    LineShapeUpdate CalculateGradient(
+        IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+        const CSpectrum& measuredSpectrum,
+        const SuperGaussianLineShape& currentLineShape);
 
 };
 

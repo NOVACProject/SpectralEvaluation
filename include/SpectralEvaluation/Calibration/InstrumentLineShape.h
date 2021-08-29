@@ -74,4 +74,10 @@ std::vector<double> PartialDerivative(const GaussianLineShape& lineShape, const 
     @param parameter 0 corresponds to partial derivative with respect to 'sigma'. 1 corresponds to partial derivative wrt 'P'. */
 std::vector<double> PartialDerivative(const SuperGaussianLineShape& lineShape, const std::vector<double>& x, int parameter);
 
+/** Retrieves the value of the given parameter (sigma == 0 and P == 1) */
+double GetParameterValue(const SuperGaussianLineShape& lineShape, int parameterIdx);
+
+/** Sets the value of the given parameter (sigma == 0 and P == 1) */
+void SetParameterValue(SuperGaussianLineShape& lineShape, int parameterIdx, double value);
+
 }

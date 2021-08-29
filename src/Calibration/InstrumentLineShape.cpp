@@ -277,31 +277,53 @@ std::vector<double> PartialDerivative(const GaussianLineShape& lineShape, const 
     return result;
 }
 
-void Setup(MathFit::CSuperGaussFunction& functionToModify, const SuperGaussianLineShape& functionToCopy)
+void Setup(const SuperGaussianLineShape& src, MathFit::CSuperGaussFunction& dst)
 {
     const double center = 0.0;
     const double amplitude = 1.0;
 
-    functionToModify.SetCenter(center);
-    functionToModify.SetSigma(functionToCopy.sigma);
-    functionToModify.SetPower(functionToCopy.P);
-    functionToModify.SetScale(amplitude);
+    dst.SetCenter(center);
+    dst.SetSigma(src.sigma);
+    dst.SetPower(src.P);
+    dst.SetScale(amplitude);
+}
+
+double GetParameterValue(const SuperGaussianLineShape& lineShape, int parameterIdx)
+{
+    if (parameterIdx == 0)
+    {
+        return lineShape.sigma;
+    }
+    else
+    {
+        return lineShape.P;
+    }
+}
+
+void SetParameterValue(SuperGaussianLineShape& lineShape, int parameterIdx, double value)
+{
+    if (parameterIdx == 0)
+    {
+        lineShape.sigma = value;
+    }
+    else
+    {
+        lineShape.P = value;
+    }
 }
 
 std::vector<double> PartialDerivative(const SuperGaussianLineShape& lineShape, const std::vector<double>& x, int parameter)
 {
-    const double center = 0.0;
-    const double amplitude = 1.0;
     const double baseline = 0.0;
-    const double delta = 0.005;
+    const double delta = 0.01;
 
     MathFit::CSuperGaussFunction originalLineShape;
-    Setup(originalLineShape, lineShape);
+    Setup(lineShape, originalLineShape);
     auto x0 = GetFunctionValues(originalLineShape, x, baseline);
     NormalizeArea(x0, x0);
 
     MathFit::CSuperGaussFunction forwardLineShape;
-    Setup(originalLineShape, lineShape);
+    Setup(lineShape, forwardLineShape);
     if (parameter == 0)
     {
         forwardLineShape.SetSigma(lineShape.sigma + delta);
