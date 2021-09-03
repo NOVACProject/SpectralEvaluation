@@ -298,7 +298,6 @@ size_t GetNonReduciblePrime(size_t number)
     return number;
 }
 
-
 bool ConvolveReference(
     const std::vector<double>& pixelToWavelengthMapping,
     const CCrossSectionData& slf,

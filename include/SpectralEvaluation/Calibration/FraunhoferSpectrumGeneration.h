@@ -30,6 +30,18 @@ public:
         const novac::CCrossSectionData& measuredInstrumentLineShape) = 0;
 
     /// <summary>
+    /// Creates a Fraunhofer reference spectrum using the provided pixel-to-wavelength mapping and measured instrument line shape.
+    /// This will determine the fwhm of the provided instrument line shape and use this value to determine the convolution grid.
+    /// </summary>
+    /// <param name="pixelToWavelengthMapping">The wavelength (in nm air) for each pixel on the detector.</param>
+    /// <param name="measuredInstrumentLineShape">A measurement of the instrument line shape</param>
+    /// <returns>The high resolution solar spectrum convolved with the measured slf and resample to the provided grid.</returns>
+    virtual std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
+        const std::vector<double>& wavelengthCalibration,
+        const novac::CCrossSectionData& measuredInstrumentLineShape,
+        bool normalize) = 0;
+
+    /// <summary>
     /// Creates a Fraunhofer reference spectrum using the provided pixel-to-wavelength mapping and differential instrument line shape.
     /// </summary>
     /// <param name="pixelToWavelengthMapping">The wavelength (in nm air) for each pixel on the detector.</param>
@@ -70,6 +82,11 @@ public:
     virtual std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
         const std::vector<double>& pixelToWavelengthMapping,
         const novac::CCrossSectionData& measuredInstrumentLineShape) override;
+
+    virtual std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
+        const std::vector<double>& pixelToWavelengthMapping,
+        const novac::CCrossSectionData& measuredInstrumentLineShape,
+        bool normalize) override;
 
     virtual std::unique_ptr<CSpectrum> GetDifferentialFraunhoferSpectrum(
         const std::vector<double>& wavelengthCalibration,
@@ -135,7 +152,8 @@ private:
         const std::vector<double>& pixelToWavelengthMapping,
         const novac::CCrossSectionData& measuredInstrumentLineShape,
         std::vector<AbsorbingCrossSection>& crossSectionsToInclude,
-        double fwhmOfInstrumentLineShape);
+        double fwhmOfInstrumentLineShape,
+        bool normalize);
 
     std::unique_ptr<CSpectrum> GetDifferentialFraunhoferSpectrum(
         const std::vector<double>& pixelToWavelengthMapping,

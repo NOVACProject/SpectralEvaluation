@@ -361,7 +361,7 @@ bool InstrumentLineshapeEstimationFromDoas::EstimateInstrumentLineShape(IFraunho
         throw std::invalid_argument("Invalid setup of InstrumentLineshapeEstimationFromDoas, the initial pixel-to-wavelength mapping must have the same length as the measured spectrum.");
     }
 
-    const double stepSize = 0.1;
+    double stepSize = 1.0;
 
     // Get an estimation of parameters of the Super-Gaussian from the initial line shape estimation
     SuperGaussianLineShape parameterizedLineShape;
@@ -373,6 +373,13 @@ bool InstrumentLineshapeEstimationFromDoas::EstimateInstrumentLineShape(IFraunho
 
     std::cout << " Initial super gaussian is (sigma: " << parameterizedLineShape.sigma << ", P: " << parameterizedLineShape.P << ")" << std::endl;
 
+    InstrumentLineshapeEstimationFromDoas::LineShapeUpdate lastUpdate;
+    lastUpdate.residualSize = std::numeric_limits<double>::max();
+    lastUpdate.error = std::numeric_limits<double>::max();
+    SuperGaussianLineShape lastLineShape = parameterizedLineShape;
+
+    double optimumError = std::numeric_limits<double>::max();
+    SuperGaussianLineShape optimumLineShape = parameterizedLineShape;
 
     int iterationCount = 0;
     std::vector<double> residuals;
@@ -382,20 +389,44 @@ bool InstrumentLineshapeEstimationFromDoas::EstimateInstrumentLineShape(IFraunho
 
         auto update = CalculateGradient(fraunhoferSpectrumGen, measuredSpectrum, parameterizedLineShape);
 
-        // if (Max(currentGradient) < 1e-4)
-        // {
-        //     // We're done.
-        //     break;
-        // }
+        std::cout << " Super gaussian (s: " << parameterizedLineShape.sigma << ", P: " << parameterizedLineShape.P << ") gave error: " << update.error << std::endl;
+        std::cout << "    Delta is (s: " << update.parameterDelta[0] << ", P: " << update.parameterDelta[1] << ") " << std::endl;
 
-        // use the gradient to modify the parameterizedLineShape
-        for (int parameterIdx = 0; parameterIdx < static_cast<int>(update.parameterDelta.size()); ++parameterIdx)
+        if (Max(update.parameterDelta) < 1e-4)
         {
-            const double currentValue = GetParameterValue(parameterizedLineShape, parameterIdx);
-            SetParameterValue(parameterizedLineShape, parameterIdx, currentValue + stepSize * update.parameterDelta[parameterIdx]);
+            // we're done
+            break;
         }
 
-        std::cout << " Updated super gaussian to (sigma: " << parameterizedLineShape.sigma << ", P: " << parameterizedLineShape.P << ")  Error: " << update.residualSize << std::endl;
+        if (update.error < optimumError)
+        {
+            optimumError = update.error;
+            optimumLineShape = parameterizedLineShape;
+        }
+
+        if (update.error < lastUpdate.error)
+        {
+            lastLineShape = parameterizedLineShape;
+            lastUpdate = update;
+
+            // use the gradient to modify the parameterizedLineShape
+            for (int parameterIdx = 0; parameterIdx < static_cast<int>(update.parameterDelta.size()); ++parameterIdx)
+            {
+                const double currentValue = GetParameterValue(lastLineShape, parameterIdx);
+                SetParameterValue(parameterizedLineShape, parameterIdx, currentValue + stepSize * update.parameterDelta[parameterIdx]);
+            }
+        }
+        else
+        {
+            // we made the solution worse by making this change, undo and instead modify the target function with a smaller stepSize.
+            stepSize *= 0.5;
+
+            for (int parameterIdx = 0; parameterIdx < static_cast<int>(lastUpdate.parameterDelta.size()); ++parameterIdx)
+            {
+                const double currentValue = GetParameterValue(lastLineShape, parameterIdx);
+                SetParameterValue(parameterizedLineShape, parameterIdx, currentValue + stepSize * lastUpdate.parameterDelta[parameterIdx]);
+            }
+        }
 
         residuals.push_back(update.residualSize);
     }
@@ -435,7 +466,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     NormalizeArea(superGaussianLineShape->m_crossSection, superGaussianLineShape->m_crossSection);
     const double fwhm = GetFwhm(*superGaussianLineShape);
 
-    auto currentFraunhoferSpectrum = fraunhoferSpectrumGen.GetFraunhoferSpectrum(this->pixelToWavelengthMapping, *superGaussianLineShape);
+    auto currentFraunhoferSpectrum = fraunhoferSpectrumGen.GetFraunhoferSpectrum(this->pixelToWavelengthMapping, *superGaussianLineShape, false);
 
     // Log the Fraunhofer reference (to get Optical Depth)
     std::vector<double> filteredFraunhoferSpectrum{ currentFraunhoferSpectrum->m_data, currentFraunhoferSpectrum->m_data + currentFraunhoferSpectrum->m_length };
@@ -457,7 +488,6 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     math.Log(filteredRingSpectrum.data(), ringSpectrum.m_length);
     doasFitSetup.ref[doasFitSetup.nRef].m_data = std::make_unique<novac::CCrossSectionData>(filteredRingSpectrum);
     doasFitSetup.ref[doasFitSetup.nRef].m_columnOption = novac::SHIFT_FREE;
-    doasFitSetup.ref[doasFitSetup.nRef].m_columnValue = 1.0;
     doasFitSetup.ref[doasFitSetup.nRef].m_squeezeOption = novac::SHIFT_FIX;
     doasFitSetup.ref[doasFitSetup.nRef].m_squeezeValue = 1.0;
     doasFitSetup.ref[doasFitSetup.nRef].m_shiftOption = novac::SHIFT_LINK;
@@ -492,7 +522,6 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
 
         doasFitSetup.ref[doasFitSetup.nRef].m_data = std::move(pseudoAbsorber);
         doasFitSetup.ref[doasFitSetup.nRef].m_columnOption = novac::SHIFT_FREE;
-        doasFitSetup.ref[doasFitSetup.nRef].m_columnValue = 1.0;
         doasFitSetup.ref[doasFitSetup.nRef].m_squeezeOption = novac::SHIFT_FIX;
         doasFitSetup.ref[doasFitSetup.nRef].m_squeezeValue = 1.0;
         doasFitSetup.ref[doasFitSetup.nRef].m_shiftOption = novac::SHIFT_LINK;
@@ -521,6 +550,22 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     LineShapeUpdate update;
     update.parameterDelta = std::vector<double>{ doasResult.referenceResult[2].column, doasResult.referenceResult[3].column };
     update.residualSize = doasResult.chiSquare;
+
+    // Now also estimate the error by doing the DOAS fit without the Pseudo-absorbers
+    {
+        doasFitSetup.ref[2].m_columnOption = novac::SHIFT_FIX;
+        doasFitSetup.ref[2].m_columnValue = 0.0;
+
+        doasFitSetup.ref[3].m_columnOption = novac::SHIFT_FIX;
+        doasFitSetup.ref[3].m_columnValue = 0.0;
+
+        doas.Setup(doasFitSetup);
+
+        DoasResult newDoasResult;
+        doas.Run(filteredMeasuredSpectrum.data(), static_cast<size_t>(measuredSpectrum.m_length), newDoasResult);
+        update.error = newDoasResult.chiSquare;
+    }
+
 
     return update;
 }

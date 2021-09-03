@@ -312,6 +312,27 @@ void SetParameterValue(SuperGaussianLineShape& lineShape, int parameterIdx, doub
     }
 }
 
+/// <summary>
+/// Normalizes the curve such that the area under abs(data) is one,
+///     assuming that there is no baseline offset in the data.
+/// </summary>
+void NormalizeAbsArea(std::vector<double>& data)
+{
+    if (data.size() == 0)
+    {
+        return;
+    }
+
+    const double sumOfValues = SumAbs(data);
+
+    for (size_t ii = 0; ii < data.size(); ++ii)
+    {
+        data[ii] = data[ii] / sumOfValues;
+    }
+
+    assert(std::abs(SumAbs(data) - 1.0) < 0.1);
+}
+
 std::vector<double> PartialDerivative(const SuperGaussianLineShape& lineShape, const std::vector<double>& x, int parameter)
 {
     const double baseline = 0.0;

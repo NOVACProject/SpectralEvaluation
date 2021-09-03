@@ -146,8 +146,9 @@ private:
 
     struct LineShapeUpdate
     {
-        double residualSize = 0.0;
-        std::vector<double> parameterDelta;
+        double error;           // This is the chi2 of the DOAS fit without the parameter adjustment.
+        double residualSize;    // This is the chi2 of the DOAS fit with the parameter adjustment.
+        std::vector<double> parameterDelta; // The retrieved parameter adjustment.
     };
 
     LineShapeUpdate CalculateGradient(

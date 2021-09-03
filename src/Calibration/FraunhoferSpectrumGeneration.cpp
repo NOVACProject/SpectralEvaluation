@@ -20,7 +20,15 @@ std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
     const std::vector<double>& pixelToWavelengthMapping,
     const CCrossSectionData& measuredInstrumentLineShape)
 {
-    return GetFraunhoferSpectrum(pixelToWavelengthMapping, measuredInstrumentLineShape, this->crossSectionsToInclude, 0.0);
+    return GetFraunhoferSpectrum(pixelToWavelengthMapping, measuredInstrumentLineShape, this->crossSectionsToInclude, 0.0, true);
+}
+
+std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
+    const std::vector<double>& pixelToWavelengthMapping,
+    const CCrossSectionData& measuredInstrumentLineShape,
+    bool normalize)
+{
+    return GetFraunhoferSpectrum(pixelToWavelengthMapping, measuredInstrumentLineShape, this->crossSectionsToInclude, 0.0, normalize);
 }
 
 std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetDifferentialFraunhoferSpectrum(
@@ -35,7 +43,8 @@ std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
     const std::vector<double>& pixelToWavelengthMapping,
     const CCrossSectionData& measuredInstrumentLineShape,
     std::vector<AbsorbingCrossSection>& localCrossSectionsToInclude,
-    double fwhmOfInstrumentLineShape)
+    double fwhmOfInstrumentLineShape,
+    bool normalize)
 {
     ReadSolarCrossSection();
 
@@ -83,7 +92,10 @@ std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
     std::cout << "Convolution of Fraunhofer Reference took " << std::chrono::duration_cast<std::chrono::milliseconds>(stopTime - startTime).count() << " ms" << std::endl;
 
     std::unique_ptr<CSpectrum> theoreticalFraunhoferSpectrum = std::make_unique<CSpectrum>(pixelToWavelengthMapping, theoreticalFraunhoferSpectrumData);
-    Normalize(*theoreticalFraunhoferSpectrum); // normalizes the intensity
+    if (normalize)
+    {
+        Normalize(*theoreticalFraunhoferSpectrum); // normalizes the intensity
+    }
 
     return theoreticalFraunhoferSpectrum;
 }
@@ -142,11 +154,11 @@ std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetDifferentialFraunhof
     std::unique_ptr<CSpectrum> theoreticalFraunhoferSpectrum = std::make_unique<CSpectrum>(pixelToWavelengthMapping, theoreticalFraunhoferSpectrumData);
 
     // Make a normalization of the intensity, without changing the mean.
-    const double range = theoreticalFraunhoferSpectrum->MaxValue() - theoreticalFraunhoferSpectrum->MinValue();
-    for (long ii = 0; ii < theoreticalFraunhoferSpectrum->m_length; ++ii)
-    {
-        theoreticalFraunhoferSpectrum->m_data[ii] = theoreticalFraunhoferSpectrum->m_data[ii] / range;
-    }
+    // const double range = theoreticalFraunhoferSpectrum->MaxValue() - theoreticalFraunhoferSpectrum->MinValue();
+    // for (long ii = 0; ii < theoreticalFraunhoferSpectrum->m_length; ++ii)
+    // {
+    //     theoreticalFraunhoferSpectrum->m_data[ii] = theoreticalFraunhoferSpectrum->m_data[ii] / range;
+    // }
 
     return theoreticalFraunhoferSpectrum;
 }
@@ -305,10 +317,10 @@ std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrumMa
             std::cout << "   Column   " << eval.m_result.m_referenceResult[ii].m_column << " +- " << eval.m_result.m_referenceResult[ii].m_columnError << std::endl;
             std::cout << "   Shift    " << eval.m_result.m_referenceResult[ii].m_shift << " +- " << eval.m_result.m_referenceResult[ii].m_shiftError << std::endl;
             std::cout << "   Squeeze  " << eval.m_result.m_referenceResult[ii].m_squeeze << " +- " << eval.m_result.m_referenceResult[ii].m_squeezeError << std::endl;
-    }
+        }
 
         return GetFraunhoferSpectrum(pixelToWavelengthMapping, measuredInstrumentLineShape, absorbingCrossSection);
-}
+    }
 }
 
 #endif
@@ -317,8 +329,18 @@ void FraunhoferSpectrumGeneration::ReadSolarCrossSection()
 {
     if (this->solarCrossSection == nullptr)
     {
+        if (this->solarAtlasFile.size() == 0)
+        {
+            throw std::invalid_argument("Missing input: a solar atlas file needs to be passed to Fraunhofer spectrum generation.");
+        }
+
         this->solarCrossSection = std::make_unique<CCrossSectionData>();
         this->solarCrossSection->ReadCrossSectionFile(this->solarAtlasFile);
+
+        if (this->solarCrossSection->m_crossSection.size() == 0)
+        {
+            throw std::invalid_argument("Invalid solar atlas file passed to Fraunhofer spectrum generation, file could not be read.");
+        }
     }
 }
 
