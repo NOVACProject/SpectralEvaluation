@@ -15,6 +15,10 @@ double Max(const std::vector<double>& values, size_t& idx);
     If values.size() == 0 then 0.0 is returned. */
 double Max(const std::vector<double>& values);
 
+/** @return the maximum absolute value in the provided vector.
+    If values.size() == 0 then 0.0 is returned. */
+double MaxAbs(const std::vector<double>& values);
+
 /** @return the minimum value in the provided vector.
     @param idx will be filled with the index where the minimum value is found.
     If values.size() == 0 then 0.0 is returned and idx is set to zero. */
@@ -36,6 +40,10 @@ std::pair<double, double> MinMax(const std::vector<double>& values, std::pair<si
 /** @return the sum of all the given values
     If values.size() == 0 then 0.0 is returned. */
 double Sum(const std::vector<double>& values);
+
+/** @return the sum of the absolutes of all the given values.
+    If values.size() == 0 then 0.0 is returned. */
+double SumAbs(const std::vector<double>& values);
 
 /** @return the sum the squared differences between the two provided vectors.
     If a.size() == 0 then 0.0 is returned.

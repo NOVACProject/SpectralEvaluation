@@ -180,7 +180,7 @@ int CCrossSectionData::ReadCrossSectionFile(const std::string& fileName)
     fileRef.open(fileName, std::ios_base::in);
     if (!fileRef.is_open())
     {
-        std::cout << "ERROR: Cannot open reference file: " << fileName.c_str();
+        std::cout << "ERROR: Cannot open reference file: " << fileName;
         return 1;
     }
 

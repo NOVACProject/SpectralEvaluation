@@ -32,6 +32,34 @@ double Max(const std::vector<double>& values)
     return Max(values, idx);
 }
 
+double MaxAbs(const std::vector<double>& values, size_t& idx)
+{
+    idx = 0;
+
+    if (values.size() == 0)
+    {
+        return 0.0;
+    }
+
+    double m = std::abs(values[0]);
+    for (size_t ii = 1; ii < values.size(); ++ii)
+    {
+        if (std::abs(values[ii]) > m)
+        {
+            m = std::abs(values[ii]);
+            idx = ii;
+        }
+    }
+
+    return m;
+}
+
+double MaxAbs(const std::vector<double>& values)
+{
+    size_t idx = 0U;
+    return MaxAbs(values, idx);
+}
+
 double Min(const std::vector<double>& values, size_t& idx)
 {
     idx = 0;
@@ -108,6 +136,18 @@ double Sum(const std::vector<double>& values)
 
     return sum;
 }
+
+double SumAbs(const std::vector<double>& values)
+{
+    double sum = 0.0;
+    for (size_t ii = 0; ii < values.size(); ++ii)
+    {
+        sum += std::abs(values[ii]);
+    }
+
+    return sum;
+}
+
 
 double SumOfSquaredDifferences(const std::vector<double>& a, const std::vector<double>& b)
 {

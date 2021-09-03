@@ -21,7 +21,7 @@ MathFit::CVector Generate(int first, int last)
     MathFit::CVector result(last - first);
     for (int i = 0; i < last - first; ++i)
     {
-        result.SetAt(i, static_cast<MathFit::TFitData>(first + 1 + i));
+        result.SetAt(i, static_cast<MathFit::TFitData>(first + i));
     }
 
     return result;
