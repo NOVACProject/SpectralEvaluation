@@ -310,6 +310,7 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple Gaussian in
     SECTION("Narrow line width")
     {
         const double sigma = 0.2; // [nm]
+        const double expectedWidth = sigma * std::sqrt(2.0);
         std::vector<double> spec = CreateGaussian(sigma, idealGaussian.m_wavelength);
         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
@@ -317,8 +318,8 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple Gaussian in
         auto ret = FitInstrumentLineShape(idealGaussian, result);
 
         REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
-        REQUIRE(fabs(result.sigma - sigma) < 0.005);
-        REQUIRE(fabs(result.P - 2) < 0.0005);
+        REQUIRE(fabs(result.w - expectedWidth) < 0.005);
+        REQUIRE(fabs(result.k - 2) < 0.0005);
     }
 }
 
@@ -332,6 +333,7 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple not centere
     SECTION("Narrow line width")
     {
         const double sigma = 0.2; // [nm]
+        const double expectedWidth = sigma * std::sqrt(2.0);
         std::vector<double> spec = CreateGaussian(gaussianCenter, sigma, idealGaussian.m_wavelength);
         memcpy(&idealGaussian.m_data, spec.data(), spec.size() * sizeof(double));
 
@@ -339,8 +341,8 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple not centere
         auto ret = FitInstrumentLineShape(idealGaussian, result);
 
         REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
-        REQUIRE(fabs(result.sigma - sigma) < 0.005);
-        REQUIRE(fabs(result.P - 2) < 0.0005);
+        REQUIRE(fabs(result.w - expectedWidth) < 0.005);
+        REQUIRE(fabs(result.k - 2) < 0.0005);
     }
 }
 
@@ -404,7 +406,7 @@ TEST_CASE("FitInstrumentLineShape: Real SLF input returns reasonable fitted func
         auto ret = FitInstrumentLineShape(measuredSpectrum, result);
 
         REQUIRE(ret == FUNCTION_FIT_RETURN_CODE::SUCCESS);
-        REQUIRE(fabs(result.sigma - 0.249351) < 0.005);
-        REQUIRE(fabs(result.P - 2.37497) < 0.0005);
+        REQUIRE(fabs(result.w - 0.3337) < 0.005);
+        REQUIRE(fabs(result.k - 2.37152) < 0.0005);
     }
 }

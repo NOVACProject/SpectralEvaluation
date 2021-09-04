@@ -142,7 +142,7 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, Su
     // Copy the relevant parameters from the regular Gaussian and proceed with fitting the super-gaussian
     MathFit::CSuperGaussFunction superGaussian;
     superGaussian.SetCenter(regularGaussian.GetCenter());
-    superGaussian.SetSigma(regularGaussian.GetSigma());
+    superGaussian.SetW(regularGaussian.GetSigma());
 
     FUNCTION_FIT_RETURN_CODE ret = FitFunction(xData, yData, superGaussian);
     if (ret != FUNCTION_FIT_RETURN_CODE::SUCCESS)
@@ -151,8 +151,8 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, Su
     }
     else
     {
-        result.sigma = superGaussian.GetSigma();
-        result.P = superGaussian.GetPower();
+        result.w = superGaussian.GetW();
+        result.k = superGaussian.GetK();
         result.center = superGaussian.GetCenter();
 
         return FUNCTION_FIT_RETURN_CODE::SUCCESS;
@@ -185,7 +185,7 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CCrossSectionData& mercury
     // Copy the relevant parameters from the regular Gaussian and proceed with fitting the super-gaussian
     MathFit::CSuperGaussFunction superGaussian;
     superGaussian.SetCenter(regularGaussian.GetCenter());
-    superGaussian.SetSigma(regularGaussian.GetSigma());
+    superGaussian.SetW(regularGaussian.GetSigma());
 
     FUNCTION_FIT_RETURN_CODE ret = FitFunction(xData, yData, superGaussian);
     if (ret != FUNCTION_FIT_RETURN_CODE::SUCCESS)
@@ -194,8 +194,8 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CCrossSectionData& mercury
     }
     else
     {
-        result.sigma = superGaussian.GetSigma();
-        result.P = superGaussian.GetPower();
+        result.w = superGaussian.GetW();
+        result.k = superGaussian.GetK();
         result.center = superGaussian.GetCenter();
 
         return FUNCTION_FIT_RETURN_CODE::SUCCESS;
@@ -240,8 +240,8 @@ std::vector<double> SampleInstrumentLineShape(const SuperGaussianLineShape& line
 {
     MathFit::CSuperGaussFunction superGauss;
     superGauss.SetCenter(center);
-    superGauss.SetSigma(lineShape.sigma);
-    superGauss.SetPower(lineShape.P);
+    superGauss.SetW(lineShape.w);
+    superGauss.SetK(lineShape.k);
     superGauss.SetScale(amplitude);
 
     return GetFunctionValues(superGauss, x, baseline);
@@ -283,8 +283,8 @@ void Setup(const SuperGaussianLineShape& src, MathFit::CSuperGaussFunction& dst)
     const double amplitude = 1.0;
 
     dst.SetCenter(center);
-    dst.SetSigma(src.sigma);
-    dst.SetPower(src.P);
+    dst.SetW(src.w);
+    dst.SetK(src.k);
     dst.SetScale(amplitude);
 }
 
@@ -292,11 +292,11 @@ double GetParameterValue(const SuperGaussianLineShape& lineShape, int parameterI
 {
     if (parameterIdx == 0)
     {
-        return lineShape.sigma;
+        return lineShape.w;
     }
     else
     {
-        return lineShape.P;
+        return lineShape.k;
     }
 }
 
@@ -304,11 +304,11 @@ void SetParameterValue(SuperGaussianLineShape& lineShape, int parameterIdx, doub
 {
     if (parameterIdx == 0)
     {
-        lineShape.sigma = value;
+        lineShape.w = value;
     }
     else
     {
-        lineShape.P = value;
+        lineShape.k = value;
     }
 }
 
@@ -347,11 +347,11 @@ std::vector<double> PartialDerivative(const SuperGaussianLineShape& lineShape, c
     Setup(lineShape, forwardLineShape);
     if (parameter == 0)
     {
-        forwardLineShape.SetSigma(lineShape.sigma + delta);
+        forwardLineShape.SetW(lineShape.w + delta);
     }
     else
     {
-        forwardLineShape.SetPower(lineShape.P + delta);
+        forwardLineShape.SetK(lineShape.k + delta);
     }
     auto xF = GetFunctionValues(forwardLineShape, x, baseline);
     NormalizeArea(xF, xF);

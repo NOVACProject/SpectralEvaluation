@@ -166,7 +166,7 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
     // Calculate the FWHM of the gaussian as well
     fwhm = GaussianSigmaToFwhm(estimatedGaussianSigma);
 
-    std::cout << "Final instrument line shape estimation gave Gaussian sigma of: " << estimatedGaussianSigma << " and a fwhm of: " << fwhm << std::endl;
+    std::cout << "Final instrument line shape estimation gave Gaussian w of: " << estimatedGaussianSigma << " and a fwhm of: " << fwhm << std::endl;
 
     return state;
 }
@@ -373,7 +373,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
         throw std::invalid_argument("Failed to fit a super gaussian line shape to measured data.");
     }
 
-    std::cout << " Initial super gaussian is (sigma: " << parameterizedLineShape.sigma << ", P: " << parameterizedLineShape.P << ")" << std::endl;
+    std::cout << " Initial super gaussian is (w: " << parameterizedLineShape.w << ", k: " << parameterizedLineShape.k << ")" << std::endl;
 
     InstrumentLineshapeEstimationFromDoas::LineShapeUpdate lastUpdate;
     lastUpdate.residualSize = std::numeric_limits<double>::max();
@@ -398,8 +398,8 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
         currentAttempt.lineShape = parameterizedLineShape;
         result.attempts.push_back(currentAttempt);
 
-        std::cout << " Super gaussian (s: " << parameterizedLineShape.sigma << ", P: " << parameterizedLineShape.P << ") gave error: " << update.error << " (with pa: " << update.residualSize << ")" << std::endl;
-        std::cout << "    Delta is (s: " << update.parameterDelta[0] << ", P: " << update.parameterDelta[1] << ") " << std::endl;
+        std::cout << " Super gaussian (w: " << parameterizedLineShape.w << ", k: " << parameterizedLineShape.k << ") gave error: " << update.error << " (with pa: " << update.residualSize << ")" << std::endl;
+        std::cout << "    Delta is (w: " << update.parameterDelta[0] << ", k: " << update.parameterDelta[1] << ") " << std::endl;
 
         if (update.error < optimumResult.error)
         {

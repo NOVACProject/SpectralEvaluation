@@ -36,14 +36,14 @@ struct AsymmetricGaussianLineShape
     double sigmaRight = 0.0;
 };
 
-// Symmetric super-gaussian line shape: exp(-0.5 * [x/sigma]^P)
+// Symmetric super-gaussian line shape: exp(- abs(x/w)^k)
 struct SuperGaussianLineShape
 {
-    // The width parameter (w)
-    double sigma = 0.0;
+    // The width parameter.
+    double w = 0.0;
 
     // The exponent (P = 2.0 equals a 'regular' Gaussian)
-    double P = 2.0;
+    double k = 2.0;
 
     // The center location
     double center = 0.0;
