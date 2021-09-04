@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <SpectralEvaluation/Calibration/InstrumentLineShape.h>
 
 namespace novac
 {
@@ -10,7 +11,6 @@ class CSpectrum;
 class CCrossSectionData;
 class IFraunhoferSpectrumGenerator;
 class DoasFit;
-struct SuperGaussianLineShape;
 
 /// <summary>
 /// Abstract base class for the different instrument line shape estimators.
@@ -135,12 +135,32 @@ public:
     {
     }
 
+    struct LineShapeEstimationAttempt
+    {
+        SuperGaussianLineShape lineShape;
+
+        double error = 0.0;
+
+        double shift = 0.0;
+    };
+
+    /// <summary>
+    /// A helper structure to provide the result from the estimation as well as the 
+    /// measurements of the goodness-of-fit.
+    /// </summary>
+    struct LineShapeEstimationResult
+    {
+        LineShapeEstimationAttempt result;
+
+        std::vector<LineShapeEstimationAttempt> attempts;
+    };
+
     /// <summary>
     /// Estimates the instrument line shape by fitting a Super Gaussian to the measured spectrum
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The fitted line shape</returns>
     /// <throws>std::invalid_argument if the initial line shape hasn't been provided (for now at least).</throws>
-    bool EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum);
+    LineShapeEstimationResult EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum);
 
 private:
 
@@ -148,6 +168,7 @@ private:
     {
         double error;           // This is the chi2 of the DOAS fit without the parameter adjustment.
         double residualSize;    // This is the chi2 of the DOAS fit with the parameter adjustment.
+        double shift;           // This is the shift of the DOAS fit with the parameter adjustment.
         std::vector<double> parameterDelta; // The retrieved parameter adjustment.
     };
 

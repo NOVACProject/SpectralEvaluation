@@ -350,7 +350,7 @@ inline bool IsZero(double value)
 /// --------------------------- InstrumentLineshapeEstimationFromDoas --------------------------------
 /// --------------------------------------------------------------------------------------------------
 
-bool InstrumentLineshapeEstimationFromDoas::EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum)
+InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLineshapeEstimationFromDoas::EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum)
 {
     if (this->initialLineShapeEstimation == nullptr)
     {
@@ -362,6 +362,8 @@ bool InstrumentLineshapeEstimationFromDoas::EstimateInstrumentLineShape(IFraunho
     }
 
     double stepSize = 1.0;
+
+    LineShapeEstimationResult result;
 
     // Get an estimation of parameters of the Super-Gaussian from the initial line shape estimation
     SuperGaussianLineShape parameterizedLineShape;
@@ -378,60 +380,54 @@ bool InstrumentLineshapeEstimationFromDoas::EstimateInstrumentLineShape(IFraunho
     lastUpdate.error = std::numeric_limits<double>::max();
     SuperGaussianLineShape lastLineShape = parameterizedLineShape;
 
-    double optimumError = std::numeric_limits<double>::max();
-    SuperGaussianLineShape optimumLineShape = parameterizedLineShape;
+    LineShapeEstimationAttempt optimumResult;
+    optimumResult.error = std::numeric_limits<double>::max();
+    optimumResult.shift = 0.0;
+    optimumResult.lineShape = parameterizedLineShape;
 
     int iterationCount = 0;
-    std::vector<double> residuals;
     while (iterationCount < 100) // TODO: Determine a limit here
     {
         ++iterationCount;
 
         auto update = CalculateGradient(fraunhoferSpectrumGen, measuredSpectrum, parameterizedLineShape);
 
-        std::cout << " Super gaussian (s: " << parameterizedLineShape.sigma << ", P: " << parameterizedLineShape.P << ") gave error: " << update.error << std::endl;
+        LineShapeEstimationAttempt currentAttempt;
+        currentAttempt.error = update.error;
+        currentAttempt.shift = update.shift;
+        currentAttempt.lineShape = parameterizedLineShape;
+        result.attempts.push_back(currentAttempt);
+
+        std::cout << " Super gaussian (s: " << parameterizedLineShape.sigma << ", P: " << parameterizedLineShape.P << ") gave error: " << update.error << " (with pa: " << update.residualSize << ")" << std::endl;
         std::cout << "    Delta is (s: " << update.parameterDelta[0] << ", P: " << update.parameterDelta[1] << ") " << std::endl;
 
-        if (Max(update.parameterDelta) < 1e-4)
+        if (update.error < optimumResult.error)
+        {
+            optimumResult.error = update.error;
+            optimumResult.shift = update.shift;
+            optimumResult.lineShape = parameterizedLineShape;
+        }
+
+        if (Max(update.parameterDelta) < 1e-6 || std::abs(lastUpdate.error - update.error) < 1e-6)
         {
             // we're done
             break;
         }
 
-        if (update.error < optimumError)
+        lastLineShape = parameterizedLineShape;
+        lastUpdate = update;
+
+        // use the gradient to modify the parameterizedLineShape
+        for (int parameterIdx = 0; parameterIdx < static_cast<int>(update.parameterDelta.size()); ++parameterIdx)
         {
-            optimumError = update.error;
-            optimumLineShape = parameterizedLineShape;
+            const double currentValue = GetParameterValue(lastLineShape, parameterIdx);
+            SetParameterValue(parameterizedLineShape, parameterIdx, currentValue + stepSize * update.parameterDelta[parameterIdx]);
         }
-
-        if (update.error < lastUpdate.error)
-        {
-            lastLineShape = parameterizedLineShape;
-            lastUpdate = update;
-
-            // use the gradient to modify the parameterizedLineShape
-            for (int parameterIdx = 0; parameterIdx < static_cast<int>(update.parameterDelta.size()); ++parameterIdx)
-            {
-                const double currentValue = GetParameterValue(lastLineShape, parameterIdx);
-                SetParameterValue(parameterizedLineShape, parameterIdx, currentValue + stepSize * update.parameterDelta[parameterIdx]);
-            }
-        }
-        else
-        {
-            // we made the solution worse by making this change, undo and instead modify the target function with a smaller stepSize.
-            stepSize *= 0.5;
-
-            for (int parameterIdx = 0; parameterIdx < static_cast<int>(lastUpdate.parameterDelta.size()); ++parameterIdx)
-            {
-                const double currentValue = GetParameterValue(lastLineShape, parameterIdx);
-                SetParameterValue(parameterizedLineShape, parameterIdx, currentValue + stepSize * lastUpdate.parameterDelta[parameterIdx]);
-            }
-        }
-
-        residuals.push_back(update.residualSize);
     }
 
-    return true;
+    result.result = optimumResult;
+
+    return result;
 }
 
 InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstimationFromDoas::CalculateGradient(
@@ -550,6 +546,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     LineShapeUpdate update;
     update.parameterDelta = std::vector<double>{ doasResult.referenceResult[2].column, doasResult.referenceResult[3].column };
     update.residualSize = doasResult.chiSquare;
+    update.shift = doasResult.referenceResult[0].shift;
 
     // Now also estimate the error by doing the DOAS fit without the Pseudo-absorbers
     {
