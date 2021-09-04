@@ -22,7 +22,8 @@ struct GaussianLineShape
     // The center location
     double center = 0.0;
 
-    double Fwhm() const { return sigma * 2.35482; }
+    // The full width at half maximum.
+    double Fwhm() const { return sigma * 2.35482004; }
 };
 
 // Asymmetric gaussian line shape, consisting of a left and a right half with different widths.
@@ -37,16 +38,20 @@ struct AsymmetricGaussianLineShape
 };
 
 // Symmetric super-gaussian line shape: exp(- abs(x/w)^k)
+// A regular gaussian is a special case of this, with k=2.0 and w=sigma*sqrt(2)
 struct SuperGaussianLineShape
 {
     // The width parameter.
     double w = 0.0;
 
-    // The exponent (P = 2.0 equals a 'regular' Gaussian)
+    // The exponent (k = 2.0 equals a 'regular' Gaussian)
     double k = 2.0;
 
     // The center location
     double center = 0.0;
+
+    // The full width at half maximum.
+    double Fwhm() const;
 };
 
 // Fits a symmetrical Gaussian line to an extract of a mercury spectrum containing only one (full) mercury line.
@@ -71,13 +76,13 @@ std::vector<double> SampleInstrumentLineShape(const SuperGaussianLineShape& line
 std::vector<double> PartialDerivative(const GaussianLineShape& lineShape, const std::vector<double>& x);
 
 /** Calculates the partial derivative with respect to the given parameter of the provided super Gaussian line shape using finite difference.
-    @param parameter 0 corresponds to partial derivative with respect to 'sigma'. 1 corresponds to partial derivative wrt 'P'. */
+    @param parameter 0 corresponds to partial derivative with respect to 'w'. 1 corresponds to partial derivative wrt 'k'. */
 std::vector<double> PartialDerivative(const SuperGaussianLineShape& lineShape, const std::vector<double>& x, int parameter);
 
-/** Retrieves the value of the given parameter (sigma == 0 and P == 1) */
+/** Retrieves the value of the given parameter (w == 0 and k == 1) */
 double GetParameterValue(const SuperGaussianLineShape& lineShape, int parameterIdx);
 
-/** Sets the value of the given parameter (sigma == 0 and P == 1) */
+/** Sets the value of the given parameter (w == 0 and k == 1) */
 void SetParameterValue(SuperGaussianLineShape& lineShape, int parameterIdx, double value);
 
 }
