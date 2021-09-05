@@ -350,7 +350,28 @@ inline bool IsZero(double value)
 /// --------------------------- InstrumentLineshapeEstimationFromDoas --------------------------------
 /// --------------------------------------------------------------------------------------------------
 
-InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLineshapeEstimationFromDoas::EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum)
+InstrumentLineshapeEstimationFromDoas::InstrumentLineshapeEstimationFromDoas(const std::vector<double>& initialPixelToWavelengthMapping, const novac::CCrossSectionData& initialLineShape)
+    : InstrumentLineShapeEstimation(initialPixelToWavelengthMapping, initialLineShape)
+{
+    // Get an estimation of parameters of the Super-Gaussian from the initial line shape estimation
+    if (FUNCTION_FIT_RETURN_CODE::SUCCESS != FitInstrumentLineShape(*this->initialLineShapeEstimation, this->initialLineShapeFunction))
+    {
+        // TODO: change type of exception
+        throw std::invalid_argument("Failed to fit a super gaussian line shape to measured data.");
+    }
+}
+
+InstrumentLineshapeEstimationFromDoas::InstrumentLineshapeEstimationFromDoas(const std::vector<double>& initialPixelToWavelengthMapping, const novac::SuperGaussianLineShape& initialLineShape)
+    : InstrumentLineShapeEstimation(initialPixelToWavelengthMapping)
+{
+    this->initialLineShapeFunction = initialLineShape;
+    this->initialLineShapeEstimation = std::make_unique<novac::CCrossSectionData>(SampleInstrumentLineShape(initialLineShape));
+}
+
+InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLineshapeEstimationFromDoas::EstimateInstrumentLineShape(
+    IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+    const CSpectrum& measuredSpectrum,
+    const LineShapeEstimationSettings& settings)
 {
     if (this->initialLineShapeEstimation == nullptr)
     {
@@ -361,18 +382,11 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
         throw std::invalid_argument("Invalid setup of InstrumentLineshapeEstimationFromDoas, the initial pixel-to-wavelength mapping must have the same length as the measured spectrum.");
     }
 
-    double stepSize = 1.0;
+    double stepSize = 5.0;
 
     LineShapeEstimationResult result;
 
-    // Get an estimation of parameters of the Super-Gaussian from the initial line shape estimation
-    SuperGaussianLineShape parameterizedLineShape;
-    if (FUNCTION_FIT_RETURN_CODE::SUCCESS != FitInstrumentLineShape(*this->initialLineShapeEstimation, parameterizedLineShape))
-    {
-        // TODO: change type of exception
-        throw std::invalid_argument("Failed to fit a super gaussian line shape to measured data.");
-    }
-
+    SuperGaussianLineShape parameterizedLineShape = this->initialLineShapeFunction;
     std::cout << " Initial super gaussian is (w: " << parameterizedLineShape.w << ", k: " << parameterizedLineShape.k << ")" << std::endl;
 
     InstrumentLineshapeEstimationFromDoas::LineShapeUpdate lastUpdate;
@@ -386,11 +400,12 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
     optimumResult.lineShape = parameterizedLineShape;
 
     int iterationCount = 0;
+    bool successfullyConverged = false;
     while (iterationCount < 100) // TODO: Determine a limit here
     {
         ++iterationCount;
 
-        auto update = CalculateGradient(fraunhoferSpectrumGen, measuredSpectrum, parameterizedLineShape);
+        auto update = CalculateGradient(fraunhoferSpectrumGen, measuredSpectrum, parameterizedLineShape, settings);
 
         LineShapeEstimationAttempt currentAttempt;
         currentAttempt.error = update.error;
@@ -411,6 +426,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
         if (Max(update.parameterDelta) < 1e-6 || std::abs(lastUpdate.error - update.error) < 1e-6)
         {
             // we're done
+            successfullyConverged = true;
             break;
         }
 
@@ -425,6 +441,11 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
         }
     }
 
+    if (!successfullyConverged)
+    {
+        // throw??
+    }
+
     result.result = optimumResult;
 
     return result;
@@ -433,36 +454,21 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
 InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstimationFromDoas::CalculateGradient(
     IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
     const CSpectrum& measuredSpectrum,
-    const SuperGaussianLineShape& currentLineShape)
+    const SuperGaussianLineShape& currentLineShape,
+    const LineShapeEstimationSettings& settings)
 {
     CBasicMath math;
 
-    std::vector<double> instrumentLineShapeWavelength;
-    {
-        // Super-sample the SLF, in order to not miss any finer details in the derivatives.
-        const size_t length = 1 + 2 * this->initialLineShapeEstimation->m_waveLength.size();
-        const double range = this->initialLineShapeEstimation->m_waveLength.back() - this->initialLineShapeEstimation->m_waveLength.front();
-        const double minValue = -range * 0.5;
-        const double delta = range / static_cast<double>(length - 1);
-        for (size_t ii = 0; ii < length; ++ii)
-        {
-            instrumentLineShapeWavelength.push_back(minValue + ii * delta);
-        }
-    }
-
     CFitWindow doasFitSetup;
-    doasFitSetup.fitLow = 1200;     // TODO: Input parameter
-    doasFitSetup.fitHigh = 1500;    // TODO: Input parameter
+    doasFitSetup.fitLow = static_cast<int>(settings.startPixel);
+    doasFitSetup.fitHigh = static_cast<int>(settings.endPixel);
     doasFitSetup.polyOrder = 3;
 
     // Sample this Super-Gaussian to get the line shape to convolve with.
-    auto superGaussianLineShape = std::make_unique<novac::CCrossSectionData>();
-    superGaussianLineShape->m_waveLength = instrumentLineShapeWavelength;
-    superGaussianLineShape->m_crossSection = SampleInstrumentLineShape(currentLineShape, instrumentLineShapeWavelength, 0.0, 1.0);
-    NormalizeArea(superGaussianLineShape->m_crossSection, superGaussianLineShape->m_crossSection);
-    const double fwhm = GetFwhm(*superGaussianLineShape);
+    auto sampledLineShape = SampleInstrumentLineShape(currentLineShape);
+    const double fwhm = currentLineShape.Fwhm();
 
-    auto currentFraunhoferSpectrum = fraunhoferSpectrumGen.GetFraunhoferSpectrum(this->pixelToWavelengthMapping, *superGaussianLineShape, false);
+    auto currentFraunhoferSpectrum = fraunhoferSpectrumGen.GetFraunhoferSpectrum(this->pixelToWavelengthMapping, sampledLineShape, false);
 
     // Log the Fraunhofer reference (to get Optical Depth)
     std::vector<double> filteredFraunhoferSpectrum{ currentFraunhoferSpectrum->m_data, currentFraunhoferSpectrum->m_data + currentFraunhoferSpectrum->m_length };
@@ -479,9 +485,9 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     doasFitSetup.ref[0].m_shiftValue = 0.0;
 
     // 2. Include the Ring spectrum as the second reference
-    auto ringSpectrum = Doasis::Scattering::CalcRingSpectrum(*currentFraunhoferSpectrum);
-    std::vector<double> filteredRingSpectrum{ ringSpectrum.m_data, ringSpectrum.m_data + ringSpectrum.m_length };
-    math.Log(filteredRingSpectrum.data(), ringSpectrum.m_length);
+    auto ringSpectrum = std::make_unique<novac::CSpectrum>(Doasis::Scattering::CalcRingSpectrum(*currentFraunhoferSpectrum));
+    std::vector<double> filteredRingSpectrum{ ringSpectrum->m_data, ringSpectrum->m_data + ringSpectrum->m_length };
+    math.Log(filteredRingSpectrum.data(), ringSpectrum->m_length);
     doasFitSetup.ref[doasFitSetup.nRef].m_data = std::make_unique<novac::CCrossSectionData>(filteredRingSpectrum);
     doasFitSetup.ref[doasFitSetup.nRef].m_columnOption = novac::SHIFT_FREE;
     doasFitSetup.ref[doasFitSetup.nRef].m_squeezeOption = novac::SHIFT_FIX;
@@ -494,8 +500,8 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     for (int parameterIdx = 0; parameterIdx < 2; ++parameterIdx)
     {
         auto diffSampledLineShape = std::make_unique<novac::CCrossSectionData>();
-        diffSampledLineShape->m_waveLength = instrumentLineShapeWavelength;
-        diffSampledLineShape->m_crossSection = PartialDerivative(currentLineShape, instrumentLineShapeWavelength, parameterIdx);
+        diffSampledLineShape->m_waveLength = sampledLineShape.m_waveLength;
+        diffSampledLineShape->m_crossSection = PartialDerivative(currentLineShape, sampledLineShape.m_waveLength, parameterIdx);
 
         auto diffFraunhofer = fraunhoferSpectrumGen.GetDifferentialFraunhoferSpectrum(this->pixelToWavelengthMapping, *diffSampledLineShape, fwhm);
 

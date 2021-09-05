@@ -130,10 +130,9 @@ class InstrumentLineshapeEstimationFromDoas : public InstrumentLineShapeEstimati
 {
 public:
 
-    InstrumentLineshapeEstimationFromDoas(const std::vector<double>& initialPixelToWavelengthMapping, const novac::CCrossSectionData& initialLineShape)
-        : InstrumentLineShapeEstimation(initialPixelToWavelengthMapping, initialLineShape)
-    {
-    }
+    InstrumentLineshapeEstimationFromDoas(const std::vector<double>& initialPixelToWavelengthMapping, const novac::CCrossSectionData& initialLineShape);
+
+    InstrumentLineshapeEstimationFromDoas(const std::vector<double>& initialPixelToWavelengthMapping, const novac::SuperGaussianLineShape& initialLineShape);
 
     struct LineShapeEstimationAttempt
     {
@@ -142,6 +141,21 @@ public:
         double error = 0.0;
 
         double shift = 0.0;
+    };
+
+    struct LineShapeEstimationSettings
+    {
+        /// <summary>
+        /// The first pixel (inclusive) in the range which will be used to estimate the line shape.
+        /// Must be smaller than endPixel.
+        /// </summary>
+        size_t startPixel = 0;
+
+        /// <summary>
+        /// The last pixel after the range which will be used to estimate the line shape.
+        /// Must be smaller than the length of the measured spectrum.
+        /// </summary>
+        size_t endPixel = 0;
     };
 
     /// <summary>
@@ -159,8 +173,11 @@ public:
     /// Estimates the instrument line shape by fitting a Super Gaussian to the measured spectrum
     /// </summary>
     /// <returns>The fitted line shape</returns>
-    /// <throws>std::invalid_argument if the initial line shape hasn't been provided (for now at least).</throws>
-    LineShapeEstimationResult EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum);
+    /// <throws>std::invalid_argument if the initial line shape hasn't been provided.</throws>
+    LineShapeEstimationResult EstimateInstrumentLineShape(
+        IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+        const CSpectrum& measuredSpectrum,
+        const LineShapeEstimationSettings& settings);
 
 private:
 
@@ -172,10 +189,18 @@ private:
         std::vector<double> parameterDelta; // The retrieved parameter adjustment.
     };
 
+    /// <summary>
+    /// The initial, starting guess for the instrument line shape.
+    /// This contains the parameterized line shape, as apart from 'initialLineShapeEstimation'
+    /// which contains the sampled data.
+    /// </summary>
+    SuperGaussianLineShape initialLineShapeFunction;
+
     LineShapeUpdate CalculateGradient(
         IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
         const CSpectrum& measuredSpectrum,
-        const SuperGaussianLineShape& currentLineShape);
+        const SuperGaussianLineShape& currentLineShape,
+        const LineShapeEstimationSettings& settings);
 
 };
 

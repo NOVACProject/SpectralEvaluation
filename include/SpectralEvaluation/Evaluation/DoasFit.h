@@ -171,6 +171,11 @@ private:
     /// This is setup when providing a FitWindow to use.
     /// </summary>
     void* m_referenceSetup = nullptr;
+
+    /// <summary>
+    /// Clears the memory used by m_referenceSetup.
+    /// </summary>
+    void DeallocateReferenceSetup();
 };
 
 }

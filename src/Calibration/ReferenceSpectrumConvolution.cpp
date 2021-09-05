@@ -352,22 +352,32 @@ bool ConvolveReference(
         const size_t minimumLength = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / minimumAllowedResolution);
         const size_t maximumLength = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / maximumAllowedResolution);
 
-        size_t testLength = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / highestResolution);
-        size_t optimumLength = testLength;
-        size_t optimumRemainder = GetNonReduciblePrime(testLength);
+        size_t testLengthForConvolutionGrid = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / highestResolution);
+        size_t optimumConvolutionGridLength = testLengthForConvolutionGrid;
+        convolutionGrid.length = testLengthForConvolutionGrid;
+        size_t slfLength = 1 + (size_t)(std::round((slf.m_waveLength.back() - slf.m_waveLength.front()) / convolutionGrid.Resolution()));
+        size_t fftLength = testLengthForConvolutionGrid + slfLength - 1; // take into account that what we're calculating the fft of isn't just the input length but the input + slf - 1.
+        size_t optimumRemainder = GetNonReduciblePrime(fftLength);
 
-        while (testLength < maximumLength)
+        while (testLengthForConvolutionGrid < maximumLength)
         {
-            ++testLength;
-            const size_t remainder = GetNonReduciblePrime(testLength);
+            ++testLengthForConvolutionGrid;
+
+            convolutionGrid.length = testLengthForConvolutionGrid;
+            slfLength = 1 + (size_t)(std::round((slf.m_waveLength.back() - slf.m_waveLength.front()) / convolutionGrid.Resolution()));
+            fftLength = testLengthForConvolutionGrid + slfLength - 1;
+
+            const size_t remainder = GetNonReduciblePrime(fftLength);
 
             if (remainder < optimumRemainder)
             {
                 optimumRemainder = remainder;
-                optimumLength = testLength;
+                optimumConvolutionGridLength = testLengthForConvolutionGrid;
             }
         }
-        convolutionGrid.length = optimumLength;
+        convolutionGrid.length = optimumConvolutionGridLength;
+
+        std::cout << "Convolution is using length: " << optimumConvolutionGridLength << " with smallest remainder: " << optimumRemainder << std::endl;
     }
     else
     {
@@ -403,7 +413,6 @@ bool ConvolveReference(
     if (method == ConvolutionMethod::Direct)
     {
         ConvolutionCore(uniformHighResReference, normalizedSlf, intermediate);
-
     }
     else if (method == ConvolutionMethod::Fft)
     {

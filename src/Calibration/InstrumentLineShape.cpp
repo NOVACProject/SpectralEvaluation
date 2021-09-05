@@ -249,6 +249,37 @@ std::vector<double> SampleInstrumentLineShape(const SuperGaussianLineShape& line
     return GetFunctionValues(superGauss, x, baseline);
 }
 
+CCrossSectionData SampleInstrumentLineShape(const SuperGaussianLineShape& lineShape)
+{
+    const double amplitude = lineShape.k / (2.0 * lineShape.w * std::lgamma(1. / lineShape.k));
+
+    MathFit::CSuperGaussFunction superGauss;
+    superGauss.SetCenter(0.0);
+    superGauss.SetW(lineShape.w);
+    superGauss.SetK(lineShape.k);
+    superGauss.SetScale(amplitude);
+
+    CCrossSectionData result;
+
+    const size_t length = 37;
+    const double range = 3 * lineShape.Fwhm();
+    const double xMin = -range * 0.5;
+    const double delta = range / static_cast<double>(length - 1);
+
+    result.m_waveLength.resize(length);
+    for (size_t ii = 0; ii < length; ++ii)
+    {
+        result.m_waveLength[ii] = xMin + range * ii / (double)(length - 1);
+    }
+
+    result.m_crossSection = GetFunctionValues(superGauss, result.m_waveLength, 0.0);
+
+    // Make sure that the area below the curve equals one.
+    NormalizeArea(result.m_crossSection, result.m_crossSection);
+
+    return result;
+}
+
 std::vector<double> PartialDerivative(const GaussianLineShape& lineShape, const std::vector<double>& x)
 {
     const double center = 0.0;

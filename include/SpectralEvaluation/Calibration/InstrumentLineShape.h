@@ -72,6 +72,10 @@ std::vector<double> SampleInstrumentLineShape(const GaussianLineShape& lineShape
 std::vector<double> SampleInstrumentLineShape(const AsymmetricGaussianLineShape& lineShape, const std::vector<double>& x, double center, double amplitude, double baseline = 0.0);
 std::vector<double> SampleInstrumentLineShape(const SuperGaussianLineShape& lineShape, const std::vector<double>& x, double center, double amplitude, double baseline = 0.0);
 
+/** Calculates the value of the provided line shape on an auto determined x-axis grid. 
+    The returned line shape will be centered on zero and have a normalized amplitude. */
+CCrossSectionData SampleInstrumentLineShape(const SuperGaussianLineShape& lineShape);
+
 /** Calculates the partial derivative with respect to the 'sigma' parameter of the provided Gaussian line shape using finite difference. */
 std::vector<double> PartialDerivative(const GaussianLineShape& lineShape, const std::vector<double>& x);
 

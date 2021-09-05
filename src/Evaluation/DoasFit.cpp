@@ -72,8 +72,23 @@ DoasFit::DoasFit()
 
 DoasFit::~DoasFit()
 {
+    DeallocateReferenceSetup();
+}
+
+void DoasFit::DeallocateReferenceSetup()
+{
     DoasReferenceSetup* setup = static_cast<DoasReferenceSetup*>(this->m_referenceSetup);
-    delete setup;
+
+    if (setup != nullptr)
+    {
+        for each (MathFit::CReferenceSpectrumFunction * reference in setup->m_ref)
+        {
+            delete reference;
+            reference = nullptr;
+        }
+        delete setup;
+    }
+
     this->m_referenceSetup = nullptr;
 }
 
@@ -83,6 +98,7 @@ void DoasFit::Setup(const CFitWindow& setup)
     this->m_fitHigh = setup.fitHigh;
     this->m_polynomialOrder = setup.polyOrder;
 
+    DeallocateReferenceSetup();
     DoasReferenceSetup* newReferenceSetup = new DoasReferenceSetup();
 
     // 1) Create the references
