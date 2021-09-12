@@ -7,7 +7,7 @@
 #include <SpectralEvaluation/Fit/MessageLog.h>
 
 CMessageLog	CMessageLog::mGlobal("CGlobalScope", __FILE__, __LINE__);
-char* CMessageLog::mLogLevelMsg[] = { "Error", "Critical", "Warning", "Information" };
+const char* CMessageLog::mLogLevelMsg[] = { "Error", "Critical", "Warning", "Information" };
 char CMessageLog::mLogFile[256] = "";
 int CMessageLog::mLogLevel = CMessageLog::LOGINFO;
 int CMessageLog::mMode = CMessageLog::LOGMODECONSOLE;

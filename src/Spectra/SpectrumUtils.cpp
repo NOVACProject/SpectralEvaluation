@@ -76,7 +76,6 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
 
     // Locate all points where the derivative changes sign from positive to negative
     Sign lastSignOfDerivative = Sign::Undetermined;
-    size_t idxOfLastSignificantDerivativeSign = 0; // the idx where the sign of the derivative was last known
     for (size_t ii = 1; ii < (size_t)spectrum.m_length - 1; ++ii)
     {
         Sign currentSignOfDerivative = SignOf(ddx[ii], 1e-5);
@@ -137,7 +136,6 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
         if (currentSignOfDerivative != Sign::Undetermined)
         {
             lastSignOfDerivative = currentSignOfDerivative;
-            idxOfLastSignificantDerivativeSign = ii;
         }
     }
 }
@@ -174,7 +172,6 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
 
     // Locate all points where the derivative changes sign from negative to positive
     Sign lastSignOfDerivative = Sign::Undetermined;
-    size_t idxOfLastSignificantDerivativeSign = 0; // the idx where the sign of the derivative was last known
     for (size_t ii = 1; ii < (size_t)spectrum.m_length - 1; ++ii)
     {
         Sign currentSignOfDerivative = SignOf(ddx[ii], 1e-5);
@@ -234,7 +231,6 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
         if (currentSignOfDerivative != Sign::Undetermined)
         {
             lastSignOfDerivative = currentSignOfDerivative;
-            idxOfLastSignificantDerivativeSign = ii;
         }
     }
 }
@@ -318,8 +314,8 @@ bool PeakIsFullyResolved(const CSpectrum& spectrum, const SpectrumDataPoint& poi
     for (size_t ii = 1; ii < ddx2.size() - 1; ++ii)
     {
         const Sign currentSignOfDerivative = SignOf(ddx2[ii], leastSignificantAmplitude);
-        if (currentSignOfDerivative == Sign::Positive && lastSignOfDerivative == Sign::Negative ||
-            currentSignOfDerivative == Sign::Negative && lastSignOfDerivative == Sign::Positive)
+        if ((currentSignOfDerivative == Sign::Positive && lastSignOfDerivative == Sign::Negative) ||
+            (currentSignOfDerivative == Sign::Negative && lastSignOfDerivative == Sign::Positive))
         {
             lastSignOfDerivative = currentSignOfDerivative;
             ++numberOfZeroCrossings;
@@ -334,7 +330,7 @@ std::vector<SpectrumDataPoint> FilterByType(const std::vector<SpectrumDataPoint>
     std::vector<SpectrumDataPoint> result;
     result.reserve(input.size());
 
-    for each (auto point in input)
+    for (auto point : input)
     {
         if (point.type == typeToFind)
         {

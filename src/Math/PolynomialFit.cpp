@@ -154,7 +154,6 @@ bool PolynomialFit::FitCubicPolynomial(std::vector<double>& xData, std::vector<d
         A[rowIdx * 4 + 2] = std::pow(xData[rowIdx], 2.0);
         A[rowIdx * 4 + 3] = std::pow(xData[rowIdx], 3.0);
     }
-    double B[4]{ yData[0],  yData[1],  yData[2],  yData[3] };
     // Multiply by transpose (TODO: this can be done manually in the setup above)
     double AtA1[4]{};
     double AtA2[4]{};

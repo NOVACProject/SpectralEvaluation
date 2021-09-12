@@ -25,7 +25,6 @@ MathFit::CVector Generate(int first, int last)
     }
 
     return result;
-
 }
 
 void SaveResidual(MathFit::CStandardFit& cFirstFit, DoasResult& result)
@@ -81,7 +80,7 @@ void DoasFit::DeallocateReferenceSetup()
 
     if (setup != nullptr)
     {
-        for each (MathFit::CReferenceSpectrumFunction * reference in setup->m_ref)
+        for (MathFit::CReferenceSpectrumFunction * reference : setup->m_ref)
         {
             delete reference;
             reference = nullptr;
