@@ -5,6 +5,7 @@
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Interpolation.h>
+#include <SpectralEvaluation/VectorUtils.h>
 #include <cstring>
 #include <sstream>
 #include <fstream>
@@ -388,8 +389,11 @@ bool ReadInstrumentCalibration(const std::string& fullFilePath, CSpectrum& instr
     // Differentiate the wavelength wrt the peak
     instrumentLineShape.m_wavelength = std::vector<double>(begin(tmpSpectrum.m_wavelength) + extendedFormatInformation.MinChannel, begin(tmpSpectrum.m_wavelength) + extendedFormatInformation.MaxChannel);
 
+    std::vector<double> specData{ instrumentLineShape.m_data, instrumentLineShape.m_data + instrumentLineShape.m_length };
+    const double centerPixel = Centroid(specData);
+
     double centerWavelength = 0.0;
-    if (!novac::LinearInterpolation(tmpSpectrum.m_wavelength, extendedFormatInformation.Marker, centerWavelength))
+    if (!novac::LinearInterpolation(instrumentLineShape.m_wavelength, centerPixel, centerWavelength))
     {
         return false;
     }

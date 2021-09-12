@@ -502,6 +502,12 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
         }
     }
 
+    // Normalize the output, such that other programs may use the data directly.
+    if (result.estimatedInstrumentLineShape.GetSize() > 0)
+    {
+        ::Normalize(result.estimatedInstrumentLineShape.m_crossSection);
+    }
+
     return result;
 }
 

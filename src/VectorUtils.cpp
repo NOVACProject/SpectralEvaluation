@@ -333,6 +333,17 @@ void FindNLowest(const std::vector<double>& input, size_t N, std::vector<double>
     std::sort(begin(result), end(result));
 }
 
+void Normalize(std::vector<double>& values)
+{
+    const double minValue = Min(values);
+    const double maxValue = Max(values);
+
+    for (size_t ii = 0; ii < values.size(); ++ii)
+    {
+        values[ii] = (values[ii] - minValue) / (maxValue - minValue);
+    }
+}
+
 void Normalize(const std::vector<double>& input, std::vector<double>& output)
 {
     output.resize(input.size());

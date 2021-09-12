@@ -97,6 +97,9 @@ void FindNLowest(const std::vector<double>& input, size_t N, std::vector<double>
     If input.size() == 0 then output.size() will also be zero. */
 void Normalize(const std::vector<double>& input, std::vector<double>& output);
 
+/** Normalizes a vector of values such that the highest value will be 1.0 and the lowest 0.0. */
+void Normalize(std::vector<double>& values);
+
 /** Normalizes a vector of values such that the lowest value will be 0.0 and the
     sum of all the values will be 1.0.
     If input.size() == 0 then output.size() will also be zero. */
