@@ -46,7 +46,20 @@ void SavePolynomial(MathFit::CPolynomialFunction& fittedPolynomial, int fitLow, 
     }
 }
 
-MathFit::CReferenceSpectrumFunction* DefaultReferenceSpectrumFunction();
+MathFit::CReferenceSpectrumFunction* DefaultReferenceSpectrumFunction()
+{
+    auto newRef = new MathFit::CReferenceSpectrumFunction();
+
+    // reset all reference's parameters
+    newRef->ResetLinearParameter();
+    newRef->ResetNonlinearParameter();
+
+    // enable amplitude normalization. This should normally be done in order to avoid numerical
+    // problems during fitting.
+    newRef->SetNormalize(true);
+
+    return newRef;
+}
 
 // Helper class, for storing the references.
 class DoasReferenceSetup
