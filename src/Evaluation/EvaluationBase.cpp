@@ -64,6 +64,8 @@ void CEvaluationBase::ClearRefereneSpectra()
     m_ref.clear();
 }
 
+CReferenceSpectrumFunction* DefaultReferenceSpectrumFunction();
+
 int CEvaluationBase::CreateReferenceSpectra()
 {
     ClearRefereneSpectra();
