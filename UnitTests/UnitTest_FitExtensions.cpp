@@ -3,7 +3,7 @@
 #include <SpectralEvaluation/Fit/GaussFunction.h>
 
 // -------- SuperGaussFunction --------
-TEST_CASE("SuperGaussFunction : Power equals two, idential to Gaussian Function", "[FitExtensions]")
+TEST_CASE("SuperGaussFunction : Power equals two, idential to ApproximateGaussian Function", "[FitExtensions]")
 {
     const double gaussianSigma = 2.3;
     

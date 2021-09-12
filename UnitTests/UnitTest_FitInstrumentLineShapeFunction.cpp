@@ -39,7 +39,7 @@ std::vector<double> CreateAsymmetricGaussian(double sigmaNegative, double sigmaP
 
 
 // -------- Fitting symmetrical Gaussians --------
-TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple Gaussian input returns correct fitted function", "[InstrumentLineShape]")
+TEST_CASE("FitInstrumentLineShape (Symmetric ApproximateGaussian): Simple ApproximateGaussian input returns correct fitted function", "[InstrumentLineShape]")
 {
     CSpectrum idealGaussian;
     idealGaussian.m_wavelength = CreatePixelToWavelengthMapping(-2.0, +2.0, 43); // 4nm range with 43 sample pointss
@@ -85,7 +85,7 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple Gaussian input re
     }
 }
 
-TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple not centered Gaussian input returns correct fitted function", "[InstrumentLineShape]")
+TEST_CASE("FitInstrumentLineShape (Symmetric ApproximateGaussian): Simple not centered ApproximateGaussian input returns correct fitted function", "[InstrumentLineShape]")
 {
     const double gaussianCenter = 300.0;
     CSpectrum idealGaussian;
@@ -133,7 +133,7 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Gaussian): Simple not centered Gaus
 }
 
 // -------- Fitting asymmetrical Gaussians --------
-TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussian input returns correct fitted function", "[InstrumentLineShape]")
+TEST_CASE("FitInstrumentLineShape (Asymmetric ApproximateGaussian): Simple Asymetric ApproximateGaussian input returns correct fitted function", "[InstrumentLineShape]")
 {
     CSpectrum idealGaussian;
     idealGaussian.m_wavelength = CreatePixelToWavelengthMapping(-2.0, +2.0, 43); // 4nm range with 43 sample pointss
@@ -301,7 +301,7 @@ TEST_CASE("FitInstrumentLineShape (Asymmetric Gaussian): Simple Asymetric Gaussi
 
 
 // -------- Fitting symmetrical SuperGaussian --------
-TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple Gaussian input returns correct fitted function", "[InstrumentLineShape][SuperGaussian]")
+TEST_CASE("FitInstrumentLineShape (Symmetric Super ApproximateGaussian): Simple ApproximateGaussian input returns correct fitted function", "[InstrumentLineShape][SuperGaussian]")
 {
     CSpectrum idealGaussian;
     idealGaussian.m_wavelength = CreatePixelToWavelengthMapping(-2.0, +2.0, 43); // 4nm range with 43 sample pointss
@@ -323,7 +323,7 @@ TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple Gaussian in
     }
 }
 
-TEST_CASE("FitInstrumentLineShape (Symmetric Super Gaussian): Simple not centered Gaussian input returns correct fitted function", "[InstrumentLineShape][SuperGaussian]")
+TEST_CASE("FitInstrumentLineShape (Symmetric Super ApproximateGaussian): Simple not centered ApproximateGaussian input returns correct fitted function", "[InstrumentLineShape][SuperGaussian]")
 {
     const double gaussianCenter = 300.0;
     CSpectrum idealGaussian;
@@ -381,7 +381,7 @@ TEST_CASE("FitInstrumentLineShape: Real SLF input returns reasonable fitted func
     measuredSpectrum.m_length = (long)xData.size();
     memcpy(&measuredSpectrum.m_data, yData.data(), yData.size() * sizeof(double));
 
-    SECTION("Asmmetric Gaussian")
+    SECTION("Asmmetric ApproximateGaussian")
     {
         AsymmetricGaussianLineShape result;
         auto ret = FitInstrumentLineShape(measuredSpectrum, result);
@@ -391,7 +391,7 @@ TEST_CASE("FitInstrumentLineShape: Real SLF input returns reasonable fitted func
         REQUIRE(fabs(result.sigmaRight - 0.25473) < 0.005);
     }
 
-    SECTION("Symmetric Gaussian")
+    SECTION("Symmetric ApproximateGaussian")
     {
         GaussianLineShape result;
         auto ret = FitInstrumentLineShape(measuredSpectrum, result);
@@ -400,7 +400,7 @@ TEST_CASE("FitInstrumentLineShape: Real SLF input returns reasonable fitted func
         REQUIRE(fabs(result.sigma - 0.23295) < 0.005);
     }
 
-    SECTION("Symmetric Super Gaussian")
+    SECTION("Symmetric Super ApproximateGaussian")
     {
         SuperGaussianLineShape result;
         auto ret = FitInstrumentLineShape(measuredSpectrum, result);

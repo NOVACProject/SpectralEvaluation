@@ -432,7 +432,6 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
     // Get the Fraunhofer spectrum
     novac::FraunhoferSpectrumGeneration fraunhoferSetup{ settings.highResSolarAtlas, settings.crossSections };
     calibrationState.originalFraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(settings.initialPixelToWavelengthMapping, settings.initialInstrumentLineShape);
-    // calibrationState.originalFraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrumMatching(settings.initialPixelToWavelengthMapping, *calibrationState.measuredSpectrum, measuredInstrumentLineShape);
     calibrationState.fraunhoferSpectrum = std::make_unique<CSpectrum>(*calibrationState.originalFraunhoferSpectrum); // create a copy which we can modify
 
     SpectrometerCalibrationResult result;
@@ -464,7 +463,7 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
 
         {
             // Output for debugging
-            std::cout << "Calibration by Ransac took " << std::chrono::duration_cast<std::chrono::seconds>(stopTime - startTime).count() << " seconds" << std::endl;
+            std::cout << "Calibration by Ransac took " << std::chrono::duration_cast<std::chrono::milliseconds>(stopTime - startTime).count() << " ms" << std::endl;
             std::cout << "Best fitting model includes " << ransacResult.highestNumberOfInliers << " inliers out of the " << ransacResult.numberOfPossibleCorrelations << " possible correspondences" << std::endl;
             std::cout << "Best fitting model: " << std::endl;
             for (int orderIdx = 0; orderIdx <= (int)ransacResult.modelPolynomialOrder; ++orderIdx)
@@ -473,66 +472,104 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
             }
         }
 
-        std::cout << " -- Adjusting Fraunhofer Spectrum -- " << std::endl;
+        // Update the estimated instrument line shape
+        if (this->settings.estimateInstrumentLineShape == InstrumentLineshapeEstimationOption::SuperGaussian)
+        {
+            EstimateInstrumentLineShapeAsSuperGaussian(result, fraunhoferSetup);
+        }
+        else if (this->settings.estimateInstrumentLineShape == InstrumentLineshapeEstimationOption::ApproximateGaussian)
+        {
+            EstimateInstrumentLineShapeAsApproximateGaussian(result, fraunhoferSetup);
+        }
 
-        // Adjust the shape of the Fraunhofer spectrum using what we now know:
-        //  We have the sensitivity of the spectrometer (pixel -> intesity) from the calculated envelope
-        //  We have the pixel-to-wavelength mapping of the spectrometer from the ransac calibration
-        // This allows us to calculate the wavelength -> intensity mapping of the 
+        // Adjust the selection parameter for the maximum error in the wavelength calibration such that the search space decreases for each iteration
+        correspondenceSelectionSettings.maximumPixelDistanceForPossibleCorrespondence = std::max(10, correspondenceSelectionSettings.maximumPixelDistanceForPossibleCorrespondence / 2);
+
         if (iterationIdx < numberOfIterations - 1)
         {
-            // Adjust the selection parameter for the maximum error in the wavelength calibration such that the search space decreases for each iteration
-            correspondenceSelectionSettings.maximumPixelDistanceForPossibleCorrespondence = std::max(10, correspondenceSelectionSettings.maximumPixelDistanceForPossibleCorrespondence / 2);
+            // Adjust the shape of the Fraunhofer spectrum using what we now know:
+            //  We have the sensitivity of the spectrometer (pixel -> intesity) from the calculated envelope
+            //  We have the pixel-to-wavelength mapping of the spectrometer from the ransac calibration
+            // Re-convolve the Fraunhofer spectrum to get it on the new pixel grid and with the new instrument line shape (if updated)
 
-            if (this->settings.estimateInstrumentLineShape == InstrumentLineshapeEstimationOption::Gaussian)
+            std::cout << " -- Adjusting Fraunhofer Spectrum -- " << std::endl;
             {
-                InstrumentLineShapeEstimationFromKeypointDistance ilsEstimator{ result.pixelToWavelengthMapping };
-                if (settings.initialInstrumentLineShape.GetSize() > 0)
-                {
-                    ilsEstimator.UpdateInitialLineShape(settings.initialInstrumentLineShape);
-                }
-
-                double lineShapeFwhm = 0.0;
-                ilsEstimator.EstimateInstrumentLineShape(fraunhoferSetup, *calibrationState.measuredSpectrum, result.estimatedInstrumentLineShape, lineShapeFwhm);
-
-                // TODO: Save the result !!
-
-                // Re-convolve the Fraunhofer spectrum to get it on the new pixel grid and with the new instrument line shape
-                calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(result.pixelToWavelengthMapping, result.estimatedInstrumentLineShape);
-            }
-            else
-            {
-                // Re-convolve the Fraunhofer spectrum to get it on the new pixel grid
-                calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(result.pixelToWavelengthMapping, settings.initialInstrumentLineShape);
-                // calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrumMatching(result.pixelToWavelengthMapping, *calibrationState.measuredSpectrum, measuredInstrumentLineShape);
+                novac::CCrossSectionData& currentEstimateOfInstrumentLineShape = (result.estimatedInstrumentLineShape.GetSize() > 0) ? result.estimatedInstrumentLineShape : settings.initialInstrumentLineShape;
+                calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(result.pixelToWavelengthMapping, currentEstimateOfInstrumentLineShape);
             }
 
-            // Create a wavelength -> intensity spline using the new wavelength calibration and the envelope of the measured spectrum
-            // TODO: Move to separate function
-            {
-                std::vector<double> measuredSpectrumWavelength(calibrationState.measuredSpectrumEnvelopePixels.size());
-                for (size_t ii = 0; ii < calibrationState.measuredSpectrumEnvelopePixels.size(); ++ii)
-                {
-                    measuredSpectrumWavelength[ii] = novac::PolynomialValueAt(ransacResult.bestFittingModelCoefficients, calibrationState.measuredSpectrumEnvelopePixels[ii]);
-                }
-                MathFit::CVector modelInput(measuredSpectrumWavelength.data(), (int)measuredSpectrumWavelength.size(), 1, false);
-                MathFit::CVector modelOutput(calibrationState.measuredSpectrumEnvelopeIntensities.data(), (int)calibrationState.measuredSpectrumEnvelopeIntensities.size(), 1, false);
-
-                // Create a spline from the slit-function.
-                MathFit::CCubicSplineFunction apparentSensitivitySpline(modelInput, modelOutput);
-
-                // Adjust the shape of the Fraunhofer spectrum to match the measured
-                for (size_t pixelIdx = 0; pixelIdx < calibrationState.fraunhoferSpectrum->m_length; ++pixelIdx)
-                {
-                    const double apparentSensitivity = apparentSensitivitySpline.GetValue((MathFit::TFitData)calibrationState.fraunhoferSpectrum->m_wavelength[pixelIdx]);
-                    calibrationState.fraunhoferSpectrum->m_data[pixelIdx] *= apparentSensitivity;
-                }
-                Normalize(*calibrationState.fraunhoferSpectrum);
-            }
+            UpdateFraunhoferSpectrumWithApparentSensitivity(ransacResult);
         }
     }
 
     return result;
+}
+
+void WavelengthCalibrationSetup::UpdateFraunhoferSpectrumWithApparentSensitivity(novac::RansacWavelengthCalibrationResult& ransacResult)
+{
+    std::vector<double> measuredSpectrumWavelength(calibrationState.measuredSpectrumEnvelopePixels.size());
+    for (size_t ii = 0; ii < calibrationState.measuredSpectrumEnvelopePixels.size(); ++ii)
+    {
+        measuredSpectrumWavelength[ii] = novac::PolynomialValueAt(ransacResult.bestFittingModelCoefficients, calibrationState.measuredSpectrumEnvelopePixels[ii]);
+    }
+    MathFit::CVector modelInput(measuredSpectrumWavelength.data(), (int)measuredSpectrumWavelength.size(), 1, false);
+    MathFit::CVector modelOutput(calibrationState.measuredSpectrumEnvelopeIntensities.data(), (int)calibrationState.measuredSpectrumEnvelopeIntensities.size(), 1, false);
+
+    // Create a spline from the slit-function.
+    MathFit::CCubicSplineFunction apparentSensitivitySpline(modelInput, modelOutput);
+
+    // Adjust the shape of the Fraunhofer spectrum to match the measured
+    for (size_t pixelIdx = 0; pixelIdx < calibrationState.fraunhoferSpectrum->m_length; ++pixelIdx)
+    {
+        const double apparentSensitivity = apparentSensitivitySpline.GetValue((MathFit::TFitData)calibrationState.fraunhoferSpectrum->m_wavelength[pixelIdx]);
+        calibrationState.fraunhoferSpectrum->m_data[pixelIdx] *= apparentSensitivity;
+    }
+    Normalize(*calibrationState.fraunhoferSpectrum);
+}
+
+void WavelengthCalibrationSetup::EstimateInstrumentLineShapeAsApproximateGaussian(novac::SpectrometerCalibrationResult& result, novac::FraunhoferSpectrumGeneration& fraunhoferSetup)
+{
+    InstrumentLineShapeEstimationFromKeypointDistance ilsEstimator{ result.pixelToWavelengthMapping };
+    if (settings.initialInstrumentLineShape.GetSize() > 0)
+    {
+        ilsEstimator.UpdateInitialLineShape(settings.initialInstrumentLineShape);
+    }
+
+    // Create an estimation and update the 'estimatedInstrumentLineShape'
+    double lineShapeFwhm = 0.0;
+    auto estimationResult = ilsEstimator.EstimateInstrumentLineShape(fraunhoferSetup, *calibrationState.measuredSpectrum, result.estimatedInstrumentLineShape, lineShapeFwhm);
+
+    // Save the result
+    result.estimatedInstrumentLineShapeParameters = std::make_unique<novac::GaussianLineShape>(estimationResult.lineShape);
+}
+
+void WavelengthCalibrationSetup::EstimateInstrumentLineShapeAsSuperGaussian(novac::SpectrometerCalibrationResult& result, novac::FraunhoferSpectrumGeneration& fraunhoferSetup)
+{
+    // The super-gaussian estimation requires that there is an initial estimate of the instrument line shape.
+    //  If there isn't any, then create an initial guess using the approximate-gaussian approach.
+    if (result.estimatedInstrumentLineShape.GetSize() == 0 && settings.initialInstrumentLineShape.GetSize() == 0)
+    {
+        EstimateInstrumentLineShapeAsApproximateGaussian(result, fraunhoferSetup);
+    }
+
+    novac::CCrossSectionData& currentEstimateOfInstrumentLineShape = (result.estimatedInstrumentLineShape.GetSize() > 0) ? result.estimatedInstrumentLineShape : settings.initialInstrumentLineShape;
+    InstrumentLineshapeEstimationFromDoas ilsEstimator{ result.pixelToWavelengthMapping, currentEstimateOfInstrumentLineShape };
+
+    InstrumentLineshapeEstimationFromDoas::LineShapeEstimationSettings estimationSettings;
+    estimationSettings.startPixel = 1300;  // TODO
+    estimationSettings.endPixel = 1500;    // TODO
+
+    auto startTime = std::chrono::steady_clock::now();
+    auto estimationResult = ilsEstimator.EstimateInstrumentLineShape(fraunhoferSetup, *calibrationState.measuredSpectrum, estimationSettings);
+    auto stopTime = std::chrono::steady_clock::now();
+
+    // Output for debugging
+    std::cout << "Instrument line shape estimation took " << std::chrono::duration_cast<std::chrono::milliseconds>(stopTime - startTime).count() << " ms" << std::endl;
+    std::cout << " Result: (w: " << estimationResult.result.lineShape.w << ", k: " << estimationResult.result.lineShape.k << ") found in " << estimationResult.attempts.size() << " iterations." << std::endl;
+
+    // Save the result.
+    result.estimatedInstrumentLineShapeParameters = std::make_unique<novac::SuperGaussianLineShape>(estimationResult.result.lineShape);
+    result.estimatedInstrumentLineShape = SampleInstrumentLineShape(estimationResult.result.lineShape);
 }
 
 std::vector<double> WavelengthCalibrationSetup::GetPixelToWavelengthMapping(const std::vector<double>& polynomialCoefficients, size_t detectorSize)

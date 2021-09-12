@@ -77,6 +77,8 @@ public:
     {
         double medianPixelDistanceInMeas = 0.0;
 
+        GaussianLineShape lineShape;
+
         std::vector<std::pair<double, double>> attempts;
     };
 

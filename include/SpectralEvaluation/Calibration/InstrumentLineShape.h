@@ -12,10 +12,32 @@ namespace novac
 class CSpectrum;
 class CCrossSectionData;
 
+/// <summary>
+/// Representation of the type of instrument line shape
+/// </summary>
+enum class InstrumentLineShapeFunctionType
+{
+    Unknown = 0,
+    Gaussian = 1,
+    AsymmetricGaussian = 2,
+    SuperGaussian = 3
+};
+
+class ParametricInstrumentLineShape
+{
+public:
+    virtual ~ParametricInstrumentLineShape() { }
+
+    virtual InstrumentLineShapeFunctionType Type() const = 0;
+
+    virtual std::vector<double> ListParameters() const = 0;
+};
+
 // --------- Possible representations of instrument line shapes ---------
 // Symmetric gaussian line shape: exp(-x^2/(2 * sigma^2))
-struct GaussianLineShape
+class GaussianLineShape : public ParametricInstrumentLineShape
 {
+public:
     // The width parameter
     double sigma = 0.0;
 
@@ -24,23 +46,33 @@ struct GaussianLineShape
 
     // The full width at half maximum.
     double Fwhm() const { return sigma * 2.35482004; }
+
+    InstrumentLineShapeFunctionType Type() const override { return InstrumentLineShapeFunctionType::Gaussian; }
+
+    virtual std::vector<double> ListParameters() const override { return std::vector<double>{ sigma, center }; }
 };
 
 // Asymmetric gaussian line shape, consisting of a left and a right half with different widths.
 //  The 'left' is used for x < center and 'right' used for x >= center
-struct AsymmetricGaussianLineShape
+class AsymmetricGaussianLineShape : public ParametricInstrumentLineShape
 {
+public:
     // The width parameter of the left gaussian
     double sigmaLeft = 0.0;
 
     // The width parameter of the right gaussian
     double sigmaRight = 0.0;
+
+    InstrumentLineShapeFunctionType Type() const override { return InstrumentLineShapeFunctionType::AsymmetricGaussian; }
+
+    virtual std::vector<double> ListParameters() const override { return std::vector<double>{ sigmaLeft, sigmaRight }; }
 };
 
 // Symmetric super-gaussian line shape: exp(- abs(x/w)^k)
 // A regular gaussian is a special case of this, with k=2.0 and w=sigma*sqrt(2)
-struct SuperGaussianLineShape
+class SuperGaussianLineShape : public ParametricInstrumentLineShape
 {
+public:
     // The width parameter.
     double w = 0.0;
 
@@ -52,6 +84,10 @@ struct SuperGaussianLineShape
 
     // The full width at half maximum.
     double Fwhm() const;
+
+    InstrumentLineShapeFunctionType Type() const override { return InstrumentLineShapeFunctionType::SuperGaussian; }
+
+    virtual std::vector<double> ListParameters() const override { return std::vector<double>{ w, k }; }
 };
 
 // Fits a symmetrical Gaussian line to an extract of a mercury spectrum containing only one (full) mercury line.
@@ -72,7 +108,7 @@ std::vector<double> SampleInstrumentLineShape(const GaussianLineShape& lineShape
 std::vector<double> SampleInstrumentLineShape(const AsymmetricGaussianLineShape& lineShape, const std::vector<double>& x, double center, double amplitude, double baseline = 0.0);
 std::vector<double> SampleInstrumentLineShape(const SuperGaussianLineShape& lineShape, const std::vector<double>& x, double center, double amplitude, double baseline = 0.0);
 
-/** Calculates the value of the provided line shape on an auto determined x-axis grid. 
+/** Calculates the value of the provided line shape on an auto determined x-axis grid.
     The returned line shape will be centered on zero and have a normalized amplitude. */
 CCrossSectionData SampleInstrumentLineShape(const SuperGaussianLineShape& lineShape);
 

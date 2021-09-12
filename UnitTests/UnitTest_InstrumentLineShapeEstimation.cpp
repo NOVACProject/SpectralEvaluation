@@ -33,7 +33,7 @@ std::string GetSolarAtlasFileName()
 
 TEST_CASE("GetFwhm returns correct value", "[InstrumentLineShapeEstimationFromKeypointDistance]")
 {
-    SECTION("Correct Fwhm of Gaussian with actual fwhm of 0.5 nm")
+    SECTION("Correct Fwhm of ApproximateGaussian with actual fwhm of 0.5 nm")
     {
         const double actualFwhm = 0.5;
         const double gaussianSigma = GaussianFwhmToSigma(actualFwhm);
@@ -47,7 +47,7 @@ TEST_CASE("GetFwhm returns correct value", "[InstrumentLineShapeEstimationFromKe
         REQUIRE(fabs(actualFwhm - estimatedFwhm) < 0.1 * actualFwhm); // 1% margin
     }
 
-    SECTION("Correct Fwhm of Gaussian with actual fwhm of 0.01 nm")
+    SECTION("Correct Fwhm of ApproximateGaussian with actual fwhm of 0.01 nm")
     {
         const double actualFwhm = 0.01;
         const double gaussianSigma = GaussianFwhmToSigma(actualFwhm);
@@ -61,7 +61,7 @@ TEST_CASE("GetFwhm returns correct value", "[InstrumentLineShapeEstimationFromKe
         REQUIRE(fabs(actualFwhm - estimatedFwhm) < 0.1 * actualFwhm); // 1% margin
     }
 
-    SECTION("Correct Fwhm of badly sampled Gaussian with actual fwhm of 0.5 nm")
+    SECTION("Correct Fwhm of badly sampled ApproximateGaussian with actual fwhm of 0.5 nm")
     {
         const double actualFwhm = 0.5;
         const double gaussianSigma = GaussianFwhmToSigma(actualFwhm);
@@ -76,7 +76,7 @@ TEST_CASE("GetFwhm returns correct value", "[InstrumentLineShapeEstimationFromKe
     }
 }
 
-TEST_CASE("EstimateInstrumentLineShape (basic input function): Simple Gaussian input returns correct fitted function", "[InstrumentLineShapeEstimationFromKeypointDistance]")
+TEST_CASE("EstimateInstrumentLineShape (basic input function): Simple ApproximateGaussian input returns correct fitted function", "[InstrumentLineShapeEstimationFromKeypointDistance]")
 {
     std::vector<double> pixelToWavelengthMapping = GeneratePixelToWavelengthMapping(330.0, 350.0, 0.05);
     InstrumentLineShapeEstimationFromKeypointDistance sut{ pixelToWavelengthMapping };
@@ -84,7 +84,7 @@ TEST_CASE("EstimateInstrumentLineShape (basic input function): Simple Gaussian i
     std::vector<std::pair<std::string, double>> noCrossSections;
     FraunhoferSpectrumGeneration fraunhoferSpectrumGenerator{ GetSolarAtlasFileName(), noCrossSections };
 
-    SECTION("Correct Estimation of Gaussian Instrument Line Shape with actual fwhm of 0.5 nm")
+    SECTION("Correct Estimation of ApproximateGaussian Instrument Line Shape with actual fwhm of 0.5 nm")
     {
         const double actualFwhm = 0.5;
         const double gaussianSigma = GaussianFwhmToSigma(actualFwhm);
@@ -101,7 +101,7 @@ TEST_CASE("EstimateInstrumentLineShape (basic input function): Simple Gaussian i
         REQUIRE(fabs(actualFwhm - estimatedFwhm) < 0.10 * actualFwhm); // 10% margin
     }
 
-    SECTION("Correct Estimation of Gaussian Instrument Line Shape with actual fwhm of 0.4 nm")
+    SECTION("Correct Estimation of ApproximateGaussian Instrument Line Shape with actual fwhm of 0.4 nm")
     {
         const double actualFwhm = 0.4;
         const double gaussianSigma = GaussianFwhmToSigma(actualFwhm);
@@ -118,7 +118,7 @@ TEST_CASE("EstimateInstrumentLineShape (basic input function): Simple Gaussian i
         REQUIRE(fabs(actualFwhm - estimatedFwhm) < 0.10 * actualFwhm); // 10% margin
     }
 
-    SECTION("Correct Estimation of Gaussian Instrument Line Shape with actual fwhm of 0.8 nm")
+    SECTION("Correct Estimation of ApproximateGaussian Instrument Line Shape with actual fwhm of 0.8 nm")
     {
         const double actualFwhm = 0.8;
         const double gaussianSigma = GaussianFwhmToSigma(actualFwhm);

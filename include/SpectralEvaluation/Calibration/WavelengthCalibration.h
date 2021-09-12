@@ -17,11 +17,28 @@ namespace novac
 class CSpectrum;
 struct SpectrumDataPoint;
 struct Correspondence;
+struct RansacWavelengthCalibrationResult;
+class FraunhoferSpectrumGeneration;
+class ParametricInstrumentLineShape;
 
 enum class InstrumentLineshapeEstimationOption
 {
+    /// <summary>
+    /// Do not make any estimate of the instrument line shape.
+    /// </summary>
     None = 0,
-    Gaussian,
+
+    /// <summary>
+    /// Estimate the instrument line shape as an approximate Gaussian function,
+    ///  based on the general distance between peaks/valleys.
+    /// </summary>
+    ApproximateGaussian,
+
+    /// <summary>
+    /// Estimate the instrument line shape as a Gaussian function, 
+    /// by minimizing the residual between the generated fraunhofer spectrum and the measured.
+    /// </summary>
+    SuperGaussian
 };
 
 /// <summary>
@@ -42,9 +59,16 @@ struct SpectrometerCalibrationResult
     /// <summary>
     /// The estimation of the instrument line shape.
     /// This is only set if the instrument line shape is set to be estimated 
-    //  in the process, otherwise this is empty
+    //  in the process, otherwise this is empty.
     /// </summary>
     novac::CCrossSectionData estimatedInstrumentLineShape;
+
+    /// <summary>
+    /// The parameterization of the estimated instrument line shape.
+    /// This is only set if the instrument line shape is set to be estimated 
+    //  in the process, otherwise this is empty.
+    /// </summary>
+    std::unique_ptr<novac::ParametricInstrumentLineShape> estimatedInstrumentLineShapeParameters;
 };
 
 struct WavelengthCalibrationSettings
@@ -187,6 +211,22 @@ private:
     SpectrumeterCalibrationState calibrationState;
 
     static std::vector<double> GetPixelToWavelengthMapping(const std::vector<double>& polynomialCoefficients, size_t detectorSize);
+
+    /// <summary>
+    /// Creates a wavelength to intensity spline of the measured spectrum using the current wavelength calibration result
+    /// and correct the current generated Fraunhofer spectrum with it. This improves the accuracy of finding the spectrum peaks/valleys.
+    /// </summary>
+    void UpdateFraunhoferSpectrumWithApparentSensitivity(novac::RansacWavelengthCalibrationResult& ransacResult);
+
+    /// <summary>
+    /// Creates an estimate of the instrument line shape of the measured spectrum as an approximate gaussian by judging the average distance between keypoints.
+    /// </summary>
+    void EstimateInstrumentLineShapeAsApproximateGaussian(novac::SpectrometerCalibrationResult& result, novac::FraunhoferSpectrumGeneration& fraunhoferSetup);
+
+    /// <summary>
+    /// Creates an estimate of the instrument line shape of the measured spectrum by fitting a SuperGaussian to the measured spectrum.
+    /// </summary>
+    void EstimateInstrumentLineShapeAsSuperGaussian(novac::SpectrometerCalibrationResult& result, novac::FraunhoferSpectrumGeneration& fraunhoferSetup);
 
 };
 
