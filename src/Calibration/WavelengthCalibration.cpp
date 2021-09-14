@@ -562,8 +562,8 @@ void WavelengthCalibrationSetup::EstimateInstrumentLineShapeAsSuperGaussian(nova
     InstrumentLineshapeEstimationFromDoas ilsEstimator{ result.pixelToWavelengthMapping, currentEstimateOfInstrumentLineShape };
 
     InstrumentLineshapeEstimationFromDoas::LineShapeEstimationSettings estimationSettings;
-    estimationSettings.startPixel = 1300;  // TODO
-    estimationSettings.endPixel = 1500;    // TODO
+    estimationSettings.startPixel = std::min(settings.estimateInstrumentLineShapePixelRegion.first, settings.estimateInstrumentLineShapePixelRegion.second);
+    estimationSettings.endPixel = std::max(settings.estimateInstrumentLineShapePixelRegion.first, settings.estimateInstrumentLineShapePixelRegion.second);
 
     auto startTime = std::chrono::steady_clock::now();
     auto estimationResult = ilsEstimator.EstimateInstrumentLineShape(fraunhoferSetup, *calibrationState.measuredSpectrum, estimationSettings);

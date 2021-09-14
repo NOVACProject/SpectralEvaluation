@@ -36,4 +36,9 @@ bool TriLinearInterpolation(const std::vector<double>& values, const std::vector
     @return the index or NAN if the value could not be found. */
 double GetFractionalIndex(const std::vector<float>& values, double valueToFind);
 
+/** Finds the provided value in the given vector of values.
+    The vector of values is assumed to be sorted in either ascending or descending order.
+    @return the index or NAN if the value could not be found. */
+double GetFractionalIndex(const std::vector<double>& values, double valueToFind);
+
 }
