@@ -109,9 +109,9 @@ struct WavelengthCalibrationSettings
     InstrumentLineshapeEstimationOption estimateInstrumentLineShape = InstrumentLineshapeEstimationOption::None;
 
     /// <summary>
-    /// The pixel region in which the instrument line shape is estimated (if estimateInstrumentLineShape != None)
+    /// The wavelength region in which the instrument line shape is estimated (if estimateInstrumentLineShape != None)
     /// </summary>
-    std::pair<double, double> estimateInstrumentLineShapePixelRegion;
+    std::pair<double, double> estimateInstrumentLineShapeWavelengthRegion;
 };
 
 class WavelengthCalibrationFailureException : public std::exception
