@@ -576,6 +576,8 @@ void WavelengthCalibrationSetup::EstimateInstrumentLineShapeAsSuperGaussian(nova
     // Save the result.
     result.estimatedInstrumentLineShapeParameters = std::make_unique<novac::SuperGaussianLineShape>(estimationResult.result.lineShape);
     result.estimatedInstrumentLineShape = SampleInstrumentLineShape(estimationResult.result.lineShape);
+    result.estimatedInstrumentLineShapePixelRange.first = estimationSettings.startPixel;
+    result.estimatedInstrumentLineShapePixelRange.second = estimationSettings.endPixel;
 }
 
 std::vector<double> WavelengthCalibrationSetup::GetPixelToWavelengthMapping(const std::vector<double>& polynomialCoefficients, size_t detectorSize)

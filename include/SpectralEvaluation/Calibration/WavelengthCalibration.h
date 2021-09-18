@@ -64,6 +64,11 @@ struct SpectrometerCalibrationResult
     novac::CCrossSectionData estimatedInstrumentLineShape;
 
     /// <summary>
+    /// The Range of pixels over which the instrument line shape was estimated.
+    /// </summary>
+    std::pair<size_t, size_t> estimatedInstrumentLineShapePixelRange;
+
+    /// <summary>
     /// The parameterization of the estimated instrument line shape.
     /// This is only set if the instrument line shape is set to be estimated 
     //  in the process, otherwise this is empty.
