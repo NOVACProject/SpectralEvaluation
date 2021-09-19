@@ -9,6 +9,6 @@ cd build
 cmake -G "Unix Makefiles" ..
 
 # Now build the solution
-make -j2
+make -j4
 
 

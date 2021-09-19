@@ -36,6 +36,19 @@ std::vector<double> GetPixelToWavelengthMappingFromFile(const std::string& clbFi
     }
 }
 
+std::vector<double> GetPixelToWavelengthMapping(const std::vector<double>& polynomialCoefficients, size_t detectorSize)
+{
+    std::vector<double> result(detectorSize);
+
+    for (size_t pixelIdx = 0; pixelIdx < detectorSize; ++pixelIdx)
+    {
+        result[pixelIdx] = novac::PolynomialValueAt(polynomialCoefficients, (double)pixelIdx);
+    }
+
+    return result;
+}
+
+
 /// <summary>
 /// Very special baseline removal where all points below the baseline are set to the baseline level.
 /// </summary>
@@ -583,18 +596,5 @@ void WavelengthCalibrationSetup::EstimateInstrumentLineShapeAsSuperGaussian(nova
     result.estimatedInstrumentLineShapePixelRange.first = estimationSettings.startPixel;
     result.estimatedInstrumentLineShapePixelRange.second = estimationSettings.endPixel;
 }
-
-std::vector<double> WavelengthCalibrationSetup::GetPixelToWavelengthMapping(const std::vector<double>& polynomialCoefficients, size_t detectorSize)
-{
-    std::vector<double> result(detectorSize);
-
-    for (size_t pixelIdx = 0; pixelIdx < detectorSize; ++pixelIdx)
-    {
-        result[pixelIdx] = novac::PolynomialValueAt(polynomialCoefficients, (double)pixelIdx);
-    }
-
-    return result;
-}
-
 
 }

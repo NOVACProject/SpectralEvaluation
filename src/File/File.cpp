@@ -9,7 +9,11 @@
 #include <SpectralEvaluation/Interpolation.h>
 #include <SpectralEvaluation/VectorUtils.h>
 #include <cstring>
+#include <cmath>
+#include <limits>
+#include <memory>
 #include <sstream>
+#include <stdio.h>
 #include <fstream>
 
 namespace novac
@@ -189,7 +193,7 @@ bool SaveCrossSectionFile(const std::string& fullFilePath, const CSpectrum& spec
         return false;
     }
 
-    const bool twoColumns = spectrum.m_wavelength.size() == spectrum.m_length;
+    const bool twoColumns = spectrum.m_wavelength.size() == static_cast<size_t>(spectrum.m_length);
     const size_t length = spectrum.m_length;
 
     for (size_t ii = 0; ii < length; ++ii)
@@ -335,7 +339,7 @@ size_t WavelengthToPixel(const std::vector<double>& pixelToWavelengthMapping, do
 std::pair<std::string, std::string> FormatProperty(const char* name, double value)
 {
     char formattedValue[128];
-    sprintf_s(formattedValue, sizeof(formattedValue), "%.9g", value);
+    sprintf(formattedValue, "%.9g", value);
 
     return std::make_pair(std::string(name), std::string(formattedValue));
 }
@@ -430,7 +434,7 @@ bool ReadInstrumentCalibration(const std::string& fullFilePath, CSpectrum& instr
     }
 
     if (extendedFormatInformation.MaxChannel <= extendedFormatInformation.MinChannel ||
-        tmpSpectrum.m_wavelength.size() != tmpSpectrum.m_length)
+        tmpSpectrum.m_wavelength.size() != static_cast<size_t>(tmpSpectrum.m_length))
     {
         // not a correct format of the data
         return false;
@@ -474,7 +478,7 @@ bool ReadInstrumentCalibration(const std::string& fullFilePath, InstrumentCalibr
     }
 
     if (extendedFormatInformation.MaxChannel <= extendedFormatInformation.MinChannel ||
-        tmpSpectrum.m_wavelength.size() != tmpSpectrum.m_length)
+        tmpSpectrum.m_wavelength.size() != static_cast<size_t>(tmpSpectrum.m_length))
     {
         // not a correct format of the data
         return false;

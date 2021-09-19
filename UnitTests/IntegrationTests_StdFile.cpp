@@ -13,7 +13,7 @@ std::string GetStdFileName()
 #endif // _MSC_VER
 }
 
-// -------- Doing a calibration from a mercury spectrum --------
+// -------- Reading all the properties from an extended Std file --------
 TEST_CASE("Wavelength calibrated std file", "[StdFile][InstrumentCalibration][IntegrationTest]")
 {
     CSpectrum spectrum;
@@ -27,7 +27,7 @@ TEST_CASE("Wavelength calibrated std file", "[StdFile][InstrumentCalibration][In
         REQUIRE(std::abs(spectrum.m_data[2042] - 0.0) < 1e-19);
     }
 
-    SECTION("Correct wavelength calibration of spectrum read")
+    SECTION("Correct pixel to wavelength mapping of spectrum read")
     {
         REQUIRE(2043 == spectrum.m_wavelength.size());
         REQUIRE(std::abs(spectrum.m_wavelength[0] - 278.385) < 1e-3);

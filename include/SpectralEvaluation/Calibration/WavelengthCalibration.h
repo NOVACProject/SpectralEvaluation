@@ -135,6 +135,12 @@ public:
 std::vector<double> GetPixelToWavelengthMappingFromFile(const std::string& clbFile);
 
 /// <summary>
+/// Generates a pixel-to-wavelength mapping for each pixel on the detector given
+/// the wavelength calibration polynomial and the number of pixels.
+/// </summary>
+std::vector<double> GetPixelToWavelengthMapping(const std::vector<double>& polynomialCoefficients, size_t detectorSize);
+
+/// <summary>
 /// This is a helper structure used to extract the internal state of the pixel-to-wavelength calibration
 /// of a spectrometer from a measured mercury spectrum.
 /// </summary>
@@ -219,8 +225,6 @@ private:
     WavelengthCalibrationSettings settings;
 
     SpectrumeterCalibrationState calibrationState;
-
-    static std::vector<double> GetPixelToWavelengthMapping(const std::vector<double>& polynomialCoefficients, size_t detectorSize);
 
     /// <summary>
     /// Creates a wavelength to intensity spline of the measured spectrum using the current wavelength calibration result
