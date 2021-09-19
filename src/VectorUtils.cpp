@@ -338,9 +338,12 @@ void Normalize(std::vector<double>& values)
     const double minValue = Min(values);
     const double maxValue = Max(values);
 
-    for (size_t ii = 0; ii < values.size(); ++ii)
+    if (std::abs(minValue) > std::numeric_limits<double>::epsilon() || std::abs(maxValue - 1.0) > std::numeric_limits<double>::epsilon())
     {
-        values[ii] = (values[ii] - minValue) / (maxValue - minValue);
+        for (size_t ii = 0; ii < values.size(); ++ii)
+        {
+            values[ii] = (values[ii] - minValue) / (maxValue - minValue);
+        }
     }
 }
 

@@ -31,6 +31,9 @@ public:
     virtual InstrumentLineShapeFunctionType Type() const = 0;
 
     virtual std::vector<double> ListParameters() const = 0;
+
+    /** Creates a copy of this instance. The copy must be delete:d to avoid memory leaks. */
+    virtual ParametricInstrumentLineShape* Clone() const = 0;
 };
 
 // --------- Possible representations of instrument line shapes ---------
@@ -50,6 +53,11 @@ public:
     InstrumentLineShapeFunctionType Type() const override { return InstrumentLineShapeFunctionType::Gaussian; }
 
     virtual std::vector<double> ListParameters() const override { return std::vector<double>{ sigma, center }; }
+
+    virtual ParametricInstrumentLineShape* Clone() const override
+    {
+        return new GaussianLineShape(*this);
+    }
 };
 
 // Asymmetric gaussian line shape, consisting of a left and a right half with different widths.
@@ -66,6 +74,11 @@ public:
     InstrumentLineShapeFunctionType Type() const override { return InstrumentLineShapeFunctionType::AsymmetricGaussian; }
 
     virtual std::vector<double> ListParameters() const override { return std::vector<double>{ sigmaLeft, sigmaRight }; }
+
+    virtual ParametricInstrumentLineShape* Clone() const override
+    {
+        return new AsymmetricGaussianLineShape(*this);
+    }
 };
 
 // Symmetric super-gaussian line shape: exp(- abs(x/w)^k)
@@ -88,6 +101,11 @@ public:
     InstrumentLineShapeFunctionType Type() const override { return InstrumentLineShapeFunctionType::SuperGaussian; }
 
     virtual std::vector<double> ListParameters() const override { return std::vector<double>{ w, k }; }
+
+    virtual ParametricInstrumentLineShape* Clone() const override
+    {
+        return new SuperGaussianLineShape(*this);
+    }
 };
 
 // Fits a symmetrical Gaussian line to an extract of a mercury spectrum containing only one (full) mercury line.

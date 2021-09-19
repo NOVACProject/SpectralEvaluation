@@ -490,8 +490,6 @@ bool ReadInstrumentCalibration(const std::string& fullFilePath, InstrumentCalibr
     result.instrumentLineShape.resize(static_cast<size_t>(extendedFormatInformation.MaxChannel) - extendedFormatInformation.MinChannel);
     memcpy(result.instrumentLineShape.data(), tmpSpectrum.m_data + extendedFormatInformation.MinChannel, result.instrumentLineShape.size() * sizeof(double));
 
-    result.instrumentLineShapeCenter = extendedFormatInformation.Marker;
-
     // Get the instrument line shape grid and make sure that it is differntiated wrt the peak
     {
         result.instrumentLineShapeGrid = std::vector<double>(begin(tmpSpectrum.m_wavelength) + extendedFormatInformation.MinChannel, begin(tmpSpectrum.m_wavelength) + extendedFormatInformation.MaxChannel);
@@ -503,6 +501,9 @@ bool ReadInstrumentCalibration(const std::string& fullFilePath, InstrumentCalibr
         {
             return false;
         }
+
+        result.instrumentLineShapeCenter = centerWavelength;
+
         if (std::abs(centerWavelength) > std::numeric_limits<double>::epsilon())
         {
             for (double& lambda : result.instrumentLineShapeGrid)
