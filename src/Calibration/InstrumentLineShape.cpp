@@ -51,7 +51,7 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, Ga
     {
         return FUNCTION_FIT_RETURN_CODE::EMPTY_INPUT;
     }
-    else if (mercuryLine.m_wavelength.size() != mercuryLine.m_length)
+    else if (mercuryLine.m_wavelength.size() != static_cast<size_t>(mercuryLine.m_length))
     {
         return FUNCTION_FIT_RETURN_CODE::MISSING_WAVELENGTH_CALIBRATION;
     }
@@ -81,7 +81,7 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, As
     {
         return FUNCTION_FIT_RETURN_CODE::EMPTY_INPUT;
     }
-    else if (mercuryLine.m_wavelength.size() != mercuryLine.m_length)
+    else if (mercuryLine.m_wavelength.size() != static_cast<size_t>(mercuryLine.m_length))
     {
         return FUNCTION_FIT_RETURN_CODE::MISSING_WAVELENGTH_CALIBRATION;
     }

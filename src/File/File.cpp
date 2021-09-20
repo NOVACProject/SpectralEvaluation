@@ -16,6 +16,8 @@
 #include <stdio.h>
 #include <fstream>
 
+#include <iostream>
+
 namespace novac
 {
 // @return the number of columns read.
@@ -344,6 +346,19 @@ std::pair<std::string, std::string> FormatProperty(const char* name, double valu
     return std::make_pair(std::string(name), std::string(formattedValue));
 }
 
+bool TryGetParameter(const std::vector<std::pair<std::string, std::string>>& properties, const char* parameterName, double& parameterValue)
+{
+    for (const auto& p : properties)
+    {
+        if (p.first.compare(parameterName) == 0)
+        {
+            // found the correct parameter, try parse the value
+            return 1 == sscanf(p.second.c_str(), "%lf", &parameterValue);
+        }
+    }
+
+    return false;
+}
 
 bool SaveInstrumentCalibration(const std::string& fullFilePath, const InstrumentCalibration& calibration)
 {
@@ -517,7 +532,24 @@ bool ReadInstrumentCalibration(const std::string& fullFilePath, InstrumentCalibr
         }
     }
 
-    // TODO: Read and parse the instrumentLineShapeParameter as well.
+    // Handle the reading of an parametrization of the instrument line shape.
+    {
+        double superGaussianWidth = 0.0;
+        double superGaussianPower = 0.0;
+        if (TryGetParameter(extendedFormatInformation.additionalProperties, "SuperGaussFitWidth", superGaussianWidth) &&
+            TryGetParameter(extendedFormatInformation.additionalProperties, "SuperGaussFitPower", superGaussianPower))
+        {
+            result.instrumentLineShapeParameter = new novac::SuperGaussianLineShape(superGaussianWidth, superGaussianPower);
+        }
+        else
+        {
+            double gaussSigma = 0.0;
+            if (TryGetParameter(extendedFormatInformation.additionalProperties, "GaussFitSigma", gaussSigma))
+            {
+                result.instrumentLineShapeParameter = new novac::GaussianLineShape(gaussSigma);
+            }
+        }
+    }
 
     return true;
 }

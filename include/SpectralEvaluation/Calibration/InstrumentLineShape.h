@@ -41,6 +41,12 @@ public:
 class GaussianLineShape : public ParametricInstrumentLineShape
 {
 public:
+    GaussianLineShape()
+        : sigma(0.0), center(0.0) { }
+
+    GaussianLineShape(double s)
+        : sigma(s), center(0.0) { }
+
     // The width parameter
     double sigma = 0.0;
 
@@ -86,6 +92,12 @@ public:
 class SuperGaussianLineShape : public ParametricInstrumentLineShape
 {
 public:
+    SuperGaussianLineShape()
+        : w(0.0), k(2.0), center(0.0) { }
+
+    SuperGaussianLineShape(double width, double power)
+        : w(width), k(power), center(0.0) { }
+
     // The width parameter.
     double w = 0.0;
 

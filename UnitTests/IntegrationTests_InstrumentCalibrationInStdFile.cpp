@@ -1,4 +1,5 @@
 #include <SpectralEvaluation/Calibration/InstrumentCalibration.h>
+#include <SpectralEvaluation/Calibration/InstrumentLineShape.h>
 #include <SpectralEvaluation/Calibration/WavelengthCalibration.h>
 #include <SpectralEvaluation/File/File.h>
 #include "catch.hpp"
@@ -41,6 +42,15 @@ TEST_CASE("InstrumentCalibration in extended std file", "[StdFile][InstrumentCal
     }
     originalCalibration.instrumentLineShapeCenter = originalCalibration.pixelToWavelengthMapping[410 + centerPixel];
 
+    const double originalW = 0.235;
+    const double originalK = 2.954;
+    {
+        auto supergauss = new SuperGaussianLineShape();
+        supergauss->k = originalK;
+        supergauss->w = originalW;
+        originalCalibration.instrumentLineShapeParameter = supergauss;
+    }
+
     // Save the calibration above to file
     bool savedSuccessfully = SaveInstrumentCalibration(GetInstrumentCalibrationStdFileName(), originalCalibration);
     REQUIRE(savedSuccessfully);
@@ -57,6 +67,13 @@ TEST_CASE("InstrumentCalibration in extended std file", "[StdFile][InstrumentCal
         REQUIRE(readCalibration.pixelToWavelengthMapping.back() ==  Approx(originalCalibration.pixelToWavelengthMapping.back()));
     }
 
+    SECTION("Correct pixel to wavelength polynomial  of spectrum read")
+    {
+        REQUIRE(readCalibration.pixelToWavelengthPolynomial.size() == originalCalibration.pixelToWavelengthPolynomial.size());
+        REQUIRE(readCalibration.pixelToWavelengthPolynomial.front() == Approx(originalCalibration.pixelToWavelengthPolynomial.front()));
+        REQUIRE(readCalibration.pixelToWavelengthPolynomial.back() ==  Approx(originalCalibration.pixelToWavelengthPolynomial.back()));
+    }
+
     SECTION("Correct instrument line shape")
     {
         REQUIRE(readCalibration.instrumentLineShape.size() == originalCalibration.instrumentLineShape.size());
@@ -69,6 +86,22 @@ TEST_CASE("InstrumentCalibration in extended std file", "[StdFile][InstrumentCal
         REQUIRE(readCalibration.instrumentLineShapeGrid.size() == originalCalibration.instrumentLineShapeGrid.size());
         REQUIRE(readCalibration.instrumentLineShapeGrid.front() ==  Approx(originalCalibration.instrumentLineShapeGrid.front()));
         REQUIRE(readCalibration.instrumentLineShapeGrid.back() ==  Approx(originalCalibration.instrumentLineShapeGrid.back()));
+    }
+
+    SECTION("Correct instrument line shape center")
+    {
+        REQUIRE(readCalibration.instrumentLineShapeCenter == Approx(originalCalibration.instrumentLineShapeCenter));
+    }
+
+    SECTION("Correct instrument line shape parametrization")
+    {
+        REQUIRE(readCalibration.instrumentLineShapeParameter != nullptr);
+        REQUIRE(readCalibration.instrumentLineShapeParameter != originalCalibration.instrumentLineShapeParameter);
+
+        const SuperGaussianLineShape* readParameters = dynamic_cast<SuperGaussianLineShape*>(readCalibration.instrumentLineShapeParameter);
+        REQUIRE(readParameters != nullptr);
+        REQUIRE(readParameters->w == Approx(originalW));
+        REQUIRE(readParameters->k == Approx(originalK));
     }
 
 }
