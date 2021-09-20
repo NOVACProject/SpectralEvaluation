@@ -57,7 +57,6 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
     state.medianPixelDistanceInMeas = GetMedianKeypointDistanceFromSpectrum(*filteredSpectrum, "Meas");
     const double pixelDistanceFromInitialCalibration = std::abs(this->pixelToWavelengthMapping.back() - this->pixelToWavelengthMapping.front()) / (double)this->pixelToWavelengthMapping.size();
     const double medianMeasKeypointDistanceInWavelength = state.medianPixelDistanceInMeas * pixelDistanceFromInitialCalibration;
-    std::cout << "Measured spectrum has keypoint distance: " << state.medianPixelDistanceInMeas << std::endl;
 
     // Guess for a gaussian line shape and create a convolved solar spectrum with this setup
     double estimatedGaussianSigma;
@@ -88,7 +87,6 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
 
         medianPixelDistanceAtLowerSigmaLimit = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, "LowLimit");
 
-        std::cout << "ApproximateGaussian width: " << lowerSigmaLimit << " gives keypoint distance: " << medianPixelDistanceAtLowerSigmaLimit << std::endl;
         state.attempts.push_back(std::pair<double, double>{lowerSigmaLimit, medianPixelDistanceAtLowerSigmaLimit});
 
         if (std::isnan(medianPixelDistanceAtLowerSigmaLimit) || medianPixelDistanceAtLowerSigmaLimit > state.medianPixelDistanceInMeas)
@@ -109,7 +107,6 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
 
         medianPixelDistanceAtUpperSigmaLimit = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, "HighLimit");
 
-        std::cout << "ApproximateGaussian width: " << upperSigmaLimit << " gives keypoint distance: " << medianPixelDistanceAtUpperSigmaLimit << std::endl;
         state.attempts.push_back(std::pair<double, double>{upperSigmaLimit, medianPixelDistanceAtUpperSigmaLimit});
 
         if (std::isnan(medianPixelDistanceAtUpperSigmaLimit) || std::abs(medianPixelDistanceAtUpperSigmaLimit) < 0.1)
@@ -139,7 +136,6 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
 
         medianPixelDistanceInSolarSpectrum = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, "Theory");
 
-        std::cout << "ApproximateGaussian width: " << estimatedGaussianSigma << " gives keypoint distance: " << medianPixelDistanceInSolarSpectrum << std::endl;
         state.attempts.push_back(std::pair<double, double>{estimatedGaussianSigma, medianPixelDistanceInSolarSpectrum});
 
         if (medianPixelDistanceInSolarSpectrum > state.medianPixelDistanceInMeas)
@@ -168,15 +164,13 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
     state.lineShape.sigma = estimatedGaussianSigma;
     fwhm = GaussianSigmaToFwhm(estimatedGaussianSigma);
 
-    std::cout << "Final instrument line shape estimation gave ApproximateGaussian w of: " << estimatedGaussianSigma << " and a fwhm of: " << fwhm << std::endl;
-
     return state;
 }
 
 bool LineIntersects(const std::vector<double>& data, size_t index, double threshold)
 {
-    return data[index] > threshold && data[index - 1] < threshold ||
-        data[index] < threshold && data[index - 1] > threshold;
+    return (data[index] > threshold && data[index - 1] < threshold) ||
+            (data[index] < threshold && data[index - 1] > threshold);
 }
 
 double InstrumentLineShapeEstimationFromKeypointDistance::GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum, const std::string& /*spectrumName*/) const
@@ -187,8 +181,9 @@ double InstrumentLineShapeEstimationFromKeypointDistance::GetMedianKeypointDista
     {
         // Version 2, getting the median distance between zero crossings of the spectrum in the region [measuredPixelStart, measuredPixelStop]
         // start by normalizing the data by removing the median value
-        const size_t start = (spectrum.m_length < this->measuredPixelStart) ? (spectrum.m_length / 10) : this->measuredPixelStart;
-        const size_t length = (spectrum.m_length < this->measuredPixelStart) ? (spectrum.m_length - 2 * start) : std::min(static_cast<size_t>(spectrum.m_length - this->measuredPixelStart), this->measuredPixelStop - this->measuredPixelStart);
+        const size_t spectrumLength = static_cast<size_t>(spectrum.m_length);
+        const size_t start = (spectrumLength < this->measuredPixelStart) ? (spectrumLength / 10) : this->measuredPixelStart;
+        const size_t length = (spectrumLength < this->measuredPixelStart) ? (spectrumLength - 2 * start) : std::min(static_cast<size_t>(spectrumLength - this->measuredPixelStart), this->measuredPixelStop - this->measuredPixelStart);
         std::vector<double> normalizedData{ spectrum.m_data + start, spectrum.m_data + start + length };
         std::vector<double> copyOfData{ begin(normalizedData), end(normalizedData) };
         auto median = Median(copyOfData);
@@ -302,7 +297,6 @@ double InstrumentLineShapeEstimationFromKeypointDistance::GetMedianKeypointDista
         }
         keypointWidth[keypoints.size() - 1] = keypoints[keypoints.size() - 1].rightPixel - keypoints[keypoints.size() - 1].leftPixel;
         const double medianPixelDistance = Median(keypointDistances);
-        const double medianPixelWidth = Median(keypointWidth);
 
         return medianPixelDistance;
     }
@@ -379,7 +373,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
     {
         throw std::invalid_argument("Cannot estimate the instrument line shape without an initial estimate.");
     }
-    if (this->pixelToWavelengthMapping.size() == 0 || this->pixelToWavelengthMapping.size() != measuredSpectrum.m_length)
+    if (this->pixelToWavelengthMapping.size() == 0 || this->pixelToWavelengthMapping.size() != static_cast<size_t>(measuredSpectrum.m_length))
     {
         throw std::invalid_argument("Invalid setup of InstrumentLineshapeEstimationFromDoas, the initial pixel-to-wavelength mapping must have the same length as the measured spectrum.");
     }

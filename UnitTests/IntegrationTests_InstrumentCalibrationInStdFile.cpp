@@ -34,7 +34,7 @@ TEST_CASE("InstrumentCalibration in extended std file", "[StdFile][InstrumentCal
         0.000005429, 0.000000159, 0.000000002,
         2.000832953e-11, 7.845422578e-14, 1.787112205e-16};  // 33 values, symmetricallly arranged around zero
     originalCalibration.instrumentLineShapeGrid.resize(originalCalibration.instrumentLineShape.size());
-    size_t centerPixel = 1 + originalCalibration.instrumentLineShape.size() / 2;
+    size_t centerPixel = originalCalibration.instrumentLineShape.size() / 2;
     for(size_t ii = 0; ii < originalCalibration.instrumentLineShapeGrid.size(); ++ii)
     {
         originalCalibration.instrumentLineShapeGrid[ii] = originalCalibration.pixelToWavelengthMapping[410 + ii] - originalCalibration.pixelToWavelengthMapping[410 + centerPixel];
@@ -67,12 +67,8 @@ TEST_CASE("InstrumentCalibration in extended std file", "[StdFile][InstrumentCal
     SECTION("Correct instrument line shape grid")
     {
         REQUIRE(readCalibration.instrumentLineShapeGrid.size() == originalCalibration.instrumentLineShapeGrid.size());
-
-        double originalRange = originalCalibration.instrumentLineShapeGrid.back() - originalCalibration.instrumentLineShapeGrid.front();
-        double readRange = readCalibration.instrumentLineShapeGrid.back() - readCalibration.instrumentLineShapeGrid.front();
-
-        // TODO: Make this correct!
-        // REQUIRE( originalRange ==  Approx(readRange));
+        REQUIRE(readCalibration.instrumentLineShapeGrid.front() ==  Approx(originalCalibration.instrumentLineShapeGrid.front()));
+        REQUIRE(readCalibration.instrumentLineShapeGrid.back() ==  Approx(originalCalibration.instrumentLineShapeGrid.back()));
     }
 
 }

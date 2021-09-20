@@ -349,7 +349,6 @@ bool ConvolveReference(
         // For the sake of efficiency of the fft below, find the length which contain as many factors of two, tree and five as possible
         //  while still being between minimumAllowedResolution and maximumAllowedResolution.
         // This is done by finding the smallest length for which the remainder after removing all 2, 3 and 5 prime factors is minimal (usually one).
-        const size_t minimumLength = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / minimumAllowedResolution);
         const size_t maximumLength = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / maximumAllowedResolution);
 
         size_t testLengthForConvolutionGrid = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / highestResolution);
@@ -377,7 +376,7 @@ bool ConvolveReference(
         }
         convolutionGrid.length = optimumConvolutionGridLength;
 
-        std::cout << "Convolution is using length: " << optimumConvolutionGridLength << " with smallest remainder: " << optimumRemainder << std::endl;
+        // std::cout << "Convolution is using length: " << optimumConvolutionGridLength << " with smallest remainder: " << optimumRemainder << std::endl;
     }
     else
     {
