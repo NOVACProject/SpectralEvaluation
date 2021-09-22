@@ -157,6 +157,98 @@ bool Contains(const std::vector<size_t>& data, size_t value)
     return false;
 }
 
+// TODO: Unit-test these mehtods somewhere
+bool AllMeasuredPointsAreUnique(const std::vector<Correspondence>& correspondences)
+{
+    if (correspondences.size() == 0)
+    {
+        return true;
+    }
+
+    std::vector<size_t> selecedMeasuredPoints;
+    selecedMeasuredPoints.push_back(correspondences[0].measuredIdx);
+    for (size_t correspondenceIdx = 1; correspondenceIdx < correspondences.size(); ++correspondenceIdx)
+    {
+        if (Contains(selecedMeasuredPoints, correspondences[correspondenceIdx].measuredIdx))
+        {
+            return false;
+        }
+        selecedMeasuredPoints.push_back(correspondences[correspondenceIdx].measuredIdx);
+    }
+
+    return true;
+}
+
+bool AllTheoreticalPointsAreUnique(const std::vector<Correspondence>& correspondences)
+{
+    if (correspondences.size() == 0)
+    {
+        return true;
+    }
+
+    std::vector<size_t> selecedTheoreticalPoints;
+    selecedTheoreticalPoints.push_back(correspondences[0].theoreticalIdx);
+    for (size_t correspondenceIdx = 1; correspondenceIdx < correspondences.size(); ++correspondenceIdx)
+    {
+        if (Contains(selecedTheoreticalPoints, correspondences[correspondenceIdx].theoreticalIdx))
+        {
+            return false;
+        }
+        selecedTheoreticalPoints.push_back(correspondences[correspondenceIdx].theoreticalIdx);
+    }
+
+    return true;
+}
+
+void ListAllPossibleKeypointCombinationsStartingWith(
+    size_t number,
+    const std::vector<Correspondence>& allCorrespondences,
+    std::vector<size_t>& selectedIndices,
+    std::vector<std::vector<Correspondence>>& result)
+{
+    if (selectedIndices.size() == number)
+    {
+        // We're done searching for indices. Check that this is a unique and valid combination of correspondences.
+        std::vector<Correspondence> selectedCorrespondences;
+        for (size_t idx : selectedIndices)
+        {
+            selectedCorrespondences.push_back(allCorrespondences[idx]);
+        }
+        if (AllMeasuredPointsAreUnique(selectedCorrespondences) && AllTheoreticalPointsAreUnique(selectedCorrespondences))
+        {
+            result.push_back(selectedCorrespondences);
+        }
+        return;
+    }
+
+    for (size_t firstMeasuredIdx = selectedIndices.back() + 1; firstMeasuredIdx < allCorrespondences.size(); ++firstMeasuredIdx)
+    {
+        selectedIndices.push_back(firstMeasuredIdx);
+        ListAllPossibleKeypointCombinationsStartingWith(number, allCorrespondences, selectedIndices, result);
+        selectedIndices.pop_back();
+    }
+
+}
+
+/// <summary>
+/// List all possible combinations of correspondences with 'N' correspondences in each.
+/// </summary>
+std::vector<std::vector<Correspondence>> ListAllPossibleKeypointCombinations(
+    size_t number,
+    const std::vector<Correspondence>& allCorrespondences)
+{
+    std::vector<std::vector<Correspondence>> result;
+
+    for (size_t firstMeasuredIdx = 0; firstMeasuredIdx < allCorrespondences.size(); ++firstMeasuredIdx)
+    {
+        std::vector<size_t> selectedIndices;
+        selectedIndices.push_back(firstMeasuredIdx);
+
+        ListAllPossibleKeypointCombinationsStartingWith(number, allCorrespondences, selectedIndices, result);
+    }
+
+    return result;
+}
 
 void SelectMaybeInliers(size_t number, const std::vector<Correspondence>& allCorrespondences, std::mt19937& randomGenerator, std::vector<Correspondence>& result)
 {
@@ -201,6 +293,8 @@ void SelectMaybeInliers(size_t number, const std::vector<Correspondence>& allCor
         result[resultIdx] = allCorrespondences[idx];
         ++resultIdx;
     }
+
+    return;
 }
 
 double PolynomialValueAt(const std::vector<double>& coefficients, double x)
@@ -219,6 +313,106 @@ double PolynomialValueAt(const std::vector<double>& coefficients, double x)
     }
     return result;
 }
+
+bool FitPolynomial(novac::PolynomialFit& polyFit, const std::vector<Correspondence>& selectedCorrespondences, std::vector<double>& resultingPolynomial)
+{
+    std::vector<double> selectedPixelValues(selectedCorrespondences.size());
+    std::vector<double> selectedWavelengths(selectedCorrespondences.size());
+
+    for (size_t ii = 0; ii < selectedCorrespondences.size(); ++ii)
+    {
+        selectedPixelValues[ii] = selectedCorrespondences[ii].measuredValue;
+        selectedWavelengths[ii] = selectedCorrespondences[ii].theoreticalValue;
+    }
+
+    return polyFit.FitPolynomial(selectedPixelValues, selectedWavelengths, resultingPolynomial);
+}
+
+bool FindRoots(const std::vector<double>& polynomial, std::vector<std::complex<double>>& roots)
+{
+    if (polynomial.size() <= 1)
+    {
+        roots.clear();
+        return true;
+    }
+    else if (polynomial.size() == 2)
+    {
+        roots.resize(1);
+        roots[0] = -polynomial[0] / polynomial[1];
+        return true;
+    }
+    else if (polynomial.size() == 3)
+    {
+        roots.resize(2);
+        const std::complex<double> q = polynomial[0] / polynomial[2];
+        const std::complex<double> p = 0.5 * polynomial[1] / polynomial[2];
+        roots[0] = -p + std::sqrt(p * p - q);
+        roots[1] = -p - std::sqrt(p * p - q);
+        return true;
+    }
+    else
+    {
+        return false; // unsupported order of polynomial (so far)
+    }
+}
+
+/// <summary>
+/// Returns true if the provided polynomial can be a possible calibration for a spectrometer with the given detector size.
+/// </summary>
+bool IsPossiblePixelToWavelengthCalibrationPolynomial(const std::vector<double>& candidatePolynomial, size_t numberOfPixels)
+{
+    // Attempt to check if the polynomial is monotonically increasing by checking that the derivative is always positive
+    //  this is done by checking that it is positive at the first value and does not change sign anywhere.
+    std::vector<double> polynomialDerivative;
+    polynomialDerivative.resize(candidatePolynomial.size() - 1);
+    for (size_t orderIdx = 1; orderIdx < candidatePolynomial.size(); ++orderIdx)
+    {
+        polynomialDerivative[orderIdx - 1] = candidatePolynomial[orderIdx] * orderIdx;
+    }
+
+    if (PolynomialValueAt(polynomialDerivative, 0.0) < 0.0)
+    {
+        // Derivative is negative at the first point
+        return false;
+    }
+
+    std::vector<std::complex<double>> polynomialRoots;
+    if (FindRoots(polynomialDerivative, polynomialRoots))
+    {
+        bool hasRootInInterval = false;
+        for (const auto& root : polynomialRoots)
+        {
+            if (root.real() > 0.0 && root.real() < numberOfPixels)
+            {
+                hasRootInInterval = true;
+                break;
+            }
+        }
+
+        if (hasRootInInterval)
+        {
+            return false;
+        }
+    }
+    else
+    {
+        // root-checking failed, sample the polynomial instead
+        const double firstValue = PolynomialValueAt(candidatePolynomial, 0);
+        const double midpointValue = PolynomialValueAt(candidatePolynomial, numberOfPixels * 0.5);
+        const double lastValue = PolynomialValueAt(candidatePolynomial, (double)(numberOfPixels - 1));
+
+        if (firstValue > lastValue || firstValue > midpointValue || midpointValue > lastValue)
+        {
+            // This is not strictly a test for monotonically increasing function, just sampling. But it's fast and that is the main point here.
+            // std::cout << "Found polynomial is not monotonically increasing, skipping" << std::endl;
+            return false;
+        }
+    }
+
+    // No problem found, seems legit.
+    return true;
+}
+
 
 inline double CalculateValueAt(const std::vector<double>& coefficients, double x)
 {
@@ -412,34 +606,6 @@ std::vector<bool> ListInliers(const std::vector<Correspondence>& selectedValues,
     return result;
 }
 
-bool FindRoots(const std::vector<double>& polynomial, std::vector<std::complex<double>>& roots)
-{
-    if (polynomial.size() <= 1)
-    {
-        roots.clear();
-        return true;
-    }
-    else if (polynomial.size() == 2)
-    {
-        roots.resize(1);
-        roots[0] = -polynomial[0] / polynomial[1];
-        return true;
-    }
-    else if (polynomial.size() == 3)
-    {
-        roots.resize(2);
-        const std::complex<double> q = polynomial[0] / polynomial[2];
-        const std::complex<double> p = 0.5 * polynomial[1] / polynomial[2];
-        roots[0] = -p + std::sqrt(p * p - q);
-        roots[1] = -p - std::sqrt(p * p - q);
-        return true;
-    }
-    else
-    {
-        return false; // unsupported order of polynomial (so far)
-    }
-}
-
 RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCalibrations(
     const std::vector<Correspondence>& possibleCorrespondences,
     const std::vector<std::vector<Correspondence>>& possibleCorrespondencesOrderedByMeasuredKeypoint,
@@ -468,62 +634,15 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCal
         SelectMaybeInliers(ransacSampleSize, possibleCorrespondences, rnd, selectedCorrespondences);
 
         // Create a new (better?) model from these selected correspondences
-        for (size_t ii = 0; ii < ransacSampleSize; ++ii)
-        {
-            selectedPixelValues[ii] = selectedCorrespondences[ii].measuredValue;
-            selectedWavelengths[ii] = selectedCorrespondences[ii].theoreticalValue;
-        }
-        if (!polyFit.FitPolynomial(selectedPixelValues, selectedWavelengths, suggestionForPolynomial))
+        if (!FitPolynomial(polyFit, selectedCorrespondences, suggestionForPolynomial))
         {
             std::cout << "Polynomial fit failed" << std::endl;
             continue;
         }
 
+        if (!IsPossiblePixelToWavelengthCalibrationPolynomial(suggestionForPolynomial, settings.detectorSize))
         {
-            // Attempt to check if the polynomial is monotonically increasing by checking that the derivative is always positive
-            //  this is done by checking that it is positive at the first value and does not change sign anywhere.
-            polynomialDerivative.resize(settings.modelPolynomialOrder);
-            for (size_t orderIdx = 1; orderIdx <= settings.modelPolynomialOrder; ++orderIdx)
-            {
-                polynomialDerivative[orderIdx - 1] = suggestionForPolynomial[orderIdx] * orderIdx;
-            }
-
-            if (PolynomialValueAt(polynomialDerivative, 0.0) < 0.0)
-            {
-                // Derivative is negative at the first point
-                continue;
-            }
-            if (FindRoots(polynomialDerivative, polynomialRoots))
-            {
-                bool hasRootInInterval = false;
-                for (const auto& root : polynomialRoots)
-                {
-                    if (root.real() > 0.0 && root.real() < settings.detectorSize)
-                    {
-                        hasRootInInterval = true;
-                        break;
-                    }
-                }
-
-                if (hasRootInInterval)
-                {
-                    continue;
-                }
-            }
-            else
-            {
-                // root-checking failed, sample the polynomial instead
-                const double firstValue = PolynomialValueAt(suggestionForPolynomial, 0);
-                const double midpointValue = PolynomialValueAt(suggestionForPolynomial, settings.detectorSize * 0.5);
-                const double lastValue = PolynomialValueAt(suggestionForPolynomial, (double)(settings.detectorSize - 1));
-
-                if (firstValue > lastValue || firstValue > midpointValue || midpointValue > lastValue)
-                {
-                    // This is not strictly a test for monotonically increasing function, just sampling. But it's fast and that is the main point here.
-                    // std::cout << "Found polynomial is not monotonically increasing, skipping" << std::endl;
-                    continue;
-                }
-            }
+            continue;
         }
 
         // Evaluate if this suggested polynomial fits better than the guess we already have by counting how many of the 
@@ -541,17 +660,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCal
         {
             if (settings.refine && numberOfInliers > settings.modelPolynomialOrder + 1)
             {
-                std::vector<double> pixelValues;
-                std::vector<double> wavelengths;
-                pixelValues.reserve(numberOfInliers);
-                wavelengths.reserve(numberOfInliers);
-                for (const auto& corr : inlierCorrespondences)
-                {
-                    pixelValues.push_back(corr.measuredValue);
-                    wavelengths.push_back(corr.theoreticalValue);
-                }
-
-                if (!polyFit.FitPolynomial(pixelValues, wavelengths, result.bestFittingModelCoefficients))
+                if (!FitPolynomial(polyFit, inlierCorrespondences, suggestionForPolynomial))
                 {
                     std::cout << "Polynomial fit failed" << std::endl;
                     continue;
@@ -559,26 +668,87 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCal
 
                 // recount the inliers
                 numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondencesOrderedByMeasuredKeypoint, settings.inlierLimitInWavelength, inlierCorrespondences, meanErrorOfModel, isMonotonicallyIncreasing);
-
-                // std::cout << "Updating model at iteration " << iteration << ", new number of inliers is: " << numberOfInliers << ", mean error: " << meanErrorOfModel << std::endl;
-
-                result.highestNumberOfInliers = numberOfInliers;
-                result.correspondenceIsInlier = ListInliers(inlierCorrespondences, possibleCorrespondences);
-                result.smallestError = meanErrorOfModel;
                 result.largestPixelSpan = MeasurePixelSpan(inlierCorrespondences);
             }
-            else
+
+            result.bestFittingModelCoefficients = std::move(suggestionForPolynomial);
+            result.highestNumberOfInliers = numberOfInliers;
+            result.correspondenceIsInlier = ListInliers(inlierCorrespondences, possibleCorrespondences);
+            result.smallestError = meanErrorOfModel;
+            result.largestPixelSpan = inlierPixelSpan;
+        }
+    }
+
+    return result;
+}
+
+RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunDeterministicCalibration(
+    const std::vector<Correspondence>& possibleCorrespondences,
+    const std::vector<std::vector<Correspondence>>& possibleCorrespondencesOrderedByMeasuredKeypoint) const
+{
+    PolynomialFit polyFit{ static_cast<int>(settings.modelPolynomialOrder) };
+
+    RansacWavelengthCalibrationResult result(settings.modelPolynomialOrder);
+    result.numberOfPossibleCorrelations = possibleCorrespondences.size();
+    result.highestNumberOfInliers = 0U;
+    result.smallestError = std::numeric_limits<double>::max();
+
+    // variables in the loop, such that we don't have to recreate them every time
+    const size_t ransacSampleSize = (settings.sampleSize > 0) ? settings.sampleSize : (settings.modelPolynomialOrder + 1);
+    std::vector<double> suggestionForPolynomial;
+    std::vector<Correspondence> selectedCorrespondences;
+
+    const auto allCorrespondenceCombinations = ListAllPossibleKeypointCombinations(ransacSampleSize, possibleCorrespondences);
+
+    for (size_t iteration = 0; iteration < allCorrespondenceCombinations.size(); ++iteration)
+    {
+        selectedCorrespondences = allCorrespondenceCombinations[iteration];
+
+        // TODO: Refactor and duplicated code in RunRansacCalibrations
+
+        // Create a new (better?) model from these selected correspondences
+        if (!FitPolynomial(polyFit, selectedCorrespondences, suggestionForPolynomial))
+        {
+            std::cout << "Polynomial fit failed" << std::endl;
+            continue;
+        }
+
+        if (!IsPossiblePixelToWavelengthCalibrationPolynomial(suggestionForPolynomial, settings.detectorSize))
+        {
+            continue;
+        }
+
+        // Evaluate if this suggested polynomial fits better than the guess we already have by counting how many of the 
+        //  possible correspondences fits with the provided model.
+        std::vector<Correspondence> inlierCorrespondences;
+        double meanErrorOfModel = 0.0;
+        bool isMonotonicallyIncreasing = true;
+        size_t numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondencesOrderedByMeasuredKeypoint, settings.inlierLimitInWavelength, inlierCorrespondences, meanErrorOfModel, isMonotonicallyIncreasing);
+        double inlierPixelSpan = MeasurePixelSpan(inlierCorrespondences);
+
+        if (iteration == 0 ||
+            (numberOfInliers > result.highestNumberOfInliers && isMonotonicallyIncreasing) ||
+            (numberOfInliers == result.highestNumberOfInliers && isMonotonicallyIncreasing && inlierPixelSpan > result.largestPixelSpan) ||
+            (numberOfInliers == result.highestNumberOfInliers && isMonotonicallyIncreasing && std::abs(inlierPixelSpan - result.largestPixelSpan) < 0.1 && meanErrorOfModel < result.smallestError))
+        {
+            if (settings.refine && numberOfInliers > settings.modelPolynomialOrder + 1)
             {
-                // std::cout << "Updating model at iteration " << iteration << ", new number of inliers is: " << numberOfInliers << std::endl;
+                if (!FitPolynomial(polyFit, inlierCorrespondences, suggestionForPolynomial))
+                {
+                    std::cout << "Polynomial fit failed" << std::endl;
+                    continue;
+                }
 
-                result.bestFittingModelCoefficients = std::move(suggestionForPolynomial);
-
-                result.highestNumberOfInliers = numberOfInliers;
-                result.correspondenceIsInlier = ListInliers(inlierCorrespondences, possibleCorrespondences);
-                result.smallestError = meanErrorOfModel;
-                result.largestPixelSpan = inlierPixelSpan;
-
+                // recount the inliers
+                numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondencesOrderedByMeasuredKeypoint, settings.inlierLimitInWavelength, inlierCorrespondences, meanErrorOfModel, isMonotonicallyIncreasing);
+                inlierPixelSpan = MeasurePixelSpan(inlierCorrespondences);
             }
+
+            result.bestFittingModelCoefficients = std::move(suggestionForPolynomial);
+            result.highestNumberOfInliers = numberOfInliers;
+            result.correspondenceIsInlier = ListInliers(inlierCorrespondences, possibleCorrespondences);
+            result.smallestError = meanErrorOfModel;
+            result.largestPixelSpan = inlierPixelSpan;
         }
     }
 
@@ -608,25 +778,34 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::DoWavelength
     const std::vector<Correspondence>& possibleCorrespondences)
 {
     const auto possibleCorrespondencesOrderedByMeasuredKeypoint = ArrangeByMeasuredKeypoint(possibleCorrespondences);
-    std::vector< RansacWavelengthCalibrationResult> partialResults;
 
-    const int numberOfThreads = (settings.numberOfThreads > 0) ? static_cast<int>(std::min(settings.numberOfThreads, OPENMP_MAX_NUMBER_OF_THREADS)) : OPENMP_DEFAULT_NUMBER_OF_THREADS;
+    if (possibleCorrespondences.size() < 5 * settings.modelPolynomialOrder)
+    {
+        // No use in random sampling, simply pick all the possible combinations.
+        return RunDeterministicCalibration(possibleCorrespondences, possibleCorrespondencesOrderedByMeasuredKeypoint);
+    }
+    else
+    {
+        std::vector< RansacWavelengthCalibrationResult> partialResults;
 
-    partialResults.resize(numberOfThreads);
-    omp_set_num_threads(numberOfThreads);
+        const int numberOfThreads = (settings.numberOfThreads > 0) ? static_cast<int>(std::min(settings.numberOfThreads, OPENMP_MAX_NUMBER_OF_THREADS)) : OPENMP_DEFAULT_NUMBER_OF_THREADS;
+
+        partialResults.resize(numberOfThreads);
+        omp_set_num_threads(numberOfThreads);
 
 #pragma omp parallel for
-    for (int threadIdx = 0; threadIdx < numberOfThreads; ++threadIdx)
-    {
-        const int numberOfIterationsInThisThread = settings.numberOfRansacIterations / numberOfThreads;
-        partialResults[threadIdx] = RunRansacCalibrations(possibleCorrespondences, possibleCorrespondencesOrderedByMeasuredKeypoint, numberOfIterationsInThisThread);
+        for (int threadIdx = 0; threadIdx < numberOfThreads; ++threadIdx)
+        {
+            const int numberOfIterationsInThisThread = settings.numberOfRansacIterations / numberOfThreads;
+            partialResults[threadIdx] = RunRansacCalibrations(possibleCorrespondences, possibleCorrespondencesOrderedByMeasuredKeypoint, numberOfIterationsInThisThread);
+        }
+
+        // Combine the results of the threads results into one final result
+        const int bestResultIdx = GetBestResult(partialResults);
+        RansacWavelengthCalibrationResult finalResult = partialResults[bestResultIdx];
+
+        return finalResult;
     }
-
-    // Combine the results of the threads results into one final result
-    const int bestResultIdx = GetBestResult(partialResults);
-    RansacWavelengthCalibrationResult finalResult = partialResults[bestResultIdx];
-
-    return finalResult;
 }
 
 }

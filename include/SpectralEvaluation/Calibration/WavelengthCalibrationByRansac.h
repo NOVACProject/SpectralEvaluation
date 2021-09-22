@@ -228,6 +228,14 @@ private:
     /// <returns>The best fitted model and the number of inliers.</returns>
     RansacWavelengthCalibrationResult RunRansacCalibrations(const std::vector<Correspondence>& possibleCorrespondences, const std::vector<std::vector<Correspondence>>& possibleCorrespondencesOrderedByMeasuredKeypoint, int numberOfIterations) const;
 
+    /// <summary>
+    /// Runs a basic calibration without random sampling, testing every possible combination.
+    //  Only possible to use if the total number of combinations is low.
+    /// </summary>
+    /// <param name="possibleCorrespondences"></param>
+    /// <returns>The best fitted model and the number of inliers.</returns>
+    RansacWavelengthCalibrationResult RunDeterministicCalibration(const std::vector<Correspondence>& possibleCorrespondences, const std::vector<std::vector<Correspondence>>& possibleCorrespondencesOrderedByMeasuredKeypoint) const;
+
 };
 
 }
