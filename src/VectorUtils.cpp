@@ -489,3 +489,14 @@ std::vector<double> GenerateVector(double minValue, double maxValue, size_t leng
     return result;
 }
 
+bool Contains(const std::vector<size_t>& data, size_t value)
+{
+    for (size_t v : data)
+    {
+        if (v == value)
+        {
+            return true;
+        }
+    }
+    return false;
+}

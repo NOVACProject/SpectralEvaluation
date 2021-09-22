@@ -484,10 +484,10 @@ void WriteExtendedData(const CSpectrum& spec, const std::string& fileName, const
     if (extendedInformation.calibrationPolynomial.size() > 0)
     {
         fprintf(f, CalibPolynomialOrderStr);
-        fprintf(f, "%lu\n", extendedInformation.calibrationPolynomial.size() - 1);
+        fprintf(f, "%lu\n", static_cast<unsigned long>(extendedInformation.calibrationPolynomial.size() - 1));
 
         fprintf(f, CalibPolynomialStr);
-        fprintf(f, "(System.Double[%lu])", extendedInformation.calibrationPolynomial.size());
+        fprintf(f, "(System.Double[%lu])", static_cast<unsigned long>(extendedInformation.calibrationPolynomial.size()));
         for (size_t ii = 0; ii < extendedInformation.calibrationPolynomial.size() - 1; ++ii)
         {
             fprintf(f, "%.9g ", extendedInformation.calibrationPolynomial[ii]);

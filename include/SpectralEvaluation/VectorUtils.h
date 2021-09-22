@@ -127,3 +127,6 @@ double Resolution(const std::vector<double>& wavelGrid);
 /** Generates a linear mapping from minValue to maxValue with 'length' values. */
 std::vector<double> GenerateVector(double minValue, double maxValue, size_t length);
 
+/** Returns true if the provided vector contains the provided value. */
+bool Contains(const std::vector<size_t>& data, size_t value);
+
