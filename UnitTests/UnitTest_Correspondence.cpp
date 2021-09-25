@@ -7,7 +7,6 @@ using namespace novac;
 TEST_CASE("Correspondence - AllMeasuredPointsAreUnique", "[Calibration][WavelengthCalibration]")
 {
     Correspondence firstMeasuredFirstTheoreticalIdx = Correspondence(0, 0, 0.0);
-    Correspondence secondMeasureFirstTheoreticaldIdx = Correspondence(1, 0, 0.0);
     Correspondence firstMeasuredSecondTheoretical = Correspondence(0, 1, 0.0);
     Correspondence secondMeasuredSecondTheoretical = Correspondence(1, 1, 0.0);
 
@@ -53,7 +52,6 @@ TEST_CASE("Correspondence - AllTheoreticalPointsAreUnique", "[Calibration][Wavel
     Correspondence firstMeasuredFirstTheoreticalIdx = Correspondence(0, 0, 0.0);
     Correspondence secondMeasureFirstTheoreticaldIdx = Correspondence(1, 0, 0.0);
     Correspondence firstMeasuredSecondTheoretical = Correspondence(0, 1, 0.0);
-    Correspondence secondMeasuredSecondTheoretical = Correspondence(1, 1, 0.0);
 
     SECTION("Returns true for empty list")
     {
@@ -345,10 +343,6 @@ TEST_CASE("Correspondence - GetMeasuredValueSpan - returns expected range", "[Ca
     // Notice that these does not contain any repetitions in measured nor theoretical index
     Correspondence firstMeasuredFirstTheoreticalIdx = Correspondence(0, 0, 0.0);
     firstMeasuredFirstTheoreticalIdx.measuredValue = 0.0;
-    Correspondence secondMeasureSecondTheoreticaldIdx = Correspondence(1, 1, 0.0);
-    secondMeasureSecondTheoreticaldIdx.measuredValue = 1.0;
-    Correspondence thirdMeasuredThirdTheoretical = Correspondence(2, 2, 0.0);
-    thirdMeasuredThirdTheoretical.measuredValue = 2.0;
     Correspondence fourthMeasuredFourthTheoretical = Correspondence(3, 3, 0.0);
     fourthMeasuredFourthTheoretical.measuredValue = 3.0;
     Correspondence fifthMeasuredFifthTheoretical = Correspondence(4, 4, 0.0);

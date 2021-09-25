@@ -1,7 +1,9 @@
 #include <SpectralEvaluation/Calibration/WavelengthCalibrationByRansac.h>
 
+#include <algorithm>
 #include <iostream>
 #include <omp.h>
+#include <memory>
 #include <random>
 #include <stdexcept>
 #include <SpectralEvaluation/Calibration/Correspondence.h>

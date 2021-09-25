@@ -2,8 +2,8 @@
 #include <SpectralEvaluation/Math/PolynomialFit.h>
 #include <SpectralEvaluation/VectorUtils.h>
 
-#include <stdexcept>
-
+#include <algorithm>
+    
 namespace novac
 {
 

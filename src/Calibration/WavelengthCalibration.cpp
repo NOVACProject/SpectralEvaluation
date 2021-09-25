@@ -539,7 +539,7 @@ void WavelengthCalibrationSetup::UpdateFraunhoferSpectrumWithApparentSensitivity
     MathFit::CCubicSplineFunction apparentSensitivitySpline(modelInput, modelOutput);
 
     // Adjust the shape of the Fraunhofer spectrum to match the measured
-    for (size_t pixelIdx = 0; pixelIdx < calibrationState.fraunhoferSpectrum->m_length; ++pixelIdx)
+    for (size_t pixelIdx = 0; pixelIdx < static_cast<size_t>(calibrationState.fraunhoferSpectrum->m_length); ++pixelIdx)
     {
         const double apparentSensitivity = apparentSensitivitySpline.GetValue((MathFit::TFitData)calibrationState.fraunhoferSpectrum->m_wavelength[pixelIdx]);
         calibrationState.fraunhoferSpectrum->m_data[pixelIdx] *= apparentSensitivity;
