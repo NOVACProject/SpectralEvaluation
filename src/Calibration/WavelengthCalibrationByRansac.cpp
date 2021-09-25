@@ -1,11 +1,8 @@
 #include <SpectralEvaluation/Calibration/WavelengthCalibrationByRansac.h>
 
-#include <algorithm>
 #include <iostream>
 #include <omp.h>
-#include <memory>
 #include <random>
-#include <complex>
 #include <stdexcept>
 #include <SpectralEvaluation/Calibration/Correspondence.h>
 #include <SpectralEvaluation/Math/PolynomialFit.h>
@@ -147,24 +144,6 @@ std::vector<novac::Correspondence> ListPossibleCorrespondences(
 // ---------------------------------- Free functions used to run the calibration ----------------------------------
 
 
-
-double PolynomialValueAt(const std::vector<double>& coefficients, double x)
-{
-    if (coefficients.size() == 1)
-    {
-        return coefficients[0];
-    }
-
-    auto it = coefficients.rbegin();
-    double result = *it;
-    ++it;
-    for (; it != coefficients.rend(); ++it)
-    {
-        result = x * result + *it;
-    }
-    return result;
-}
-
 bool FitPolynomial(novac::PolynomialFit& polyFit, const std::vector<Correspondence>& selectedCorrespondences, std::vector<double>& resultingPolynomial)
 {
     std::vector<double> selectedPixelValues(selectedCorrespondences.size());
@@ -179,33 +158,6 @@ bool FitPolynomial(novac::PolynomialFit& polyFit, const std::vector<Corresponden
     return polyFit.FitPolynomial(selectedPixelValues, selectedWavelengths, resultingPolynomial);
 }
 
-bool FindRoots(const std::vector<double>& polynomial, std::vector<std::complex<double>>& roots)
-{
-    if (polynomial.size() <= 1)
-    {
-        roots.clear();
-        return true;
-    }
-    else if (polynomial.size() == 2)
-    {
-        roots.resize(1);
-        roots[0] = -polynomial[0] / polynomial[1];
-        return true;
-    }
-    else if (polynomial.size() == 3)
-    {
-        roots.resize(2);
-        const std::complex<double> q = polynomial[0] / polynomial[2];
-        const std::complex<double> p = 0.5 * polynomial[1] / polynomial[2];
-        roots[0] = -p + std::sqrt(p * p - q);
-        roots[1] = -p - std::sqrt(p * p - q);
-        return true;
-    }
-    else
-    {
-        return false; // unsupported order of polynomial (so far)
-    }
-}
 
 /// <summary>
 /// Returns true if the provided polynomial can be a possible calibration for a spectrometer with the given detector size.
@@ -264,118 +216,6 @@ bool IsPossiblePixelToWavelengthCalibrationPolynomial(const std::vector<double>&
     return true;
 }
 
-inline double CalculateValueAt(const std::vector<double>& coefficients, double x)
-{
-    double value = coefficients.back();
-    for (size_t ii = 1; ii < coefficients.size(); ++ii)
-    {
-        value = x * value + coefficients[coefficients.size() - ii - 1];
-    }
-    return value;
-}
-
-/// <summary>
-/// Counts the number of inliers in the provided model.
-/// </summary>
-/// <param name="polynomialCoefficients"></param>
-/// <param name="possibleCorrespondences"></param>
-/// <param name="toleranceInWavelength"></param>
-/// <param name="inlier">Will on return be filled with the found inliers. inlier.size() == return value</param>
-/// <param name="averageError">Will on return be filled with an error estimate describing how well the inliers fit to the model</param>
-/// <param name="isMonotonic">Will on return be set to 'true' if the polynomial is jugded to be monotonically increasing with pixel</param>
-/// <returns>The number of inliers found</returns>
-size_t CountInliers(
-    const std::vector<double>& polynomialCoefficients,
-    const std::vector<std::vector<Correspondence>>& possibleCorrespondences,
-    double toleranceInWavelength,
-    std::vector<Correspondence>& inlier,
-    double& averageError,
-    bool& isMonotonic)
-{
-    // Order the correspondences by the measured keypoint they belong to and only select one correspondence per keypoint
-    averageError = 0.0;
-    inlier.clear();
-    inlier.reserve(100); // guess for the upper bound
-    std::vector<double> distances;
-    distances.reserve(100); // guess for the upper bound.
-    std::vector<std::pair<double, double>> pixelToWavelengthMappings; // the mapping evaluated at the measured keypoints
-    pixelToWavelengthMappings.resize(possibleCorrespondences.size());
-
-    for (size_t measuredKeypointIdx = 0; measuredKeypointIdx < possibleCorrespondences.size(); ++measuredKeypointIdx)
-    {
-        if (possibleCorrespondences[measuredKeypointIdx].size() == 0)
-        {
-            continue;
-        }
-
-        // These correspondeces all have the same measured value, use that to only calculate the wavelength value once
-        const double pixelValue = possibleCorrespondences[measuredKeypointIdx][0].measuredValue;
-        const double predictedWavelength = CalculateValueAt(polynomialCoefficients, pixelValue);
-        pixelToWavelengthMappings[measuredKeypointIdx].first = pixelValue;
-        pixelToWavelengthMappings[measuredKeypointIdx].second = predictedWavelength;
-
-        // Find the best possible correspondence for this measured keypoint.
-        Correspondence bestcorrespondence;
-        double smallestDistance = std::numeric_limits<double>::max();
-        for (const Correspondence& corr : possibleCorrespondences[measuredKeypointIdx])
-        {
-            // Calculate the distance, in nm air, between the wavelength of this keypoint in the fraunhofer spectrum and the predicted wavelength of the measured keypoint
-            const double wavelength = corr.theoreticalValue;
-            const double distance = std::abs(predictedWavelength - wavelength); // in nm air
-
-            if (distance < toleranceInWavelength && distance < smallestDistance)
-            {
-                bestcorrespondence = corr;
-                smallestDistance = distance;
-            }
-        }
-
-        if (smallestDistance < toleranceInWavelength)
-        {
-            // There are correspondences with the same theoreticalIdx in the incoming list
-            //  but the selected inliers must be unique wrt both the measuredIdx and theoreticalIdx.
-            //  Hence, check if we have already inserted a correspondence with this same theoreticalIdx in the result list.
-            const int idxOfDuplicateEntry = FindCorrespondenceWithTheoreticalIdx(inlier, bestcorrespondence.theoreticalIdx);
-
-            if (idxOfDuplicateEntry < 0)
-            {
-                // unique
-                inlier.push_back(bestcorrespondence);
-                distances.push_back(smallestDistance);
-                averageError += smallestDistance;
-            }
-            else
-            {
-                // this theoreticalIdx already exists, compare the distances and keep the entry with the lowest distance
-                if (smallestDistance < distances[idxOfDuplicateEntry])
-                {
-                    // Replace the existing entry with this
-                    distances[idxOfDuplicateEntry] = smallestDistance;
-                    inlier[idxOfDuplicateEntry] = bestcorrespondence;
-                }
-                // else, do nothing...
-            }
-        }
-    }
-
-    averageError /= (double)inlier.size();
-
-    // Determine if the mapping is monotonically increasing
-    std::sort(begin(pixelToWavelengthMappings), end(pixelToWavelengthMappings), [](const std::pair<double, double>& a, const std::pair<double, double>& b) { return a.first < b.first; });
-    isMonotonic = true;
-    for (size_t ii = 1; ii < pixelToWavelengthMappings.size(); ++ii)
-    {
-        if (pixelToWavelengthMappings[ii].second < pixelToWavelengthMappings[ii - 1].second)
-        {
-            isMonotonic = false;
-            break;
-        }
-    }
-
-    return inlier.size();
-}
-
-
 // ---------------------------------- RansacWavelengthCalibrationSetup ----------------------------------
 RansacWavelengthCalibrationSetup::RansacWavelengthCalibrationSetup(RansacWavelengthCalibrationSettings calibrationSettings) :
     settings(calibrationSettings)
@@ -427,7 +267,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCal
         double meanErrorOfModel = 0.0;
         bool isMonotonicallyIncreasing = true;
         size_t numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondencesOrderedByMeasuredKeypoint, settings.inlierLimitInWavelength, inlierCorrespondences, meanErrorOfModel, isMonotonicallyIncreasing);
-        const double inlierPixelSpan = MeasurePixelSpan(inlierCorrespondences);
+        const double inlierPixelSpan = GetMeasuredValueSpan(inlierCorrespondences);
 
         if (iteration == 0 ||
             (numberOfInliers > result.highestNumberOfInliers && isMonotonicallyIncreasing) ||
@@ -444,7 +284,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunRansacCal
 
                 // recount the inliers
                 numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondencesOrderedByMeasuredKeypoint, settings.inlierLimitInWavelength, inlierCorrespondences, meanErrorOfModel, isMonotonicallyIncreasing);
-                result.largestPixelSpan = MeasurePixelSpan(inlierCorrespondences);
+                result.largestPixelSpan = GetMeasuredValueSpan(inlierCorrespondences);
             }
 
             result.bestFittingModelCoefficients = std::move(suggestionForPolynomial);
@@ -500,7 +340,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunDetermini
         double meanErrorOfModel = 0.0;
         bool isMonotonicallyIncreasing = true;
         size_t numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondencesOrderedByMeasuredKeypoint, settings.inlierLimitInWavelength, inlierCorrespondences, meanErrorOfModel, isMonotonicallyIncreasing);
-        double inlierPixelSpan = MeasurePixelSpan(inlierCorrespondences);
+        double inlierPixelSpan = GetMeasuredValueSpan(inlierCorrespondences);
 
         if (iteration == 0 ||
             (numberOfInliers > result.highestNumberOfInliers && isMonotonicallyIncreasing) ||
@@ -517,7 +357,7 @@ RansacWavelengthCalibrationResult RansacWavelengthCalibrationSetup::RunDetermini
 
                 // recount the inliers
                 numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondencesOrderedByMeasuredKeypoint, settings.inlierLimitInWavelength, inlierCorrespondences, meanErrorOfModel, isMonotonicallyIncreasing);
-                inlierPixelSpan = MeasurePixelSpan(inlierCorrespondences);
+                inlierPixelSpan = GetMeasuredValueSpan(inlierCorrespondences);
             }
 
             result.bestFittingModelCoefficients = std::move(suggestionForPolynomial);

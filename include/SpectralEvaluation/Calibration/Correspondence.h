@@ -52,10 +52,12 @@ struct Correspondence
     double error = 0.0;
 };
 
-/** Returns true if the provided set of correspondences all have unique measuredIdx */
+/** Returns true if the provided set of correspondences all have unique measuredIdx.
+    Also returns true for empty lists. */
 bool AllMeasuredPointsAreUnique(const std::vector<Correspondence>& correspondences);
 
-/** Returns true if the provided set of correspondences all have unique theoreticalIdx */
+/** Returns true if the provided set of correspondences all have unique theoreticalIdx
+    Also returns true for empty lists. */
 bool AllTheoreticalPointsAreUnique(const std::vector<Correspondence>& correspondences);
 
 /** Lists all possible combinations of the provided vector of Correspondences such that
@@ -72,17 +74,39 @@ void SelectMaybeInliers(size_t number, const std::vector<Correspondence>& allCor
     Returns -1 if no such Correspondence can be found. */
 int FindCorrespondenceWithTheoreticalIdx(const std::vector<Correspondence>& allEntries, size_t theoreticalIdxOfEntryToFind);
 
-/** Calculates and returns the measured pixel-distance between the correspondence with the smallest 
-    measuredIdx and the correspondence with the largest measuredIdx. */
-double MeasurePixelSpan(const std::vector<Correspondence>& correspondences);
+/** Calculates and returns the measured pixel-distance between the correspondence with the smallest
+    measuredValue and the correspondence with the largest measuredValue. */
+double GetMeasuredValueSpan(const std::vector<Correspondence>& correspondences);
 
-/** Sorts the provided set of correspondences into a vector where the element at position 'N' lists 
+/** Sorts the provided set of correspondences into a vector where the element at position 'N' lists
     all the correspondences for the measured keypoint 'N' */
 std::vector<std::vector<Correspondence>> ArrangeByMeasuredKeypoint(const std::vector<Correspondence>& allCorrespondences);
 
 /** Returns a vector of equal length to 'selectedValues' where element ii is true if the correspondence selectedValues[ii]
     is present in allValues */
 std::vector<bool> ListInliers(const std::vector<Correspondence>& selectedValues, const std::vector<Correspondence>& allValues);
+
+/** Counts the number of the provided correspondences which fits the provided pixel-to-wavelength model.
+*   Method:
+*       1) The 'measuredValue' is taken to be the pixel-location for each correspondence,
+*       2) The model is used to calculate a wavelength value for this 'measuredValue'
+*       3) This calculated value is compared to the 'theoreticalValue' of the same correspondence.
+*       4) If this difference is smaller thant the provided 'toleranceInWavelength' then the correspondence is an inlier otherwise not.
+*   @param polynomialCoefficientsOfModel the polynomial coefficients of the model (stored with the 0th order coefficient first).
+*   @allCorrespondencesOrderedByMeasuredKeypoint all the available correspondences to select from, must be arranged by the measured keypoint,
+*       (i.e. is the output from ArrangeByMeasuredKeypoint).
+*   @toleranceInWavelength The tolerance
+*   @inlier Will on return be filled with the found inliers. inlier.size() == return value.
+*   @param averageError Will on return be filled with an error estimate describing how well the inliers fit to the model.
+*   @param isMonotonic Will on return be set to 'true' if the polynomial is jugded to be monotonically increasing with pixel
+*   @return The number of inliers found */
+size_t CountInliers(
+    const std::vector<double>& polynomialCoefficientsOfModel,
+    const std::vector<std::vector<Correspondence>>& allCorrespondencesOrderedByMeasuredKeypoint,
+    double toleranceInWavelength,
+    std::vector<Correspondence>& inlier,
+    double& averageError,
+    bool& isMonotonic);
 
 
 }

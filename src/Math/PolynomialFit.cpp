@@ -189,6 +189,10 @@ bool PolynomialFit::FitCubicPolynomial(std::vector<double>& xData, std::vector<d
 
 bool PolynomialFit::FitPolynomial(std::vector<double>& xData, std::vector<double>& yData, std::vector<double>& polynomialCoefficients)
 {
+    if (xData.size() == 0)
+    {
+        return false;
+    }
     if (xData.size() != yData.size())
     {
         return false;
@@ -234,6 +238,45 @@ bool PolynomialFit::FitPolynomial(std::vector<double>& xData, std::vector<double
         std::cout << "Fit failed: " << e.mMessage << std::endl;
 
         return false;
+    }
+}
+
+double PolynomialValueAt(const std::vector<double>& coefficients, double x)
+{
+    double value = coefficients.back();
+    for (size_t ii = 1; ii < coefficients.size(); ++ii)
+    {
+        value = x * value + coefficients[coefficients.size() - ii - 1];
+    }
+    return value;
+}
+
+
+bool FindRoots(const std::vector<double>& polynomial, std::vector<std::complex<double>>& roots)
+{
+    if (polynomial.size() <= 1)
+    {
+        roots.clear();
+        return true;
+    }
+    else if (polynomial.size() == 2)
+    {
+        roots.resize(1);
+        roots[0] = -polynomial[0] / polynomial[1];
+        return true;
+    }
+    else if (polynomial.size() == 3)
+    {
+        roots.resize(2);
+        const std::complex<double> q = polynomial[0] / polynomial[2];
+        const std::complex<double> p = 0.5 * polynomial[1] / polynomial[2];
+        roots[0] = -p + std::sqrt(p * p - q);
+        roots[1] = -p - std::sqrt(p * p - q);
+        return true;
+    }
+    else
+    {
+        return false; // unsupported order of polynomial (so far)
     }
 }
 

@@ -1,4 +1,5 @@
 #include <SpectralEvaluation/Calibration/Correspondence.h>
+#include <SpectralEvaluation/Math/PolynomialFit.h>
 #include <SpectralEvaluation/VectorUtils.h>
 
 #include <stdexcept>
@@ -6,7 +7,6 @@
 namespace novac
 {
 
-// TODO: Unit-test these mehtods somewhere
 bool AllMeasuredPointsAreUnique(const std::vector<Correspondence>& correspondences)
 {
     if (correspondences.size() == 0)
@@ -156,7 +156,7 @@ int FindCorrespondenceWithTheoreticalIdx(const std::vector<Correspondence>& allE
     return -1; // not found
 }
 
-double MeasurePixelSpan(const std::vector<Correspondence>& correspondences)
+double GetMeasuredValueSpan(const std::vector<Correspondence>& correspondences)
 {
     if (correspondences.size() == 0)
     {
@@ -209,6 +209,97 @@ std::vector<bool> ListInliers(const std::vector<Correspondence>& selectedValues,
     }
 
     return result;
+}
+
+size_t CountInliers(
+    const std::vector<double>& polynomialCoefficients,
+    const std::vector<std::vector<Correspondence>>& possibleCorrespondences,
+    double toleranceInWavelength,
+    std::vector<Correspondence>& inlier,
+    double& averageError,
+    bool& isMonotonic)
+{
+    // Order the correspondences by the measured keypoint they belong to and only select one correspondence per keypoint
+    averageError = 0.0;
+    inlier.clear();
+    inlier.reserve(100); // guess for the upper bound
+    std::vector<double> distances;
+    distances.reserve(100); // guess for the upper bound.
+    std::vector<std::pair<double, double>> pixelToWavelengthMappings; // the mapping evaluated at the measured keypoints
+    pixelToWavelengthMappings.resize(possibleCorrespondences.size());
+
+    for (size_t measuredKeypointIdx = 0; measuredKeypointIdx < possibleCorrespondences.size(); ++measuredKeypointIdx)
+    {
+        if (possibleCorrespondences[measuredKeypointIdx].size() == 0)
+        {
+            continue;
+        }
+
+        // These correspondeces all have the same measured value, use that to only calculate the wavelength value once
+        const double pixelValue = possibleCorrespondences[measuredKeypointIdx][0].measuredValue;
+        const double predictedWavelength = PolynomialValueAt(polynomialCoefficients, pixelValue);
+        pixelToWavelengthMappings[measuredKeypointIdx].first = pixelValue;
+        pixelToWavelengthMappings[measuredKeypointIdx].second = predictedWavelength;
+
+        // Find the best possible correspondence for this measured keypoint.
+        Correspondence bestcorrespondence;
+        double smallestDistance = std::numeric_limits<double>::max();
+        for (const Correspondence& corr : possibleCorrespondences[measuredKeypointIdx])
+        {
+            // Calculate the distance, in nm air, between the wavelength of this keypoint in the fraunhofer spectrum and the predicted wavelength of the measured keypoint
+            const double wavelength = corr.theoreticalValue;
+            const double distance = std::abs(predictedWavelength - wavelength); // in nm air
+
+            if (distance < toleranceInWavelength && distance < smallestDistance)
+            {
+                bestcorrespondence = corr;
+                smallestDistance = distance;
+            }
+        }
+
+        if (smallestDistance < toleranceInWavelength)
+        {
+            // There are correspondences with the same theoreticalIdx in the incoming list
+            //  but the selected inliers must be unique wrt both the measuredIdx and theoreticalIdx.
+            //  Hence, check if we have already inserted a correspondence with this same theoreticalIdx in the result list.
+            const int idxOfDuplicateEntry = FindCorrespondenceWithTheoreticalIdx(inlier, bestcorrespondence.theoreticalIdx);
+
+            if (idxOfDuplicateEntry < 0)
+            {
+                // unique
+                inlier.push_back(bestcorrespondence);
+                distances.push_back(smallestDistance);
+                averageError += smallestDistance;
+            }
+            else
+            {
+                // this theoreticalIdx already exists, compare the distances and keep the entry with the lowest distance
+                if (smallestDistance < distances[idxOfDuplicateEntry])
+                {
+                    // Replace the existing entry with this
+                    distances[idxOfDuplicateEntry] = smallestDistance;
+                    inlier[idxOfDuplicateEntry] = bestcorrespondence;
+                }
+                // else, do nothing...
+            }
+        }
+    }
+
+    averageError /= (double)inlier.size();
+
+    // Determine if the mapping is monotonically increasing
+    std::sort(begin(pixelToWavelengthMappings), end(pixelToWavelengthMappings), [](const std::pair<double, double>& a, const std::pair<double, double>& b) { return a.first < b.first; });
+    isMonotonic = true;
+    for (size_t ii = 1; ii < pixelToWavelengthMappings.size(); ++ii)
+    {
+        if (pixelToWavelengthMappings[ii].second < pixelToWavelengthMappings[ii - 1].second)
+        {
+            isMonotonic = false;
+            break;
+        }
+    }
+
+    return inlier.size();
 }
 
 
