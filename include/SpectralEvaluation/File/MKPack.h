@@ -54,7 +54,6 @@ namespace novac
     {
     public:
         MKPack();
-        ~MKPack();
 
         /** Compress the given input-buffer to the given output-buffer
             @param in - the uncompressed spectral data
@@ -79,7 +78,7 @@ namespace novac
 
         void PackSeg(std::uint8_t *utpek, long *kvar);
 
-        long m_bitnr;
-        long *m_strt;
+        long m_bitnr = 0;
+        long *m_strt = nullptr;
     };
 }

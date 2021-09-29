@@ -1,11 +1,9 @@
 #include <SpectralEvaluation/File/SpectrumIO.h>
+#include <SpectralEvaluation/File/MKPack.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 #include <SpectralEvaluation/StringUtils.h>
-
-#include <algorithm>
 #include <cstring>
-#include <vector>
 
 
 #ifdef _MSC_VER
@@ -17,18 +15,21 @@
 
 namespace novac
 {
-CSpectrumIO::CSpectrumIO(void)
+CSpectrumIO::CSpectrumIO()
 {
     this->m_lastError = ERROR_NO_ERROR;
+    this->m_buffer.resize(16384);
+    this->m_outbuf.resize(16384);
 }
 
-int CSpectrumIO::CountSpectra(const std::string& fileName) {
+int CSpectrumIO::CountSpectra(const std::string& fileName)
+{
     std::uint32_t specNum = 0;
-    int headerSize;
 
     FILE* f = fopen(fileName.c_str(), "rb");
 
-    if (f == NULL) {
+    if (f == nullptr)
+    {
         printf("Could not open spectrum file: %s\n", fileName.c_str());
         m_lastError = ERROR_COULD_NOT_OPEN_FILE;
         return(1);
@@ -36,33 +37,45 @@ int CSpectrumIO::CountSpectra(const std::string& fileName) {
 
     while (1)
     {
-        int ret = ReadNextSpectrumHeader(f, headerSize);
+        int headerSize;
+        struct MKZYhdr MKZY;
+        int ret = ReadNextSpectrumHeader(f, MKZY, headerSize);
         if (ret == 1)
+        {
             break;
+        }
         if (ret == 2)
+        {
             continue;
-
-        char textBuffer[4];
+        }
 
         // Seek our way into the next spectrum...
         if (0 != fseek(f, std::min(MKZY.size, (std::uint16_t)(4 * MAX_SPECTRUM_LENGTH)), SEEK_CUR))
+        {
             break;
+        }
 
         // Make sure we're at the right place, if not rewind again and search for the next
         // occurence of the "MKZY" string, which signals the start of a 'new' spectrum.
+        char textBuffer[4];
         fread(textBuffer, 1, 4, f);
-        if (NULL == strstr(textBuffer, "MKZY")) {
+        if (nullptr == strstr(textBuffer, "MKZY"))
+        {
             // rewind
             if (0 != fseek(f, -std::min(MKZY.size, (std::uint16_t)(4 * MAX_SPECTRUM_LENGTH)), SEEK_CUR))
+            {
                 break;
+            }
         }
-        else {
+        else
+        {
             if (0 != fseek(f, -4, SEEK_CUR))
+            {
                 break;
+            }
         }
 
         ++specNum;
-        continue;
     }
 
     // signals that there's no error in the file.
@@ -89,11 +102,17 @@ std::uint32_t CSpectrumIO::ScanSpectrumFile(const std::string& fileName, const s
     while (1)
     {
         int headerSize;
-        int ret = ReadNextSpectrumHeader(f, headerSize);
+        struct MKZYhdr MKZY;
+        int ret = ReadNextSpectrumHeader(f, MKZY, headerSize);
+
         if (ret == 1)
+        {
             break;
+        }
         if (ret == 2)
+        {
             continue;
+        }
 
         /** Look in the buffer */
         // 1. Clean the spectrum name from special characters...
@@ -126,18 +145,22 @@ std::uint32_t CSpectrumIO::ScanSpectrumFile(const std::string& fileName, const s
         // Make sure we're at the right place, if not rewind again and search for the next
         // occurence of the "MKZY" string, which signals the start of a 'new' spectrum.
         fread(textBuffer, 1, 4, f);
-        if (NULL == strstr(textBuffer, "MKZY")) {
+        if (nullptr == strstr(textBuffer, "MKZY")) {
             // rewind
             if (0 != fseek(f, -std::min(MKZY.size, (std::uint16_t)(4 * MAX_SPECTRUM_LENGTH)), SEEK_CUR))
+            {
                 break;
+            }
         }
-        else {
+        else
+        {
             if (0 != fseek(f, -4, SEEK_CUR))
+            {
                 break;
+            }
         }
 
         ++specNum;
-        continue;
     }
 
     // signals that there's no error in the file.
@@ -148,21 +171,14 @@ std::uint32_t CSpectrumIO::ScanSpectrumFile(const std::string& fileName, const s
     return specNum;
 }
 
-bool CSpectrumIO::ReadSpectrum(const std::string& fileName, const int spectrumNumber, CSpectrum& spec, char* headerBuffer /* = NULL*/, int headerBufferSize /* = 0*/, int* headerSize /* = NULL*/) {
-    MKPack mkPack;
+bool CSpectrumIO::ReadSpectrum(const std::string& fileName, const int spectrumNumber, CSpectrum& spec, char* headerBuffer /* = nullptr*/, int headerBufferSize /* = 0*/, int* headerSize /* = nullptr*/)
+{
+    long currentSpectrumNumber = 0;
 
-    long i, j;
-    long outlen;
-    std::uint32_t chk;
-    std::uint16_t checksum;
-    int hdrSize;
-
-    std::uint16_t* p = NULL;
-
-    i = 0;
     FILE* f = fopen(fileName.c_str(), "rb");
 
-    if (f == NULL) {
+    if (f == nullptr)
+    {
         printf("Could not open spectrum file: %s\n", fileName.c_str());
         m_lastError = ERROR_COULD_NOT_OPEN_FILE;
         return false;
@@ -171,51 +187,72 @@ bool CSpectrumIO::ReadSpectrum(const std::string& fileName, const int spectrumNu
     while (1)
     {
         int ret;
-        if (headerBuffer != NULL)
-            ret = ReadNextSpectrumHeader(f, *headerSize, &spec, headerBuffer, headerBufferSize);
+        struct MKZYhdr MKZY;
+        if (headerBuffer != nullptr)
+        {
+            ret = ReadNextSpectrumHeader(f, MKZY, *headerSize, &spec, headerBuffer, headerBufferSize);
+        }
         else
-            ret = ReadNextSpectrumHeader(f, hdrSize, &spec);
+        {
+            int hdrSize;
+            ret = ReadNextSpectrumHeader(f, MKZY, hdrSize, &spec);
+        }
         if (ret == 1)
+        {
             break;
+        }
         if (ret == 2)
+        {
             continue;
+        }
 
-        if (i != spectrumNumber) {
+        if (currentSpectrumNumber != spectrumNumber)
+        {
             char textBuffer[4];
 
             // Seek our way into the next spectrum...
             if (0 != fseek(f, std::min(MKZY.size, (std::uint16_t)(4 * MAX_SPECTRUM_LENGTH)), SEEK_CUR))
+            {
                 break;
+            }
 
             // Make sure we're at the right place, if not rewind again and search for the next
             // occurence of the "MKZY" string, which signals the start of a 'new' spectrum.
             if (fread(textBuffer, 1, 4, f) < 4)
+            {
                 break;
-            if (NULL == strstr(textBuffer, "MKZY")) {
+            }
+            if (nullptr == strstr(textBuffer, "MKZY"))
+            {
                 // rewind
                 if (0 != fseek(f, -std::min(MKZY.size, (std::uint16_t)(4 * MAX_SPECTRUM_LENGTH)), SEEK_CUR))
+                {
                     break;
+                }
             }
-            else {
+            else
+            {
                 if (0 != fseek(f, -4, SEEK_CUR))
+                {
                     break;
+                }
             }
 
-            ++i;
+            ++currentSpectrumNumber;
             continue;
         }
         else
         {
             // read the spectrum from the file
-
-            if (MKZY.size > sizeof(buffer)) {
+            if (MKZY.size > m_buffer.size())
+            {
                 // compressed data is too long. We cannot read the full spectrum.
                 m_lastError = ERROR_SPECTRUM_TOO_LARGE;
                 fclose(f);
                 return false;
             }
 
-            if (fread(buffer, 1, MKZY.size, f) < MKZY.size) //read compressed info
+            if (fread(m_buffer.data(), 1, MKZY.size, f) < MKZY.size) //read compressed info
             {
                 printf("Error EOF! in %s\n", fileName.c_str());
                 fclose(f);
@@ -223,7 +260,8 @@ bool CSpectrumIO::ReadSpectrum(const std::string& fileName, const int spectrumNu
                 return false;
             }
 
-            if (MKZY.pixels > sizeof(outbuf) * sizeof(long)) {
+            if (MKZY.pixels > m_buffer.size())
+            {
                 // The spectrum is longer than what the buffer can handle. Trying to
                 // uncompress the whole spectrum will result in a buffer overflow.
                 // this spectrum cannot be read - return.
@@ -232,32 +270,37 @@ bool CSpectrumIO::ReadSpectrum(const std::string& fileName, const int spectrumNu
                 return false;
             }
 
-            outlen = mkPack.UnPack(buffer, MKZY.pixels, outbuf); //uncompress info(compressed buffer,num of sampling points, uncompressedinfo)
+            MKPack mkPack;
+            const long outlen = mkPack.UnPack(m_buffer.data(), MKZY.pixels, m_outbuf.data()); //uncompress info(compressed buffer,num of sampling points, uncompressedinfo)
 
             // validate that the decompression was ok - Added 2006.02.13 by MJ
-            if (outlen < 0) {
+            if (outlen < 0)
+            {
                 m_lastError = ERROR_DECOMPRESS;
                 fclose(f);
                 return false;
             }
 
             // validate that the spectrum is not too large - Added 2006.02.13 by MJ
-            if (outlen > MAX_SPECTRUM_LENGTH) {
+            if (outlen > MAX_SPECTRUM_LENGTH)
+            {
                 m_lastError = ERROR_SPECTRUM_TOO_LARGE;
                 fclose(f);
                 return false;
             }
 
             // calculate the checksum
-            chk = 0;
-            for (j = 0; j < outlen && j < MAX_SPECTRUM_LENGTH; j++)
+            std::uint32_t chk = 0;
+            for (long j = 0; j < outlen && j < MAX_SPECTRUM_LENGTH; j++)
             {
-                chk += outbuf[j];
-                spec.m_data[j] = outbuf[j];
+                chk += m_outbuf[j];
+                spec.m_data[j] = m_outbuf[j];
             }
-            p = (std::uint16_t*)&chk;
-            checksum = p[0] + p[1];
-            if (checksum != MKZY.checksum) {
+            const std::uint16_t* p = (std::uint16_t*)&chk;
+            const std::uint16_t checksum = p[0] + p[1];
+
+            if (checksum != MKZY.checksum)
+            {
                 printf("Checksum mismatch %04x!=x%04x\n", checksum, MKZY.checksum);
 
                 m_lastError = ERROR_CHECKSUM_MISMATCH;
@@ -266,7 +309,8 @@ bool CSpectrumIO::ReadSpectrum(const std::string& fileName, const int spectrumNu
             }
 
             // Get the maximum intensity
-            if (MKZY.pixels > 0) {
+            if (MKZY.pixels > 0)
+            {
                 spec.m_info.m_peakIntensity = (float)spec.MaxValue();
                 spec.m_info.m_offset = (float)spec.GetOffset();
             }
@@ -276,23 +320,21 @@ bool CSpectrumIO::ReadSpectrum(const std::string& fileName, const int spectrumNu
             return true;
         }
     }
-    multisize = i;
     fclose(f);
 
     this->m_lastError = ERROR_SPECTRUM_NOT_FOUND;
     return false; // spectrum not found
 }
 
-/** Rewinds the gien file to the beginning and forwards the current position
-        in the file to the beginning of spectrum number 'spectrumNumber' (zero-based index).
-        Return true if all is ok, return false if the file is corrupt in some
-            way or the spectrum number 'spectrumNumber' does not exist in this file. */
-bool CSpectrumIO::FindSpectrumNumber(FILE* f, int spectrumNumber) {
+bool CSpectrumIO::FindSpectrumNumber(FILE* f, int spectrumNumber)
+{
     std::string errorMessage; // a string used for error messages
     long curSpecNum = 0;
 
-    if (f == NULL)
+    if (f == nullptr)
+    {
         return false;
+    }
 
     // first rewind the file
     rewind(f);
@@ -302,9 +344,12 @@ bool CSpectrumIO::FindSpectrumNumber(FILE* f, int spectrumNumber) {
         int c;
 
         // find the next 'MKZY' - string in the spectrum file
-        while ((c = getc(f)) != (int)'M') {
+        while ((c = getc(f)) != (int)'M')
+        {
             if (c == EOF)
+            {
                 return false;
+            }
         }
 
         if (getc(f) != (int)'K')
@@ -331,38 +376,32 @@ bool CSpectrumIO::FindSpectrumNumber(FILE* f, int spectrumNumber) {
     return true;
 }
 
-bool CSpectrumIO::ReadNextSpectrum(FILE* f, CSpectrum& spec) {
+bool CSpectrumIO::ReadNextSpectrum(FILE* f, CSpectrum& spec)
+{
     int tmp;
     return ReadNextSpectrum(f, spec, tmp);
 }
 
-/** Reads the next spectrum in the provided spectrum file.
-        The spectrum file (which must be in the .pak format) must be opened for reading
-        in binary mode
-    @param f - The opened spectrum file.
-    @param spec - Will on successful return contain the desired spectrum.
-    @return true if all is ok. */
-bool CSpectrumIO::ReadNextSpectrum(FILE* f, CSpectrum& spec, int& headerSize, char* headerBuffer, int headerBufferSize) {
-    long outlen;
-    long j;
-    std::uint32_t chk;
-    std::uint16_t checksum;
-    MKPack mkPack;
+bool CSpectrumIO::ReadNextSpectrum(FILE* f, CSpectrum& spec, int& headerSize, char* headerBuffer, int headerBufferSize)
+{
+    std::uint16_t* p = nullptr;
 
-    std::uint16_t* p = NULL;
-
-    int ret = ReadNextSpectrumHeader(f, headerSize, &spec, headerBuffer, headerBufferSize);
+    struct MKZYhdr MKZY;
+    int ret = ReadNextSpectrumHeader(f, MKZY, headerSize, &spec, headerBuffer, headerBufferSize);
     if (ret != 0)
+    {
         return false;
+    }
 
     // read the spectrum from the file
-    if (MKZY.size > sizeof(buffer)) {
+    if (MKZY.size > m_buffer.size())
+    {
         // compressed data is too long. We cannot read the full spectrum.
         this->m_lastError = ERROR_SPECTRUM_TOO_LARGE;
         return false;
     }
 
-    if (fread(buffer, 1, MKZY.size, f) < MKZY.size) //read compressed info
+    if (fread(m_buffer.data(), 1, MKZY.size, f) < MKZY.size) //read compressed info
     {
         printf("Error EOF! in pak-file\n");
 
@@ -370,7 +409,8 @@ bool CSpectrumIO::ReadNextSpectrum(FILE* f, CSpectrum& spec, int& headerSize, ch
         return false;
     }
 
-    if (MKZY.pixels > sizeof(outbuf) * sizeof(long)) {
+    if (MKZY.pixels > m_outbuf.size())
+    {
         // The spectrum is longer than what the buffer can handle. Trying to
         // uncompress the whole spectrum will result in a buffer overflow.
         // this spectrum cannot be read - return.
@@ -385,28 +425,33 @@ bool CSpectrumIO::ReadNextSpectrum(FILE* f, CSpectrum& spec, int& headerSize, ch
     spec.m_info.m_name = std::string(MKZY.name);
 
     // Decompress the spectrum itself
-    outlen = mkPack.UnPack(buffer, MKZY.pixels, outbuf); //uncompress info(compressed buffer,num of sampling points, uncompressedinfo)
+    MKPack mkPack;
+    const long outlen = mkPack.UnPack(m_buffer.data(), MKZY.pixels, m_outbuf.data()); //uncompress info(compressed buffer,num of sampling points, uncompressedinfo)
 
     // validate that the decompression was ok - Added 2006.02.13 by MJ
-    if (outlen < 0) {
+    if (outlen < 0)
+    {
         this->m_lastError = ERROR_DECOMPRESS;
         return false;
     }
     // validate that the spectrum is not too large - Added 2006.02.13 by MJ
-    if (outlen > MAX_SPECTRUM_LENGTH) {
+    if (outlen > MAX_SPECTRUM_LENGTH)
+    {
         this->m_lastError = ERROR_SPECTRUM_TOO_LARGE;
         return false;
     }
 
     // calculate the checksum
-    chk = 0;
-    for (j = 0; j < outlen && j < MAX_SPECTRUM_LENGTH; j++)
+    std::uint32_t chk = 0;
+    for (long j = 0; j < outlen && j < MAX_SPECTRUM_LENGTH; j++)
     {
-        chk += outbuf[j];
+        chk += m_outbuf[j];
     }
     p = (std::uint16_t*)&chk;
-    checksum = p[0] + p[1];
-    if (checksum != MKZY.checksum) {
+
+    const std::uint16_t checksum = p[0] + p[1];
+    if (checksum != MKZY.checksum)
+    {
         printf("Checksum mismatch %04x!=x%04x\n", checksum, MKZY.checksum);
 
         this->m_lastError = ERROR_CHECKSUM_MISMATCH;
@@ -414,12 +459,14 @@ bool CSpectrumIO::ReadNextSpectrum(FILE* f, CSpectrum& spec, int& headerSize, ch
     }
 
     // copy the spectrum
-    for (j = 0; j < outlen && j < MAX_SPECTRUM_LENGTH; j++)
-        spec.m_data[j] = outbuf[j];
-
+    for (long j = 0; j < outlen && j < MAX_SPECTRUM_LENGTH; j++)
+    {
+        spec.m_data[j] = m_outbuf[j];
+    }
 
     // Get the maximum intensity
-    if (MKZY.pixels > 0) {
+    if (MKZY.pixels > 0)
+    {
         spec.m_info.m_peakIntensity = (float)spec.MaxValue();
         spec.m_info.m_offset = (float)spec.GetOffset();
     }
@@ -427,7 +474,8 @@ bool CSpectrumIO::ReadNextSpectrum(FILE* f, CSpectrum& spec, int& headerSize, ch
     return true;
 }
 
-void CSpectrumIO::ParseTime(const std::uint32_t t, CDateTime& time) const {
+void CSpectrumIO::ParseTime(const std::uint32_t t, CDateTime& time) const
+{
     time.hour = (unsigned char)(t / 1000000);
     time.minute = (unsigned char)((t - time.hour * 1000000) / 10000);
     time.second = (unsigned char)((t - time.hour * 1000000 - time.minute * 10000) / 100);
@@ -457,13 +505,6 @@ void CSpectrumIO::WriteDate(std::uint32_t& d, const CDateTime& day) const {
 
 int CSpectrumIO::AddSpectrumToFile(const std::string& fileName, const CSpectrum& spectrum, const char* headerBuffer, int headerSize, bool overwrite)
 {
-    long last, tmp;
-    int i;
-    std::uint16_t outsiz;
-    std::uint32_t checksum;
-    std::uint16_t* p;
-    MKPack mkPack;
-
     // Test the input-data
     if (spectrum.m_length <= 0)
     {
@@ -472,29 +513,30 @@ int CSpectrumIO::AddSpectrumToFile(const std::string& fileName, const CSpectrum&
 
     // ---- start by converting the spectrum into 'long'
     std::vector<long> spec(spectrum.m_length);
-    for (i = 0; i < spectrum.m_length; ++i)
+    for (long i = 0; i < spectrum.m_length; ++i)
     {
         spec[i] = (long)spectrum.m_data[i];
     }
 
     // ---- create the proper header information ---- 
+    struct MKZYhdr MKZY;
 
     // calculate checksum
-    checksum = 0;
-    for (i = 0; i < spectrum.m_length; ++i)
+    std::uint32_t checksum = 0;
+    for (long i = 0; i < spectrum.m_length; ++i)
     {
         checksum += spec[i];
     }
-    p = (std::uint16_t*)&checksum;
+    const std::uint16_t* p = (std::uint16_t*)&checksum;
     MKZY.checksum = p[0] + p[1];
 
     // the spectrum should be stored as just the difference
     //  between each two pixels (delta compression)
     //  except for the first pixel (of course)
-    last = spec[0];
-    for (i = 1; i < spectrum.m_length; i++)
+    long last = spec[0];
+    for (long i = 1; i < spectrum.m_length; i++)
     {
-        tmp = spec[i];
+        long tmp = spec[i];
         spec[i] = tmp - last;
         last = tmp;
     }
@@ -502,7 +544,8 @@ int CSpectrumIO::AddSpectrumToFile(const std::string& fileName, const CSpectrum&
     // Compress the spectrum..
     std::vector<std::uint16_t> sbuf(16384);
     memset(sbuf.data(), 0, 16384);
-    outsiz = mkPack.mk_compress(spec.data(), (unsigned char*)sbuf.data(), (std::uint16_t)spectrum.m_length);
+    MKPack mkPack;
+    const std::uint16_t outsiz = mkPack.mk_compress(spec.data(), (unsigned char*)sbuf.data(), (std::uint16_t)spectrum.m_length);
     const CSpectrumInfo& info = spectrum.m_info;
 
     MKZY.ident[0] = 'M';
@@ -561,7 +604,7 @@ int CSpectrumIO::AddSpectrumToFile(const std::string& fileName, const CSpectrum&
 
     if (0 == fseek(f, 0, SEEK_END)) {
         // Write the header
-        if (headerBuffer != NULL && headerSize != 0) {
+        if (headerBuffer != nullptr && headerSize != 0) {
             fwrite(headerBuffer, headerSize, 1, f);
         }
         else {
@@ -576,98 +619,105 @@ int CSpectrumIO::AddSpectrumToFile(const std::string& fileName, const CSpectrum&
     return 0;
 }
 
-/** Reads a spectrum header from the supplied file. The result
-        will be saved to the member-variable 'MKZY'. */
-int CSpectrumIO::ReadNextSpectrumHeader(FILE* f, int& headerSize, CSpectrum* spec, char* headerBuffer, int headerBufferSize) {
-    std::uint32_t local_headersize;
-    long sizdiff;
+int CSpectrumIO::ReadNextSpectrumHeader(FILE* f, struct MKZYhdr& MKZYHeader, int& headerSize, CSpectrum* spec, char* headerBuffer, int headerBufferSize)
+{
+    memset(&MKZYHeader, 0, sizeof(MKZYHeader));  // clear header information
+    MKZYHeader.measureidx = -1;   // this is for compatibility reasons, if the file does not contain spectrum number, we'll know about it
 
-    memset(&MKZY, 0, sizeof(MKZY));  // clear header information
-    MKZY.measureidx = -1;   // this is for compatibility reasons, if the file does not contain spectrum number, we'll know about it
-
-    if (fread(&MKZY, 1, 8, f) < 8) {        // reads MKZY.ident and MKZY.hdrsize
+    if (fread(&MKZYHeader, 1, 8, f) < 8) {        // reads MKZY.ident and MKZY.hdrsize
         return 1;  // could not read header info, break /* TODO - this is not a good way to quit */
     }
 
     // check that we are actually at the beginning of the header - Added 2006.02.13 by MJ
-    if (strncmp(MKZY.ident, "MKZY", 4 * sizeof(char))) {
+    if (strncmp(MKZYHeader.ident, "MKZY", 4 * sizeof(char)))
+    {
         return 2;
     }
 
-    local_headersize = MKZY.hdrsize;
-    headerSize = MKZY.hdrsize;
+    std::uint32_t local_headersize = MKZYHeader.hdrsize;
+    headerSize = MKZYHeader.hdrsize;
 
-    if (sizeof(MKZY) < local_headersize)
-        local_headersize = sizeof(MKZY);
+    if (sizeof(MKZYHeader) < local_headersize)
+    {
+        local_headersize = sizeof(MKZYHeader);
+    }
 
     /** If the file contains a smaller header than the program version can read (MKZY.hdrsize < sizeof(MKZY))
                 only read the actual header in the file.
             If the file contains a bigger header than the program version can read (sizeof(MKZY) < MKZY.hdrsize)
                 only read what we can understand. */
 
-    if (fread((char*)&MKZY + 8, 1, local_headersize - 8, f) < local_headersize - 8) // read the rest of the header
+    if (fread((char*)&MKZYHeader + 8, 1, local_headersize - 8, f) < local_headersize - 8) // read the rest of the header
         return 1;
 
     // If the user wants the header in binary format, copy it
-    if (headerBuffer != NULL && headerBufferSize > (int)local_headersize) {
+    if (headerBuffer != nullptr && headerBufferSize > (int)local_headersize) {
         memset(headerBuffer, 0, headerBufferSize);
-        memcpy(headerBuffer, &MKZY, local_headersize);
+        memcpy(headerBuffer, &MKZYHeader, local_headersize);
     }
 
 
     // Calculate how much of the information in the file that we could not read because the program version is too old.
-    sizdiff = MKZY.hdrsize - sizeof(MKZY);
+    const long sizdiff = MKZYHeader.hdrsize - sizeof(MKZYHeader);
     if (sizdiff > 0)
     {
         // If the user want the whole header, read it. Otherwise jump formwards
-        if (headerBuffer != NULL && headerBufferSize > MKZY.hdrsize) {
+        if (headerBuffer != nullptr && headerBufferSize > MKZYHeader.hdrsize)
+        {
             if (fread(headerBuffer + local_headersize, 1, sizdiff, f) < (std::uint32_t)sizdiff)
+            {
                 m_lastError = ERROR_SPECTRUM_NOT_FOUND;
+            }
             return false;
         }
-        else {
+        else
+        {
             fseek(f, sizdiff, SEEK_CUR);       // NOTE -- BUG CORRECTED 2006.02.14 BY MJ - was "fseek(f,sizdiff-8,SEEK_CUR);"
         }
     }
 
-    if (spec != NULL) {
+    if (spec != nullptr)
+    {
         // clear the spectrum
         memset(spec->m_data, 0, MAX_SPECTRUM_LENGTH * sizeof(double));
 
         CSpectrumInfo* info = &spec->m_info;
         // save the spectrum information in the CSpectrum data structure
-        spec->m_length = std::max(std::min(MKZY.pixels, (std::uint16_t)(MAX_SPECTRUM_LENGTH)), (std::uint16_t)(0));
-        info->m_startChannel = MKZY.startc;
-        info->m_numSpec = MKZY.scans;
-        info->m_exposureTime = (MKZY.exptime > 0) ? MKZY.exptime : -MKZY.exptime;
-        info->m_gps.m_longitude = MKZY.lon;
-        info->m_gps.m_latitude = MKZY.lat;
-        info->m_gps.m_altitude = MKZY.altitude;
-        info->m_channel = MKZY.channel;
+        spec->m_length = std::max(std::min(MKZYHeader.pixels, (std::uint16_t)(MAX_SPECTRUM_LENGTH)), (std::uint16_t)(0));
+        info->m_startChannel = MKZYHeader.startc;
+        info->m_numSpec = MKZYHeader.scans;
+        info->m_exposureTime = (MKZYHeader.exptime > 0) ? MKZYHeader.exptime : -MKZYHeader.exptime;
+        info->m_gps.m_longitude = MKZYHeader.lon;
+        info->m_gps.m_latitude = MKZYHeader.lat;
+        info->m_gps.m_altitude = MKZYHeader.altitude;
+        info->m_channel = MKZYHeader.channel;
         CSpectrum::GetInterlaceSteps(info->m_channel, info->m_interlaceStep);
-        info->m_scanAngle = MKZY.viewangle;
+        info->m_scanAngle = MKZYHeader.viewangle;
         if (info->m_scanAngle > 180.0)
+        {
             info->m_scanAngle -= 360.0; // map 270 -> -90
-        info->m_scanAngle2 = (float)MKZY.viewangle2;
-        info->m_coneAngle = MKZY.coneangle;
-        info->m_compass = (float)MKZY.compassdir / 10.0f;
-        if (info->m_compass > 360.0 || info->m_compass < 0) {
+        }
+        info->m_scanAngle2 = (float)MKZYHeader.viewangle2;
+        info->m_coneAngle = MKZYHeader.coneangle;
+        info->m_compass = (float)MKZYHeader.compassdir / 10.0f;
+        if (info->m_compass > 360.0 || info->m_compass < 0)
+        {
             printf("Spectrum has compass angle outside of the expected [0, 360] degree range.\n");
         }
-        info->m_batteryVoltage = (float)MKZY.ADC[0] / 100.0f;
-        info->m_temperature = MKZY.temperature;
+        info->m_batteryVoltage = (float)MKZYHeader.ADC[0] / 100.0f;
+        info->m_temperature = MKZYHeader.temperature;
 
-        info->m_scanIndex = MKZY.measureidx;
-        info->m_scanSpecNum = MKZY.measurecnt;
-        info->m_flag = MKZY.flag;
+        info->m_scanIndex = MKZYHeader.measureidx;
+        info->m_scanSpecNum = MKZYHeader.measurecnt;
+        info->m_flag = MKZYHeader.flag;
 
-        ParseTime(MKZY.starttime, info->m_startTime);
-        ParseTime(MKZY.stoptime, info->m_stopTime);
-        ParseDate(MKZY.date, info->m_startTime);
+        ParseTime(MKZYHeader.starttime, info->m_startTime);
+        ParseTime(MKZYHeader.stoptime, info->m_stopTime);
+        ParseDate(MKZYHeader.date, info->m_startTime);
 
-        info->m_device = std::string(MKZY.instrumentname);
+        info->m_device = std::string(MKZYHeader.instrumentname);
         Trim(info->m_device, " "); // remove spaces in the beginning or the end
-        info->m_name = std::string(MKZY.name);
+        info->m_name = std::string(MKZYHeader.name);
     }
 
     return 0;

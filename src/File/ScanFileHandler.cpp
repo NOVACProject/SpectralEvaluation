@@ -241,7 +241,7 @@ int CScanFileHandler::GetSpectrum(CSpectrum& spec, long specNo)
 
     return 1;
 }
-/** Gets the dark spectrum of the scan */
+
 int CScanFileHandler::GetDark(CSpectrum& spec) const {
     spec = m_dark;
 

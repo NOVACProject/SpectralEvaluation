@@ -8,10 +8,6 @@ MKPack::MKPack()
 {
 }
 
-MKPack::~MKPack()
-{
-}
-
 void MKPack::SetBit(std::uint8_t* pek, long bit)
 {
     std::uint16_t ut = 0x80;
