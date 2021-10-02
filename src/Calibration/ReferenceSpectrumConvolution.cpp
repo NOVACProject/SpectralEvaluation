@@ -34,26 +34,58 @@ double CalculateFhwm(const CCrossSectionData& slf)
 /* Performs a convolution between the input and core and stores the result in 'result' */
 void ConvolutionCore(const std::vector<double>& input, const std::vector<double>& core, std::vector<double>& result)
 {
-    const size_t refSize = input.size();
+    const size_t inputSize = input.size();
     const size_t coreSize = core.size();
 
-    result.resize(refSize + coreSize - 1, 0.0);
+    result.resize(inputSize + coreSize - 1, 0.0);
 
-    // The actual convolution. Here a dead-simple raw convolution calculation. This can be made faster using FFT if required.
-    //  Get the pointers to the data, this avoids range-checking for each and every value (at least in debug mode)
+    // The actual convolution. Here a dead-simple raw convolution calculation. This can be made faster if required.
+    // The convolution is separated into three parts, the beginning, the middle and the end, for efficiently reasons since
+    // some math in the inner loop can be avoided in the major loop this way.
+    //  Get the pointers to the data, this avoids range-checking for each and every value.
     const double* inputPtr = input.data();
     const double* corePtr = core.data();
     double* resultPtr = result.data();
-    for (size_t n = 0; n < refSize + coreSize - 1; ++n)
-    {
-        result[n] = 0;
 
-        const size_t kmin = (n >= coreSize - 1) ? n - (coreSize - 1) : 0;
-        const size_t kmax = (n < refSize - 1) ? n : refSize - 1;
+    // The first part, until the entire core fits into the 
+    for (std::int64_t n = 0; n < (std::int64_t)coreSize - 1; ++n)
+    {
+        resultPtr[n] = 0;
+
+        const std::int64_t kmin = n - (coreSize - 1);
+        const std::int64_t kmax = n;
+
+        for (std::int64_t k = kmin; k <= kmax; k++)
+        {
+            resultPtr[n] += inputPtr[std::max(k, (std::int64_t)0)] * corePtr[std::max(n - k, (std::int64_t)0)];
+        }
+    }
+
+    // The middle, this is normally the longest part of the convolution.
+    for (size_t n = coreSize - 1; n < inputSize - 1; ++n)
+    {
+        resultPtr[n] = 0;
+
+        const size_t kmin = n - (coreSize - 1);
+        const size_t kmax = n;
 
         for (size_t k = kmin; k <= kmax; k++)
         {
             resultPtr[n] += inputPtr[k] * corePtr[n - k];
+        }
+    }
+
+    // The end
+    for (size_t n = inputSize - 1; n < inputSize + coreSize - 1; ++n)
+    {
+        resultPtr[n] = 0;
+
+        const size_t kmin = n - (coreSize - 1);
+        const size_t kmax = n;
+
+        for (size_t k = kmin; k <= kmax; k++)
+        {
+            resultPtr[n] += inputPtr[std::min(k, inputSize - 1)] * corePtr[n - k];
         }
     }
 }
