@@ -1,5 +1,7 @@
 #include <SpectralEvaluation/File/XmlUtil.h>
 
+#include <string.h>
+
 namespace novac
 {
 

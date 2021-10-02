@@ -1,9 +1,11 @@
 #include <SpectralEvaluation/Calibration/StandardCrossSectionSetup.h>
 #include <SpectralEvaluation/File/XmlUtil.h>
 #include <SpectralEvaluation/File/File.h>
+#include <SpectralEvaluation/StringUtils.h>
 
 #include <fstream>
 #include <sstream>
+#include <string.h>
 
 namespace novac
 {
@@ -57,7 +59,7 @@ StandardCrossSectionSetup::StandardCrossSectionSetup(const std::string& director
             {
                 std::string mediumName = ParseXmlString("Medium", line);
 
-                if (mediumName.length() > 0 && _strnicmp(mediumName.c_str(), "air", 3) == 0)
+                if (mediumName.length() > 0 && EqualsIgnoringCase(mediumName.c_str(), "air", 3) == 0)
                 {
                     currentReference.isVacuum = false;
                 }
