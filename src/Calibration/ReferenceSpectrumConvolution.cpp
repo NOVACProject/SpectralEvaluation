@@ -47,17 +47,17 @@ void ConvolutionCore(const std::vector<double>& input, const std::vector<double>
     const double* corePtr = core.data();
     double* resultPtr = result.data();
 
-    // The first part, until the entire core fits into the 
-    for (std::int64_t n = 0; n < (std::int64_t)coreSize - 1; ++n)
+    // The first part, until the entire core fits into the input.
+    for (std::int64_t n = coreSize / 2; n < (std::int64_t)coreSize - 1; ++n)
     {
         resultPtr[n] = 0;
 
         const std::int64_t kmin = n - (coreSize - 1);
         const std::int64_t kmax = n;
 
-        for (std::int64_t k = kmin; k <= kmax; k++)
+        for (std::int64_t k = std::max(kmin, (std::int64_t)0); k <= kmax; k++)
         {
-            resultPtr[n] += inputPtr[std::max(k, (std::int64_t)0)] * corePtr[std::max(n - k, (std::int64_t)0)];
+            resultPtr[n] += inputPtr[k] * corePtr[std::max(n - k, (std::int64_t)0)];
         }
     }
 
@@ -83,9 +83,9 @@ void ConvolutionCore(const std::vector<double>& input, const std::vector<double>
         const size_t kmin = n - (coreSize - 1);
         const size_t kmax = n;
 
-        for (size_t k = kmin; k <= kmax; k++)
+        for (size_t k = kmin; k <= std::min(kmax, inputSize - 1); k++)
         {
-            resultPtr[n] += inputPtr[std::min(k, inputSize - 1)] * corePtr[n - k];
+            resultPtr[n] += inputPtr[k] * corePtr[n - k];
         }
     }
 }
