@@ -3,12 +3,18 @@
 #include <string>
 #include <vector>
 
+// This file contains basic file input and output operations used throughout the novac software
+
 namespace novac
 {
 
 class CSpectrum;
 class CCrossSectionData;
 class InstrumentCalibration;
+
+/** Checks if the provided file name is an existing and readable file
+    by attempting to open the file for reading. */
+bool IsExistingFile(const std::string& fullFileName);
 
 /** Reads cross section data from the provded file.
         This is able to read ASCII data files with data in one or two columns.

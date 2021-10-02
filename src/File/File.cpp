@@ -20,6 +20,19 @@
 
 namespace novac
 {
+
+bool IsExistingFile(const std::string& fullFileName)
+{
+    FILE* f = fopen(fullFileName.c_str(), "r");
+    if (f == nullptr)
+    {
+        return false;
+    }
+    fclose(f);
+
+    return true;
+}
+
 // @return the number of columns read.
 int ReadFromFile(FILE* f, const char* formatStr, double& col1, double& col2)
 {
