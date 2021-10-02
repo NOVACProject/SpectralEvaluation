@@ -4,6 +4,7 @@
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 #include <SpectralEvaluation/StringUtils.h>
 #include <cstring>
+#include <algorithm>
 
 
 #ifdef _MSC_VER

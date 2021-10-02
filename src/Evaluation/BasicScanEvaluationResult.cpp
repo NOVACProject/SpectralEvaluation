@@ -4,6 +4,46 @@
 namespace novac
 {
 
+int BasicScanEvaluationResult::AppendResult(const CEvaluationResult& evalRes, const CSpectrumInfo& specInfo)
+{
+    // Append the evaluationresult to the end of the 'm_spec'-vector
+    m_spec.push_back(CEvaluationResult(evalRes));
+
+    // Append the spectral information to the end of the 'm_specInfo'-vector
+    m_specInfo.push_back(CSpectrumInfo(specInfo));
+
+    // Increase the numbers of spectra in this result-set.
+    ++m_specNum;
+    return 0;
+}
+
+int BasicScanEvaluationResult::RemoveResult(unsigned int specIndex)
+{
+    if (specIndex >= m_specNum)
+    {
+        return 1; // not a valid index
+    }
+
+    // Remove the desired value
+    m_specInfo.erase(begin(m_specInfo) + specIndex);
+
+    // Decrease the number of values in the list
+    m_specNum -= 1;
+
+    return 0;
+}
+
+void BasicScanEvaluationResult::InitializeArrays(long size)
+{
+    if (size < 0 || size > 1024)
+    {
+        return;
+    }
+
+    m_spec.reserve(size);
+    m_specInfo.reserve(size);
+}
+
 int BasicScanEvaluationResult::GetSpecieIndex(const char* specieName) const
 {
     // If there are no spectra, there can be no species
