@@ -4,10 +4,19 @@
 #include <SpectralEvaluation/File/TXTFile.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/Calibration/InstrumentCalibration.h>
+#include <SpectralEvaluation/Calibration/InstrumentLineShape.h>
 #include <SpectralEvaluation/Interpolation.h>
+#include <SpectralEvaluation/VectorUtils.h>
 #include <cstring>
+#include <cmath>
+#include <limits>
+#include <memory>
 #include <sstream>
+#include <stdio.h>
 #include <fstream>
+
+#include <iostream>
 
 namespace novac
 {
@@ -186,7 +195,7 @@ bool SaveCrossSectionFile(const std::string& fullFilePath, const CSpectrum& spec
         return false;
     }
 
-    const bool twoColumns = spectrum.m_wavelength.size() == spectrum.m_length;
+    const bool twoColumns = spectrum.m_wavelength.size() == static_cast<size_t>(spectrum.m_length);
     const size_t length = spectrum.m_length;
 
     for (size_t ii = 0; ii < length; ++ii)
@@ -312,53 +321,120 @@ std::string GetFileExtension(const std::string& fullFilePath)
     }
 }
 
-bool SaveInstrumentCalibration(const std::string& fullFilePath, const CSpectrum& instrumentLineShape, const std::vector<double>& pixelToWavelengthMapping)
+size_t WavelengthToPixel(const std::vector<double>& pixelToWavelengthMapping, double wavelength)
 {
-    if (instrumentLineShape.m_length == 0 || instrumentLineShape.m_wavelength.size() == 0)
+    if (wavelength <= 0.0)
     {
-        return false; // cannot save an empty reference.
+        return 0;
+    }
+    else if (wavelength > pixelToWavelengthMapping.back())
+    {
+        return pixelToWavelengthMapping.size() - 1;
+    }
+    else
+    {
+        const double instrumentLineShapeFractionalCenterPixel = novac::GetFractionalIndex(pixelToWavelengthMapping, wavelength);
+        return static_cast<size_t>(std::round(instrumentLineShapeFractionalCenterPixel));
+    }
+}
+
+std::pair<std::string, std::string> FormatProperty(const char* name, double value)
+{
+    char formattedValue[128];
+    sprintf(formattedValue, "%.9g", value);
+
+    return std::make_pair(std::string(name), std::string(formattedValue));
+}
+
+bool TryGetParameter(const std::vector<std::pair<std::string, std::string>>& properties, const char* parameterName, double& parameterValue)
+{
+    for (const auto& p : properties)
+    {
+        if (p.first.compare(parameterName) == 0)
+        {
+            // found the correct parameter, try parse the value
+            return 1 == sscanf(p.second.c_str(), "%lf", &parameterValue);
+        }
     }
 
-    FILE* f = fopen(fullFilePath.c_str(), "w");
-    if (nullptr == f)
+    return false;
+}
+
+bool SaveInstrumentCalibration(const std::string& fullFilePath, const InstrumentCalibration& calibration)
+{
+    if (calibration.pixelToWavelengthMapping.size() == 0)
+    {
+        return false;
+    }
+    if (calibration.instrumentLineShape.size() == 0 ||
+        calibration.instrumentLineShapeGrid.size() == 0 ||
+        calibration.instrumentLineShape.size() != calibration.instrumentLineShapeGrid.size())
     {
         return false;
     }
 
-    fprintf(f, "<InstrumentCalibration>\n");
+    novac::CSTDFile::ExtendedFormatInformation extendedFileInfo;
+
+    size_t instrumentLineShapeSpectrumStartIdx = 0; // The pixel where the instrument line shape should start
     {
-        fprintf(f, "<InstrumentLineShape>\n");
+        size_t instrumentLineShapeCenterPixel = WavelengthToPixel(calibration.pixelToWavelengthMapping, calibration.instrumentLineShapeCenter);
 
-        fprintf(f, "\t<Wavelength>[");
-        fprintf(f, "%.9lf", instrumentLineShape.m_wavelength[0]);
-        for (size_t ii = 1; ii < instrumentLineShape.m_length; ++ii)
+        if (instrumentLineShapeCenterPixel <= calibration.instrumentLineShape.size() / 2)
         {
-            fprintf(f, ";%.9lf", instrumentLineShape.m_wavelength[ii]);
+            instrumentLineShapeSpectrumStartIdx = 0;
         }
-        fprintf(f, "]</Wavelength>\n");
-
-        fprintf(f, "\t<Intensity>[");
-        fprintf(f, "%.9lf", instrumentLineShape.m_data[0]);
-        for (size_t ii = 1; ii < instrumentLineShape.m_length; ++ii)
+        else if (instrumentLineShapeCenterPixel >= calibration.pixelToWavelengthMapping.size() - calibration.instrumentLineShape.size())
         {
-            fprintf(f, ";%.9lf", instrumentLineShape.m_data[ii]);
+            instrumentLineShapeSpectrumStartIdx = calibration.pixelToWavelengthMapping.size() - calibration.instrumentLineShape.size();
         }
-        fprintf(f, "]</Intensity>\n");
-
-        fprintf(f, "</InstrumentLineShape>\n");
+        else
+        {
+            instrumentLineShapeSpectrumStartIdx = instrumentLineShapeCenterPixel - calibration.instrumentLineShape.size() / 2;
+        }
     }
 
+    extendedFileInfo.MinChannel = static_cast<int>(instrumentLineShapeSpectrumStartIdx);
+    extendedFileInfo.MaxChannel = static_cast<int>(instrumentLineShapeSpectrumStartIdx + calibration.instrumentLineShape.size());
+    extendedFileInfo.MathLow = extendedFileInfo.MinChannel;
+    extendedFileInfo.MathHigh = extendedFileInfo.MaxChannel;
+    extendedFileInfo.Marker = calibration.instrumentLineShapeCenter;
+
+    // If there is a parameterized instrument line shape function
+    if (calibration.instrumentLineShapeParameter != nullptr)
     {
-        fprintf(f, "<PixelToWavelengthMapping>[");
-        fprintf(f, "%.9lf", pixelToWavelengthMapping[0]);
-        for (size_t ii = 1; ii < pixelToWavelengthMapping.size(); ++ii)
+        const novac::SuperGaussianLineShape* superGaussian = dynamic_cast<novac::SuperGaussianLineShape*>(calibration.instrumentLineShapeParameter);
+        if (superGaussian != nullptr)
         {
-            fprintf(f, ";%.9lf", pixelToWavelengthMapping[ii]);
+            extendedFileInfo.additionalProperties.push_back(FormatProperty("SuperGaussFitWidth", superGaussian->w));
+            extendedFileInfo.additionalProperties.push_back(FormatProperty("SuperGaussFitPower", superGaussian->k));
         }
-        fprintf(f, "]</PixelToWavelengthMapping>\n");
+        else
+        {
+            const novac::GaussianLineShape* gaussian = dynamic_cast<novac::GaussianLineShape*>(calibration.instrumentLineShapeParameter);
+            if (gaussian != nullptr)
+            {
+                extendedFileInfo.additionalProperties.push_back(FormatProperty("GaussFitSigma", gaussian->sigma));
+            }
+        }
     }
-    fprintf(f, "</InstrumentCalibration>\n");
-    fclose(f);
+
+    // Additional information about the spectrum
+    extendedFileInfo.calibrationPolynomial = calibration.pixelToWavelengthPolynomial;
+
+    // Create the spectrum to save from the instrument line-shape + the 
+    std::unique_ptr<novac::CSpectrum> spectrumToSave;
+    {
+        // Extend the measured spectrum line shape into a full spectrum
+        std::vector<double> extendedPeak(calibration.pixelToWavelengthMapping.size(), 0.0);
+        std::copy(calibration.instrumentLineShape.data(), calibration.instrumentLineShape.data() + calibration.instrumentLineShape.size(), extendedPeak.begin() + instrumentLineShapeSpectrumStartIdx);
+
+        spectrumToSave = std::make_unique<novac::CSpectrum>(calibration.pixelToWavelengthMapping, extendedPeak);
+    }
+
+    // spectrumToSave->m_info = this->m_inputspectrumInformation;
+
+    novac::CSTDFile::WriteSpectrum(*spectrumToSave, fullFilePath, extendedFileInfo);
+
     return true;
 }
 
@@ -373,7 +449,7 @@ bool ReadInstrumentCalibration(const std::string& fullFilePath, CSpectrum& instr
     }
 
     if (extendedFormatInformation.MaxChannel <= extendedFormatInformation.MinChannel ||
-        tmpSpectrum.m_wavelength.size() != tmpSpectrum.m_length)
+        tmpSpectrum.m_wavelength.size() != static_cast<size_t>(tmpSpectrum.m_length))
     {
         // not a correct format of the data
         return false;
@@ -388,14 +464,91 @@ bool ReadInstrumentCalibration(const std::string& fullFilePath, CSpectrum& instr
     // Differentiate the wavelength wrt the peak
     instrumentLineShape.m_wavelength = std::vector<double>(begin(tmpSpectrum.m_wavelength) + extendedFormatInformation.MinChannel, begin(tmpSpectrum.m_wavelength) + extendedFormatInformation.MaxChannel);
 
+    std::vector<double> specData{ instrumentLineShape.m_data, instrumentLineShape.m_data + instrumentLineShape.m_length };
+    const double centerPixel = Centroid(specData);
+
     double centerWavelength = 0.0;
-    if (!novac::LinearInterpolation(tmpSpectrum.m_wavelength, extendedFormatInformation.Marker, centerWavelength))
+    if (!novac::LinearInterpolation(instrumentLineShape.m_wavelength, centerPixel, centerWavelength))
     {
         return false;
     }
     for (double& lambda : instrumentLineShape.m_wavelength)
     {
         lambda -= centerWavelength;
+    }
+
+    return true;
+}
+
+bool ReadInstrumentCalibration(const std::string& fullFilePath, InstrumentCalibration& result)
+{
+    result.Clear();
+
+    CSTDFile::ExtendedFormatInformation extendedFormatInformation;
+
+    CSpectrum tmpSpectrum;
+    if (!CSTDFile::ReadSpectrum(tmpSpectrum, fullFilePath, extendedFormatInformation))
+    {
+        return false;
+    }
+
+    if (extendedFormatInformation.MaxChannel <= extendedFormatInformation.MinChannel ||
+        tmpSpectrum.m_wavelength.size() != static_cast<size_t>(tmpSpectrum.m_length))
+    {
+        // not a correct format of the data
+        return false;
+    }
+
+    // The pixel to wavelength mapping
+    {
+        result.pixelToWavelengthMapping = tmpSpectrum.m_wavelength;
+        result.pixelToWavelengthPolynomial = extendedFormatInformation.calibrationPolynomial;
+    }
+
+    // Copy out instrument line shape
+    result.instrumentLineShape.resize(static_cast<size_t>(extendedFormatInformation.MaxChannel) - extendedFormatInformation.MinChannel);
+    memcpy(result.instrumentLineShape.data(), tmpSpectrum.m_data + extendedFormatInformation.MinChannel, result.instrumentLineShape.size() * sizeof(double));
+
+    // Get the instrument line shape grid and make sure that it is differntiated wrt the peak
+    {
+        result.instrumentLineShapeGrid = std::vector<double>(begin(tmpSpectrum.m_wavelength) + extendedFormatInformation.MinChannel, begin(tmpSpectrum.m_wavelength) + extendedFormatInformation.MaxChannel);
+
+        const double centerPixel = Centroid(result.instrumentLineShape);
+
+        double centerWavelength = 0.0;
+        if (!novac::LinearInterpolation(result.instrumentLineShapeGrid, centerPixel, centerWavelength))
+        {
+            return false;
+        }
+
+        result.instrumentLineShapeCenter = centerWavelength;
+
+        if (std::abs(centerWavelength) > std::numeric_limits<double>::epsilon())
+        {
+            for (double& lambda : result.instrumentLineShapeGrid)
+            {
+                lambda -= centerWavelength;
+            }
+        }
+    }
+
+    // Handle the reading of an parametrization of the instrument line shape.
+    {
+        double superGaussianWidth = 0.0;
+        double superGaussianPower = 0.0;
+        if (TryGetParameter(extendedFormatInformation.additionalProperties, "SuperGaussFitWidth", superGaussianWidth) &&
+            TryGetParameter(extendedFormatInformation.additionalProperties, "SuperGaussFitPower", superGaussianPower))
+        {
+            result.instrumentLineShapeParameter = new novac::SuperGaussianLineShape(superGaussianWidth, superGaussianPower);
+        }
+        else
+        {
+            double gaussSigma = 0.0;
+            if (TryGetParameter(extendedFormatInformation.additionalProperties, "GaussFitSigma", gaussSigma))
+            {
+                result.instrumentLineShapeParameter = new novac::GaussianLineShape(gaussSigma);
+            }
+        }
     }
 
     return true;

@@ -17,11 +17,28 @@ namespace novac
 class CSpectrum;
 struct SpectrumDataPoint;
 struct Correspondence;
+struct RansacWavelengthCalibrationResult;
+class FraunhoferSpectrumGeneration;
+class ParametricInstrumentLineShape;
 
 enum class InstrumentLineshapeEstimationOption
 {
+    /// <summary>
+    /// Do not make any estimate of the instrument line shape.
+    /// </summary>
     None = 0,
-    Gaussian,
+
+    /// <summary>
+    /// Estimate the instrument line shape as an approximate Gaussian function,
+    ///  based on the general distance between peaks/valleys.
+    /// </summary>
+    ApproximateGaussian,
+
+    /// <summary>
+    /// Estimate the instrument line shape as a Gaussian function, 
+    /// by minimizing the residual between the generated fraunhofer spectrum and the measured.
+    /// </summary>
+    SuperGaussian
 };
 
 /// <summary>
@@ -42,9 +59,21 @@ struct SpectrometerCalibrationResult
     /// <summary>
     /// The estimation of the instrument line shape.
     /// This is only set if the instrument line shape is set to be estimated 
-    //  in the process, otherwise this is empty
+    //  in the process, otherwise this is empty.
     /// </summary>
     novac::CCrossSectionData estimatedInstrumentLineShape;
+
+    /// <summary>
+    /// The Range of pixels over which the instrument line shape was estimated.
+    /// </summary>
+    std::pair<size_t, size_t> estimatedInstrumentLineShapePixelRange;
+
+    /// <summary>
+    /// The parameterization of the estimated instrument line shape.
+    /// This is only set if the instrument line shape is set to be estimated 
+    //  in the process, otherwise this is empty.
+    /// </summary>
+    std::unique_ptr<novac::ParametricInstrumentLineShape> estimatedInstrumentLineShapeParameters;
 };
 
 struct WavelengthCalibrationSettings
@@ -78,6 +107,11 @@ struct WavelengthCalibrationSettings
     /// during the wavelength calibration procedure.
     /// </summary>
     InstrumentLineshapeEstimationOption estimateInstrumentLineShape = InstrumentLineshapeEstimationOption::None;
+
+    /// <summary>
+    /// The wavelength region in which the instrument line shape is estimated (if estimateInstrumentLineShape != None)
+    /// </summary>
+    std::pair<double, double> estimateInstrumentLineShapeWavelengthRegion;
 };
 
 class WavelengthCalibrationFailureException : public std::exception
@@ -101,15 +135,27 @@ public:
 std::vector<double> GetPixelToWavelengthMappingFromFile(const std::string& clbFile);
 
 /// <summary>
+/// Generates a pixel-to-wavelength mapping for each pixel on the detector given
+/// the wavelength calibration polynomial and the number of pixels.
+/// </summary>
+std::vector<double> GetPixelToWavelengthMapping(const std::vector<double>& polynomialCoefficients, size_t detectorSize);
+
+/// <summary>
 /// This is a helper structure used to extract the internal state of the pixel-to-wavelength calibration
 /// of a spectrometer from a measured mercury spectrum.
 /// </summary>
 struct MercurySpectrumCalibrationState
 {
     /// <summary>
-    /// This lists all the peaks found in the mercury spectrum (defined in pixels)
+    /// This lists all the peaks found in the mercury spectrum (defined in pixels).
     /// </summary>
     std::vector<SpectrumDataPoint> peaks;
+
+    /// <summary>
+    /// This is a list of peaks found in the spectrum but for which we didn't find a
+    /// suitable emission line in the theoretical spectrum, or the line seems to be not fully resolved.
+    /// </summary>
+    std::vector<SpectrumDataPoint> rejectedPeaks;
 
     /// <summary>
     /// If the Mercury calibration failed, then this will be filled in with the reason why
@@ -180,7 +226,21 @@ private:
 
     SpectrumeterCalibrationState calibrationState;
 
-    static std::vector<double> GetPixelToWavelengthMapping(const std::vector<double>& polynomialCoefficients, size_t detectorSize);
+    /// <summary>
+    /// Creates a wavelength to intensity spline of the measured spectrum using the current wavelength calibration result
+    /// and correct the current generated Fraunhofer spectrum with it. This improves the accuracy of finding the spectrum peaks/valleys.
+    /// </summary>
+    void UpdateFraunhoferSpectrumWithApparentSensitivity(novac::RansacWavelengthCalibrationResult& ransacResult);
+
+    /// <summary>
+    /// Creates an estimate of the instrument line shape of the measured spectrum as an approximate gaussian by judging the average distance between keypoints.
+    /// </summary>
+    void EstimateInstrumentLineShapeAsApproximateGaussian(novac::SpectrometerCalibrationResult& result, novac::FraunhoferSpectrumGeneration& fraunhoferSetup);
+
+    /// <summary>
+    /// Creates an estimate of the instrument line shape of the measured spectrum by fitting a SuperGaussian to the measured spectrum.
+    /// </summary>
+    void EstimateInstrumentLineShapeAsSuperGaussian(novac::SpectrometerCalibrationResult& result, novac::FraunhoferSpectrumGeneration& fraunhoferSetup);
 
 };
 

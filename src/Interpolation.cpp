@@ -127,7 +127,8 @@ bool TriLinearInterpolation(const std::vector<double>& values, const std::vector
     return true;
 }
 
-double GetFractionalIndex(const std::vector<float>& values, double valueToFind)
+template<class T>
+double GetFractionalIndex(const std::vector<T>& values, double valueToFind)
 {
     for (size_t ii = 1; ii < values.size(); ++ii)
     {
@@ -142,7 +143,17 @@ double GetFractionalIndex(const std::vector<float>& values, double valueToFind)
     }
 
     // not found
-    return NAN; // not found.
+    return NAN;
+}
+
+double GetFractionalIndex(const std::vector<float>& values, double valueToFind)
+{
+    return GetFractionalIndex<float>(values, valueToFind);
+}
+
+double GetFractionalIndex(const std::vector<double>& values, double valueToFind)
+{
+    return GetFractionalIndex<double>(values, valueToFind);
 }
 
 }

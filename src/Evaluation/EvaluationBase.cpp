@@ -64,20 +64,7 @@ void CEvaluationBase::ClearRefereneSpectra()
     m_ref.clear();
 }
 
-CReferenceSpectrumFunction* DefaultReferenceSpectrumFunction()
-{
-    auto newRef = new CReferenceSpectrumFunction();
-
-    // reset all reference's parameters
-    newRef->ResetLinearParameter();
-    newRef->ResetNonlinearParameter();
-
-    // enable amplitude normalization. This should normally be done in order to avoid numerical
-    // problems during fitting.
-    newRef->SetNormalize(true);
-
-    return newRef;
-}
+CReferenceSpectrumFunction* DefaultReferenceSpectrumFunction();
 
 int CEvaluationBase::CreateReferenceSpectra()
 {

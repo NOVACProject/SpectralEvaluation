@@ -58,8 +58,8 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
     const double minPeakHeight = intensityRange / 3000.0; // TODO: Find a reasonable value here!
     const size_t minPeakWidth = 5; // TODO: Find a reasonable value here!
 
-    std::vector<double> lowPassFilteredSpectrum(spectrum.m_data, spectrum.m_data + spectrum.m_length);
     CBasicMath math;
+    std::vector<double> lowPassFilteredSpectrum(spectrum.m_data, spectrum.m_data + spectrum.m_length);
     math.LowPassBinomial(lowPassFilteredSpectrum.data(), spectrum.m_length, 10);
 
     // Calculate the first and second order derivatives
@@ -76,7 +76,6 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
 
     // Locate all points where the derivative changes sign from positive to negative
     Sign lastSignOfDerivative = Sign::Undetermined;
-    size_t idxOfLastSignificantDerivativeSign = 0; // the idx where the sign of the derivative was last known
     for (size_t ii = 1; ii < (size_t)spectrum.m_length - 1; ++ii)
     {
         Sign currentSignOfDerivative = SignOf(ddx[ii], 1e-5);
@@ -137,7 +136,6 @@ void FindPeaks(const CSpectrum& spectrum, double minimumIntensity, std::vector<S
         if (currentSignOfDerivative != Sign::Undetermined)
         {
             lastSignOfDerivative = currentSignOfDerivative;
-            idxOfLastSignificantDerivativeSign = ii;
         }
     }
 }
@@ -174,7 +172,6 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
 
     // Locate all points where the derivative changes sign from negative to positive
     Sign lastSignOfDerivative = Sign::Undetermined;
-    size_t idxOfLastSignificantDerivativeSign = 0; // the idx where the sign of the derivative was last known
     for (size_t ii = 1; ii < (size_t)spectrum.m_length - 1; ++ii)
     {
         Sign currentSignOfDerivative = SignOf(ddx[ii], 1e-5);
@@ -234,7 +231,6 @@ void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector
         if (currentSignOfDerivative != Sign::Undetermined)
         {
             lastSignOfDerivative = currentSignOfDerivative;
-            idxOfLastSignificantDerivativeSign = ii;
         }
     }
 }
@@ -261,13 +257,13 @@ void FindKeypointsInSpectrum(const CSpectrum& spectrum, double minimumIntensity,
 
     for (SpectrumDataPoint& pt : valleys)
     {
-        pt.type = -1;
+        pt.type = SpectrumDataPointType::Valley;
         result.push_back(pt);
     }
 
     for (SpectrumDataPoint& pt : peaks)
     {
-        pt.type = +1;
+        pt.type = SpectrumDataPointType::Peak;
         result.push_back(pt);
     }
 
@@ -285,18 +281,78 @@ double Average(const double* data, size_t size)
     return sum / (double)size;
 }
 
-void FindEmissionLines(const CSpectrum& spectrum, std::vector<SpectrumDataPoint>& result)
+inline double LeftWidth(const SpectrumDataPoint& point)
+{
+    return point.pixel - point.leftPixel;
+}
+inline double RightWidth(const SpectrumDataPoint& point)
+{
+    return point.rightPixel - point.pixel;
+}
+
+bool PeakIsFullyResolved(const CSpectrum& spectrum, const SpectrumDataPoint& point)
+{
+    // Extract a portion of the spectrum surrounding the found peak and calculate the second derivative there.
+    const size_t leftPixel = (size_t)std::round(std::max(0.0, point.pixel - 3 * LeftWidth(point)));
+    const size_t rightPixel = std::min(static_cast<size_t>(spectrum.m_length), static_cast<size_t>(std::round(point.pixel + 3 * RightWidth(point))));
+    const size_t cutOutLength = rightPixel - leftPixel;
+
+    CBasicMath math;
+    std::vector<double> lowPassFilteredSpectrum(spectrum.m_data + leftPixel, spectrum.m_data + rightPixel);
+    math.LowPassBinomial(lowPassFilteredSpectrum.data(), static_cast<int>(cutOutLength), 10);
+
+    std::vector<double> ddx2;
+    if (!Derivative(lowPassFilteredSpectrum.data(), cutOutLength, 2, ddx2))
+    {
+        return true;
+    }
+
+    // There should now be exactly two zero-crossings (of significant amplitude) in this cut out second-derivative spectrum.
+    Sign lastSignOfDerivative = Sign::Positive;
+    const double leastSignificantAmplitude = 0.01 * std::max(Max(ddx2), -Min(ddx2));
+    int numberOfZeroCrossings = 0;
+    for (size_t ii = 1; ii < ddx2.size() - 1; ++ii)
+    {
+        const Sign currentSignOfDerivative = SignOf(ddx2[ii], leastSignificantAmplitude);
+        if ((currentSignOfDerivative == Sign::Positive && lastSignOfDerivative == Sign::Negative) ||
+            (currentSignOfDerivative == Sign::Negative && lastSignOfDerivative == Sign::Positive))
+        {
+            lastSignOfDerivative = currentSignOfDerivative;
+            ++numberOfZeroCrossings;
+        }
+    }
+
+    return (numberOfZeroCrossings < 3);
+}
+
+std::vector<SpectrumDataPoint> FilterByType(const std::vector<SpectrumDataPoint>& input, SpectrumDataPointType typeToFind)
+{
+    std::vector<SpectrumDataPoint> result;
+    result.reserve(input.size());
+
+    for (auto point : input)
+    {
+        if (point.type == typeToFind)
+        {
+            result.push_back(point);
+        }
+    }
+
+    return result;
+}
+
+void FindEmissionLines(const CSpectrum& spectrum, std::vector<SpectrumDataPoint>& result, bool includeNotClearlyResolvedLines)
 {
     // Find the 10% lowest values and use these as a baseline
     // if we assume tha there are a small number of narrow peaks, then this will be a relatively ok level for the baseline
     std::vector<double> spectrumValues{ spectrum.m_data, spectrum.m_data + spectrum.m_length };
     std::sort(begin(spectrumValues), end(spectrumValues));
 
-    const size_t length = spectrum.m_length / 10;
-    const double baseline = Average(spectrumValues.data(), length);
+    const size_t numberOfPointsForBaseline = spectrum.m_length / 10;
+    const double baseline = Average(spectrumValues.data(), numberOfPointsForBaseline);
     const double maximumIntensity = spectrumValues.back(); // the vector is now sorted in increasing order, the maximum value is in the back.
 
-    const double threshold = baseline + 0.02 * (maximumIntensity - baseline);
+    const double threshold = baseline + 0.02 * (maximumIntensity - baseline); // threshold at 2% above the baseline.
 
     FindPeaks(spectrum, threshold, result);
 
@@ -305,8 +361,42 @@ void FindEmissionLines(const CSpectrum& spectrum, std::vector<SpectrumDataPoint>
         return;
     }
 
-    // TODO: Improve in some way?
+    // Filter out not fully resolved emission lines.
+    {
+        const size_t distance = 3; // Minimum distance between two peaks (in terms of peak-half-width) for a peak to be judged to be isolated.
+        for (size_t peakIdx = 0; peakIdx < result.size(); ++peakIdx)
+        {
+            if (peakIdx < result.size() - 1)
+            {
+                const double thisRightWidth = RightWidth(result[peakIdx]);
+                const double nextLeftWidth = LeftWidth(result[peakIdx + 1]);
+                if (result[peakIdx].pixel + distance * thisRightWidth >=
+                    result[peakIdx + 1].pixel - distance * nextLeftWidth)
+                {
+                    // This peak overlaps the next one. Both are unresolved
+                    result[peakIdx].type = SpectrumDataPointType::UnresolvedPeak;
+                    result[peakIdx + 1].type = SpectrumDataPointType::UnresolvedPeak;
+                    ++peakIdx;
+                    continue;
+                }
+            }
 
+            if (result[peakIdx].flatTop || !PeakIsFullyResolved(spectrum, result[peakIdx]))
+            {
+                result[peakIdx].type = SpectrumDataPointType::UnresolvedPeak;
+                continue;
+            }
+
+            // all tests passed, the peak seems good.
+            result[peakIdx].type = SpectrumDataPointType::Peak;
+        }
+
+        if (!includeNotClearlyResolvedLines)
+        {
+            // Extract only the fully resolved peaks.
+            result = FilterByType(result, SpectrumDataPointType::Peak);
+        }
+    }
 }
 
 bool Derivative(const double* data, size_t dataLength, std::vector<double>& result)

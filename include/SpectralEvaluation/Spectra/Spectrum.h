@@ -6,7 +6,7 @@
 // the maximum number of channels that the program can handle
 #define MAX_CHANNEL_NUM 8
 
-#include "SpectrumInfo.h"
+#include <SpectralEvaluation/Spectra/SpectrumInfo.h>
 #include <vector>
 
 namespace novac

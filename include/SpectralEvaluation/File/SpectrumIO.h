@@ -1,12 +1,13 @@
 #pragma once
 
-#include <SpectralEvaluation/File/MKPack.h>
 #include <string>
+#include <vector>
 
 namespace novac
 {
 class CSpectrum;
 class CDateTime;
+struct MKZYhdr;
 
 /** <b>CSpectrumIO</b> is a class for reading and storing Spectra */
 
@@ -31,7 +32,7 @@ public:
         @param spectrumNumber - The spectrum number in the file.
         @param spec - Will on successful return contain the desired spectrum.
         @return true if all is ok. */
-    bool ReadSpectrum(const std::string& fileName, const int spectrumNumber, CSpectrum& spec, char* headerBuffer = NULL, int headerBufferSize = 0, int* headerSize = NULL);
+    bool ReadSpectrum(const std::string& fileName, const int spectrumNumber, CSpectrum& spec, char* headerBuffer = nullptr, int headerBufferSize = 0, int* headerSize = nullptr);
 
     /** Reads the next spectrum in the provided spectrum file.
             The spectrum file (which must be in the .pak format) must be opened for reading
@@ -58,7 +59,7 @@ public:
         @param headerBufferSize - the size of the headerBuffer.
         @param headerSize - will on successfull return be the size of the binary header (in bytes)
         @return true if all is ok. */
-    bool ReadNextSpectrum(FILE* f, CSpectrum& spec, int& headerSize, char* headerBuffer = NULL, int headerBufferSize = 0);
+    bool ReadNextSpectrum(FILE* f, CSpectrum& spec, int& headerSize, char* headerBuffer = nullptr, int headerBufferSize = 0);
 
     /** Adds a new spectrum to the given pak-file. If the file does not exist, it will be created.
         @param fileName - The name of the spectrum file in which to store the spectrum.
@@ -100,31 +101,22 @@ public:
 
 private:
     /** A buffer for reading data */
-    unsigned char buffer[16384];
+    std::vector<unsigned char> m_buffer;
 
     /** A buffer for temporary output */
-    long outbuf[16384];
+    std::vector<long> m_outbuf;
 
-    /** The maximum value read */
-    double maxv;
-
-    /** The last read header */
-    struct MKZYhdr MKZY;
-
-    /** ?? */
-    long multisize;
-
-    /** Reads a spectrum header from the supplied file. The result
-            will be saved to the member-variable 'MKZY'. If a CSpectrum
-            is provided, the header information will also be saved in the spectrum.
-            @param headerBuffer - if this is not null it will on successfull return be filled
-                    with the full header of the spectrum in binary format. Useful if the header in the .pak
-                    file is of a newer version than the programs headerversion
-            @param headerBufferSize - the size of the headerBuffer.
-            @param headerSize - will on successfull return be the size of the binary header (in bytes)
-            @return 0 - on success
-            @return 1 - ...*/
-    int ReadNextSpectrumHeader(FILE* f, int& headerSize, CSpectrum* spec = NULL, char* headerBuffer = NULL, int headerBufferSize = 0);
+    /** Reads a spectrum header from the supplied file.
+        @param MKZYHeader Will on successful return contain the read in result. 
+        @param spec If not null then the header information will also be saved in the spectrum (not the spectral data).
+        @param headerBuffer - if this is not null it will on successfull return be filled
+                with the full header of the spectrum in binary format. Useful if the header in the .pak
+                file is of a newer version than the programs headerversion
+        @param headerBufferSize - the size of the headerBuffer.
+        @param headerSize - will on successfull return be the size of the binary header (in bytes)
+        @return 0 - on success
+        @return 1 - ...*/
+    int ReadNextSpectrumHeader(FILE* f, struct MKZYhdr& MKZYHeader, int& headerSize, CSpectrum* spec = nullptr, char* headerBuffer = nullptr, int headerBufferSize = 0);
 
     /** Converts a time from std::uint32_t to CDateTime */
     void ParseTime(const std::uint32_t t, CDateTime& time) const;

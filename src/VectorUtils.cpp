@@ -32,6 +32,34 @@ double Max(const std::vector<double>& values)
     return Max(values, idx);
 }
 
+double MaxAbs(const std::vector<double>& values, size_t& idx)
+{
+    idx = 0;
+
+    if (values.size() == 0)
+    {
+        return 0.0;
+    }
+
+    double m = std::abs(values[0]);
+    for (size_t ii = 1; ii < values.size(); ++ii)
+    {
+        if (std::abs(values[ii]) > m)
+        {
+            m = std::abs(values[ii]);
+            idx = ii;
+        }
+    }
+
+    return m;
+}
+
+double MaxAbs(const std::vector<double>& values)
+{
+    size_t idx = 0U;
+    return MaxAbs(values, idx);
+}
+
 double Min(const std::vector<double>& values, size_t& idx)
 {
     idx = 0;
@@ -108,6 +136,18 @@ double Sum(const std::vector<double>& values)
 
     return sum;
 }
+
+double SumAbs(const std::vector<double>& values)
+{
+    double sum = 0.0;
+    for (size_t ii = 0; ii < values.size(); ++ii)
+    {
+        sum += std::abs(values[ii]);
+    }
+
+    return sum;
+}
+
 
 double SumOfSquaredDifferences(const std::vector<double>& a, const std::vector<double>& b)
 {
@@ -293,6 +333,20 @@ void FindNLowest(const std::vector<double>& input, size_t N, std::vector<double>
     std::sort(begin(result), end(result));
 }
 
+void Normalize(std::vector<double>& values)
+{
+    const double minValue = Min(values);
+    const double maxValue = Max(values);
+
+    if (std::abs(minValue) > std::numeric_limits<double>::epsilon() || std::abs(maxValue - 1.0) > std::numeric_limits<double>::epsilon())
+    {
+        for (size_t ii = 0; ii < values.size(); ++ii)
+        {
+            values[ii] = (values[ii] - minValue) / (maxValue - minValue);
+        }
+    }
+}
+
 void Normalize(const std::vector<double>& input, std::vector<double>& output)
 {
     output.resize(input.size());
@@ -355,7 +409,7 @@ double FindValue(const std::vector<double>& values, double valueToFind, size_t s
 
     stopIdx = std::min(stopIdx, values.size());
 
-    for (size_t idx = startIdx + 1; idx < stopIdx; ++idx)
+    for (size_t idx = startIdx + 1; idx <= stopIdx; ++idx)
     {
         const double lastValue = values[idx - 1];
         const double thisValue = values[idx];
@@ -435,3 +489,14 @@ std::vector<double> GenerateVector(double minValue, double maxValue, size_t leng
     return result;
 }
 
+bool Contains(const std::vector<size_t>& data, size_t value)
+{
+    for (size_t v : data)
+    {
+        if (v == value)
+        {
+            return true;
+        }
+    }
+    return false;
+}

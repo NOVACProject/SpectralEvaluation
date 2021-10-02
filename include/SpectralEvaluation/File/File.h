@@ -8,6 +8,7 @@ namespace novac
 
 class CSpectrum;
 class CCrossSectionData;
+class InstrumentCalibration;
 
 /** Reads cross section data from the provded file.
         This is able to read ASCII data files with data in one or two columns.
@@ -40,13 +41,18 @@ std::string EnsureFilenameHasSuffix(const std::string& fullFilePath, const std::
 /** Returns the file extension (suffix) from the provided full file path */
 std::string GetFileExtension(const std::string& fullFilePath);
 
-/** Saves the full instrument calibration data to a single file using the extended STD-format, including the sampled
-    instrument line shape and the pixel to wavelength mapping. */
-// bool SaveInstrumentCalibration(const std::string& fullFilePath, const CSpectrum& instrumentLineShape, const std::vector<double>& pixelToWavelengthMapping);
+/** Saves the full instrument calibration to a single file using the extended STD-format.
+    This requires that at least that 'pixelToWavelengthMapping', 'instrumentLineShape', and 'instrumentLineShapeGrid' are defined. */
+bool SaveInstrumentCalibration(const std::string& fullFilePath, const InstrumentCalibration& calibration);
 
 /** Reads a saved instrument line shape and pixel-to-wavelength mapping from an instrument calibration file in extended STD-format.
+*   TODO: Try to replace with the overload below taking an InstrumentCalibration instead.
     @return true on success. */
 bool ReadInstrumentCalibration(const std::string& fullFilePath, CSpectrum& instrumentLineShape, std::vector<double>& pixelToWavelengthMapping);
 
+/** Reads an instrument calibration from a file in the extended STD-format.
+    The read in data will be filled into 'result'.
+    @return true on success. */
+bool ReadInstrumentCalibration(const std::string& fullFilePath, InstrumentCalibration& result);
 
 }

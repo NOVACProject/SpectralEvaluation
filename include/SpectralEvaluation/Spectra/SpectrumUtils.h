@@ -7,6 +7,13 @@ namespace novac
 
 class CSpectrum;
 
+enum class SpectrumDataPointType
+{
+    Peak = 0,   // Represents a point of a local maximum in the spectrum.
+    Valley = 1, // Represents a point of a local minimum in the spectrum.
+    UnresolvedPeak = 2 // Represents a not fully resolved emission line in the spectrum.
+};
+
 // Simple structure used to represent a point in a spectrum
 struct SpectrumDataPoint
 {
@@ -20,7 +27,7 @@ struct SpectrumDataPoint
     double intensity = 0.0;
 
     // A type enumerator, may be used to classify points
-    int type = 0;
+    SpectrumDataPointType type = SpectrumDataPointType::Peak;
 
     // An associated left point
     double leftPixel = 0.0;
@@ -67,7 +74,12 @@ void FindKeypointsInSpectrum(const CSpectrum& spectrum, double minimumIntensity,
  *  if this has a wavelength calibration then the resulting points will have a wavelength filled in.
  * @param result Will on return be filled with the found peaks.
  * The resulting points will have their leftPixel and rightPixel set to the points where the peak is judged to start. */
-void FindEmissionLines(const CSpectrum& spectrum, std::vector<SpectrumDataPoint>& result);
+void FindEmissionLines(const CSpectrum& spectrum, std::vector<SpectrumDataPoint>& result, bool includeNotClearlyResolvedLines = true);
+
+/**
+    @brief Filters the provided input vector by the SpectrumDataPoint::type and returns
+        a copy of the input containing only the input points which have the provided type. */
+std::vector<SpectrumDataPoint> FilterByType(const std::vector<SpectrumDataPoint>& input, SpectrumDataPointType typeToFind);
 
 /**
  * @brief Calculates a first order derivative on the provided data array wrt index value using finite difference.

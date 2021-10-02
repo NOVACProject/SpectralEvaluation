@@ -20,11 +20,38 @@ class IFraunhoferSpectrumGenerator
 public:
     /// <summary>
     /// Creates a Fraunhofer reference spectrum using the provided pixel-to-wavelength mapping and measured instrument line shape.
+    /// This will determine the fwhm of the provided instrument line shape and use this value to determine the convolution grid.
     /// </summary>
     /// <param name="pixelToWavelengthMapping">The wavelength (in nm air) for each pixel on the detector.</param>
     /// <param name="measuredInstrumentLineShape">A measurement of the instrument line shape</param>
     /// <returns>The high resolution solar spectrum convolved with the measured slf and resample to the provided grid.</returns>
-    virtual std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(const std::vector<double>& wavelengthCalibration, const novac::CCrossSectionData& ils) = 0;
+    virtual std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
+        const std::vector<double>& wavelengthCalibration,
+        const novac::CCrossSectionData& measuredInstrumentLineShape) = 0;
+
+    /// <summary>
+    /// Creates a Fraunhofer reference spectrum using the provided pixel-to-wavelength mapping and measured instrument line shape.
+    /// This will determine the fwhm of the provided instrument line shape and use this value to determine the convolution grid.
+    /// </summary>
+    /// <param name="pixelToWavelengthMapping">The wavelength (in nm air) for each pixel on the detector.</param>
+    /// <param name="measuredInstrumentLineShape">A measurement of the instrument line shape</param>
+    /// <returns>The high resolution solar spectrum convolved with the measured slf and resample to the provided grid.</returns>
+    virtual std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
+        const std::vector<double>& wavelengthCalibration,
+        const novac::CCrossSectionData& measuredInstrumentLineShape,
+        bool normalize) = 0;
+
+    /// <summary>
+    /// Creates a Fraunhofer reference spectrum using the provided pixel-to-wavelength mapping and differential instrument line shape.
+    /// </summary>
+    /// <param name="pixelToWavelengthMapping">The wavelength (in nm air) for each pixel on the detector.</param>
+    /// <param name="measuredInstrumentLineShape">A measurement of the instrument line shape.</param>
+    /// <param name="fwhmOfInstrumentLineShape>The Full Width at Half Maximum of the provided instrument line shape.</param>
+    /// <returns>The high resolution solar spectrum convolved with the measured slf and resample to the provided grid.</returns>
+    virtual std::unique_ptr<CSpectrum> GetDifferentialFraunhoferSpectrum(
+        const std::vector<double>& wavelengthCalibration,
+        const novac::CCrossSectionData& measuredInstrumentLineShape,
+        double fwhmOfInstrumentLineShape) = 0;
 };
 
 /// <summary>
@@ -56,23 +83,15 @@ public:
         const std::vector<double>& pixelToWavelengthMapping,
         const novac::CCrossSectionData& measuredInstrumentLineShape) override;
 
-#ifdef USE_DOAS_FIT
-
-    /// <summary>
-    /// Creates a Fraunhofer reference spectrum using the provided pixel-to-wavelength mapping and measured instrument line shape.
-    ///     A DOAS fit is applied in order to determine the total columns of each high resolution cross section in this setup.
-    ///     I.e., the total columns passed in to the constructor are ignored.
-    /// This will throw an std::invalid_argument if no high resolution cross section was provided at creation (indicating an invalid setup)
-    /// </summary>
-    /// <param name="measuredInstrumentLineShape">A measurement of the instrument line shape</param>
-    /// <param name="measuredSpectrum">A measured spectrum. </param>
-    /// <returns>The high resolution solar spectrum convolved with the measured slf and resample to the provided grid.</returns>
-    std::unique_ptr<CSpectrum> GetFraunhoferSpectrumMatching(
+    virtual std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
         const std::vector<double>& pixelToWavelengthMapping,
-        const novac::CSpectrum& measuredSpectrum,
-        const novac::CCrossSectionData& measuredInstrumentLineShape);
+        const novac::CCrossSectionData& measuredInstrumentLineShape,
+        bool normalize) override;
 
-#endif // USE_DOAS_FIT
+    virtual std::unique_ptr<CSpectrum> GetDifferentialFraunhoferSpectrum(
+        const std::vector<double>& wavelengthCalibration,
+        const novac::CCrossSectionData& measuredInstrumentLineShape,
+        double fwhmOfInstrumentLineShape) override;
 
 private:
     /// <summary>
@@ -114,7 +133,15 @@ private:
     std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
         const std::vector<double>& pixelToWavelengthMapping,
         const novac::CCrossSectionData& measuredInstrumentLineShape,
-        std::vector<AbsorbingCrossSection>& crossSectionsToInclude);
+        std::vector<AbsorbingCrossSection>& crossSectionsToInclude,
+        double fwhmOfInstrumentLineShape,
+        bool normalize);
+
+    std::unique_ptr<CSpectrum> GetDifferentialFraunhoferSpectrum(
+        const std::vector<double>& pixelToWavelengthMapping,
+        const novac::CCrossSectionData& measuredInstrumentLineShape,
+        std::vector<AbsorbingCrossSection>& crossSectionsToInclude,
+        double fwhmOfInstrumentLineShape);
 
     void ReadSolarCrossSection();
 };

@@ -7,12 +7,14 @@ cmake_minimum_required (VERSION 3.6)
 add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/main.cpp
     ${CMAKE_CURRENT_LIST_DIR}/catch.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_InstrumentCalibrationInStdFile.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTest_ScanFileHandler.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTest_SpectrumIO.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_StdFile.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_WavelengthCalibration.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Air.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Convolution.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Correspondence.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_CrossSectionData.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_DateTime.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Evaluation.cpp
@@ -20,7 +22,9 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FindPlume.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitExtensions.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitWindow.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_InstrumentLineShape.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitInstrumentLineShapeFunction.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_InstrumentLineShapeEstimation.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_PolynomialFit.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_RatioEvaluation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_SpectrumUtils.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Utils.cpp

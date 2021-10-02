@@ -6,7 +6,7 @@
 
 using namespace novac;
 
-TEST_CASE("Fft_Real zero valued input, returns all-zero valued result", "[FFT][Fft_Real]")
+TEST_CASE("Fft_Real zero valued input, returns all-zero valued result", "[Math][FFT][Fft_Real]")
 {
     std::vector<double> inputValues(64, 0.0);
     std::vector<std::complex<double>> outputValues(64, std::complex<double>{1.0, 1.0}); // sets all values to one initially
@@ -30,7 +30,7 @@ TEST_CASE("Fft_Real zero valued input, returns all-zero valued result", "[FFT][F
     }
 }
 
-TEST_CASE("Fft_Real constant valued input, all energy ends up in DC-component", "[FFT][Fft_Real]")
+TEST_CASE("Fft_Real constant valued input, all energy ends up in DC-component", "[Math][FFT][Fft_Real]")
 {
     size_t fftLength = 64;
     std::vector<double> inputValues(fftLength, 5.0);
@@ -56,7 +56,7 @@ TEST_CASE("Fft_Real constant valued input, all energy ends up in DC-component", 
     }
 }
 
-TEST_CASE("Fft_Real returns same result as Fft with real valued input", "[FFT][Fft_Real]")
+TEST_CASE("Fft_Real returns same result as Fft with real valued input", "[Math][FFT][Fft_Real]")
 {
     size_t fftLength = 62;
     std::vector<std::complex<double>> outputFromFftReal(fftLength, std::complex<double>{1.0, 1.0});
@@ -107,7 +107,7 @@ TEST_CASE("Fft_Real returns same result as Fft with real valued input", "[FFT][F
     }
 }
 
-TEST_CASE("Fft_Real constant valued input, length not power of two, all energy ends up in DC-component", "[FFT][Fft_Real]")
+TEST_CASE("Fft_Real constant valued input, length not power of two, all energy ends up in DC-component", "[Math][FFT][Fft_Real]")
 {
     size_t fftLength = 26; // this is an even number, but not a power of two
     std::vector<double> inputValues(fftLength, 5.0);
@@ -133,7 +133,7 @@ TEST_CASE("Fft_Real constant valued input, length not power of two, all energy e
     }
 }
 
-TEST_CASE("InverseFft restores result of Fft", "[FFT][Fft_Real]")
+TEST_CASE("InverseFft restores result of Fft", "[Math][FFT][Fft_Real]")
 {
     size_t fftLength = 63;
     std::vector<std::complex<double>> intermediate(fftLength, std::complex<double>{1.0, 1.0}); // sets all values to one initially
@@ -161,7 +161,7 @@ TEST_CASE("InverseFft restores result of Fft", "[FFT][Fft_Real]")
     }
 }
 
-TEST_CASE("InverseFft restores result of FftReal", "[FFT][Fft_Real]")
+TEST_CASE("InverseFft restores result of FftReal", "[Math][FFT][Fft_Real]")
 {
     size_t fftLength = 28;
     std::vector<std::complex<double>> intermediate(fftLength, std::complex<double>{1.0, 1.0}); // sets all values to one initially

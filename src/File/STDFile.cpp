@@ -20,7 +20,7 @@ constexpr const char* MathHighStr = "MathHigh = ";
 constexpr const char* MinChannelStr = "MinChannel = ";
 constexpr const char* MaxChannelStr = "MaxChannel = ";
 constexpr const char* CalibPolynomialOrderStr = "CalibPolynomialOrder = ";
-constexpr const char* CalibPolynomialStr = "CalibPolynomial = ";
+constexpr const char* CalibPolynomialStr = "CalibrationPolynomial = ";
 
 bool AttemptParseDouble(const std::vector<char>& stringToParse, const char* propertyName, double& value)
 {
@@ -75,6 +75,16 @@ bool AttemptParseVector(const std::vector<char>& stringToParse, const char* prop
     }
 
     return false;
+}
+
+// Split the vector-of-characters into two substrings, at the position of the 'separator' character.
+std::pair<std::string, std::string> Split(std::vector<char>& str, const char* separator)
+{
+    char* pt = strstr(str.data(), separator);
+    *pt = '\0';
+    std::string first = str.data();
+    std::string second = (pt + strlen(separator));
+    return std::make_pair(first, second);
 }
 
 bool CSTDFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName)
@@ -359,6 +369,13 @@ bool CSTDFile::ReadSpectrum(CSpectrum& spec, const std::string& fileName, CSTDFi
         {
             continue;
         }
+
+        // Unknown property
+        if (nullptr != strstr(szLine.data(), " = "))
+        {
+            auto properties = Split(szLine, " = ");
+            extendedInformation.additionalProperties.push_back(properties);
+        }
     }
 
     // Get the intensity
@@ -466,10 +483,11 @@ void WriteExtendedData(const CSpectrum& spec, const std::string& fileName, const
 
     if (extendedInformation.calibrationPolynomial.size() > 0)
     {
-        fprintf(f, "%s %lld\n", CalibPolynomialOrderStr, extendedInformation.calibrationPolynomial.size() - 1);
+        fprintf(f, CalibPolynomialOrderStr);
+        fprintf(f, "%lu\n", static_cast<unsigned long>(extendedInformation.calibrationPolynomial.size() - 1));
 
-        fprintf(f, "CalibPolynomial = ");
-        fprintf(f, "(System.Double[%lld])", extendedInformation.calibrationPolynomial.size());
+        fprintf(f, CalibPolynomialStr);
+        fprintf(f, "(System.Double[%lu])", static_cast<unsigned long>(extendedInformation.calibrationPolynomial.size()));
         for (size_t ii = 0; ii < extendedInformation.calibrationPolynomial.size() - 1; ++ii)
         {
             fprintf(f, "%.9g ", extendedInformation.calibrationPolynomial[ii]);

@@ -11,48 +11,8 @@ namespace novac
 {
 
 class CSpectrum;
+struct Correspondence;
 struct SpectrumDataPoint;
-
-/// <summary>
-/// A Correspondence is an essential part in the ransac calibration routine, it
-/// represents a connection between a point in the measured spectrum and a point
-/// in the theoretical fraunhofer spectrum.
-/// </summary>
-struct Correspondence
-{
-    Correspondence()
-        : measuredIdx(0), theoreticalIdx(0), error(0.0)
-    { }
-
-    Correspondence(size_t measured, size_t theoretical, double error)
-        : measuredIdx(measured), theoreticalIdx(theoretical), error(error)
-    { }
-
-    /// <summary>
-    /// The index of the keypoint in the measured spectrum
-    /// </summary>
-    size_t measuredIdx = 0;
-
-    /// <summary>
-    /// The value of the keypoint in the measured spectrum (pixel, in the case of wavelength calibration)
-    /// </summary>
-    double measuredValue = 0.0;
-
-    /// <summary>
-    /// The index of the keypoint in the theoretical spectrum
-    /// </summary>
-    size_t theoreticalIdx = 0;
-
-    /// <summary>
-    /// The value of the keypoint in the theoretical spectrum (wavelength, in the case of wavelength calibration)
-    /// </summary>
-    double theoreticalValue = 0.0;
-
-    /// <summary>
-    /// An error measure between the keypoints in the two spectra, lower is better
-    /// </summary>
-    double error = 0.0;
-};
 
 
 // ------------- Keypoint selection and preparation -------------
@@ -227,6 +187,14 @@ private:
     /// <param name="possibleCorrespondences"></param>
     /// <returns>The best fitted model and the number of inliers.</returns>
     RansacWavelengthCalibrationResult RunRansacCalibrations(const std::vector<Correspondence>& possibleCorrespondences, const std::vector<std::vector<Correspondence>>& possibleCorrespondencesOrderedByMeasuredKeypoint, int numberOfIterations) const;
+
+    /// <summary>
+    /// Runs a basic calibration without random sampling, testing every possible combination.
+    //  Only possible to use if the total number of combinations is low.
+    /// </summary>
+    /// <param name="possibleCorrespondences"></param>
+    /// <returns>The best fitted model and the number of inliers.</returns>
+    RansacWavelengthCalibrationResult RunDeterministicCalibration(const std::vector<Correspondence>& possibleCorrespondences, const std::vector<std::vector<Correspondence>>& possibleCorrespondencesOrderedByMeasuredKeypoint) const;
 
 };
 

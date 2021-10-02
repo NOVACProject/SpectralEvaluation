@@ -58,7 +58,7 @@ TEST_CASE("FindPeaks", "[SpectrumUtils][FindPeaks]")
         REQUIRE(0 == result.size());
     }
 
-    SECTION("Narrow Gaussian 1 - locates peak")
+    SECTION("Narrow ApproximateGaussian 1 - locates peak")
     {
         const double sigma = 0.2; // [nm]
         const double center = inputSpectrum.m_wavelength[inputSpectrum.m_length / 2]; 
@@ -73,7 +73,7 @@ TEST_CASE("FindPeaks", "[SpectrumUtils][FindPeaks]")
         REQUIRE(result[0].intensity == 1.0);
     }
 
-    SECTION("Narrow Gaussian 2 - locates peak")
+    SECTION("Narrow ApproximateGaussian 2 - locates peak")
     {
         const double sigma = 0.2; // [nm]
         const double center = inputSpectrum.m_wavelength[0] + 0.42 * (inputSpectrum.m_wavelength[inputSpectrum.m_length - 1] - inputSpectrum.m_wavelength[0]);

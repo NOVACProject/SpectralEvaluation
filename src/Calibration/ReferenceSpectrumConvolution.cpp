@@ -298,14 +298,15 @@ size_t GetNonReduciblePrime(size_t number)
     return number;
 }
 
-
 bool ConvolveReference(
     const std::vector<double>& pixelToWavelengthMapping,
     const CCrossSectionData& slf,
     const CCrossSectionData& highResReference,
     std::vector<double>& result,
     WavelengthConversion conversion,
-    ConvolutionMethod method)
+    ConvolutionMethod method,
+    double fwhmOfInstrumentLineShape,
+    bool normalizeSlf)
 {
     if (slf.m_waveLength.size() != slf.m_crossSection.size())
     {
@@ -323,9 +324,17 @@ bool ConvolveReference(
     Convert(highResReference, conversion, convertedHighResReference);
 
     // We need to make sure we work on the correct resolution, the highest possible to get the most accurate results.
-    const double fwhmOfSlf = GetFwhm(slf);
-    const double minimumAllowedResolution = 0.02 * fwhmOfSlf; // do use at least 50 points per FWHM of the SLF
-    const double maximumAllowedResolution = 0.01 * fwhmOfSlf; // do not use more than 100 points per FWHM of the SLF
+    if (fwhmOfInstrumentLineShape < std::numeric_limits<float>::epsilon())
+    {
+        fwhmOfInstrumentLineShape = GetFwhm(slf);
+    }
+    if (fwhmOfInstrumentLineShape < std::numeric_limits<float>::epsilon())
+    {
+        std::cout << " Error in call to 'ConvolveReference', the estimated fwhm of the instrument line shape is zero." << std::endl;
+        return false;
+    }
+    const double minimumAllowedResolution = 0.02 * fwhmOfInstrumentLineShape; // do use at least 50 points per FWHM of the SLF
+    const double maximumAllowedResolution = 0.01 * fwhmOfInstrumentLineShape; // do not use more than 100 points per FWHM of the SLF
     const double resolutionOfReference = Resolution(convertedHighResReference.m_waveLength);
     const double highestResolution = std::max(std::min(resolutionOfReference, maximumAllowedResolution), minimumAllowedResolution);
 
@@ -340,25 +349,34 @@ bool ConvolveReference(
         // For the sake of efficiency of the fft below, find the length which contain as many factors of two, tree and five as possible
         //  while still being between minimumAllowedResolution and maximumAllowedResolution.
         // This is done by finding the smallest length for which the remainder after removing all 2, 3 and 5 prime factors is minimal (usually one).
-        const size_t minimumLength = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / minimumAllowedResolution);
         const size_t maximumLength = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / maximumAllowedResolution);
 
-        size_t testLength = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / highestResolution);
-        size_t optimumLength = testLength;
-        size_t optimumRemainder = GetNonReduciblePrime(testLength);
+        size_t testLengthForConvolutionGrid = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / highestResolution);
+        size_t optimumConvolutionGridLength = testLengthForConvolutionGrid;
+        convolutionGrid.length = testLengthForConvolutionGrid;
+        size_t slfLength = 1 + (size_t)(std::round((slf.m_waveLength.back() - slf.m_waveLength.front()) / convolutionGrid.Resolution()));
+        size_t fftLength = testLengthForConvolutionGrid + slfLength - 1; // take into account that what we're calculating the fft of isn't just the input length but the input + slf - 1.
+        size_t optimumRemainder = GetNonReduciblePrime(fftLength);
 
-        while (testLength < maximumLength)
+        while (testLengthForConvolutionGrid < maximumLength)
         {
-            ++testLength;
-            const size_t remainder = GetNonReduciblePrime(testLength);
+            ++testLengthForConvolutionGrid;
+
+            convolutionGrid.length = testLengthForConvolutionGrid;
+            slfLength = 1 + (size_t)(std::round((slf.m_waveLength.back() - slf.m_waveLength.front()) / convolutionGrid.Resolution()));
+            fftLength = testLengthForConvolutionGrid + slfLength - 1;
+
+            const size_t remainder = GetNonReduciblePrime(fftLength);
 
             if (remainder < optimumRemainder)
             {
                 optimumRemainder = remainder;
-                optimumLength = testLength;
+                optimumConvolutionGridLength = testLengthForConvolutionGrid;
             }
         }
-        convolutionGrid.length = optimumLength;
+        convolutionGrid.length = optimumConvolutionGridLength;
+
+        // std::cout << "Convolution is using length: " << optimumConvolutionGridLength << " with smallest remainder: " << optimumRemainder << std::endl;
     }
     else
     {
@@ -376,8 +394,15 @@ bool ConvolveReference(
 
     // To preserve the energy, we need to normalize the slit-function to the range [0->1]
     std::vector<double> normalizedSlf;
-    NormalizeArea(resampledSlf, normalizedSlf);
-    assert(normalizedSlf.size() == resampledSlf.size());
+    if (normalizeSlf)
+    {
+        NormalizeArea(resampledSlf, normalizedSlf);
+        assert(normalizedSlf.size() == resampledSlf.size());
+    }
+    else
+    {
+        normalizedSlf = resampledSlf;
+    }
 
     const size_t refSize = uniformHighResReference.size();
     const size_t coreSize = normalizedSlf.size();
@@ -387,7 +412,6 @@ bool ConvolveReference(
     if (method == ConvolutionMethod::Direct)
     {
         ConvolutionCore(uniformHighResReference, normalizedSlf, intermediate);
-
     }
     else if (method == ConvolutionMethod::Fft)
     {

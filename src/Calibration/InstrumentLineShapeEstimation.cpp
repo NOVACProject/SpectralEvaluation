@@ -4,7 +4,14 @@
 #include <SpectralEvaluation/Calibration/FraunhoferSpectrumGeneration.h>
 #include <SpectralEvaluation/Evaluation/BasicMath.h>
 #include <SpectralEvaluation/Spectra/SpectrumUtils.h>
+#include <SpectralEvaluation/Spectra/Scattering.h>
 #include <SpectralEvaluation/VectorUtils.h>
+#include <SpectralEvaluation/Evaluation/FitWindow.h>
+#include <SpectralEvaluation/Evaluation/DoasFit.h>
+#include <SpectralEvaluation/Calibration/InstrumentLineShape.h>
+
+// TODO: Remove, this is included for debugging only.
+#include <SpectralEvaluation/File/File.h>
 
 #undef min
 #undef max
@@ -15,14 +22,28 @@
 
 namespace novac
 {
-/// --------------------------- Estimating the instrument line shape --------------------------------
 
 static double GaussianSigmaToFwhm(double sigma)
 {
     return sigma * 2.0 * std::sqrt(2.0 * std::log(2.0));
 }
 
-InstrumentLineShapeEstimation::LineShapeEstimationState InstrumentLineShapeEstimation::EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& spectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm)
+/// ------------------------------------------------------------------------------------------
+/// --------------------------- InstrumentLineShapeEstimation --------------------------------
+/// ------------------------------------------------------------------------------------------
+
+bool InstrumentLineShapeEstimation::HasInitialLineShape() const
+{
+    return this->initialLineShapeEstimation != nullptr && this->initialLineShapeEstimation->GetSize() > 0;
+}
+
+
+
+/// --------------------------------------------------------------------------------------------------------------
+/// --------------------------- InstrumentLineShapeEstimationFromKeypointDistance --------------------------------
+/// --------------------------------------------------------------------------------------------------------------
+
+InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState InstrumentLineShapeEstimationFromKeypointDistance::EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& spectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm)
 {
     // Prepare a high-pass filtered version of the measured spectrum, removing all baseline
     CBasicMath math;
@@ -36,7 +57,6 @@ InstrumentLineShapeEstimation::LineShapeEstimationState InstrumentLineShapeEstim
     state.medianPixelDistanceInMeas = GetMedianKeypointDistanceFromSpectrum(*filteredSpectrum, "Meas");
     const double pixelDistanceFromInitialCalibration = std::abs(this->pixelToWavelengthMapping.back() - this->pixelToWavelengthMapping.front()) / (double)this->pixelToWavelengthMapping.size();
     const double medianMeasKeypointDistanceInWavelength = state.medianPixelDistanceInMeas * pixelDistanceFromInitialCalibration;
-    std::cout << "Measured spectrum has keypoint distance: " << state.medianPixelDistanceInMeas << std::endl;
 
     // Guess for a gaussian line shape and create a convolved solar spectrum with this setup
     double estimatedGaussianSigma;
@@ -67,7 +87,6 @@ InstrumentLineShapeEstimation::LineShapeEstimationState InstrumentLineShapeEstim
 
         medianPixelDistanceAtLowerSigmaLimit = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, "LowLimit");
 
-        std::cout << "Gaussian width: " << lowerSigmaLimit << " gives keypoint distance: " << medianPixelDistanceAtLowerSigmaLimit << std::endl;
         state.attempts.push_back(std::pair<double, double>{lowerSigmaLimit, medianPixelDistanceAtLowerSigmaLimit});
 
         if (std::isnan(medianPixelDistanceAtLowerSigmaLimit) || medianPixelDistanceAtLowerSigmaLimit > state.medianPixelDistanceInMeas)
@@ -88,10 +107,9 @@ InstrumentLineShapeEstimation::LineShapeEstimationState InstrumentLineShapeEstim
 
         medianPixelDistanceAtUpperSigmaLimit = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, "HighLimit");
 
-        std::cout << "Gaussian width: " << upperSigmaLimit << " gives keypoint distance: " << medianPixelDistanceAtUpperSigmaLimit << std::endl;
         state.attempts.push_back(std::pair<double, double>{upperSigmaLimit, medianPixelDistanceAtUpperSigmaLimit});
 
-        if (std::isnan(medianPixelDistanceAtUpperSigmaLimit))
+        if (std::isnan(medianPixelDistanceAtUpperSigmaLimit) || std::abs(medianPixelDistanceAtUpperSigmaLimit) < 0.1)
         {
             upperSigmaLimit /= 2.0;
             medianPixelDistanceAtUpperSigmaLimit = 0.0;
@@ -118,7 +136,6 @@ InstrumentLineShapeEstimation::LineShapeEstimationState InstrumentLineShapeEstim
 
         medianPixelDistanceInSolarSpectrum = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, "Theory");
 
-        std::cout << "Gaussian width: " << estimatedGaussianSigma << " gives keypoint distance: " << medianPixelDistanceInSolarSpectrum << std::endl;
         state.attempts.push_back(std::pair<double, double>{estimatedGaussianSigma, medianPixelDistanceInSolarSpectrum});
 
         if (medianPixelDistanceInSolarSpectrum > state.medianPixelDistanceInMeas)
@@ -142,26 +159,21 @@ InstrumentLineShapeEstimation::LineShapeEstimationState InstrumentLineShapeEstim
         // estimatedGaussianSigma = lowerSigmaLimit + (state.medianPixelDistanceInMeas - medianPixelDistanceAtLowerSigmaLimit) * (upperSigmaLimit - lowerSigmaLimit) / (medianPixelDistanceAtUpperSigmaLimit - medianPixelDistanceAtLowerSigmaLimit);
     }
 
-    // Calculate the FWHM of the gaussian as well
+    // Save the results
+    state.lineShape.center = 0.0;
+    state.lineShape.sigma = estimatedGaussianSigma;
     fwhm = GaussianSigmaToFwhm(estimatedGaussianSigma);
-
-    std::cout << "Final instrument line shape estimation gave Gaussian sigma of: " << estimatedGaussianSigma << " and a fwhm of: " << fwhm << std::endl;
 
     return state;
 }
 
-bool InstrumentLineShapeEstimation::HasInitialLineShape() const
-{
-    return this->initialLineShapeEstimation != nullptr && this->initialLineShapeEstimation->GetSize() > 0;
-}
-
 bool LineIntersects(const std::vector<double>& data, size_t index, double threshold)
 {
-    return data[index] > threshold && data[index - 1] < threshold ||
-        data[index] < threshold && data[index - 1] > threshold;
+    return (data[index] > threshold && data[index - 1] < threshold) ||
+            (data[index] < threshold && data[index - 1] > threshold);
 }
 
-double InstrumentLineShapeEstimation::GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum, const std::string& /*spectrumName*/) const
+double InstrumentLineShapeEstimationFromKeypointDistance::GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum, const std::string& /*spectrumName*/) const
 {
     int version = 2;
 
@@ -169,8 +181,10 @@ double InstrumentLineShapeEstimation::GetMedianKeypointDistanceFromSpectrum(cons
     {
         // Version 2, getting the median distance between zero crossings of the spectrum in the region [measuredPixelStart, measuredPixelStop]
         // start by normalizing the data by removing the median value
-        const size_t length = std::min(static_cast<size_t>(spectrum.m_length - this->measuredPixelStart), this->measuredPixelStop - this->measuredPixelStart);
-        std::vector<double> normalizedData{ spectrum.m_data + this->measuredPixelStart, spectrum.m_data + this->measuredPixelStart + length };
+        const size_t spectrumLength = static_cast<size_t>(spectrum.m_length);
+        const size_t start = (spectrumLength < this->measuredPixelStart) ? (spectrumLength / 10) : this->measuredPixelStart;
+        const size_t length = (spectrumLength < this->measuredPixelStart) ? (spectrumLength - 2 * start) : std::min(static_cast<size_t>(spectrumLength - this->measuredPixelStart), this->measuredPixelStop - this->measuredPixelStart);
+        std::vector<double> normalizedData{ spectrum.m_data + start, spectrum.m_data + start + length };
         std::vector<double> copyOfData{ begin(normalizedData), end(normalizedData) };
         auto median = Median(copyOfData);
         for (size_t ii = 0; ii < normalizedData.size(); ++ii)
@@ -283,7 +297,6 @@ double InstrumentLineShapeEstimation::GetMedianKeypointDistanceFromSpectrum(cons
         }
         keypointWidth[keypoints.size() - 1] = keypoints[keypoints.size() - 1].rightPixel - keypoints[keypoints.size() - 1].leftPixel;
         const double medianPixelDistance = Median(keypointDistances);
-        const double medianPixelWidth = Median(keypointWidth);
 
         return medianPixelDistance;
     }
@@ -321,6 +334,242 @@ double GetFwhm(const novac::CCrossSectionData& lineshape)
     {
         return (rightIdx - leftIdx);
     }
+}
+
+inline bool IsZero(double value)
+{
+    return std::abs(value) < std::numeric_limits<double>::epsilon();
+}
+
+
+/// --------------------------------------------------------------------------------------------------
+/// --------------------------- InstrumentLineshapeEstimationFromDoas --------------------------------
+/// --------------------------------------------------------------------------------------------------
+
+InstrumentLineshapeEstimationFromDoas::InstrumentLineshapeEstimationFromDoas(const std::vector<double>& initialPixelToWavelengthMapping, const novac::CCrossSectionData& initialLineShape)
+    : InstrumentLineShapeEstimation(initialPixelToWavelengthMapping, initialLineShape)
+{
+    // Get an estimation of parameters of the Super-Gaussian from the initial line shape estimation
+    if (FUNCTION_FIT_RETURN_CODE::SUCCESS != FitInstrumentLineShape(*this->initialLineShapeEstimation, this->initialLineShapeFunction))
+    {
+        // TODO: change type of exception
+        throw std::invalid_argument("Failed to fit a super gaussian line shape to measured data.");
+    }
+}
+
+InstrumentLineshapeEstimationFromDoas::InstrumentLineshapeEstimationFromDoas(const std::vector<double>& initialPixelToWavelengthMapping, const novac::SuperGaussianLineShape& initialLineShape)
+    : InstrumentLineShapeEstimation(initialPixelToWavelengthMapping)
+{
+    this->initialLineShapeFunction = initialLineShape;
+    this->initialLineShapeEstimation = std::make_unique<novac::CCrossSectionData>(SampleInstrumentLineShape(initialLineShape));
+}
+
+InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLineshapeEstimationFromDoas::EstimateInstrumentLineShape(
+    IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+    const CSpectrum& measuredSpectrum,
+    const LineShapeEstimationSettings& settings)
+{
+    if (this->initialLineShapeEstimation == nullptr)
+    {
+        throw std::invalid_argument("Cannot estimate the instrument line shape without an initial estimate.");
+    }
+    if (this->pixelToWavelengthMapping.size() == 0 || this->pixelToWavelengthMapping.size() != static_cast<size_t>(measuredSpectrum.m_length))
+    {
+        throw std::invalid_argument("Invalid setup of InstrumentLineshapeEstimationFromDoas, the initial pixel-to-wavelength mapping must have the same length as the measured spectrum.");
+    }
+
+    double stepSize = 5.0;
+
+    LineShapeEstimationResult result;
+
+    SuperGaussianLineShape parameterizedLineShape = this->initialLineShapeFunction;
+    std::cout << " Initial super gaussian is (w: " << parameterizedLineShape.w << ", k: " << parameterizedLineShape.k << ")" << std::endl;
+
+    InstrumentLineshapeEstimationFromDoas::LineShapeUpdate lastUpdate;
+    lastUpdate.residualSize = std::numeric_limits<double>::max();
+    lastUpdate.error = std::numeric_limits<double>::max();
+    SuperGaussianLineShape lastLineShape = parameterizedLineShape;
+
+    LineShapeEstimationAttempt optimumResult;
+    optimumResult.error = std::numeric_limits<double>::max();
+    optimumResult.shift = 0.0;
+    optimumResult.lineShape = parameterizedLineShape;
+
+    int iterationCount = 0;
+    bool successfullyConverged = false;
+    while (iterationCount < 100) // TODO: Determine a limit here
+    {
+        ++iterationCount;
+
+        auto update = CalculateGradient(fraunhoferSpectrumGen, measuredSpectrum, parameterizedLineShape, settings);
+
+        LineShapeEstimationAttempt currentAttempt;
+        currentAttempt.error = update.error;
+        currentAttempt.shift = update.shift;
+        currentAttempt.lineShape = parameterizedLineShape;
+        result.attempts.push_back(currentAttempt);
+
+        std::cout << " Super gaussian (w: " << parameterizedLineShape.w << ", k: " << parameterizedLineShape.k << ") gave error: " << update.error << " (with pa: " << update.residualSize << ") and shift: " << update.shift << std::endl;
+        std::cout << "    Delta is (w: " << update.parameterDelta[0] << ", k: " << update.parameterDelta[1] << ") " << std::endl;
+
+        if (update.error < optimumResult.error)
+        {
+            optimumResult.error = update.error;
+            optimumResult.shift = update.shift;
+            optimumResult.lineShape = parameterizedLineShape;
+        }
+
+        if (MaxAbs(update.parameterDelta) < 1e-6 || std::abs(lastUpdate.error - update.error) < 1e-6)
+        {
+            // we're done
+            successfullyConverged = true;
+            break;
+        }
+
+        lastLineShape = parameterizedLineShape;
+        lastUpdate = update;
+
+        // use the gradient to modify the parameterizedLineShape
+        for (int parameterIdx = 0; parameterIdx < static_cast<int>(update.parameterDelta.size()); ++parameterIdx)
+        {
+            const double currentValue = GetParameterValue(lastLineShape, parameterIdx);
+            SetParameterValue(parameterizedLineShape, parameterIdx, currentValue + stepSize * update.parameterDelta[parameterIdx]);
+        }
+
+        // gradually decrease the step size as we approach the solution
+        stepSize *= 0.8;
+    }
+
+    if (!successfullyConverged)
+    {
+        // throw??
+    }
+
+    result.result = optimumResult;
+
+    return result;
+}
+
+InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstimationFromDoas::CalculateGradient(
+    IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+    const CSpectrum& measuredSpectrum,
+    const SuperGaussianLineShape& currentLineShape,
+    const LineShapeEstimationSettings& settings)
+{
+    CBasicMath math;
+
+    CFitWindow doasFitSetup;
+    doasFitSetup.fitLow = static_cast<int>(settings.startPixel);
+    doasFitSetup.fitHigh = static_cast<int>(settings.endPixel);
+    doasFitSetup.polyOrder = 3;
+
+    // Sample this Super-Gaussian to get the line shape to convolve with.
+    auto sampledLineShape = SampleInstrumentLineShape(currentLineShape);
+    const double fwhm = currentLineShape.Fwhm();
+
+    auto currentFraunhoferSpectrum = fraunhoferSpectrumGen.GetFraunhoferSpectrum(this->pixelToWavelengthMapping, sampledLineShape, false);
+
+    // Log the Fraunhofer reference (to get Optical Depth)
+    std::vector<double> filteredFraunhoferSpectrum{ currentFraunhoferSpectrum->m_data, currentFraunhoferSpectrum->m_data + currentFraunhoferSpectrum->m_length };
+    math.Log(filteredFraunhoferSpectrum.data(), currentFraunhoferSpectrum->m_length);
+
+    // 1. Include the Fraunhofer reference as the first reference
+    doasFitSetup.nRef = 1;
+    doasFitSetup.ref[0].m_data = std::make_unique<novac::CCrossSectionData>(filteredFraunhoferSpectrum);
+    doasFitSetup.ref[0].m_columnOption = novac::SHIFT_FIX;
+    doasFitSetup.ref[0].m_columnValue = 1.0;
+    doasFitSetup.ref[0].m_squeezeOption = novac::SHIFT_FIX;
+    doasFitSetup.ref[0].m_squeezeValue = 1.0;
+    doasFitSetup.ref[0].m_shiftOption = novac::SHIFT_FREE;
+    doasFitSetup.ref[0].m_shiftValue = 0.0;
+
+    // 2. Include the Ring spectrum as the second reference
+    auto ringSpectrum = std::make_unique<novac::CSpectrum>(Doasis::Scattering::CalcRingSpectrum(*currentFraunhoferSpectrum));
+    std::vector<double> filteredRingSpectrum{ ringSpectrum->m_data, ringSpectrum->m_data + ringSpectrum->m_length };
+    math.Log(filteredRingSpectrum.data(), ringSpectrum->m_length);
+    doasFitSetup.ref[doasFitSetup.nRef].m_data = std::make_unique<novac::CCrossSectionData>(filteredRingSpectrum);
+    doasFitSetup.ref[doasFitSetup.nRef].m_columnOption = novac::SHIFT_FREE;
+    doasFitSetup.ref[doasFitSetup.nRef].m_squeezeOption = novac::SHIFT_FIX;
+    doasFitSetup.ref[doasFitSetup.nRef].m_squeezeValue = 1.0;
+    doasFitSetup.ref[doasFitSetup.nRef].m_shiftOption = novac::SHIFT_LINK;
+    doasFitSetup.ref[doasFitSetup.nRef].m_shiftValue = 0.0;
+    doasFitSetup.nRef += 1;
+
+    // 3. Include the pseudo-absorbers derived from the derivative of the instrument-line-shape function.
+    for (int parameterIdx = 0; parameterIdx < 2; ++parameterIdx)
+    {
+        auto diffSampledLineShape = std::make_unique<novac::CCrossSectionData>();
+        diffSampledLineShape->m_waveLength = sampledLineShape.m_waveLength;
+        diffSampledLineShape->m_crossSection = PartialDerivative(currentLineShape, sampledLineShape.m_waveLength, parameterIdx);
+
+        auto diffFraunhofer = fraunhoferSpectrumGen.GetDifferentialFraunhoferSpectrum(this->pixelToWavelengthMapping, *diffSampledLineShape, fwhm);
+
+        auto pseudoAbsorber = std::make_unique<novac::CCrossSectionData>();
+        pseudoAbsorber->m_crossSection.resize(currentFraunhoferSpectrum->m_length);
+        pseudoAbsorber->m_waveLength = std::vector<double>(begin(this->pixelToWavelengthMapping), end(this->pixelToWavelengthMapping));
+        for (size_t ii = 0; ii < pseudoAbsorber->m_crossSection.size(); ++ii)
+        {
+            pseudoAbsorber->m_crossSection[ii] = IsZero(currentFraunhoferSpectrum->m_data[ii]) ? 0.0 : diffFraunhofer->m_data[ii] / currentFraunhoferSpectrum->m_data[ii];
+        }
+
+        // if (parameterIdx == 0)
+        // {
+        //     novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/PseudoAbsorberSpectrum0.txt", pseudoAbsorber->m_crossSection);
+        // }
+        // else
+        // {
+        //     novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/PseudoAbsorberSpectrum1.txt", pseudoAbsorber->m_crossSection);
+        // }
+
+        doasFitSetup.ref[doasFitSetup.nRef].m_data = std::move(pseudoAbsorber);
+        doasFitSetup.ref[doasFitSetup.nRef].m_columnOption = novac::SHIFT_FREE;
+        doasFitSetup.ref[doasFitSetup.nRef].m_squeezeOption = novac::SHIFT_FIX;
+        doasFitSetup.ref[doasFitSetup.nRef].m_squeezeValue = 1.0;
+        doasFitSetup.ref[doasFitSetup.nRef].m_shiftOption = novac::SHIFT_LINK;
+        doasFitSetup.ref[doasFitSetup.nRef].m_shiftValue = 0.0;
+        doasFitSetup.nRef += 1;
+    }
+
+    DoasFit doas;
+    doas.Setup(doasFitSetup);
+
+    // Log the Measured spectrum (to get Optical Depth)
+    std::vector<double> filteredMeasuredSpectrum{ measuredSpectrum.m_data, measuredSpectrum.m_data + measuredSpectrum.m_length };
+    math.Log(filteredMeasuredSpectrum.data(), measuredSpectrum.m_length);
+
+    DoasResult doasResult;
+    // TODO: this throws an exception if the fit fails. Catch it!
+    doas.Run(filteredMeasuredSpectrum.data(), static_cast<size_t>(measuredSpectrum.m_length), doasResult);
+
+    // Save the setup such that we can debug and inspect
+    // {
+    //     novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/FraunhoferSpectrum.txt", filteredFraunhoferSpectrum);
+    //     novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/MeasuredSpectrum.txt", filteredMeasuredSpectrum);
+    //     novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/RingSpectrum.txt", filteredRingSpectrum);
+    // }
+
+    LineShapeUpdate update;
+    update.parameterDelta = std::vector<double>{ doasResult.referenceResult[2].column, doasResult.referenceResult[3].column };
+    update.residualSize = doasResult.chiSquare;
+    update.shift = doasResult.referenceResult[0].shift;
+
+    // Now also estimate the error by doing the DOAS fit without the Pseudo-absorbers
+    {
+        doasFitSetup.ref[2].m_columnOption = novac::SHIFT_FIX;
+        doasFitSetup.ref[2].m_columnValue = 0.0;
+
+        doasFitSetup.ref[3].m_columnOption = novac::SHIFT_FIX;
+        doasFitSetup.ref[3].m_columnValue = 0.0;
+
+        doas.Setup(doasFitSetup);
+
+        DoasResult newDoasResult;
+        doas.Run(filteredMeasuredSpectrum.data(), static_cast<size_t>(measuredSpectrum.m_length), newDoasResult);
+        update.error = newDoasResult.chiSquare;
+    }
+
+
+    return update;
 }
 
 }
