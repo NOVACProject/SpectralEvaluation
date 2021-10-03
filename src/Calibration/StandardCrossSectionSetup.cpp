@@ -51,15 +51,15 @@ StandardCrossSectionSetup::StandardCrossSectionSetup(const std::string& director
                     currentReference.fileName.append(fileName);
                 }
             }
-            else if (line.find("Specie") != std::string::npos)
+            else if (line.find("Name") != std::string::npos)
             {
-                currentReference.specieName = ParseXmlString("Specie", line);
+                currentReference.specieName = ParseXmlString("Name", line);
             }
             else if (line.find("Medium") != std::string::npos)
             {
                 std::string mediumName = ParseXmlString("Medium", line);
 
-                if (mediumName.length() > 0 && EqualsIgnoringCase(mediumName.c_str(), "air", 3) == 0)
+                if (mediumName.length() > 0 && EqualsIgnoringCase(mediumName.c_str(), "air", 3))
                 {
                     currentReference.isVacuum = false;
                 }
