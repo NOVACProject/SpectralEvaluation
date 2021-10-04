@@ -27,6 +27,7 @@ StandardCrossSectionSetup::StandardCrossSectionSetup(const std::string& director
         // Super basic xml parsing, without using any additional libraries.
         std::ifstream file(xmlFileName, std::ios::in);
         std::string line;
+        bool isReadingFraunhoferReferenceData = false;
         while (std::getline(file, line))
         {
             if (line.find("/CrossSection") != std::string::npos)
@@ -41,6 +42,22 @@ StandardCrossSectionSetup::StandardCrossSectionSetup(const std::string& director
             {
                 // Start the reading over with a new reference
                 currentReference = StandardReference();
+                isReadingFraunhoferReferenceData = false;
+            }
+            else if (line.find("/FraunhoferSpectrum") != std::string::npos)
+            {
+                // Add the currently read reference as the Fraunhofer reference to use, if it points to a valid location.
+                if (IsExistingFile(currentReference.fileName))
+                {
+                    m_fraunhoferReference.fileName = currentReference.fileName;
+                    m_fraunhoferReference.isVacuum = currentReference.isVacuum;
+                }
+            }
+            else if (line.find("FraunhoferSpectrum") != std::string::npos)
+            {
+                // Start the reading over with a new reference
+                currentReference = StandardReference();
+                isReadingFraunhoferReferenceData = true;
             }
             else if (line.find("File") != std::string::npos)
             {

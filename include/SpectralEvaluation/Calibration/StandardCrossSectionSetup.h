@@ -39,7 +39,15 @@ private:
         bool isVacuum = true;
     };
 
+    struct FraunhoferReference
+    {
+        std::string fileName;
+        bool isVacuum = false;
+    };
+
     std::vector< StandardReference> m_standardReferences;
+
+    FraunhoferReference m_fraunhoferReference;
 };
 
 }
