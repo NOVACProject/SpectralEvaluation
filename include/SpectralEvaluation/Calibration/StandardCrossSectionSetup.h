@@ -30,6 +30,10 @@ public:
         @throws std::invalid_argument if index >= NumberOfReferences(). */
     bool IsReferenceInVacuum(size_t index) const;
 
+    /** Returns the full file name of the Fraunhofer reference - if any exists.
+        @returns empty-string if no Fraunhofer reference exists. */
+    std::string FraunhoferReferenceFileName() const;
+
 private:
 
     struct StandardReference

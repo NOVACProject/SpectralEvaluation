@@ -145,4 +145,9 @@ bool StandardCrossSectionSetup::IsReferenceInVacuum(size_t index) const
     return m_standardReferences[index].isVacuum;
 }
 
+std::string StandardCrossSectionSetup::FraunhoferReferenceFileName() const
+{
+    return m_fraunhoferReference.fileName;
+}
+
 }
