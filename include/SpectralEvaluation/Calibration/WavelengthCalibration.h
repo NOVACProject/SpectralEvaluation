@@ -141,6 +141,19 @@ std::vector<double> GetPixelToWavelengthMappingFromFile(const std::string& clbFi
 std::vector<double> GetPixelToWavelengthMapping(const std::vector<double>& polynomialCoefficients, size_t detectorSize);
 
 /// <summary>
+/// Returns true if the provided polynomial can be a possible calibration for a spectrometer with the given detector size.
+/// This verifies that the provided polynomial is monotonically increasing in the pixel interval [0, numberOfPixels-1]
+/// </summary>
+bool IsPossiblePixelToWavelengthCalibrationPolynomial(const std::vector<double>& candidatePolynomial, size_t numberOfPixels);
+
+/// <summary>
+/// Returns true if the provided vector is be a possible calibration for a spectrometer.
+/// This checks the mappings to make sure that they are monotonically increasing.
+/// </summary>
+bool IsPossiblePixelToWavelengthCalibration(const std::vector<double>& pixelToWavelengthMapping);
+
+
+/// <summary>
 /// This is a helper structure used to extract the internal state of the pixel-to-wavelength calibration
 /// of a spectrometer from a measured mercury spectrum.
 /// </summary>
