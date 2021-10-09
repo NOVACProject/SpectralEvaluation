@@ -332,6 +332,32 @@ std::pair<double, double> GetFwhm(const std::vector<double>& lineShape)
     return std::make_pair(leftIdx, rightIdx);
 }
 
+double GetFwhm(const std::vector<double>& lineshapeWavelength, const std::vector<double>& lineShapeIntensity)
+{
+    if (lineShapeIntensity.size() <= 1)
+    {
+        // empty input
+        return 0.0;
+    }
+
+    const auto leftAndRightIdx = GetFwhm(lineShapeIntensity);
+
+    if (leftAndRightIdx.first < 0.0 || leftAndRightIdx.second < leftAndRightIdx.first)
+    {
+        return 0.0;
+    }
+
+    if (lineshapeWavelength.size() > 0)
+    {
+        // convert index to wavelength
+        return std::abs(GetAt(lineshapeWavelength, leftAndRightIdx.second) - GetAt(lineshapeWavelength, leftAndRightIdx.first));
+    }
+    else
+    {
+        return (leftAndRightIdx.second - leftAndRightIdx.first);
+    }
+}
+
 double GetFwhm(const novac::CCrossSectionData& lineshape)
 {
     if (lineshape.m_crossSection.size() <= 1)
@@ -339,23 +365,7 @@ double GetFwhm(const novac::CCrossSectionData& lineshape)
         // empty input
         return 0.0;
     }
-
-    const auto leftAndRightIdx = GetFwhm(lineshape.m_crossSection);
-
-    if (leftAndRightIdx.first < 0.0 || leftAndRightIdx.second < leftAndRightIdx.first)
-    {
-        return 0.0;
-    }
-
-    if (lineshape.m_waveLength.size() > 0)
-    {
-        // convert index to wavelength
-        return std::abs(GetAt(lineshape.m_waveLength, leftAndRightIdx.second) - GetAt(lineshape.m_waveLength, leftAndRightIdx.first));
-    }
-    else
-    {
-        return (leftAndRightIdx.second - leftAndRightIdx.first);
-    }
+    return GetFwhm(lineshape.m_waveLength, lineshape.m_crossSection);
 }
 
 inline bool IsZero(double value)

@@ -211,4 +211,9 @@ private:
 /// </summary>
 double GetFwhm(const novac::CCrossSectionData& lineshape);
 
+/// <summary>
+/// Estimates the Full Width at Half Maximum of a given lineshape function.
+/// </summary>
+double GetFwhm(const std::vector<double>& lineshapeWavelength, const std::vector<double>& lineShapeIntensity);
+
 }
