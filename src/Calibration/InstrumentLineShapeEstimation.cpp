@@ -397,7 +397,11 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
     }
     if (this->pixelToWavelengthMapping.size() == 0 || this->pixelToWavelengthMapping.size() != static_cast<size_t>(measuredSpectrum.m_length))
     {
-        throw std::invalid_argument("Invalid setup of InstrumentLineshapeEstimationFromDoas, the initial pixel-to-wavelength mapping must have the same length as the measured spectrum.");
+        throw std::invalid_argument("Invalid setup of Instrument Lineshape Estimation, the initial pixel-to-wavelength mapping must have the same length as the measured spectrum.");
+    }
+    if (settings.endPixel <= settings.startPixel)
+    {
+        throw std::invalid_argument("Invalid setup of Instrument Lineshape Estimation, a valid wavelength range must be defined.");
     }
 
     double stepSize = 5.0;
