@@ -437,7 +437,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
     {
         ++iterationCount;
 
-        auto update = CalculateGradient(fraunhoferSpectrumGen, measuredSpectrum, parameterizedLineShape, settings);
+        auto update = GetGradient(fraunhoferSpectrumGen, measuredSpectrum, parameterizedLineShape, settings);
 
         LineShapeEstimationAttempt currentAttempt;
         currentAttempt.error = update.error;
@@ -486,13 +486,44 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
     return result;
 }
 
-InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstimationFromDoas::CalculateGradient(
+InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstimationFromDoas::GetGradient(
     IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
     const CSpectrum& measuredSpectrum,
     const SuperGaussianLineShape& currentLineShape,
     const LineShapeEstimationSettings& settings)
 {
+    InstrumentLineshapeEstimationFromDoas::LineShapeUpdate update;
+    bool exceptionHappened = false;
+    try
+    {
+        update = CalculateGradient(fraunhoferSpectrumGen, measuredSpectrum, currentLineShape, settings);
+    }
+    catch (DoasFitException&)
+    {
+        exceptionHappened = true;
+    }
+
+    // If the fit is really bad of failed entirely. Go back and attempt again.
+    if (exceptionHappened || (update.residualSize > 2.0 && std::abs(update.shift) > 2.0))
+    {
+        // Chi2 > 2 is indicative of a _really_ bad DOAS fit. Attempt to do the DOAS fit again, but this time without allowing the shift to happen.
+        // Also, this time we don't catch the exception. If an exception happens here then abort the instrument line shape estimation.
+        update = CalculateGradient(fraunhoferSpectrumGen, measuredSpectrum, currentLineShape, settings, false);
+    }
+
+    return update;
+}
+
+InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstimationFromDoas::CalculateGradient(
+    IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+    const CSpectrum& measuredSpectrum,
+    const SuperGaussianLineShape& currentLineShape,
+    const LineShapeEstimationSettings& settings,
+    bool allowShift)
+{
     CBasicMath math;
+
+    const novac::SHIFT_TYPE shiftOption = allowShift ? novac::SHIFT_TYPE::SHIFT_FREE : novac::SHIFT_TYPE::SHIFT_FIX;
 
     CFitWindow doasFitSetup;
     doasFitSetup.fitLow = static_cast<int>(settings.startPixel);
@@ -516,7 +547,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     doasFitSetup.ref[0].m_columnValue = 1.0;
     doasFitSetup.ref[0].m_squeezeOption = novac::SHIFT_FIX;
     doasFitSetup.ref[0].m_squeezeValue = 1.0;
-    doasFitSetup.ref[0].m_shiftOption = novac::SHIFT_FREE;
+    doasFitSetup.ref[0].m_shiftOption = shiftOption;
     doasFitSetup.ref[0].m_shiftValue = 0.0;
 
     // 2. Include the Ring spectrum as the second reference
@@ -548,15 +579,6 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
             pseudoAbsorber->m_crossSection[ii] = IsZero(currentFraunhoferSpectrum->m_data[ii]) ? 0.0 : diffFraunhofer->m_data[ii] / currentFraunhoferSpectrum->m_data[ii];
         }
 
-        // if (parameterIdx == 0)
-        // {
-        //     novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/PseudoAbsorberSpectrum0.txt", pseudoAbsorber->m_crossSection);
-        // }
-        // else
-        // {
-        //     novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/PseudoAbsorberSpectrum1.txt", pseudoAbsorber->m_crossSection);
-        // }
-
         doasFitSetup.ref[doasFitSetup.nRef].m_data = std::move(pseudoAbsorber);
         doasFitSetup.ref[doasFitSetup.nRef].m_columnOption = novac::SHIFT_FREE;
         doasFitSetup.ref[doasFitSetup.nRef].m_squeezeOption = novac::SHIFT_FIX;
@@ -574,15 +596,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     math.Log(filteredMeasuredSpectrum.data(), measuredSpectrum.m_length);
 
     DoasResult doasResult;
-    // TODO: this throws an exception if the fit fails. Catch it!
     doas.Run(filteredMeasuredSpectrum.data(), static_cast<size_t>(measuredSpectrum.m_length), doasResult);
-
-    // Save the setup such that we can debug and inspect
-    // {
-    //     novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/FraunhoferSpectrum.txt", filteredFraunhoferSpectrum);
-    //     novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/MeasuredSpectrum.txt", filteredMeasuredSpectrum);
-    //     novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/RingSpectrum.txt", filteredRingSpectrum);
-    // }
 
     LineShapeUpdate update;
     update.parameterDelta = std::vector<double>{ doasResult.referenceResult[2].column, doasResult.referenceResult[3].column };

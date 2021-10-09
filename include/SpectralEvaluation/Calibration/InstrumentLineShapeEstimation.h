@@ -198,11 +198,26 @@ private:
     /// </summary>
     SuperGaussianLineShape initialLineShapeFunction;
 
-    LineShapeUpdate CalculateGradient(
+    /// <summary>
+    /// Attempts to calculate the gradient of the parameters of the instrument line shape fit
+    /// by calling CalculateGradient.
+    /// </summary>
+    LineShapeUpdate GetGradient(
         IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
         const CSpectrum& measuredSpectrum,
         const SuperGaussianLineShape& currentLineShape,
         const LineShapeEstimationSettings& settings);
+
+    /// <summary>
+    /// Caclulates the gradient of the parameters of the instrument line shape using a DOAS fit.
+    /// @throws DoasFitException if the fit fails.
+    /// </summary>
+    LineShapeUpdate CalculateGradient(
+        IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+        const CSpectrum& measuredSpectrum,
+        const SuperGaussianLineShape& currentLineShape,
+        const LineShapeEstimationSettings& settings,
+        bool allowShift = true);
 
 };
 
