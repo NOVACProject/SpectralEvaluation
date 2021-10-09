@@ -1,4 +1,5 @@
 #include <SpectralEvaluation/StringUtils.h>
+#include <SpectralEvaluation/Interpolation.h>
 #include <SpectralEvaluation/File/File.h>
 #include <SpectralEvaluation/File/STDFile.h>
 #include <SpectralEvaluation/File/TXTFile.h>
@@ -20,6 +21,8 @@
 
 namespace novac
 {
+
+std::pair<double, double> GetFwhm(const std::vector<double>& lineShape);
 
 bool IsExistingFile(const std::string& fullFileName)
 {
@@ -497,9 +500,8 @@ bool ReadInstrumentCalibration(const std::string& fullFilePath, InstrumentCalibr
 {
     result.Clear();
 
-    CSTDFile::ExtendedFormatInformation extendedFormatInformation;
-
     CSpectrum tmpSpectrum;
+    CSTDFile::ExtendedFormatInformation extendedFormatInformation;
     if (!CSTDFile::ReadSpectrum(tmpSpectrum, fullFilePath, extendedFormatInformation))
     {
         return false;
@@ -513,23 +515,50 @@ bool ReadInstrumentCalibration(const std::string& fullFilePath, InstrumentCalibr
     }
 
     // The pixel to wavelength mapping
+    result.pixelToWavelengthMapping = tmpSpectrum.m_wavelength;
+    result.pixelToWavelengthPolynomial = extendedFormatInformation.calibrationPolynomial;
+
+    // Copy out the instrument line shape
+    std::vector<double> instrumentLineShape;
+    instrumentLineShape.resize(static_cast<size_t>(extendedFormatInformation.MaxChannel - extendedFormatInformation.MinChannel));
+    memcpy(instrumentLineShape.data(), tmpSpectrum.m_data + extendedFormatInformation.MinChannel, instrumentLineShape.size() * sizeof(double));
+
+    const double instrumentLineShapeCenterPixel = Centroid(instrumentLineShape);
+    const std::pair<double, double> leftAndRightFwhmIdx = GetFwhm(instrumentLineShape);
+
+    // Check if the instrument line shape is reasonable.
+    if (leftAndRightFwhmIdx.first < (double)extendedFormatInformation.MinChannel ||
+        leftAndRightFwhmIdx.second >(double)extendedFormatInformation.MaxChannel ||
+        instrumentLineShapeCenterPixel < leftAndRightFwhmIdx.first ||
+        instrumentLineShapeCenterPixel > leftAndRightFwhmIdx.second)
     {
-        result.pixelToWavelengthMapping = tmpSpectrum.m_wavelength;
-        result.pixelToWavelengthPolynomial = extendedFormatInformation.calibrationPolynomial;
+        // We did at least manage to read the pixel-to-wavelength mapping.
+        return true;
     }
 
-    // Copy out instrument line shape
-    result.instrumentLineShape.resize(static_cast<size_t>(extendedFormatInformation.MaxChannel) - extendedFormatInformation.MinChannel);
-    memcpy(result.instrumentLineShape.data(), tmpSpectrum.m_data + extendedFormatInformation.MinChannel, result.instrumentLineShape.size() * sizeof(double));
+    double wavelengthAtLeftFwhm = 0.0;
+    double wavelengthAtRightFwhm = 0.0;
+    if (!LinearInterpolation(result.pixelToWavelengthMapping, leftAndRightFwhmIdx.first, wavelengthAtLeftFwhm) ||
+        !LinearInterpolation(result.pixelToWavelengthMapping, leftAndRightFwhmIdx.second, wavelengthAtRightFwhm))
+    {
+        // Interpolation failure, instrument line shape seems unreasonable.
+        return true;
+    }
 
-    // Get the instrument line shape grid and make sure that it is differntiated wrt the peak
+    if (std::abs(wavelengthAtRightFwhm - wavelengthAtLeftFwhm) > 0.01 * std::abs(result.pixelToWavelengthMapping.back() - result.pixelToWavelengthMapping.front()))
+    {
+        // Instrument line shape has a too large full width at half maximum.
+        return true;
+    }
+
+    result.instrumentLineShape = instrumentLineShape;
+
+    // Get the instrument line shape grid and make sure that it is differentiated wrt the peak
     {
         result.instrumentLineShapeGrid = std::vector<double>(begin(tmpSpectrum.m_wavelength) + extendedFormatInformation.MinChannel, begin(tmpSpectrum.m_wavelength) + extendedFormatInformation.MaxChannel);
 
-        const double centerPixel = Centroid(result.instrumentLineShape);
-
         double centerWavelength = 0.0;
-        if (!novac::LinearInterpolation(result.instrumentLineShapeGrid, centerPixel, centerWavelength))
+        if (!novac::LinearInterpolation(result.instrumentLineShapeGrid, instrumentLineShapeCenterPixel, centerWavelength))
         {
             return false;
         }

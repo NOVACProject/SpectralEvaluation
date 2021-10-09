@@ -170,7 +170,7 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
 bool LineIntersects(const std::vector<double>& data, size_t index, double threshold)
 {
     return (data[index] > threshold && data[index - 1] < threshold) ||
-            (data[index] < threshold && data[index - 1] > threshold);
+        (data[index] < threshold && data[index - 1] > threshold);
 }
 
 double InstrumentLineShapeEstimationFromKeypointDistance::GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum, const std::string& /*spectrumName*/) const
@@ -302,6 +302,36 @@ double InstrumentLineShapeEstimationFromKeypointDistance::GetMedianKeypointDista
     }
 }
 
+/// <summary>
+/// Investigates the provided lineshape and returns the left and right index 
+/// defining the FWHM.
+/// </summary>
+std::pair<double, double> GetFwhm(const std::vector<double>& lineShape)
+{
+    if (lineShape.size() <= 1)
+    {
+        // empty input
+        return std::make_pair(0.0, 0.0);
+    }
+
+    std::pair<size_t, size_t> minMaxIdx;
+    const auto minMax = MinMax(lineShape, minMaxIdx);
+
+    // Set a threshold which is half the maximum value.
+    const double threshold = minMax.first + 0.5 * (minMax.second - minMax.first);
+
+    // from the center (position of maximum value, get the point to the left and to the right where the lineshape crosses the threshold.
+    const double leftIdx = FindValue(lineShape, threshold, 0U, minMaxIdx.second);
+    const double rightIdx = FindValue(lineShape, threshold, minMaxIdx.second, lineShape.size());
+
+    if (leftIdx < 0.0 || rightIdx < leftIdx)
+    {
+        return std::make_pair(0.0, 0.0);
+    }
+
+    return std::make_pair(leftIdx, rightIdx);
+}
+
 double GetFwhm(const novac::CCrossSectionData& lineshape)
 {
     if (lineshape.m_crossSection.size() <= 1)
@@ -310,17 +340,9 @@ double GetFwhm(const novac::CCrossSectionData& lineshape)
         return 0.0;
     }
 
-    std::pair<size_t, size_t> minMaxIdx;
-    const auto minMax = MinMax(lineshape.m_crossSection, minMaxIdx);
+    const auto leftAndRightIdx = GetFwhm(lineshape.m_crossSection);
 
-    // Set a threshold which is half the maximum value.
-    const double threshold = minMax.first + 0.5 * (minMax.second - minMax.first);
-
-    // from the center (position of maximum value, get the point to the left and to the right where the lineshape crosses the threshold.
-    const double leftIdx = FindValue(lineshape.m_crossSection, threshold, 0U, minMaxIdx.second);
-    const double rightIdx = FindValue(lineshape.m_crossSection, threshold, minMaxIdx.second, lineshape.m_crossSection.size());
-
-    if (leftIdx < 0.0 || rightIdx < leftIdx)
+    if (leftAndRightIdx.first < 0.0 || leftAndRightIdx.second < leftAndRightIdx.first)
     {
         return 0.0;
     }
@@ -328,11 +350,11 @@ double GetFwhm(const novac::CCrossSectionData& lineshape)
     if (lineshape.m_waveLength.size() > 0)
     {
         // convert index to wavelength
-        return std::abs(GetAt(lineshape.m_waveLength, rightIdx) - GetAt(lineshape.m_waveLength, leftIdx));
+        return std::abs(GetAt(lineshape.m_waveLength, leftAndRightIdx.second) - GetAt(lineshape.m_waveLength, leftAndRightIdx.first));
     }
     else
     {
-        return (rightIdx - leftIdx);
+        return (leftAndRightIdx.second - leftAndRightIdx.first);
     }
 }
 
