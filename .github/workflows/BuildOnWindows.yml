@@ -21,7 +21,10 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
+    - name: Checkout code
+      uses: actions/checkout@v2
     - name: Run CMake to Create Project Files
       run: cmake -G "Visual Studio 16 2019" -A x64 .
     - name: Build
