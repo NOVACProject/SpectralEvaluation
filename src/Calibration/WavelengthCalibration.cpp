@@ -599,7 +599,7 @@ void WavelengthCalibrationSetup::EstimateInstrumentLineShapeAsSuperGaussian(nova
     }
     catch (std::exception& e)
     {
-        std::cout << "Instrumetn line shape estimation failed: " << e.what() << std::endl;
+        std::cout << "Instrument line shape estimation failed: " << e.what() << std::endl;
     }
 }
 

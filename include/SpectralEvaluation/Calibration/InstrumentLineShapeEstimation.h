@@ -206,7 +206,8 @@ private:
         IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
         const CSpectrum& measuredSpectrum,
         const SuperGaussianLineShape& currentLineShape,
-        const LineShapeEstimationSettings& settings);
+        const LineShapeEstimationSettings& settings,
+        bool& allowSpectrumShift);
 
     /// <summary>
     /// Caclulates the gradient of the parameters of the instrument line shape using a DOAS fit.

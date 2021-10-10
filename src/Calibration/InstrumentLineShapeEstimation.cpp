@@ -433,11 +433,12 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
 
     int iterationCount = 0;
     bool successfullyConverged = false;
+    bool allowSpectrumShift = true;
     while (iterationCount < 100) // TODO: Determine a limit here
     {
         ++iterationCount;
 
-        auto update = GetGradient(fraunhoferSpectrumGen, measuredSpectrum, parameterizedLineShape, settings);
+        auto update = GetGradient(fraunhoferSpectrumGen, measuredSpectrum, parameterizedLineShape, settings, allowSpectrumShift);
 
         LineShapeEstimationAttempt currentAttempt;
         currentAttempt.error = update.error;
@@ -490,13 +491,14 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
     const CSpectrum& measuredSpectrum,
     const SuperGaussianLineShape& currentLineShape,
-    const LineShapeEstimationSettings& settings)
+    const LineShapeEstimationSettings& settings,
+    bool& allowSpectrumShift)
 {
     InstrumentLineshapeEstimationFromDoas::LineShapeUpdate update;
     bool exceptionHappened = false;
     try
     {
-        update = CalculateGradient(fraunhoferSpectrumGen, measuredSpectrum, currentLineShape, settings);
+        update = CalculateGradient(fraunhoferSpectrumGen, measuredSpectrum, currentLineShape, settings, allowSpectrumShift);
     }
     catch (DoasFitException&)
     {
@@ -506,6 +508,15 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     // If the fit is really bad of failed entirely. Go back and attempt again.
     if (exceptionHappened || (update.residualSize > 2.0 && std::abs(update.shift) > 2.0))
     {
+        if (allowSpectrumShift)
+        {
+            allowSpectrumShift = false;
+        }
+        else
+        {
+            throw std::exception("Instrument line shape estimation failed, DOAS fit failed.");
+        }
+
         // Chi2 > 2 is indicative of a _really_ bad DOAS fit. Attempt to do the DOAS fit again, but this time without allowing the shift to happen.
         // Also, this time we don't catch the exception. If an exception happens here then abort the instrument line shape estimation.
         update = CalculateGradient(fraunhoferSpectrumGen, measuredSpectrum, currentLineShape, settings, false);
