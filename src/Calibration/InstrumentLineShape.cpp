@@ -264,8 +264,7 @@ CCrossSectionData SampleInstrumentLineShape(const SuperGaussianLineShape& lineSh
     const size_t length = 37;
     const double range = 3 * lineShape.Fwhm();
     const double xMin = -range * 0.5;
-    const double delta = range / static_cast<double>(length - 1);
-
+ 
     result.m_waveLength.resize(length);
     for (size_t ii = 0; ii < length; ++ii)
     {

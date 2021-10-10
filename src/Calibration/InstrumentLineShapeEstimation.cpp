@@ -514,7 +514,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
         }
         else
         {
-            throw std::exception("Instrument line shape estimation failed, DOAS fit failed.");
+            throw InstrumentLineShapeEstimationException("Instrument line shape estimation failed, DOAS fit failed.");
         }
 
         // Chi2 > 2 is indicative of a _really_ bad DOAS fit. Attempt to do the DOAS fit again, but this time without allowing the shift to happen.

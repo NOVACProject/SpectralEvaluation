@@ -12,6 +12,19 @@ class CCrossSectionData;
 class IFraunhoferSpectrumGenerator;
 class DoasFit;
 
+class InstrumentLineShapeEstimationException : public std::exception
+{
+private:
+    const char* const m_msg = "";
+
+public:
+    InstrumentLineShapeEstimationException(const char* msg) :
+        m_msg(msg)
+    {}
+
+    const char* what() const noexcept override final { return m_msg; }
+};
+
 /// <summary>
 /// Abstract base class for the different instrument line shape estimators.
 /// </summary>

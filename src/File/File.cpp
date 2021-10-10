@@ -526,16 +526,6 @@ bool ReadInstrumentCalibration(const std::string& fullFilePath, InstrumentCalibr
     const double instrumentLineShapeCenterPixel = Centroid(instrumentLineShape);
     const std::pair<double, double> leftAndRightFwhmIdx = GetFwhm(instrumentLineShape);
 
-    // Check if the instrument line shape is reasonable.
-    if (leftAndRightFwhmIdx.first < (double)extendedFormatInformation.MinChannel ||
-        leftAndRightFwhmIdx.second >(double)extendedFormatInformation.MaxChannel ||
-        instrumentLineShapeCenterPixel < leftAndRightFwhmIdx.first ||
-        instrumentLineShapeCenterPixel > leftAndRightFwhmIdx.second)
-    {
-        // We did at least manage to read the pixel-to-wavelength mapping.
-        return true;
-    }
-
     double wavelengthAtLeftFwhm = 0.0;
     double wavelengthAtRightFwhm = 0.0;
     if (!LinearInterpolation(result.pixelToWavelengthMapping, leftAndRightFwhmIdx.first, wavelengthAtLeftFwhm) ||
@@ -548,6 +538,8 @@ bool ReadInstrumentCalibration(const std::string& fullFilePath, InstrumentCalibr
     if (std::abs(wavelengthAtRightFwhm - wavelengthAtLeftFwhm) > 0.01 * std::abs(result.pixelToWavelengthMapping.back() - result.pixelToWavelengthMapping.front()))
     {
         // Instrument line shape has a too large full width at half maximum.
+        std::cout << "The provided .std file does not contain an instrument line shape. Estimated fwhm is: " << std::abs(wavelengthAtRightFwhm - wavelengthAtLeftFwhm);
+        std::cout << " and entire wavelength range of spectrum is " << std::abs(result.pixelToWavelengthMapping.back() - result.pixelToWavelengthMapping.front()) << "nm " << std::endl;
         return true;
     }
 
