@@ -8,7 +8,7 @@ namespace novac
 {
 
 CEvaluationResult::CEvaluationResult()
-    :m_chiSquare(0.0), m_delta(0.0), m_stepNum(0)
+    : m_delta(0.0), m_chiSquare(0.0), m_stepNum(0)
 {
     memset(m_polynomial, 0, 5 * sizeof(float));
     m_evaluationStatus = 0;

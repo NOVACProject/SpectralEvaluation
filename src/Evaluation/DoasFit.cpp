@@ -219,7 +219,6 @@ void DoasFit::Run(const double* measuredData, size_t measuredLength, DoasResult&
 
     // To perform the fit we need to extract the wavelength (or pixel)
     //  information from the vXData-vector
-    const int fitRegionSize = this->m_fitHigh - this->m_fitLow;
     MathFit::CVector vXSec = Generate(this->m_fitLow, this->m_fitHigh); // the x-axis data of the fit, here in pixels
 
     ////////////////////////////////////////////////////////////////////////////

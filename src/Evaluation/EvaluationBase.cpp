@@ -473,12 +473,12 @@ int CEvaluationBase::Evaluate(const CSpectrum &measured, int numSteps)
 
 int CEvaluationBase::Evaluate(const double* measured, size_t measuredLength, int measuredStartChannel, int numSteps)
 {
-    assert(vXData.GetSize() >= measuredLength);
+    assert(static_cast<size_t>(vXData.GetSize()) >= measuredLength);
 
     m_lastError = "";
 
     // Check so that the length of the spectra agree with each other
-    if (m_window.specLength != measuredLength)
+    if (static_cast<size_t>(m_window.specLength) != measuredLength)
     {
         m_lastError = "Failed to evaluate: the length of the measured spectrum does not equal the spectrum length of the fit-window used.";
         return 1;
