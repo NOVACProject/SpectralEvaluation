@@ -240,4 +240,10 @@ double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum, double max
 /** Normalizes the intensity of the provided spectrum to the range [0, 1] */
 void Normalize(CSpectrum& spectrum);
 
+/** Applies a shift and squeeze to the measured spectrum. 
+    The squeeze (if any) uses the origin pixel as starting point.
+    @param channelBased If true then the operation will be performed in pixels. If true in wavelength. 
+    @throws std::invalid_argument if channelBased is true and the spectrum does not have wavelength data. */
+void ShiftAndSqueezeSpectrum(CSpectrum& spectrum, bool channelBased, double shift, double squeezeOrigin = 0.0, double squeeze = 1.0);
+
 }

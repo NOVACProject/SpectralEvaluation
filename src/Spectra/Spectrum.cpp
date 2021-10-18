@@ -1,6 +1,8 @@
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
+#include <SpectralEvaluation/Evaluation/BasicMath.h>
+#include <SpectralEvaluation/Fit/Vector.h>
 
 #include <algorithm>
 
@@ -14,6 +16,8 @@
 
 namespace novac
 {
+MathFit::CVector Generate(int first, int last); // from DoasFit.cpp
+
 CSpectrum::CSpectrum()
     : m_length(0)
 {
@@ -557,6 +561,47 @@ void Normalize(CSpectrum& spectrum)
     for (long ii = 0; ii < spectrum.m_length; ++ii)
     {
         spectrum.m_data[ii] = (spectrum.m_data[ii] - minValue) / (maxValue - minValue);
+    }
+}
+
+void ShiftAndSqueezeSpectrum(CSpectrum& spectrum, bool channelBased, double shift, double squeezeOrigin, double squeeze)
+{
+    CBasicMath math;
+
+    const int spectrumLength = static_cast<int>(spectrum.m_length);
+
+    MathFit::CVector xData;
+    if (channelBased)
+    {
+        xData.Copy(Generate(0, spectrumLength));
+    }
+    else
+    {
+        if (spectrumLength != static_cast<int>(spectrum.m_wavelength.size()))
+        {
+            throw std::invalid_argument("Cannot perform a wavelength based shift and squeeze on a spectrum without wavelength information.");
+        }
+        xData.Copy(spectrum.m_wavelength.data(), spectrumLength);
+    }
+
+    MathFit::CVector yData;
+    yData.Copy(spectrum.m_data, spectrumLength);
+
+    // Perform the actual shift and squeeze
+    math.ShiftAndSqueeze(xData, yData, squeezeOrigin, shift, squeeze);
+
+    // Copy the data back
+    for (int ii = 0; ii < spectrumLength; ++ii)
+    {
+        spectrum.m_data[ii] = yData.GetAt(ii);
+    }
+
+    if (!channelBased)
+    {
+        for (int ii = 0; ii < spectrumLength; ++ii)
+        {
+            spectrum.m_wavelength[ii] = xData.GetAt(ii);
+        }
     }
 }
 

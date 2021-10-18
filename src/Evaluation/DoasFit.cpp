@@ -89,11 +89,11 @@ DoasFit::~DoasFit()
 
 void DoasFit::DeallocateReferenceSetup()
 {
-    DoasReferenceSetup* setup = static_cast<DoasReferenceSetup*>(this->m_referenceSetup);
+    DoasReferenceSetup* setup = static_cast<DoasReferenceSetup*>(m_referenceSetup);
 
     if (setup != nullptr)
     {
-        for (MathFit::CReferenceSpectrumFunction * reference : setup->m_ref)
+        for (MathFit::CReferenceSpectrumFunction* reference : setup->m_ref)
         {
             delete reference;
             reference = nullptr;
@@ -101,14 +101,14 @@ void DoasFit::DeallocateReferenceSetup()
         delete setup;
     }
 
-    this->m_referenceSetup = nullptr;
+    m_referenceSetup = nullptr;
 }
 
 void DoasFit::Setup(const CFitWindow& setup)
 {
-    this->m_fitLow = setup.fitLow;
-    this->m_fitHigh = setup.fitHigh;
-    this->m_polynomialOrder = setup.polyOrder;
+    m_fitLow = setup.fitLow;
+    m_fitHigh = setup.fitHigh;
+    m_polynomialOrder = setup.polyOrder;
 
     DeallocateReferenceSetup();
     DoasReferenceSetup* newReferenceSetup = new DoasReferenceSetup();
@@ -138,10 +138,11 @@ void DoasFit::Setup(const CFitWindow& setup)
     // 2) Couple the references
     for (int i = 0; i < setup.nRef; i++)
     {
-        // Chech the options for the column value
+        // Check the options for the column value.
+        //  Notice the multiplication with minus one here, this is done to keep the signs of everything compatible with DOASIS.
         switch (setup.ref[i].m_columnOption)
         {
-        case SHIFT_FIX:     newReferenceSetup->m_ref[i]->FixParameter(MathFit::CReferenceSpectrumFunction::CONCENTRATION, setup.ref[i].m_columnValue * newReferenceSetup->m_ref[i]->GetAmplitudeScale()); break;
+        case SHIFT_FIX:     newReferenceSetup->m_ref[i]->FixParameter(MathFit::CReferenceSpectrumFunction::CONCENTRATION, -1.0 * setup.ref[i].m_columnValue * newReferenceSetup->m_ref[i]->GetAmplitudeScale()); break;
         case SHIFT_LINK:    newReferenceSetup->m_ref[(int)setup.ref[i].m_columnValue]->LinkParameter(MathFit::CReferenceSpectrumFunction::CONCENTRATION, *newReferenceSetup->m_ref[i], MathFit::CReferenceSpectrumFunction::CONCENTRATION); break;
         }
 
@@ -169,12 +170,12 @@ void DoasFit::Setup(const CFitWindow& setup)
     assert(newReferenceSetup->name.size() == newReferenceSetup->m_ref.size());
 
     // Set the member
-    if (this->m_referenceSetup != nullptr)
+    if (m_referenceSetup != nullptr)
     {
-        auto currentSetup = static_cast<DoasReferenceSetup*>(this->m_referenceSetup);
+        auto currentSetup = static_cast<DoasReferenceSetup*>(m_referenceSetup);
         delete currentSetup;
     }
-    this->m_referenceSetup = newReferenceSetup;
+    m_referenceSetup = newReferenceSetup;
 }
 
 void ValidateDoasInputData(const double* measuredData, size_t measuredLength, const DoasReferenceSetup* referenceSetup)
@@ -203,13 +204,12 @@ void ValidateDoasInputData(const double* measuredData, size_t measuredLength, co
 
 void DoasFit::Run(const double* measuredData, size_t measuredLength, DoasResult& result)
 {
-    DoasReferenceSetup* referenceSetup = static_cast<DoasReferenceSetup*>(this->m_referenceSetup);
+    DoasReferenceSetup* referenceSetup = static_cast<DoasReferenceSetup*>(m_referenceSetup);
 
     ValidateDoasInputData(measuredData, measuredLength, referenceSetup);
 
-    // Make a local copy of the data (since we're going to change the contents)
+    // Make a local copy of the data. TODO: Check if this actually is necessary anymore?!?
     std::vector<double> measArray(measuredData, measuredData + measuredLength);
-    // m_measuredData = std::vector<double>(begin(measArray), end(measArray)); // save??
 
     //----------------------------------------------------------------
 
@@ -219,7 +219,7 @@ void DoasFit::Run(const double* measuredData, size_t measuredLength, DoasResult&
 
     // To perform the fit we need to extract the wavelength (or pixel)
     //  information from the vXData-vector
-    MathFit::CVector vXSec = Generate(this->m_fitLow, this->m_fitHigh); // the x-axis data of the fit, here in pixels
+    MathFit::CVector vXSec = Generate(m_fitLow, m_fitHigh); // the x-axis data of the fit, here in pixels
 
     ////////////////////////////////////////////////////////////////////////////
     // now we start building the model function needed for fitting.
@@ -230,6 +230,7 @@ void DoasFit::Run(const double* measuredData, size_t measuredLength, DoasResult&
 
     // now set the data of the measured spectrum in regard to the wavelength information
     {
+        // use channel base fitting.
         auto temp = Generate(0, static_cast<int>(measuredLength));
         dataTarget.SetData(temp, vMeas);
     }
@@ -247,7 +248,7 @@ void DoasFit::Run(const double* measuredData, size_t measuredLength, DoasResult&
 
     // create the additional polynomial with the correct order
     //	and add it to the summation object, too
-    MathFit::CPolynomialFunction cPoly(this->m_polynomialOrder);
+    MathFit::CPolynomialFunction cPoly(m_polynomialOrder);
     cRefSum.AddReference(cPoly);
 
     // the last step in the model function will be to define how the difference between the measured data and the modeled
@@ -268,7 +269,7 @@ void DoasFit::Run(const double* measuredData, size_t measuredLength, DoasResult&
 
     // limit the number of fit iteration to 5000. This can still take a long time! More convinient values are
     // between 100 and 1000
-    cFirstFit.GetNonlinearMinimizer().SetMaxFitSteps(this->m_maximumNumberOfSteps);
+    cFirstFit.GetNonlinearMinimizer().SetMaxFitSteps(m_maximumNumberOfSteps);
     cFirstFit.GetNonlinearMinimizer().SetMinChiSquare(0.0001);
 
     try
@@ -286,28 +287,31 @@ void DoasFit::Run(const double* measuredData, size_t measuredLength, DoasResult&
         cFirstFit.FinishMinimize();
 
         // Save the results of the fit.
-        result.fitLow = this->m_fitLow;
-        result.fitHigh = this->m_fitHigh;
+        result.fitLow = m_fitLow;
+        result.fitHigh = m_fitHigh;
         result.iterations = (long)cFirstFit.GetFitSteps();
         result.chiSquare = (double)cFirstFit.GetChiSquare();
         result.delta = cFirstFit.GetResiduum().Max() - cFirstFit.GetResiduum().Min();
 
-        result.polynomialCoefficients.resize(1 + this->m_polynomialOrder);
-        for (int tmpInt = 0; tmpInt <= this->m_polynomialOrder; ++tmpInt)
+        result.polynomialCoefficients.resize(1 + m_polynomialOrder);
+        for (int tmpInt = 0; tmpInt <= m_polynomialOrder; ++tmpInt)
         {
             result.polynomialCoefficients[tmpInt] = (double)cPoly.GetCoefficient(tmpInt);
         }
 
         SaveResidual(cFirstFit, result);
 
-        SavePolynomial(cPoly, this->m_fitLow, this->m_fitHigh, result);
+        SavePolynomial(cPoly, m_fitLow, m_fitHigh, result);
+
+        // Save the filtered measured spectrum
+        result.measuredSpectrum = std::vector<double>(begin(measArray) + m_fitLow, begin(measArray) + m_fitHigh);
 
         // finally display the fit results for each reference spectrum including their appropriate error
         result.referenceResult.resize(referenceSetup->m_ref.size());
         for (size_t ii = 0; ii < referenceSetup->m_ref.size(); ii++)
         {
             result.referenceResult[ii].name = referenceSetup->name[ii];
-            result.referenceResult[ii].column = (double)referenceSetup->m_ref[ii]->GetModelParameter(MathFit::CReferenceSpectrumFunction::CONCENTRATION);
+            result.referenceResult[ii].column = -1.0 * (double)referenceSetup->m_ref[ii]->GetModelParameter(MathFit::CReferenceSpectrumFunction::CONCENTRATION);
             result.referenceResult[ii].columnError = (double)referenceSetup->m_ref[ii]->GetModelParameterError(MathFit::CReferenceSpectrumFunction::CONCENTRATION);
             result.referenceResult[ii].shift = (double)referenceSetup->m_ref[ii]->GetModelParameter(MathFit::CReferenceSpectrumFunction::SHIFT);
             result.referenceResult[ii].shiftError = (double)referenceSetup->m_ref[ii]->GetModelParameterError(MathFit::CReferenceSpectrumFunction::SHIFT);
@@ -315,8 +319,8 @@ void DoasFit::Run(const double* measuredData, size_t measuredLength, DoasResult&
             result.referenceResult[ii].squeezeError = (double)referenceSetup->m_ref[ii]->GetModelParameterError(MathFit::CReferenceSpectrumFunction::SQUEEZE);
 
             // Get the scaled reference as well
-            result.referenceResult[ii].scaledValues.reserve(this->m_fitHigh - this->m_fitLow);
-            for (int pixelIdx = this->m_fitLow; pixelIdx < this->m_fitHigh; ++pixelIdx)
+            result.referenceResult[ii].scaledValues.reserve(m_fitHigh - m_fitLow);
+            for (int pixelIdx = m_fitLow; pixelIdx < m_fitHigh; ++pixelIdx)
             {
                 result.referenceResult[ii].scaledValues.push_back(referenceSetup->m_ref[ii]->GetValue(static_cast<MathFit::TFitData>(pixelIdx)));
             }
