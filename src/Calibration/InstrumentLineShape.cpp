@@ -95,8 +95,8 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, As
 
     const bool autoReleaseData = false;
     std::vector<double> localX{ mercuryLine.m_wavelength };
-    MathFit::CVector xData{ &localX[0], mercuryLine.m_length, 1, autoReleaseData };
-    MathFit::CVector yData{ &localY[0], mercuryLine.m_length, 1, autoReleaseData };
+    MathFit::CVector xData{ &localX[0], static_cast<int>(mercuryLine.m_length), 1, autoReleaseData };
+    MathFit::CVector yData{ &localY[0], static_cast<int>(mercuryLine.m_length), 1, autoReleaseData };
 
 
     MathFit::CAsymmetricGaussFunction gaussianToFit;
@@ -125,7 +125,7 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, Su
     {
         return FUNCTION_FIT_RETURN_CODE::EMPTY_INPUT;
     }
-    else if (mercuryLine.m_wavelength.size() != mercuryLine.m_length)
+    else if (mercuryLine.m_wavelength.size() != static_cast<size_t>(mercuryLine.m_length))
     {
         return FUNCTION_FIT_RETURN_CODE::MISSING_WAVELENGTH_CALIBRATION;
     }
@@ -134,8 +134,8 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, Su
     std::vector<double> localY{ mercuryLine.m_data, mercuryLine.m_data + mercuryLine.m_length };
 
     const bool autoReleaseData = false;
-    MathFit::CVector xData{ &localX[0], mercuryLine.m_length, 1, autoReleaseData };
-    MathFit::CVector yData{ &localY[0], mercuryLine.m_length, 1, autoReleaseData };
+    MathFit::CVector xData{ &localX[0], static_cast<int>(mercuryLine.m_length), 1, autoReleaseData };
+    MathFit::CVector yData{ &localY[0], static_cast<int>(mercuryLine.m_length), 1, autoReleaseData };
 
     // First create an initial estimation of the location, width and amplitude of the Gaussian
     MathFit::CGaussFunction regularGaussian;

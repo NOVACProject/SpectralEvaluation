@@ -16,6 +16,7 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Convolution.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Correspondence.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_CrossSectionData.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_CVector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_DateTime.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Evaluation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Fft.cpp
@@ -30,6 +31,7 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Utils.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_VectorUtils.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_WavelengthCalibration.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_XmlUtils.cpp
 )
 
 target_include_directories(SpectralEvaluationTests PRIVATE ${SPECTRALEVAUATION_INCLUDE_DIRS})

@@ -44,8 +44,8 @@ CCrossSectionData::CCrossSectionData(const CCrossSectionData& other, double star
 }
 
 CCrossSectionData::CCrossSectionData(const CSpectrum& spectrum)
-    : m_crossSection(spectrum.m_data, spectrum.m_data + spectrum.m_length),
-    m_waveLength(begin(spectrum.m_wavelength), end(spectrum.m_wavelength))
+    : m_waveLength(begin(spectrum.m_wavelength), end(spectrum.m_wavelength)),
+      m_crossSection(spectrum.m_data, spectrum.m_data + spectrum.m_length)
 {
 }
 
@@ -360,8 +360,6 @@ void Resample(const CCrossSectionData& slf, double resolution, std::vector<doubl
 
 void Resample(const CCrossSectionData& crossSection, const std::vector<double>& newGrid, std::vector<double>& result)
 {
-    const double newXMin = newGrid.front();
-    const double newXMax = newGrid.back();
     const double oldXMin = crossSection.m_waveLength.front();
     const double oldXMax = crossSection.m_waveLength.back();
 

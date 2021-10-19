@@ -170,7 +170,6 @@ std::vector<Correspondence> ListMercurySpectrumCorrespondences(
     // sortedPeaks is the emission lines sorted in decreasing intensity
     std::vector<novac::SpectrumDataPoint> sortedPeaks{ begin(measuredPeaks), end(measuredPeaks) };
     std::sort(begin(sortedPeaks), end(sortedPeaks), [](const novac::SpectrumDataPoint& a, const novac::SpectrumDataPoint& b) {return a.intensity > b.intensity; });
-    const double maximumMeasuredIntensity = sortedPeaks[0].intensity;
 
     // List of known, strong mercury lines, in nm(air)
     struct emissionLine
@@ -413,7 +412,7 @@ WavelengthCalibrationSetup::WavelengthCalibrationSetup(const WavelengthCalibrati
 
 SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibration(const CSpectrum& measuredSpectrum)
 {
-    if (settings.initialPixelToWavelengthMapping.size() != measuredSpectrum.m_length)
+    if (settings.initialPixelToWavelengthMapping.size() != static_cast<size_t>(measuredSpectrum.m_length))
     {
         throw std::invalid_argument("The initial pixel to wavelength mapping must have as many points as the measured spectrum.");
     }

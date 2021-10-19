@@ -126,16 +126,22 @@ std::pair<double, double> MinMax(const std::vector<double>& values, std::pair<si
     return std::pair<double, double>(minValue, maxValue);
 }
 
-double Sum(const std::vector<double>& values)
+double Sum(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end)
 {
     double sum = 0.0;
-    for (size_t ii = 0; ii < values.size(); ++ii)
+    for (auto it = start; it < end; ++it)
     {
-        sum += values[ii];
+        sum += *it;
     }
 
     return sum;
 }
+
+double Sum(const std::vector<double>& values)
+{
+    return Sum(begin(values), end(values));
+}
+
 
 double SumAbs(const std::vector<double>& values)
 {
@@ -203,18 +209,29 @@ void Exp(std::vector<double>& values)
     }
 }
 
-double Average(const std::vector<double>& values)
+double Average(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end)
 {
-    if (values.size() == 0)
+    if (start > end)
     {
         return 0.0;
     }
-    if (values.size() == 1)
+    if (start == end)
     {
-        return values.front();
+        return *start;
     }
-    const double sum = Sum(values);
-    return (sum / (double)values.size());
+    double sum = 0.0;
+    double numberOfValues = 0.0;
+    for (auto it = start; it < end; ++it)
+    {
+        sum += *it;
+        numberOfValues += 1;
+    }
+    return sum / numberOfValues;
+}
+
+double Average(const std::vector<double>& values)
+{
+    return Average(begin(values), end(values));
 }
 
 double MinOfAbsolutes(const std::vector<double>& values)

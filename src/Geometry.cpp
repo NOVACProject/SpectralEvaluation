@@ -21,13 +21,12 @@ void EquatorialCoordinates(double D, double& RA, double& dec, double& EQT)
     const double g_deg = fmod(357.529 + 0.98560028 * D, 360.0);
     const double g_rad = g_deg * DEGREETORAD;
     const double q_deg = fmod(280.459 + 0.98564736 * D, 360.0);
-    const double q_rad = q_deg * DEGREETORAD;
 
     const double L_deg = q_deg + 1.915 * std::sin(g_rad) + 0.02 * std::sin(2 * g_rad);
     const double L_rad = L_deg * DEGREETORAD;
 
     // The distance between the sun and the earth (in Astronomical Units)
-    const double R = 1.00014 - 0.01671 * cos(g_rad) - 0.00014 * cos(2 * g_rad);
+    // const double R = 1.00014 - 0.01671 * cos(g_rad) - 0.00014 * cos(2 * g_rad);
 
     // The obliquity of the earth's orbit:
     const double obliq_deg = 23.439 - 0.00000036 * D;
