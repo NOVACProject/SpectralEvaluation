@@ -564,6 +564,47 @@ void Normalize(CSpectrum& spectrum)
     }
 }
 
+void ShiftAndSqueezeSpectrum(CCrossSectionData& spectrum, bool channelBased, double shift, double squeezeOrigin, double squeeze)
+{
+    CBasicMath math;
+
+    const int spectrumLength = static_cast<int>(spectrum.GetSize());
+
+    MathFit::CVector xData;
+    if (channelBased)
+    {
+        xData.Copy(Generate(0, spectrumLength));
+    }
+    else
+    {
+        if (spectrumLength != static_cast<int>(spectrum.m_waveLength.size()))
+        {
+            throw std::invalid_argument("Cannot perform a wavelength based shift and squeeze on a spectrum without wavelength information.");
+        }
+        xData.Copy(spectrum.m_waveLength.data(), spectrumLength);
+    }
+
+    MathFit::CVector yData;
+    yData.Copy(spectrum.m_crossSection.data(), spectrumLength);
+
+    // Perform the actual shift and squeeze
+    math.ShiftAndSqueeze(xData, yData, squeezeOrigin, shift, squeeze);
+
+    // Copy the data back
+    for (int ii = 0; ii < spectrumLength; ++ii)
+    {
+        spectrum.m_crossSection[ii] = yData.GetAt(ii);
+    }
+
+    if (!channelBased)
+    {
+        for (int ii = 0; ii < spectrumLength; ++ii)
+        {
+            spectrum.m_waveLength[ii] = xData.GetAt(ii);
+        }
+    }
+}
+
 void ShiftAndSqueezeSpectrum(CSpectrum& spectrum, bool channelBased, double shift, double squeezeOrigin, double squeeze)
 {
     CBasicMath math;
