@@ -305,6 +305,7 @@ double InstrumentLineShapeEstimationFromKeypointDistance::GetMedianKeypointDista
 /// <summary>
 /// Investigates the provided lineshape and returns the left and right index 
 /// defining the FWHM.
+/// If no such points could be found then (0; 0) is returned.
 /// </summary>
 std::pair<double, double> GetFwhm(const std::vector<double>& lineShape)
 {

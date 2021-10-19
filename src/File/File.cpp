@@ -528,7 +528,8 @@ bool ReadInstrumentCalibration(const std::string& fullFilePath, InstrumentCalibr
 
     double wavelengthAtLeftFwhm = 0.0;
     double wavelengthAtRightFwhm = 0.0;
-    if (!LinearInterpolation(result.pixelToWavelengthMapping, leftAndRightFwhmIdx.first, wavelengthAtLeftFwhm) ||
+    if (std::abs(leftAndRightFwhmIdx.second - leftAndRightFwhmIdx.first) < 2.0 ||
+        !LinearInterpolation(result.pixelToWavelengthMapping, leftAndRightFwhmIdx.first, wavelengthAtLeftFwhm) ||
         !LinearInterpolation(result.pixelToWavelengthMapping, leftAndRightFwhmIdx.second, wavelengthAtRightFwhm))
     {
         // Interpolation failure, instrument line shape seems unreasonable.
