@@ -25,6 +25,7 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitWindow.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitInstrumentLineShapeFunction.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_InstrumentLineShapeEstimation.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_InstrumentLineshapeEstimationFromDoas.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_PolynomialFit.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_RatioEvaluation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_SpectrumUtils.cpp
