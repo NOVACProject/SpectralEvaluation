@@ -1,9 +1,9 @@
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Evaluation/BasicMath.h>
 #include <SpectralEvaluation/Fit/Vector.h>
-#include <SpectralEvaluation/Fit/CubicSplineFunction.h>
 #include <SpectralEvaluation/Spectra/Grid.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/Interpolation.h>
 #include <fstream>
 #include <numeric>
 #include <map>
@@ -45,7 +45,7 @@ CCrossSectionData::CCrossSectionData(const CCrossSectionData& other, double star
 
 CCrossSectionData::CCrossSectionData(const CSpectrum& spectrum)
     : m_waveLength(begin(spectrum.m_wavelength), end(spectrum.m_wavelength)),
-      m_crossSection(spectrum.m_data, spectrum.m_data + spectrum.m_length)
+    m_crossSection(spectrum.m_data, spectrum.m_data + spectrum.m_length)
 {
 }
 
@@ -323,69 +323,21 @@ int Log(CCrossSectionData& crossSection)
 
 void Resample(const CCrossSectionData& slf, double resolution, std::vector<double>& resampledSlf)
 {
-    const double xMin = slf.m_waveLength.front();
-    const double xMax = slf.m_waveLength.back();
-
-    std::vector<double> xCopy(begin(slf.m_waveLength), end(slf.m_waveLength)); // a non-const local copy
-    std::vector<double> yCopy(begin(slf.m_crossSection), end(slf.m_crossSection)); // a non-const local copy
-
-    MathFit::CVector slfX(xCopy.data(), (int)xCopy.size(), 1, false);
-    MathFit::CVector slfY(yCopy.data(), (int)yCopy.size(), 1, false);
-
-    // Create a spline from the slit-function.
-    MathFit::CCubicSplineFunction spline(slfX, slfY);
-
     // Create a new grid for the SLF with the same resolution as the 'grid' but with the same xMin and xMax values
     UniformGrid newGridForSlf;
     newGridForSlf.minValue = slf.m_waveLength.front();
     newGridForSlf.maxValue = slf.m_waveLength.back();
     newGridForSlf.length = 1 + (size_t)(std::round((newGridForSlf.maxValue - newGridForSlf.minValue) / resolution));
 
-    // do the resampling...
-    resampledSlf.resize(newGridForSlf.length);
-    for (size_t ii = 0; ii < newGridForSlf.length; ++ii)
-    {
-        const double x = newGridForSlf.At(ii);
+    std::vector<double> newX;
+    newGridForSlf.Generate(newX);
 
-        if (x >= xMin && x <= xMax)
-        {
-            resampledSlf[ii] = spline.GetValue(x);
-        }
-        else
-        {
-            resampledSlf[ii] = 0.0;
-        }
-    }
+    novac::Resample(slf.m_waveLength, slf.m_crossSection, newX, resampledSlf);
 }
 
 void Resample(const CCrossSectionData& crossSection, const std::vector<double>& newGrid, std::vector<double>& result)
 {
-    const double oldXMin = crossSection.m_waveLength.front();
-    const double oldXMax = crossSection.m_waveLength.back();
-
-    std::vector<double> xCopy(begin(crossSection.m_waveLength), end(crossSection.m_waveLength)); // a non-const local copy
-    std::vector<double> yCopy(begin(crossSection.m_crossSection), end(crossSection.m_crossSection)); // a non-const local copy
-    MathFit::CVector slfX(xCopy.data(), (int)xCopy.size(), 1, false);
-    MathFit::CVector slfY(yCopy.data(), (int)yCopy.size(), 1, false);
-
-    // Create a spline from the slit-function.
-    MathFit::CCubicSplineFunction spline(slfX, slfY);
-
-    // do the resampling...
-    result.resize(newGrid.size());
-    for (size_t ii = 0; ii < newGrid.size(); ++ii)
-    {
-        const double x = newGrid[ii];
-
-        if (x >= oldXMin && x <= oldXMax)
-        {
-            result[ii] = spline.GetValue(x);
-        }
-        else
-        {
-            result[ii] = 0.0;
-        }
-    }
+    novac::Resample(crossSection.m_waveLength, crossSection.m_crossSection, newGrid, result);
 }
 
 void Shift(std::vector<double>& data, double pixelCount)

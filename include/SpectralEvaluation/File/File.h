@@ -48,7 +48,8 @@ std::string EnsureFilenameHasSuffix(const std::string& fullFilePath, const std::
 std::string GetFileExtension(const std::string& fullFilePath);
 
 /** Saves the full instrument calibration to a single file using the extended STD-format.
-    This requires that at least that 'pixelToWavelengthMapping', 'instrumentLineShape', and 'instrumentLineShapeGrid' are defined. */
+    This requires that at least that 'pixelToWavelengthMapping', 'instrumentLineShape', and 'instrumentLineShapeGrid' are defined.
+    If the instrument line shape is sampled on a different grid density than the 'pixelToWavelengthMapping' then it will be resampled. */
 bool SaveInstrumentCalibration(const std::string& fullFilePath, const InstrumentCalibration& calibration);
 
 /** Reads a saved instrument line shape and pixel-to-wavelength mapping from an instrument calibration file in extended STD-format.

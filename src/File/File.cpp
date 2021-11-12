@@ -389,12 +389,50 @@ bool SaveInstrumentCalibration(const std::string& fullFilePath, const Instrument
         return false;
     }
 
+    const double instrumentLineShapeGridRange = calibration.instrumentLineShapeGrid.back() - calibration.instrumentLineShapeGrid.front();
+    const double instrumentWavelengthRange = calibration.pixelToWavelengthMapping.back() - calibration.pixelToWavelengthMapping.front();
+    if (instrumentLineShapeGridRange > instrumentWavelengthRange)
+    {
+        return false; // this does not make sense.
+    }
+
     novac::CSTDFile::ExtendedFormatInformation extendedFileInfo;
 
-    size_t instrumentLineShapeSpectrumStartIdx = 0; // The pixel where the instrument line shape should start
-    {
-        size_t instrumentLineShapeCenterPixel = WavelengthToPixel(calibration.pixelToWavelengthMapping, calibration.instrumentLineShapeCenter);
+    // Make sure that the instrument line shape is sampled on the same grid as the pixel-to-wavelength mapping.
+    double instrumentLineShapeStartWavelength = calibration.instrumentLineShapeCenter + calibration.instrumentLineShapeGrid.front();
+    double instrumentLineShapeEndWavelength = calibration.instrumentLineShapeCenter + calibration.instrumentLineShapeGrid.back();
+    // size_t instrumentLineShapeCenterPixel = WavelengthToPixel(calibration.pixelToWavelengthMapping, calibration.instrumentLineShapeCenter);
 
+    std::vector<double> resampledLineShape;
+    if (instrumentLineShapeStartWavelength < calibration.pixelToWavelengthMapping.front())
+    {
+        instrumentLineShapeStartWavelength = calibration.pixelToWavelengthMapping.front();
+        instrumentLineShapeEndWavelength = instrumentLineShapeStartWavelength + instrumentLineShapeGridRange;
+    }
+    else if (instrumentLineShapeEndWavelength > calibration.pixelToWavelengthMapping.back())
+    {
+        instrumentLineShapeEndWavelength = calibration.pixelToWavelengthMapping.back();
+        instrumentLineShapeStartWavelength = instrumentLineShapeEndWavelength - instrumentLineShapeGridRange;
+    }
+
+    // The pixels where the instrument line shape should start and end
+    const size_t instrumentLineShapeSpectrumStartPixel = WavelengthToPixel(calibration.pixelToWavelengthMapping, instrumentLineShapeStartWavelength);
+    const size_t instrumentLineShapeSpectrumEndPixel = 1 + WavelengthToPixel(calibration.pixelToWavelengthMapping, instrumentLineShapeEndWavelength);
+    const size_t instrumentLineShapeCenterPixel = (instrumentLineShapeSpectrumEndPixel + instrumentLineShapeSpectrumStartPixel) / 2; // the middle pixel
+
+    // Perform the resampling
+    {
+        const double wavelengthAtInstrumentLineShapeCenterPixel = calibration.pixelToWavelengthMapping[instrumentLineShapeCenterPixel]; // due to rounding, this is exactly same as instrumentLineShapeCenter
+        std::vector<double> newLineShapeGrid;
+        for (size_t ii = instrumentLineShapeSpectrumStartPixel; ii < instrumentLineShapeSpectrumEndPixel; ++ii)
+        {
+            newLineShapeGrid.push_back(calibration.pixelToWavelengthMapping[ii] - wavelengthAtInstrumentLineShapeCenterPixel);
+        }
+
+        novac::Resample(calibration.instrumentLineShapeGrid, calibration.instrumentLineShape, newLineShapeGrid, resampledLineShape);
+    }
+
+    /* {
         if (instrumentLineShapeCenterPixel <= calibration.instrumentLineShape.size() / 2)
         {
             instrumentLineShapeSpectrumStartIdx = 0;
@@ -407,10 +445,10 @@ bool SaveInstrumentCalibration(const std::string& fullFilePath, const Instrument
         {
             instrumentLineShapeSpectrumStartIdx = instrumentLineShapeCenterPixel - calibration.instrumentLineShape.size() / 2;
         }
-    }
+    } */
 
-    extendedFileInfo.MinChannel = static_cast<int>(instrumentLineShapeSpectrumStartIdx);
-    extendedFileInfo.MaxChannel = static_cast<int>(instrumentLineShapeSpectrumStartIdx + calibration.instrumentLineShape.size());
+    extendedFileInfo.MinChannel = static_cast<int>(instrumentLineShapeSpectrumStartPixel);
+    extendedFileInfo.MaxChannel = static_cast<int>(instrumentLineShapeSpectrumEndPixel);
     extendedFileInfo.MathLow = extendedFileInfo.MinChannel;
     extendedFileInfo.MathHigh = extendedFileInfo.MaxChannel;
     extendedFileInfo.Marker = calibration.instrumentLineShapeCenter;
@@ -442,7 +480,7 @@ bool SaveInstrumentCalibration(const std::string& fullFilePath, const Instrument
     {
         // Extend the measured spectrum line shape into a full spectrum
         std::vector<double> extendedPeak(calibration.pixelToWavelengthMapping.size(), 0.0);
-        std::copy(calibration.instrumentLineShape.data(), calibration.instrumentLineShape.data() + calibration.instrumentLineShape.size(), extendedPeak.begin() + instrumentLineShapeSpectrumStartIdx);
+        std::copy(resampledLineShape.data(), resampledLineShape.data() + resampledLineShape.size(), extendedPeak.begin() + instrumentLineShapeSpectrumStartPixel);
 
         spectrumToSave = std::make_unique<novac::CSpectrum>(calibration.pixelToWavelengthMapping, extendedPeak);
     }

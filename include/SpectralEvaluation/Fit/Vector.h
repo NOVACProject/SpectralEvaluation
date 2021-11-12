@@ -980,7 +980,9 @@ namespace MathFit
 		TFitData Max(int iOffset = 0, int iLength = -1)
 		{
 			if(iLength < 0)
-				iLength = mLength;
+			{
+				iLength = mLength - iOffset;
+			}
 
 			MATHFIT_ASSERT(iOffset >= 0 && (iOffset + iLength) <= mLength && iLength > 0);
 
