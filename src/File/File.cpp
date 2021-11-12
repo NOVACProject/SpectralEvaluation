@@ -22,7 +22,9 @@
 namespace novac
 {
 
+// General functions declared elsewhere.
 std::pair<double, double> GetFwhm(const std::vector<double>& lineShape);
+size_t WavelengthToPixel(const std::vector<double>& pixelToWavelengthMapping, double wavelength);;
 
 bool IsExistingFile(const std::string& fullFileName)
 {
@@ -334,23 +336,6 @@ std::string GetFileExtension(const std::string& fullFilePath)
     {
         // no period found _after_ the last path-separator character, hence no suffix
         return std::string();
-    }
-}
-
-size_t WavelengthToPixel(const std::vector<double>& pixelToWavelengthMapping, double wavelength)
-{
-    if (wavelength <= 0.0)
-    {
-        return 0;
-    }
-    else if (wavelength > pixelToWavelengthMapping.back())
-    {
-        return pixelToWavelengthMapping.size() - 1;
-    }
-    else
-    {
-        const double instrumentLineShapeFractionalCenterPixel = novac::GetFractionalIndex(pixelToWavelengthMapping, wavelength);
-        return static_cast<size_t>(std::round(instrumentLineShapeFractionalCenterPixel));
     }
 }
 

@@ -472,4 +472,21 @@ bool GetEnvelope(const CSpectrum& spectrum, std::vector<double>& pixel, std::vec
     return true;
 }
 
+size_t WavelengthToPixel(const std::vector<double>& pixelToWavelengthMapping, double wavelength)
+{
+    if (wavelength <= 0.0)
+    {
+        return 0;
+    }
+    else if (wavelength > pixelToWavelengthMapping.back())
+    {
+        return pixelToWavelengthMapping.size() - 1;
+    }
+    else
+    {
+        const double instrumentLineShapeFractionalCenterPixel = novac::GetFractionalIndex(pixelToWavelengthMapping, wavelength);
+        return static_cast<size_t>(std::round(instrumentLineShapeFractionalCenterPixel));
+    }
+}
+
 }

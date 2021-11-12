@@ -11,6 +11,7 @@ class CSpectrum;
 class CCrossSectionData;
 class IFraunhoferSpectrumGenerator;
 class DoasFit;
+struct IndexRange;
 
 class InstrumentLineShapeEstimationException : public std::exception
 {
@@ -117,22 +118,8 @@ public:
     LineShapeEstimationState EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm);
 
 private:
-    /// <summary>
-    /// The first pixel to include when checking the properties of the spectrum. 
-    /// Often do the signal in the spectra decline at short wavelengths and this is a means to disregard points with low intensity.
-    /// TODO: Settable or adaptable to input
-    /// </summary>
-    const size_t measuredPixelStart = 1000;
 
-    /// <summary>
-    /// The last pixel to include when checking the properties of the spectrum. 
-    /// Often do the signal in the spectra decline at long wavelengths and this is a means to disregard points with low intensity.
-    /// This must be larger than measuredPixelStart.
-    /// TODO: Settable or adaptable to input
-    /// </summary>
-    const size_t measuredPixelStop = 4095;
-
-    double GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum, const std::string& spectrumName) const;
+    double GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum, const IndexRange& pixelRange, const std::string& spectrumName) const;
 };
 
 

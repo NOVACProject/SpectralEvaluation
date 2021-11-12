@@ -5,10 +5,12 @@
 #include <SpectralEvaluation/Evaluation/BasicMath.h>
 #include <SpectralEvaluation/Spectra/SpectrumUtils.h>
 #include <SpectralEvaluation/Spectra/Scattering.h>
+#include <SpectralEvaluation/Spectra/WavelengthRange.h>
 #include <SpectralEvaluation/VectorUtils.h>
 #include <SpectralEvaluation/Evaluation/FitWindow.h>
 #include <SpectralEvaluation/Evaluation/DoasFit.h>
 #include <SpectralEvaluation/Calibration/InstrumentLineShape.h>
+#include <SpectralEvaluation/Math/IndexRange.h>
 
 // TODO: Remove, this is included for debugging only.
 #include <SpectralEvaluation/File/File.h>
@@ -45,6 +47,18 @@ bool InstrumentLineShapeEstimation::HasInitialLineShape() const
 
 InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState InstrumentLineShapeEstimationFromKeypointDistance::EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& spectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm)
 {
+    // Check the range over which we can compare the spectra
+    const WavelengthRange comparisonWavelengthRange = fraunhoferSpectrumGen.GetFraunhoferRange(this->pixelToWavelengthMapping);
+    if (comparisonWavelengthRange.Empty())
+    {
+        throw std::invalid_argument("Cannot create an initial estimate for the instrument line shape, no overlap between the instruments wavelength range and the solar spectrum's wavelength range.");
+    }
+    const IndexRange comparisonIndexRange
+    {
+        std::max((size_t)1000, WavelengthToPixel(this->pixelToWavelengthMapping, comparisonWavelengthRange.low)),
+        std::min((size_t)4095, WavelengthToPixel(this->pixelToWavelengthMapping, comparisonWavelengthRange.high))
+    };
+
     // Prepare a high-pass filtered version of the measured spectrum, removing all baseline
     CBasicMath math;
     std::unique_ptr<CSpectrum> filteredSpectrum = std::make_unique<CSpectrum>(spectrum);
@@ -54,7 +68,7 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
 
     LineShapeEstimationState state;
 
-    state.medianPixelDistanceInMeas = GetMedianKeypointDistanceFromSpectrum(*filteredSpectrum, "Meas");
+    state.medianPixelDistanceInMeas = GetMedianKeypointDistanceFromSpectrum(*filteredSpectrum, comparisonIndexRange, "Meas");
     const double pixelDistanceFromInitialCalibration = std::abs(this->pixelToWavelengthMapping.back() - this->pixelToWavelengthMapping.front()) / (double)this->pixelToWavelengthMapping.size();
     const double medianMeasKeypointDistanceInWavelength = state.medianPixelDistanceInMeas * pixelDistanceFromInitialCalibration;
 
@@ -85,7 +99,7 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
         math.HighPassBinomial(solarSpectrum->m_data, (int)solarSpectrum->m_length, 500);
         Normalize(*solarSpectrum);
 
-        medianPixelDistanceAtLowerSigmaLimit = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, "LowLimit");
+        medianPixelDistanceAtLowerSigmaLimit = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, comparisonIndexRange, "LowLimit");
 
         state.attempts.push_back(std::pair<double, double>{lowerSigmaLimit, medianPixelDistanceAtLowerSigmaLimit});
 
@@ -105,7 +119,7 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
         math.HighPassBinomial(solarSpectrum->m_data, (int)solarSpectrum->m_length, 500);
         Normalize(*solarSpectrum);
 
-        medianPixelDistanceAtUpperSigmaLimit = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, "HighLimit");
+        medianPixelDistanceAtUpperSigmaLimit = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, comparisonIndexRange, "HighLimit");
 
         state.attempts.push_back(std::pair<double, double>{upperSigmaLimit, medianPixelDistanceAtUpperSigmaLimit});
 
@@ -134,7 +148,7 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
         math.HighPassBinomial(solarSpectrum->m_data, (int)solarSpectrum->m_length, 500);
         Normalize(*solarSpectrum);
 
-        medianPixelDistanceInSolarSpectrum = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, "Theory");
+        medianPixelDistanceInSolarSpectrum = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, comparisonIndexRange, "Theory");
 
         state.attempts.push_back(std::pair<double, double>{estimatedGaussianSigma, medianPixelDistanceInSolarSpectrum});
 
@@ -150,13 +164,12 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
         }
 
         if (std::abs(medianPixelDistanceInSolarSpectrum - state.medianPixelDistanceInMeas) < 0.01 * state.medianPixelDistanceInMeas ||
-            std::abs(upperSigmaLimit - lowerSigmaLimit) < 0.01 * upperSigmaLimit)
+            std::abs(upperSigmaLimit - lowerSigmaLimit) < 0.1 * upperSigmaLimit)
         {
             break;
         }
 
         estimatedGaussianSigma = 0.5 * (lowerSigmaLimit + upperSigmaLimit);
-        // estimatedGaussianSigma = lowerSigmaLimit + (state.medianPixelDistanceInMeas - medianPixelDistanceAtLowerSigmaLimit) * (upperSigmaLimit - lowerSigmaLimit) / (medianPixelDistanceAtUpperSigmaLimit - medianPixelDistanceAtLowerSigmaLimit);
     }
 
     // Save the results
@@ -173,132 +186,77 @@ bool LineIntersects(const std::vector<double>& data, size_t index, double thresh
         (data[index] < threshold && data[index - 1] > threshold);
 }
 
-double InstrumentLineShapeEstimationFromKeypointDistance::GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum, const std::string& /*spectrumName*/) const
+double InstrumentLineShapeEstimationFromKeypointDistance::GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum, const IndexRange& pixelRange, const std::string& /*spectrumName*/) const
 {
-    int version = 2;
-
-    if (version == 2)
+    // Version 2, getting the median distance between zero crossings of the spectrum in the region [measuredPixelStart, measuredPixelStop]
+    // start by normalizing the data by removing the median value
+    const size_t spectrumLength = static_cast<size_t>(spectrum.m_length);
+    std::vector<double> normalizedData{ spectrum.m_data + pixelRange.from, spectrum.m_data + pixelRange.to };
+    std::vector<double> copyOfData{ begin(normalizedData), end(normalizedData) };
+    auto median = Median(copyOfData);
+    for (size_t ii = 0; ii < normalizedData.size(); ++ii)
     {
-        // Version 2, getting the median distance between zero crossings of the spectrum in the region [measuredPixelStart, measuredPixelStop]
-        // start by normalizing the data by removing the median value
-        const size_t spectrumLength = static_cast<size_t>(spectrum.m_length);
-        const size_t start = (spectrumLength < this->measuredPixelStart) ? (spectrumLength / 10) : this->measuredPixelStart;
-        const size_t length = (spectrumLength < this->measuredPixelStart) ? (spectrumLength - 2 * start) : std::min(static_cast<size_t>(spectrumLength - this->measuredPixelStart), this->measuredPixelStop - this->measuredPixelStart);
-        std::vector<double> normalizedData{ spectrum.m_data + start, spectrum.m_data + start + length };
-        std::vector<double> copyOfData{ begin(normalizedData), end(normalizedData) };
-        auto median = Median(copyOfData);
-        for (size_t ii = 0; ii < normalizedData.size(); ++ii)
+        normalizedData[ii] -= median;
+    }
+    auto minMax = MinMax(normalizedData);
+    const double scaleF = 2.0 / (minMax.second - minMax.first);
+    for (size_t ii = 0; ii < normalizedData.size(); ++ii)
+    {
+        normalizedData[ii] *= scaleF;
+    }
+
+    // Now find the locations where this normalized spectrum crosses; 1) the y=0.1 , 2) y=0.0 and 3) y=-0.1
+    struct intersectionPoint
+    {
+        intersectionPoint(double px, int t)
+            : pixel(px), type(t)
+        { }
+
+        double pixel = 0.0;
+        int type = 0; // +1, 0 or -1
+    };
+    std::vector<intersectionPoint> intersections;
+    for (size_t ii = 1; ii < normalizedData.size(); ++ii)
+    {
+        if (LineIntersects(normalizedData, ii, 0.0))
         {
-            normalizedData[ii] -= median;
+            intersectionPoint pt(ii - 1 - normalizedData[ii - 1] / (normalizedData[ii] - normalizedData[ii - 1]), 0);
+            intersections.push_back(pt);
         }
-        auto minMax = MinMax(normalizedData);
-        const double scaleF = 2.0 / (minMax.second - minMax.first);
-        for (size_t ii = 0; ii < normalizedData.size(); ++ii)
+        if (LineIntersects(normalizedData, ii, +0.1))
         {
-            normalizedData[ii] *= scaleF;
+            intersectionPoint pt(ii - 1 + (0.1 - normalizedData[ii - 1]) / (normalizedData[ii] - normalizedData[ii - 1]), +1);
+            intersections.push_back(pt);
         }
-
-        // Now find the locations where this normalized spectrum crosses; 1) the y=0.1 , 2) y=0.0 and 3) y=-0.1
-        struct intersectionPoint
+        if (LineIntersects(normalizedData, ii, -0.1))
         {
-            intersectionPoint(double px, int t)
-                : pixel(px), type(t)
-            { }
-
-            double pixel = 0.0;
-            int type = 0; // +1, 0 or -1
-        };
-        std::vector<intersectionPoint> intersections;
-        for (size_t ii = 1; ii < normalizedData.size(); ++ii)
-        {
-            if (LineIntersects(normalizedData, ii, 0.0))
-            {
-                intersectionPoint pt(ii - 1 - normalizedData[ii - 1] / (normalizedData[ii] - normalizedData[ii - 1]), 0);
-                intersections.push_back(pt);
-            }
-            if (LineIntersects(normalizedData, ii, +0.1))
-            {
-                intersectionPoint pt(ii - 1 + (0.1 - normalizedData[ii - 1]) / (normalizedData[ii] - normalizedData[ii - 1]), +1);
-                intersections.push_back(pt);
-            }
-            if (LineIntersects(normalizedData, ii, -0.1))
-            {
-                intersectionPoint pt(ii - 1 + (-0.1 - normalizedData[ii - 1]) / (normalizedData[ii] - normalizedData[ii - 1]), -1);
-                intersections.push_back(pt);
-            }
+            intersectionPoint pt(ii - 1 + (-0.1 - normalizedData[ii - 1]) / (normalizedData[ii] - normalizedData[ii - 1]), -1);
+            intersections.push_back(pt);
         }
+    }
 
-        std::vector<double> zeroCrossingDistances;
-        int lastIntersectionIdx = -1;
-        for (size_t ii = 1; ii < intersections.size() - 1; ++ii)
+    std::vector<double> zeroCrossingDistances;
+    int lastIntersectionIdx = -1;
+    for (size_t ii = 1; ii < intersections.size() - 1; ++ii)
+    {
+        if (intersections[ii].type == 0 && intersections[ii - 1].type != intersections[ii].type && intersections[ii + 1].type != intersections[ii].type)
         {
-            if (intersections[ii].type == 0 && intersections[ii - 1].type != intersections[ii].type && intersections[ii + 1].type != intersections[ii].type)
+            if (lastIntersectionIdx >= 0)
             {
-                if (lastIntersectionIdx >= 0)
-                {
-                    zeroCrossingDistances.push_back(intersections[ii].pixel - intersections[lastIntersectionIdx].pixel);
-                }
-                lastIntersectionIdx = static_cast<int>(ii);
+                zeroCrossingDistances.push_back(intersections[ii].pixel - intersections[lastIntersectionIdx].pixel);
             }
+            lastIntersectionIdx = static_cast<int>(ii);
         }
+    }
 
-        // {
-        //     std::ofstream outFile{ "D:/NOVAC/SpectrometerCalibration/ZeroCrossings.csv", std::ios::app };
-        //     outFile << "------- " << spectrumName << "--------------" << std::endl;
-        //     for (const auto& p : intersections)
-        //     {
-        //         outFile << p.pixel << std::endl;
-        //     }
-        // }
-
+    if (zeroCrossingDistances.size() > 0)
+    {
         double medianPixelDistance = Average(zeroCrossingDistances);
         return medianPixelDistance;
     }
     else
     {
-        // Version 1, getting the median distance between keypoints.
-        // Find all keypoints in the prepared spectrum
-        std::vector<SpectrumDataPoint> allKeypoints;
-        FindKeypointsInSpectrum(spectrum, 0.01, allKeypoints);
-
-        // Filter out the keypoints to only be the points in the allowed range [measuredPixelStart, measuredPixelStop]
-        std::vector<SpectrumDataPoint> keypoints;
-        keypoints.reserve(allKeypoints.size());
-        for (size_t ii = 0; ii < allKeypoints.size(); ++ii)
-        {
-            if (static_cast<size_t>(allKeypoints[ii].pixel) >= this->measuredPixelStart && static_cast<size_t>(allKeypoints[ii].pixel) <= this->measuredPixelStop)
-            {
-                keypoints.push_back(allKeypoints[ii]);
-            }
-        }
-
-        if (keypoints.size() <= 2)
-        {
-            // Cannot determine the distance if there's only one point
-            return std::numeric_limits<double>::quiet_NaN();
-        }
-
-        // {
-        //     std::ofstream outFile{ "D:/NOVAC/SpectrometerCalibration/Keypoints.csv", std::ios::app };
-        //     outFile << "------- " << spectrumName << "--------------" << std::endl;
-        //     for (const auto& pt : keypoints)
-        //     {
-        //         outFile << pt.leftPixel << "\t" << pt.pixel << "\t" << pt.rightPixel << "\t" << pt.type << std::endl;
-        //     }
-        // }
-
-        // Estimate the width by getting the median keypoint distance
-        std::vector<double> keypointDistances(keypoints.size() - 1); // the distance between adjacent keypoints, in pixels
-        std::vector<double> keypointWidth(keypoints.size()); // the width of each keypoint
-        for (size_t ii = 0; ii < keypoints.size() - 1; ++ii)
-        {
-            keypointDistances[ii] = keypoints[ii + 1].pixel - keypoints[ii].pixel;
-            keypointWidth[ii] = keypoints[ii].rightPixel - keypoints[ii].leftPixel;
-        }
-        keypointWidth[keypoints.size() - 1] = keypoints[keypoints.size() - 1].rightPixel - keypoints[keypoints.size() - 1].leftPixel;
-        const double medianPixelDistance = Median(keypointDistances);
-
-        return medianPixelDistance;
+        return 0.0;
     }
 }
 
