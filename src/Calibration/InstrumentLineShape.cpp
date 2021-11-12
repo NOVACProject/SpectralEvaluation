@@ -249,6 +249,16 @@ std::vector<double> SampleInstrumentLineShape(const SuperGaussianLineShape& line
     return GetFunctionValues(superGauss, x, baseline);
 }
 
+CCrossSectionData SampleInstrumentLineShape(const GaussianLineShape& lineShape)
+{
+    // Use the fact that a Gaussian line shape is just a special case of a super-gaussian.
+    SuperGaussianLineShape superGaussianLineShape;
+    superGaussianLineShape.k = 2.0;
+    superGaussianLineShape.w = lineShape.sigma * std::sqrt(2.0);
+
+    return SampleInstrumentLineShape(superGaussianLineShape);
+}
+
 CCrossSectionData SampleInstrumentLineShape(const SuperGaussianLineShape& lineShape)
 {
     const double amplitude = lineShape.k / (2.0 * lineShape.w * std::lgamma(1. / lineShape.k));
@@ -264,7 +274,7 @@ CCrossSectionData SampleInstrumentLineShape(const SuperGaussianLineShape& lineSh
     const size_t length = 101;
     const double range = 3 * lineShape.Fwhm();
     const double xMin = -range * 0.5;
- 
+
     result.m_waveLength.resize(length);
     for (size_t ii = 0; ii < length; ++ii)
     {

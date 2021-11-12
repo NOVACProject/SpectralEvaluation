@@ -140,6 +140,7 @@ std::vector<double> SampleInstrumentLineShape(const SuperGaussianLineShape& line
 
 /** Calculates the value of the provided line shape on an auto determined x-axis grid.
     The returned line shape will be centered on zero and have a normalized amplitude. */
+CCrossSectionData SampleInstrumentLineShape(const GaussianLineShape& lineShape);
 CCrossSectionData SampleInstrumentLineShape(const SuperGaussianLineShape& lineShape);
 
 /** Calculates the partial derivative with respect to the 'sigma' parameter of the provided Gaussian line shape using finite difference. */
