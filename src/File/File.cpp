@@ -401,7 +401,6 @@ bool SaveInstrumentCalibration(const std::string& fullFilePath, const Instrument
     // Make sure that the instrument line shape is sampled on the same grid as the pixel-to-wavelength mapping.
     double instrumentLineShapeStartWavelength = calibration.instrumentLineShapeCenter + calibration.instrumentLineShapeGrid.front();
     double instrumentLineShapeEndWavelength = calibration.instrumentLineShapeCenter + calibration.instrumentLineShapeGrid.back();
-    // size_t instrumentLineShapeCenterPixel = WavelengthToPixel(calibration.pixelToWavelengthMapping, calibration.instrumentLineShapeCenter);
 
     std::vector<double> resampledLineShape;
     if (instrumentLineShapeStartWavelength < calibration.pixelToWavelengthMapping.front())
@@ -431,21 +430,6 @@ bool SaveInstrumentCalibration(const std::string& fullFilePath, const Instrument
 
         novac::Resample(calibration.instrumentLineShapeGrid, calibration.instrumentLineShape, newLineShapeGrid, resampledLineShape);
     }
-
-    /* {
-        if (instrumentLineShapeCenterPixel <= calibration.instrumentLineShape.size() / 2)
-        {
-            instrumentLineShapeSpectrumStartIdx = 0;
-        }
-        else if (instrumentLineShapeCenterPixel >= calibration.pixelToWavelengthMapping.size() - calibration.instrumentLineShape.size())
-        {
-            instrumentLineShapeSpectrumStartIdx = calibration.pixelToWavelengthMapping.size() - calibration.instrumentLineShape.size();
-        }
-        else
-        {
-            instrumentLineShapeSpectrumStartIdx = instrumentLineShapeCenterPixel - calibration.instrumentLineShape.size() / 2;
-        }
-    } */
 
     extendedFileInfo.MinChannel = static_cast<int>(instrumentLineShapeSpectrumStartPixel);
     extendedFileInfo.MaxChannel = static_cast<int>(instrumentLineShapeSpectrumEndPixel);
@@ -484,8 +468,6 @@ bool SaveInstrumentCalibration(const std::string& fullFilePath, const Instrument
 
         spectrumToSave = std::make_unique<novac::CSpectrum>(calibration.pixelToWavelengthMapping, extendedPeak);
     }
-
-    // spectrumToSave->m_info = this->m_inputspectrumInformation;
 
     novac::CSTDFile::WriteSpectrum(*spectrumToSave, fullFilePath, extendedFileInfo);
 
