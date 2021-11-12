@@ -21,6 +21,10 @@ TEST_CASE("EstimateInstrumentLineShape with measured spectrum being Gaussian of 
 {
     std::vector<double> pixelToWavelengthMapping = GeneratePixelToWavelengthMapping(330.0, 350.0, 0.05);
 
+    InstrumentLineshapeEstimationFromDoas::LineShapeEstimationSettings settings;
+    settings.startPixel = pixelToWavelengthMapping.size() / 20; // 5% margin in either end
+    settings.endPixel = pixelToWavelengthMapping.size() - pixelToWavelengthMapping.size() / 20;
+
     std::vector<std::pair<std::string, double>> noCrossSections;
     FraunhoferSpectrumGeneration fraunhoferSpectrumGenerator{ GetSolarAtlasFileName(), noCrossSections };
 
@@ -37,9 +41,6 @@ TEST_CASE("EstimateInstrumentLineShape with measured spectrum being Gaussian of 
         InstrumentLineshapeEstimationFromDoas sut{ pixelToWavelengthMapping, actualnstrumentLineShape };
 
         // Act
-        InstrumentLineshapeEstimationFromDoas::LineShapeEstimationSettings settings;
-        settings.startPixel = 10;
-        settings.endPixel = pixelToWavelengthMapping.size() - 10;
         const auto output = sut.EstimateInstrumentLineShape(fraunhoferSpectrumGenerator, *measuredSpectrum, settings);
 
         // Assert
@@ -55,13 +56,10 @@ TEST_CASE("EstimateInstrumentLineShape with measured spectrum being Gaussian of 
         InstrumentLineshapeEstimationFromDoas sut{ pixelToWavelengthMapping, initialGuessForInstrumentLineShape };
 
         // Act
-        InstrumentLineshapeEstimationFromDoas::LineShapeEstimationSettings settings;
-        settings.startPixel = 10;
-        settings.endPixel = pixelToWavelengthMapping.size() - 10;
         const auto output = sut.EstimateInstrumentLineShape(fraunhoferSpectrumGenerator, *measuredSpectrum, settings);
 
         // Assert
-        REQUIRE(fabs(actualFwhm - output.result.lineShape.Fwhm()) < 0.01 * actualFwhm); // 1% margin
+        REQUIRE(fabs(actualFwhm - output.result.lineShape.Fwhm()) < 0.02 * actualFwhm); // 2% margin
         REQUIRE(fabs(output.result.shift) < 0.01); // in pixels
     }
 

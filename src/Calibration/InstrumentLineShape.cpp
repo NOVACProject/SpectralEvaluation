@@ -261,7 +261,7 @@ CCrossSectionData SampleInstrumentLineShape(const SuperGaussianLineShape& lineSh
 
     CCrossSectionData result;
 
-    const size_t length = 37;
+    const size_t length = 101;
     const double range = 3 * lineShape.Fwhm();
     const double xMin = -range * 0.5;
  

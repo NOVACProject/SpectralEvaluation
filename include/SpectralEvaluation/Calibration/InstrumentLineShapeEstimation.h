@@ -198,7 +198,7 @@ private:
 
     struct LineShapeUpdate
     {
-        double error;           // This is the chi2 of the DOAS fit without the parameter adjustment.
+        double currentError;    // This is the chi2 of the DOAS fit without the parameter adjustment.
         double residualSize;    // This is the chi2 of the DOAS fit with the parameter adjustment.
         double shift;           // This is the shift of the DOAS fit with the parameter adjustment.
         std::vector<double> parameterDelta; // The retrieved parameter adjustment.
@@ -213,7 +213,7 @@ private:
 
     /// <summary>
     /// Attempts to calculate the gradient of the parameters of the instrument line shape fit
-    /// by calling CalculateGradient.
+    /// by calling CalculateGradientAndCurrentError.
     /// </summary>
     LineShapeUpdate GetGradient(
         IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
@@ -223,10 +223,11 @@ private:
         bool& allowSpectrumShift);
 
     /// <summary>
-    /// Caclulates the gradient of the parameters of the instrument line shape using a DOAS fit.
+    /// Calculates the gradient of the parameters of the instrument line shape using a DOAS fit.
+    /// At the same time an currentError measure at the current location is calculated (by reusing the same objects).
     /// @throws DoasFitException if the fit fails.
     /// </summary>
-    LineShapeUpdate CalculateGradient(
+    LineShapeUpdate CalculateGradientAndCurrentError(
         IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
         const CSpectrum& measuredSpectrum,
         const SuperGaussianLineShape& currentLineShape,

@@ -415,6 +415,8 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
         throw std::invalid_argument("Invalid setup of Instrument Lineshape Estimation, a valid wavelength range must be defined.");
     }
 
+    const int maximumNumberOfIterations = 100; // slightly arbitrary, but we need to stop at some point.
+
     double stepSize = 1.0;
 
     LineShapeEstimationResult result;
@@ -424,40 +426,39 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
 
     InstrumentLineshapeEstimationFromDoas::LineShapeUpdate lastUpdate;
     lastUpdate.residualSize = std::numeric_limits<double>::max();
-    lastUpdate.error = std::numeric_limits<double>::max();
+    lastUpdate.currentError = std::numeric_limits<double>::max();
     SuperGaussianLineShape lastLineShape = parameterizedLineShape;
 
-    LineShapeEstimationAttempt optimumResult;
+    LineShapeEstimationAttempt optimumResult; // i.e. the best result we have ever gotten
     optimumResult.error = std::numeric_limits<double>::max();
-    optimumResult.shift = 0.0;
     optimumResult.lineShape = parameterizedLineShape;
 
     int iterationCount = 0;
     bool successfullyConverged = false;
     bool allowSpectrumShift = true;
-    while (iterationCount < 100) // TODO: Determine a limit here
+    while (iterationCount < maximumNumberOfIterations)
     {
         ++iterationCount;
 
         auto update = GetGradient(fraunhoferSpectrumGen, measuredSpectrum, parameterizedLineShape, settings, allowSpectrumShift);
 
         LineShapeEstimationAttempt currentAttempt;
-        currentAttempt.error = update.error;
+        currentAttempt.error = update.currentError;
         currentAttempt.shift = update.shift;
         currentAttempt.lineShape = parameterizedLineShape;
         result.attempts.push_back(currentAttempt);
 
-        std::cout << " Super gaussian (w: " << parameterizedLineShape.w << ", k: " << parameterizedLineShape.k << ", fwhm: " << parameterizedLineShape.Fwhm() << ") gave error : " << update.error << " (with pa : " << update.residualSize << ") and shift : " << update.shift << std::endl;
+        std::cout << " Super gaussian (w: " << parameterizedLineShape.w << ", k: " << parameterizedLineShape.k << ", fwhm: " << parameterizedLineShape.Fwhm() << ") gave currentError : " << update.currentError << " (with pa : " << update.residualSize << ") and shift : " << update.shift << std::endl;
         std::cout << "    Delta is (w: " << update.parameterDelta[0] << ", k: " << update.parameterDelta[1] << ") " << std::endl;
 
-        if (update.error < optimumResult.error)
+        if (update.currentError < optimumResult.error)
         {
-            optimumResult.error = update.error;
+            optimumResult.error = update.currentError;
             optimumResult.shift = update.shift;
             optimumResult.lineShape = parameterizedLineShape;
         }
 
-        if (MaxAbs(update.parameterDelta) < 1e-6 || std::abs(lastUpdate.error - update.error) < 1e-6)
+        if (MaxAbs(update.parameterDelta) < 1e-6 || std::abs(lastUpdate.currentError - update.currentError) < 1e-8)
         {
             // we're done
             successfullyConverged = true;
@@ -465,18 +466,34 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
             break;
         }
 
-        lastLineShape = parameterizedLineShape;
-        lastUpdate = update;
-
-        // use the gradient to modify the parameterizedLineShape
-        for (int parameterIdx = 0; parameterIdx < static_cast<int>(update.parameterDelta.size()); ++parameterIdx)
+        if (update.currentError > lastUpdate.currentError)
         {
-            const double currentValue = GetParameterValue(lastLineShape, parameterIdx);
-            SetParameterValue(parameterizedLineShape, parameterIdx, currentValue - stepSize * update.parameterDelta[parameterIdx]);
-        }
+            // The update resulted in a worse solution than the one we had earlier, step back and make a smaller step size.
+            stepSize *= 0.5;
 
-        // gradually decrease the step size as we approach the solution
-        // stepSize *= 0.9;
+            std::cout << " Updated resulted in a worse result than last iteration, reducing step size to " << stepSize << " and attempting again." << std::endl;
+
+            for (int parameterIdx = 0; parameterIdx < static_cast<int>(update.parameterDelta.size()); ++parameterIdx)
+            {
+                const double currentValue = GetParameterValue(lastLineShape, parameterIdx);
+                SetParameterValue(parameterizedLineShape, parameterIdx, currentValue - stepSize * update.parameterDelta[parameterIdx]);
+            }
+        }
+        else
+        {
+            lastLineShape = parameterizedLineShape;
+            lastUpdate = update;
+
+            // use the gradient to modify the parameterizedLineShape
+            for (int parameterIdx = 0; parameterIdx < static_cast<int>(update.parameterDelta.size()); ++parameterIdx)
+            {
+                const double currentValue = GetParameterValue(lastLineShape, parameterIdx);
+                SetParameterValue(parameterizedLineShape, parameterIdx, currentValue - stepSize * update.parameterDelta[parameterIdx]);
+            }
+
+            // gradually decrease the step size as we approach the solution
+            // stepSize *= 0.9;
+        }
     }
 
     if (!successfullyConverged)
@@ -500,7 +517,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     bool exceptionHappened = false;
     try
     {
-        update = CalculateGradient(fraunhoferSpectrumGen, measuredSpectrum, currentLineShape, settings, allowSpectrumShift);
+        update = CalculateGradientAndCurrentError(fraunhoferSpectrumGen, measuredSpectrum, currentLineShape, settings, allowSpectrumShift);
     }
     catch (DoasFitException& e)
     {
@@ -522,13 +539,13 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
 
         // Chi2 > 2 is indicative of a _really_ bad DOAS fit. Attempt to do the DOAS fit again, but this time without allowing the shift to happen.
         // Also, this time we don't catch the exception. If an exception happens here then abort the instrument line shape estimation.
-        update = CalculateGradient(fraunhoferSpectrumGen, measuredSpectrum, currentLineShape, settings, false);
+        update = CalculateGradientAndCurrentError(fraunhoferSpectrumGen, measuredSpectrum, currentLineShape, settings, false);
     }
 
     return update;
 }
 
-InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstimationFromDoas::CalculateGradient(
+InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstimationFromDoas::CalculateGradientAndCurrentError(
     IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
     const CSpectrum& measuredSpectrum,
     const SuperGaussianLineShape& currentLineShape,
@@ -617,7 +634,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     update.residualSize = doasResult.chiSquare;
     update.shift = doasResult.referenceResult[0].shift;
 
-    // Now also estimate the error by doing the DOAS fit without the Pseudo-absorbers
+    // Now also estimate the currentError by doing the DOAS fit without the Pseudo-absorbers
     {
         doasFitSetup.ref[2].m_columnOption = novac::SHIFT_FIX;
         doasFitSetup.ref[2].m_columnValue = 0.0;
@@ -629,9 +646,8 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
 
         DoasResult newDoasResult;
         doas.Run(filteredMeasuredSpectrum.data(), static_cast<size_t>(measuredSpectrum.m_length), newDoasResult);
-        update.error = newDoasResult.chiSquare;
+        update.currentError = newDoasResult.chiSquare;
     }
-
 
     return update;
 }
