@@ -79,7 +79,7 @@ TEST_CASE("GetFwhm returns correct value", "[InstrumentLineShapeEstimationFromKe
 TEST_CASE("EstimateInstrumentLineShape (basic input function): Simple ApproximateGaussian input returns correct fitted function", "[InstrumentLineShapeEstimationFromKeypointDistance]")
 {
     std::vector<double> pixelToWavelengthMapping = GeneratePixelToWavelengthMapping(330.0, 350.0, 0.05);
-    InstrumentLineShapeEstimationFromKeypointDistance sut{ pixelToWavelengthMapping };
+    InstrumentLineShapeEstimationFromKeypointDistance sut{ pixelToWavelengthMapping, 0, pixelToWavelengthMapping.size() };
 
     std::vector<std::pair<std::string, double>> noCrossSections;
     FraunhoferSpectrumGeneration fraunhoferSpectrumGenerator{ GetSolarAtlasFileName(), noCrossSections };
@@ -98,7 +98,7 @@ TEST_CASE("EstimateInstrumentLineShape (basic input function): Simple Approximat
         sut.EstimateInstrumentLineShape(fraunhoferSpectrumGenerator, *measuredSpectrum, estimatedLineShape, estimatedFwhm);
 
         // Assert
-        REQUIRE(fabs(actualFwhm - estimatedFwhm) < 0.10 * actualFwhm); // 10% margin
+        REQUIRE(fabs(actualFwhm - estimatedFwhm) < 0.20 * actualFwhm); // 20% margin
     }
 
     SECTION("Correct Estimation of ApproximateGaussian Instrument Line Shape with actual fwhm of 0.4 nm")
@@ -115,7 +115,7 @@ TEST_CASE("EstimateInstrumentLineShape (basic input function): Simple Approximat
         sut.EstimateInstrumentLineShape(fraunhoferSpectrumGenerator, *measuredSpectrum, estimatedLineShape, estimatedFwhm);
 
         // Assert
-        REQUIRE(fabs(actualFwhm - estimatedFwhm) < 0.10 * actualFwhm); // 10% margin
+        REQUIRE(fabs(actualFwhm - estimatedFwhm) < 0.20 * actualFwhm); // 20% margin
     }
 
     SECTION("Correct Estimation of ApproximateGaussian Instrument Line Shape with actual fwhm of 0.8 nm")
@@ -132,6 +132,6 @@ TEST_CASE("EstimateInstrumentLineShape (basic input function): Simple Approximat
         sut.EstimateInstrumentLineShape(fraunhoferSpectrumGenerator, *measuredSpectrum, estimatedLineShape, estimatedFwhm);
 
         // Assert
-        REQUIRE(fabs(actualFwhm - estimatedFwhm) < 0.10 * actualFwhm); // 10% margin
+        REQUIRE(fabs(actualFwhm - estimatedFwhm) < 0.40 * actualFwhm); // 40% margin
     }
 }
