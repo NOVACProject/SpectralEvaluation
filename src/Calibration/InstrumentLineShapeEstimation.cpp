@@ -55,8 +55,8 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
     }
     const IndexRange comparisonIndexRange
     {
-        std::max((size_t)1000, WavelengthToPixel(this->pixelToWavelengthMapping, comparisonWavelengthRange.low)),
-        std::min((size_t)4095, WavelengthToPixel(this->pixelToWavelengthMapping, comparisonWavelengthRange.high))
+        std::max(m_measuredPixelStart, WavelengthToPixel(this->pixelToWavelengthMapping, comparisonWavelengthRange.low)),
+        std::min(m_measuredPixelStop, WavelengthToPixel(this->pixelToWavelengthMapping, comparisonWavelengthRange.high))
     };
 
     // Prepare a high-pass filtered version of the measured spectrum, removing all baseline
@@ -233,6 +233,11 @@ double InstrumentLineShapeEstimationFromKeypointDistance::GetMedianKeypointDista
             intersectionPoint pt(ii - 1 + (-0.1 - normalizedData[ii - 1]) / (normalizedData[ii] - normalizedData[ii - 1]), -1);
             intersections.push_back(pt);
         }
+    }
+
+    if (intersections.size() == 0)
+    {
+        return 0.0;
     }
 
     std::vector<double> zeroCrossingDistances;
