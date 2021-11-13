@@ -293,11 +293,11 @@ std::string EnsureFilenameHasSuffix(const std::string& fullFilePath, const std::
         return correctedFileName.str();
     }
 
-    const size_t lastForwardSlash = fullFilePath.rfind('\\');
-    const size_t lastBackwardSlash = fullFilePath.rfind('/');
+    const size_t lastBackwardSlash = fullFilePath.rfind('\\');
+    const size_t lastForwardSlash = fullFilePath.rfind('/');
 
-    if ((lastForwardSlash != fullFilePath.npos && lastPeriod > lastForwardSlash) ||
-        (lastBackwardSlash != fullFilePath.npos && lastPeriod > lastBackwardSlash))
+    if ((lastBackwardSlash != fullFilePath.npos && lastPeriod > lastBackwardSlash) ||
+        (lastForwardSlash != fullFilePath.npos && lastPeriod > lastForwardSlash))
     {
         return fullFilePath;
     }

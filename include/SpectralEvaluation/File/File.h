@@ -41,7 +41,8 @@ bool ReadSpectrum(const std::string& fullFilePath, CSpectrum& result);
 
 /** This is a helper method which makes sure that the provided filename contains a file suffix.
     If no suffix exists, then the default suffix is appended.
-    NOTICE: the provided suffix should not start with a period. */
+    NOTICE: the provided suffix should not start with a period.
+    NOTICE2: this will not guarantee that the fullFilePath has the default suffix, only that there is one. */
 std::string EnsureFilenameHasSuffix(const std::string& fullFilePath, const std::string& defaultSuffix);
 
 /** Returns the file extension (suffix) from the provided full file path */
