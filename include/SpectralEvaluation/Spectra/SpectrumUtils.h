@@ -108,4 +108,10 @@ bool Derivative(const double* data, size_t dataLength, int order, std::vector<do
  * @param intensity Will on return be filled with the intensity of the found points (in the same units as the spectrum). s*/
 bool GetEnvelope(const CSpectrum& spectrum, std::vector<double>& pixel, std::vector<double>& intensity);
 
+/** Searches for the pixel in the provided pixel-to-wavelength mapping where the provided
+*   wavelength can be found. Will round to the nearest pixel.
+*   If wavelength is smaller than the smalles value in pixelToWavelengthMapping then zero is returned.
+*   If wavelength is larger than the largest value in pixelToWavelengthMapping, then pixelToWavelengthMapping.size() - 1 is returned. */
+size_t WavelengthToPixel(const std::vector<double>& pixelToWavelengthMapping, double wavelength);
+
 }

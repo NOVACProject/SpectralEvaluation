@@ -5,10 +5,12 @@
 #include <SpectralEvaluation/Evaluation/BasicMath.h>
 #include <SpectralEvaluation/Spectra/SpectrumUtils.h>
 #include <SpectralEvaluation/Spectra/Scattering.h>
+#include <SpectralEvaluation/Spectra/WavelengthRange.h>
 #include <SpectralEvaluation/VectorUtils.h>
 #include <SpectralEvaluation/Evaluation/FitWindow.h>
 #include <SpectralEvaluation/Evaluation/DoasFit.h>
 #include <SpectralEvaluation/Calibration/InstrumentLineShape.h>
+#include <SpectralEvaluation/Math/IndexRange.h>
 
 // TODO: Remove, this is included for debugging only.
 #include <SpectralEvaluation/File/File.h>
@@ -45,6 +47,18 @@ bool InstrumentLineShapeEstimation::HasInitialLineShape() const
 
 InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState InstrumentLineShapeEstimationFromKeypointDistance::EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& spectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm)
 {
+    // Check the range over which we can compare the spectra
+    const WavelengthRange comparisonWavelengthRange = fraunhoferSpectrumGen.GetFraunhoferRange(this->pixelToWavelengthMapping);
+    if (comparisonWavelengthRange.Empty())
+    {
+        throw std::invalid_argument("Cannot create an initial estimate for the instrument line shape, no overlap between the instruments wavelength range and the solar spectrum's wavelength range.");
+    }
+    const IndexRange comparisonIndexRange
+    {
+        std::max((size_t)1000, WavelengthToPixel(this->pixelToWavelengthMapping, comparisonWavelengthRange.low)),
+        std::min((size_t)4095, WavelengthToPixel(this->pixelToWavelengthMapping, comparisonWavelengthRange.high))
+    };
+
     // Prepare a high-pass filtered version of the measured spectrum, removing all baseline
     CBasicMath math;
     std::unique_ptr<CSpectrum> filteredSpectrum = std::make_unique<CSpectrum>(spectrum);
@@ -54,7 +68,7 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
 
     LineShapeEstimationState state;
 
-    state.medianPixelDistanceInMeas = GetMedianKeypointDistanceFromSpectrum(*filteredSpectrum, "Meas");
+    state.medianPixelDistanceInMeas = GetMedianKeypointDistanceFromSpectrum(*filteredSpectrum, comparisonIndexRange, "Meas");
     const double pixelDistanceFromInitialCalibration = std::abs(this->pixelToWavelengthMapping.back() - this->pixelToWavelengthMapping.front()) / (double)this->pixelToWavelengthMapping.size();
     const double medianMeasKeypointDistanceInWavelength = state.medianPixelDistanceInMeas * pixelDistanceFromInitialCalibration;
 
@@ -85,7 +99,7 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
         math.HighPassBinomial(solarSpectrum->m_data, (int)solarSpectrum->m_length, 500);
         Normalize(*solarSpectrum);
 
-        medianPixelDistanceAtLowerSigmaLimit = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, "LowLimit");
+        medianPixelDistanceAtLowerSigmaLimit = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, comparisonIndexRange, "LowLimit");
 
         state.attempts.push_back(std::pair<double, double>{lowerSigmaLimit, medianPixelDistanceAtLowerSigmaLimit});
 
@@ -105,7 +119,7 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
         math.HighPassBinomial(solarSpectrum->m_data, (int)solarSpectrum->m_length, 500);
         Normalize(*solarSpectrum);
 
-        medianPixelDistanceAtUpperSigmaLimit = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, "HighLimit");
+        medianPixelDistanceAtUpperSigmaLimit = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, comparisonIndexRange, "HighLimit");
 
         state.attempts.push_back(std::pair<double, double>{upperSigmaLimit, medianPixelDistanceAtUpperSigmaLimit});
 
@@ -134,7 +148,7 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
         math.HighPassBinomial(solarSpectrum->m_data, (int)solarSpectrum->m_length, 500);
         Normalize(*solarSpectrum);
 
-        medianPixelDistanceInSolarSpectrum = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, "Theory");
+        medianPixelDistanceInSolarSpectrum = GetMedianKeypointDistanceFromSpectrum(*solarSpectrum, comparisonIndexRange, "Theory");
 
         state.attempts.push_back(std::pair<double, double>{estimatedGaussianSigma, medianPixelDistanceInSolarSpectrum});
 
@@ -150,13 +164,12 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
         }
 
         if (std::abs(medianPixelDistanceInSolarSpectrum - state.medianPixelDistanceInMeas) < 0.01 * state.medianPixelDistanceInMeas ||
-            std::abs(upperSigmaLimit - lowerSigmaLimit) < 0.01 * upperSigmaLimit)
+            std::abs(upperSigmaLimit - lowerSigmaLimit) < 0.1 * upperSigmaLimit)
         {
             break;
         }
 
         estimatedGaussianSigma = 0.5 * (lowerSigmaLimit + upperSigmaLimit);
-        // estimatedGaussianSigma = lowerSigmaLimit + (state.medianPixelDistanceInMeas - medianPixelDistanceAtLowerSigmaLimit) * (upperSigmaLimit - lowerSigmaLimit) / (medianPixelDistanceAtUpperSigmaLimit - medianPixelDistanceAtLowerSigmaLimit);
     }
 
     // Save the results
@@ -170,135 +183,137 @@ InstrumentLineShapeEstimationFromKeypointDistance::LineShapeEstimationState Inst
 bool LineIntersects(const std::vector<double>& data, size_t index, double threshold)
 {
     return (data[index] > threshold && data[index - 1] < threshold) ||
-            (data[index] < threshold && data[index - 1] > threshold);
+        (data[index] < threshold && data[index - 1] > threshold);
 }
 
-double InstrumentLineShapeEstimationFromKeypointDistance::GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum, const std::string& /*spectrumName*/) const
+double InstrumentLineShapeEstimationFromKeypointDistance::GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum, const IndexRange& pixelRange, const std::string& /*spectrumName*/) const
 {
-    int version = 2;
-
-    if (version == 2)
+    // Version 2, getting the median distance between zero crossings of the spectrum in the region [measuredPixelStart, measuredPixelStop]
+    // start by normalizing the data by removing the median value
+    const size_t spectrumLength = static_cast<size_t>(spectrum.m_length);
+    std::vector<double> normalizedData{ spectrum.m_data + pixelRange.from, spectrum.m_data + pixelRange.to };
+    std::vector<double> copyOfData{ begin(normalizedData), end(normalizedData) };
+    auto median = Median(copyOfData);
+    for (size_t ii = 0; ii < normalizedData.size(); ++ii)
     {
-        // Version 2, getting the median distance between zero crossings of the spectrum in the region [measuredPixelStart, measuredPixelStop]
-        // start by normalizing the data by removing the median value
-        const size_t spectrumLength = static_cast<size_t>(spectrum.m_length);
-        const size_t start = (spectrumLength < this->measuredPixelStart) ? (spectrumLength / 10) : this->measuredPixelStart;
-        const size_t length = (spectrumLength < this->measuredPixelStart) ? (spectrumLength - 2 * start) : std::min(static_cast<size_t>(spectrumLength - this->measuredPixelStart), this->measuredPixelStop - this->measuredPixelStart);
-        std::vector<double> normalizedData{ spectrum.m_data + start, spectrum.m_data + start + length };
-        std::vector<double> copyOfData{ begin(normalizedData), end(normalizedData) };
-        auto median = Median(copyOfData);
-        for (size_t ii = 0; ii < normalizedData.size(); ++ii)
+        normalizedData[ii] -= median;
+    }
+    auto minMax = MinMax(normalizedData);
+    const double scaleF = 2.0 / (minMax.second - minMax.first);
+    for (size_t ii = 0; ii < normalizedData.size(); ++ii)
+    {
+        normalizedData[ii] *= scaleF;
+    }
+
+    // Now find the locations where this normalized spectrum crosses; 1) the y=0.1 , 2) y=0.0 and 3) y=-0.1
+    struct intersectionPoint
+    {
+        intersectionPoint(double px, int t)
+            : pixel(px), type(t)
+        { }
+
+        double pixel = 0.0;
+        int type = 0; // +1, 0 or -1
+    };
+    std::vector<intersectionPoint> intersections;
+    for (size_t ii = 1; ii < normalizedData.size(); ++ii)
+    {
+        if (LineIntersects(normalizedData, ii, 0.0))
         {
-            normalizedData[ii] -= median;
+            intersectionPoint pt(ii - 1 - normalizedData[ii - 1] / (normalizedData[ii] - normalizedData[ii - 1]), 0);
+            intersections.push_back(pt);
         }
-        auto minMax = MinMax(normalizedData);
-        const double scaleF = 2.0 / (minMax.second - minMax.first);
-        for (size_t ii = 0; ii < normalizedData.size(); ++ii)
+        if (LineIntersects(normalizedData, ii, +0.1))
         {
-            normalizedData[ii] *= scaleF;
+            intersectionPoint pt(ii - 1 + (0.1 - normalizedData[ii - 1]) / (normalizedData[ii] - normalizedData[ii - 1]), +1);
+            intersections.push_back(pt);
         }
-
-        // Now find the locations where this normalized spectrum crosses; 1) the y=0.1 , 2) y=0.0 and 3) y=-0.1
-        struct intersectionPoint
+        if (LineIntersects(normalizedData, ii, -0.1))
         {
-            intersectionPoint(double px, int t)
-                : pixel(px), type(t)
-            { }
-
-            double pixel = 0.0;
-            int type = 0; // +1, 0 or -1
-        };
-        std::vector<intersectionPoint> intersections;
-        for (size_t ii = 1; ii < normalizedData.size(); ++ii)
-        {
-            if (LineIntersects(normalizedData, ii, 0.0))
-            {
-                intersectionPoint pt(ii - 1 - normalizedData[ii - 1] / (normalizedData[ii] - normalizedData[ii - 1]), 0);
-                intersections.push_back(pt);
-            }
-            if (LineIntersects(normalizedData, ii, +0.1))
-            {
-                intersectionPoint pt(ii - 1 + (0.1 - normalizedData[ii - 1]) / (normalizedData[ii] - normalizedData[ii - 1]), +1);
-                intersections.push_back(pt);
-            }
-            if (LineIntersects(normalizedData, ii, -0.1))
-            {
-                intersectionPoint pt(ii - 1 + (-0.1 - normalizedData[ii - 1]) / (normalizedData[ii] - normalizedData[ii - 1]), -1);
-                intersections.push_back(pt);
-            }
+            intersectionPoint pt(ii - 1 + (-0.1 - normalizedData[ii - 1]) / (normalizedData[ii] - normalizedData[ii - 1]), -1);
+            intersections.push_back(pt);
         }
+    }
 
-        std::vector<double> zeroCrossingDistances;
-        int lastIntersectionIdx = -1;
-        for (size_t ii = 1; ii < intersections.size() - 1; ++ii)
+    std::vector<double> zeroCrossingDistances;
+    int lastIntersectionIdx = -1;
+    for (size_t ii = 1; ii < intersections.size() - 1; ++ii)
+    {
+        if (intersections[ii].type == 0 && intersections[ii - 1].type != intersections[ii].type && intersections[ii + 1].type != intersections[ii].type)
         {
-            if (intersections[ii].type == 0 && intersections[ii - 1].type != intersections[ii].type && intersections[ii + 1].type != intersections[ii].type)
+            if (lastIntersectionIdx >= 0)
             {
-                if (lastIntersectionIdx >= 0)
-                {
-                    zeroCrossingDistances.push_back(intersections[ii].pixel - intersections[lastIntersectionIdx].pixel);
-                }
-                lastIntersectionIdx = static_cast<int>(ii);
+                zeroCrossingDistances.push_back(intersections[ii].pixel - intersections[lastIntersectionIdx].pixel);
             }
+            lastIntersectionIdx = static_cast<int>(ii);
         }
+    }
 
-        // {
-        //     std::ofstream outFile{ "D:/NOVAC/SpectrometerCalibration/ZeroCrossings.csv", std::ios::app };
-        //     outFile << "------- " << spectrumName << "--------------" << std::endl;
-        //     for (const auto& p : intersections)
-        //     {
-        //         outFile << p.pixel << std::endl;
-        //     }
-        // }
-
+    if (zeroCrossingDistances.size() > 0)
+    {
         double medianPixelDistance = Average(zeroCrossingDistances);
         return medianPixelDistance;
     }
     else
     {
-        // Version 1, getting the median distance between keypoints.
-        // Find all keypoints in the prepared spectrum
-        std::vector<SpectrumDataPoint> allKeypoints;
-        FindKeypointsInSpectrum(spectrum, 0.01, allKeypoints);
+        return 0.0;
+    }
+}
 
-        // Filter out the keypoints to only be the points in the allowed range [measuredPixelStart, measuredPixelStop]
-        std::vector<SpectrumDataPoint> keypoints;
-        keypoints.reserve(allKeypoints.size());
-        for (size_t ii = 0; ii < allKeypoints.size(); ++ii)
-        {
-            if (static_cast<size_t>(allKeypoints[ii].pixel) >= this->measuredPixelStart && static_cast<size_t>(allKeypoints[ii].pixel) <= this->measuredPixelStop)
-            {
-                keypoints.push_back(allKeypoints[ii]);
-            }
-        }
+/// <summary>
+/// Investigates the provided lineshape and returns the left and right index 
+/// defining the FWHM.
+/// If no such points could be found then (0; 0) is returned.
+/// </summary>
+std::pair<double, double> GetFwhm(const std::vector<double>& lineShape)
+{
+    if (lineShape.size() <= 1)
+    {
+        // empty input
+        return std::make_pair(0.0, 0.0);
+    }
 
-        if (keypoints.size() <= 2)
-        {
-            // Cannot determine the distance if there's only one point
-            return std::numeric_limits<double>::quiet_NaN();
-        }
+    std::pair<size_t, size_t> minMaxIdx;
+    const auto minMax = MinMax(lineShape, minMaxIdx);
 
-        // {
-        //     std::ofstream outFile{ "D:/NOVAC/SpectrometerCalibration/Keypoints.csv", std::ios::app };
-        //     outFile << "------- " << spectrumName << "--------------" << std::endl;
-        //     for (const auto& pt : keypoints)
-        //     {
-        //         outFile << pt.leftPixel << "\t" << pt.pixel << "\t" << pt.rightPixel << "\t" << pt.type << std::endl;
-        //     }
-        // }
+    // Set a threshold which is half the maximum value.
+    const double threshold = minMax.first + 0.5 * (minMax.second - minMax.first);
 
-        // Estimate the width by getting the median keypoint distance
-        std::vector<double> keypointDistances(keypoints.size() - 1); // the distance between adjacent keypoints, in pixels
-        std::vector<double> keypointWidth(keypoints.size()); // the width of each keypoint
-        for (size_t ii = 0; ii < keypoints.size() - 1; ++ii)
-        {
-            keypointDistances[ii] = keypoints[ii + 1].pixel - keypoints[ii].pixel;
-            keypointWidth[ii] = keypoints[ii].rightPixel - keypoints[ii].leftPixel;
-        }
-        keypointWidth[keypoints.size() - 1] = keypoints[keypoints.size() - 1].rightPixel - keypoints[keypoints.size() - 1].leftPixel;
-        const double medianPixelDistance = Median(keypointDistances);
+    // from the center (position of maximum value, get the point to the left and to the right where the lineshape crosses the threshold.
+    const double leftIdx = FindValue(lineShape, threshold, 0U, minMaxIdx.second);
+    const double rightIdx = FindValue(lineShape, threshold, minMaxIdx.second, lineShape.size());
 
-        return medianPixelDistance;
+    if (leftIdx < 0.0 || rightIdx < leftIdx)
+    {
+        return std::make_pair(0.0, 0.0);
+    }
+
+    return std::make_pair(leftIdx, rightIdx);
+}
+
+double GetFwhm(const std::vector<double>& lineshapeWavelength, const std::vector<double>& lineShapeIntensity)
+{
+    if (lineShapeIntensity.size() <= 1)
+    {
+        // empty input
+        return 0.0;
+    }
+
+    const auto leftAndRightIdx = GetFwhm(lineShapeIntensity);
+
+    if (leftAndRightIdx.first < 0.0 || leftAndRightIdx.second < leftAndRightIdx.first)
+    {
+        return 0.0;
+    }
+
+    if (lineshapeWavelength.size() > 0)
+    {
+        // convert index to wavelength
+        return std::abs(GetAt(lineshapeWavelength, leftAndRightIdx.second) - GetAt(lineshapeWavelength, leftAndRightIdx.first));
+    }
+    else
+    {
+        return (leftAndRightIdx.second - leftAndRightIdx.first);
     }
 }
 
@@ -309,31 +324,7 @@ double GetFwhm(const novac::CCrossSectionData& lineshape)
         // empty input
         return 0.0;
     }
-
-    std::pair<size_t, size_t> minMaxIdx;
-    const auto minMax = MinMax(lineshape.m_crossSection, minMaxIdx);
-
-    // Set a threshold which is half the maximum value.
-    const double threshold = minMax.first + 0.5 * (minMax.second - minMax.first);
-
-    // from the center (position of maximum value, get the point to the left and to the right where the lineshape crosses the threshold.
-    const double leftIdx = FindValue(lineshape.m_crossSection, threshold, 0U, minMaxIdx.second);
-    const double rightIdx = FindValue(lineshape.m_crossSection, threshold, minMaxIdx.second, lineshape.m_crossSection.size());
-
-    if (leftIdx < 0.0 || rightIdx < leftIdx)
-    {
-        return 0.0;
-    }
-
-    if (lineshape.m_waveLength.size() > 0)
-    {
-        // convert index to wavelength
-        return std::abs(GetAt(lineshape.m_waveLength, rightIdx) - GetAt(lineshape.m_waveLength, leftIdx));
-    }
-    else
-    {
-        return (rightIdx - leftIdx);
-    }
+    return GetFwhm(lineshape.m_waveLength, lineshape.m_crossSection);
 }
 
 inline bool IsZero(double value)
@@ -375,69 +366,92 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
     }
     if (this->pixelToWavelengthMapping.size() == 0 || this->pixelToWavelengthMapping.size() != static_cast<size_t>(measuredSpectrum.m_length))
     {
-        throw std::invalid_argument("Invalid setup of InstrumentLineshapeEstimationFromDoas, the initial pixel-to-wavelength mapping must have the same length as the measured spectrum.");
+        throw std::invalid_argument("Invalid setup of Instrument Lineshape Estimation, the initial pixel-to-wavelength mapping must have the same length as the measured spectrum.");
+    }
+    if (settings.endPixel <= settings.startPixel)
+    {
+        throw std::invalid_argument("Invalid setup of Instrument Lineshape Estimation, a valid wavelength range must be defined.");
     }
 
-    double stepSize = 5.0;
+    const int maximumNumberOfIterations = 100; // slightly arbitrary, but we need to stop at some point.
+
+    double stepSize = 1.0;
 
     LineShapeEstimationResult result;
 
     SuperGaussianLineShape parameterizedLineShape = this->initialLineShapeFunction;
-    std::cout << " Initial super gaussian is (w: " << parameterizedLineShape.w << ", k: " << parameterizedLineShape.k << ")" << std::endl;
+    std::cout << " Initial super gaussian is (w: " << parameterizedLineShape.w << ", k: " << parameterizedLineShape.k << " giving fwhm: " << parameterizedLineShape.Fwhm() << ")" << std::endl;
 
     InstrumentLineshapeEstimationFromDoas::LineShapeUpdate lastUpdate;
     lastUpdate.residualSize = std::numeric_limits<double>::max();
-    lastUpdate.error = std::numeric_limits<double>::max();
+    lastUpdate.currentError = std::numeric_limits<double>::max();
     SuperGaussianLineShape lastLineShape = parameterizedLineShape;
 
-    LineShapeEstimationAttempt optimumResult;
+    LineShapeEstimationAttempt optimumResult; // i.e. the best result we have ever gotten
     optimumResult.error = std::numeric_limits<double>::max();
-    optimumResult.shift = 0.0;
     optimumResult.lineShape = parameterizedLineShape;
 
     int iterationCount = 0;
     bool successfullyConverged = false;
-    while (iterationCount < 100) // TODO: Determine a limit here
+    bool allowSpectrumShift = true;
+    while (iterationCount < maximumNumberOfIterations)
     {
         ++iterationCount;
 
-        auto update = CalculateGradient(fraunhoferSpectrumGen, measuredSpectrum, parameterizedLineShape, settings);
+        auto update = GetGradient(fraunhoferSpectrumGen, measuredSpectrum, parameterizedLineShape, settings, allowSpectrumShift);
 
         LineShapeEstimationAttempt currentAttempt;
-        currentAttempt.error = update.error;
+        currentAttempt.error = update.currentError;
         currentAttempt.shift = update.shift;
         currentAttempt.lineShape = parameterizedLineShape;
         result.attempts.push_back(currentAttempt);
 
-        std::cout << " Super gaussian (w: " << parameterizedLineShape.w << ", k: " << parameterizedLineShape.k << ") gave error: " << update.error << " (with pa: " << update.residualSize << ") and shift: " << update.shift << std::endl;
+        std::cout << " Super gaussian (w: " << parameterizedLineShape.w << ", k: " << parameterizedLineShape.k << ", fwhm: " << parameterizedLineShape.Fwhm() << ") gave currentError : " << update.currentError << " (with pa : " << update.residualSize << ") and shift : " << update.shift << std::endl;
         std::cout << "    Delta is (w: " << update.parameterDelta[0] << ", k: " << update.parameterDelta[1] << ") " << std::endl;
 
-        if (update.error < optimumResult.error)
+        if (update.currentError < optimumResult.error)
         {
-            optimumResult.error = update.error;
+            optimumResult.error = update.currentError;
             optimumResult.shift = update.shift;
             optimumResult.lineShape = parameterizedLineShape;
         }
 
-        if (MaxAbs(update.parameterDelta) < 1e-6 || std::abs(lastUpdate.error - update.error) < 1e-6)
+        if (MaxAbs(update.parameterDelta) < 1e-6 || std::abs(lastUpdate.currentError - update.currentError) < 1e-8)
         {
             // we're done
             successfullyConverged = true;
+            std::cout << "Instrument line shape estimation successfully converged." << std::endl;
             break;
         }
 
-        lastLineShape = parameterizedLineShape;
-        lastUpdate = update;
-
-        // use the gradient to modify the parameterizedLineShape
-        for (int parameterIdx = 0; parameterIdx < static_cast<int>(update.parameterDelta.size()); ++parameterIdx)
+        if (update.currentError > lastUpdate.currentError)
         {
-            const double currentValue = GetParameterValue(lastLineShape, parameterIdx);
-            SetParameterValue(parameterizedLineShape, parameterIdx, currentValue + stepSize * update.parameterDelta[parameterIdx]);
-        }
+            // The update resulted in a worse solution than the one we had earlier, step back and make a smaller step size.
+            stepSize *= 0.5;
 
-        // gradually decrease the step size as we approach the solution
-        stepSize *= 0.8;
+            std::cout << " Updated resulted in a worse result than last iteration, reducing step size to " << stepSize << " and attempting again." << std::endl;
+
+            for (int parameterIdx = 0; parameterIdx < static_cast<int>(update.parameterDelta.size()); ++parameterIdx)
+            {
+                const double currentValue = GetParameterValue(lastLineShape, parameterIdx);
+                SetParameterValue(parameterizedLineShape, parameterIdx, currentValue - stepSize * update.parameterDelta[parameterIdx]);
+            }
+        }
+        else
+        {
+            lastLineShape = parameterizedLineShape;
+            lastUpdate = update;
+
+            // use the gradient to modify the parameterizedLineShape
+            for (int parameterIdx = 0; parameterIdx < static_cast<int>(update.parameterDelta.size()); ++parameterIdx)
+            {
+                const double currentValue = GetParameterValue(lastLineShape, parameterIdx);
+                SetParameterValue(parameterizedLineShape, parameterIdx, currentValue - stepSize * update.parameterDelta[parameterIdx]);
+            }
+
+            // gradually decrease the step size as we approach the solution
+            // stepSize *= 0.9;
+        }
     }
 
     if (!successfullyConverged)
@@ -450,13 +464,55 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
     return result;
 }
 
-InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstimationFromDoas::CalculateGradient(
+InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstimationFromDoas::GetGradient(
     IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
     const CSpectrum& measuredSpectrum,
     const SuperGaussianLineShape& currentLineShape,
-    const LineShapeEstimationSettings& settings)
+    const LineShapeEstimationSettings& settings,
+    bool& allowSpectrumShift)
+{
+    InstrumentLineshapeEstimationFromDoas::LineShapeUpdate update;
+    bool exceptionHappened = false;
+    try
+    {
+        update = CalculateGradientAndCurrentError(fraunhoferSpectrumGen, measuredSpectrum, currentLineShape, settings, allowSpectrumShift);
+    }
+    catch (DoasFitException& e)
+    {
+        std::cout << "Exception caught while calculating instrument line shape gradient: " << e.what() << std::endl;
+        exceptionHappened = true;
+    }
+
+    // If the fit is really bad of failed entirely. Go back and attempt again.
+    if (exceptionHappened || (update.residualSize > 2.0 && std::abs(update.shift) > 2.0))
+    {
+        if (allowSpectrumShift)
+        {
+            allowSpectrumShift = false;
+        }
+        else
+        {
+            throw InstrumentLineShapeEstimationException("Instrument line shape estimation failed, DOAS fit failed.");
+        }
+
+        // Chi2 > 2 is indicative of a _really_ bad DOAS fit. Attempt to do the DOAS fit again, but this time without allowing the shift to happen.
+        // Also, this time we don't catch the exception. If an exception happens here then abort the instrument line shape estimation.
+        update = CalculateGradientAndCurrentError(fraunhoferSpectrumGen, measuredSpectrum, currentLineShape, settings, false);
+    }
+
+    return update;
+}
+
+InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstimationFromDoas::CalculateGradientAndCurrentError(
+    IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+    const CSpectrum& measuredSpectrum,
+    const SuperGaussianLineShape& currentLineShape,
+    const LineShapeEstimationSettings& settings,
+    bool allowShift)
 {
     CBasicMath math;
+
+    const novac::SHIFT_TYPE shiftOption = allowShift ? novac::SHIFT_TYPE::SHIFT_FREE : novac::SHIFT_TYPE::SHIFT_FIX;
 
     CFitWindow doasFitSetup;
     doasFitSetup.fitLow = static_cast<int>(settings.startPixel);
@@ -477,10 +533,10 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     doasFitSetup.nRef = 1;
     doasFitSetup.ref[0].m_data = std::make_unique<novac::CCrossSectionData>(filteredFraunhoferSpectrum);
     doasFitSetup.ref[0].m_columnOption = novac::SHIFT_FIX;
-    doasFitSetup.ref[0].m_columnValue = 1.0;
+    doasFitSetup.ref[0].m_columnValue = -1.0;
     doasFitSetup.ref[0].m_squeezeOption = novac::SHIFT_FIX;
     doasFitSetup.ref[0].m_squeezeValue = 1.0;
-    doasFitSetup.ref[0].m_shiftOption = novac::SHIFT_FREE;
+    doasFitSetup.ref[0].m_shiftOption = shiftOption;
     doasFitSetup.ref[0].m_shiftValue = 0.0;
 
     // 2. Include the Ring spectrum as the second reference
@@ -512,15 +568,6 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
             pseudoAbsorber->m_crossSection[ii] = IsZero(currentFraunhoferSpectrum->m_data[ii]) ? 0.0 : diffFraunhofer->m_data[ii] / currentFraunhoferSpectrum->m_data[ii];
         }
 
-        // if (parameterIdx == 0)
-        // {
-        //     novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/PseudoAbsorberSpectrum0.txt", pseudoAbsorber->m_crossSection);
-        // }
-        // else
-        // {
-        //     novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/PseudoAbsorberSpectrum1.txt", pseudoAbsorber->m_crossSection);
-        // }
-
         doasFitSetup.ref[doasFitSetup.nRef].m_data = std::move(pseudoAbsorber);
         doasFitSetup.ref[doasFitSetup.nRef].m_columnOption = novac::SHIFT_FREE;
         doasFitSetup.ref[doasFitSetup.nRef].m_squeezeOption = novac::SHIFT_FIX;
@@ -538,22 +585,14 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     math.Log(filteredMeasuredSpectrum.data(), measuredSpectrum.m_length);
 
     DoasResult doasResult;
-    // TODO: this throws an exception if the fit fails. Catch it!
     doas.Run(filteredMeasuredSpectrum.data(), static_cast<size_t>(measuredSpectrum.m_length), doasResult);
-
-    // Save the setup such that we can debug and inspect
-    // {
-    //     novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/FraunhoferSpectrum.txt", filteredFraunhoferSpectrum);
-    //     novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/MeasuredSpectrum.txt", filteredMeasuredSpectrum);
-    //     novac::SaveDataToFile("D:/NOVAC/SpectrometerCalibration/RingSpectrum.txt", filteredRingSpectrum);
-    // }
 
     LineShapeUpdate update;
     update.parameterDelta = std::vector<double>{ doasResult.referenceResult[2].column, doasResult.referenceResult[3].column };
     update.residualSize = doasResult.chiSquare;
     update.shift = doasResult.referenceResult[0].shift;
 
-    // Now also estimate the error by doing the DOAS fit without the Pseudo-absorbers
+    // Now also estimate the currentError by doing the DOAS fit without the Pseudo-absorbers
     {
         doasFitSetup.ref[2].m_columnOption = novac::SHIFT_FIX;
         doasFitSetup.ref[2].m_columnValue = 0.0;
@@ -565,9 +604,8 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
 
         DoasResult newDoasResult;
         doas.Run(filteredMeasuredSpectrum.data(), static_cast<size_t>(measuredSpectrum.m_length), newDoasResult);
-        update.error = newDoasResult.chiSquare;
+        update.currentError = newDoasResult.chiSquare;
     }
-
 
     return update;
 }

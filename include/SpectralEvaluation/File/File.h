@@ -3,12 +3,18 @@
 #include <string>
 #include <vector>
 
+// This file contains basic file input and output operations used throughout the novac software
+
 namespace novac
 {
 
 class CSpectrum;
 class CCrossSectionData;
 class InstrumentCalibration;
+
+/** Checks if the provided file name is an existing and readable file
+    by attempting to open the file for reading. */
+bool IsExistingFile(const std::string& fullFileName);
 
 /** Reads cross section data from the provded file.
         This is able to read ASCII data files with data in one or two columns.
@@ -35,14 +41,16 @@ bool ReadSpectrum(const std::string& fullFilePath, CSpectrum& result);
 
 /** This is a helper method which makes sure that the provided filename contains a file suffix.
     If no suffix exists, then the default suffix is appended.
-    NOTICE: the provided suffix should not start with a period. */
+    NOTICE: the provided suffix should not start with a period.
+    NOTICE2: this will not guarantee that the fullFilePath has the default suffix, only that there is one. */
 std::string EnsureFilenameHasSuffix(const std::string& fullFilePath, const std::string& defaultSuffix);
 
 /** Returns the file extension (suffix) from the provided full file path */
 std::string GetFileExtension(const std::string& fullFilePath);
 
 /** Saves the full instrument calibration to a single file using the extended STD-format.
-    This requires that at least that 'pixelToWavelengthMapping', 'instrumentLineShape', and 'instrumentLineShapeGrid' are defined. */
+    This requires that at least that 'pixelToWavelengthMapping', 'instrumentLineShape', and 'instrumentLineShapeGrid' are defined.
+    If the instrument line shape is sampled on a different grid density than the 'pixelToWavelengthMapping' then it will be resampled. */
 bool SaveInstrumentCalibration(const std::string& fullFilePath, const InstrumentCalibration& calibration);
 
 /** Reads a saved instrument line shape and pixel-to-wavelength mapping from an instrument calibration file in extended STD-format.

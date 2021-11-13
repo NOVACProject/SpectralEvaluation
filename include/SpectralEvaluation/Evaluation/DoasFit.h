@@ -59,6 +59,12 @@ struct DoasResult
     std::vector<double> residual;
 
     /// <summary>
+    /// The filtered measured spectrum in the fit region.
+    /// Length equals the length of the fit region used.
+    /// </summary>
+    std::vector<double> measuredSpectrum;
+
+    /// <summary>
     /// The valeus of the fitted polynomial.
     /// Length equals the length of the fit region used.
     /// </summary>

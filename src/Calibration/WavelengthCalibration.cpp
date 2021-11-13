@@ -170,7 +170,6 @@ std::vector<Correspondence> ListMercurySpectrumCorrespondences(
     // sortedPeaks is the emission lines sorted in decreasing intensity
     std::vector<novac::SpectrumDataPoint> sortedPeaks{ begin(measuredPeaks), end(measuredPeaks) };
     std::sort(begin(sortedPeaks), end(sortedPeaks), [](const novac::SpectrumDataPoint& a, const novac::SpectrumDataPoint& b) {return a.intensity > b.intensity; });
-    const double maximumMeasuredIntensity = sortedPeaks[0].intensity;
 
     // List of known, strong mercury lines, in nm(air)
     struct emissionLine
@@ -413,7 +412,7 @@ WavelengthCalibrationSetup::WavelengthCalibrationSetup(const WavelengthCalibrati
 
 SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibration(const CSpectrum& measuredSpectrum)
 {
-    if (settings.initialPixelToWavelengthMapping.size() != measuredSpectrum.m_length)
+    if (settings.initialPixelToWavelengthMapping.size() != static_cast<size_t>(measuredSpectrum.m_length))
     {
         throw std::invalid_argument("The initial pixel to wavelength mapping must have as many points as the measured spectrum.");
     }
@@ -421,7 +420,6 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
     {
         throw std::invalid_argument("The initial instrument line shape must not be empty.");
     }
-    // TODO: More validation of the setup and incoming parameters?
 
     // Magic parameters...
     const double minimumPeakIntensityInMeasuredSpectrum = 0.02; // in the normalized units.
@@ -572,30 +570,36 @@ void WavelengthCalibrationSetup::EstimateInstrumentLineShapeAsSuperGaussian(nova
         EstimateInstrumentLineShapeAsApproximateGaussian(result, fraunhoferSetup);
     }
 
-    novac::CCrossSectionData& currentEstimateOfInstrumentLineShape = (result.estimatedInstrumentLineShape.GetSize() > 0) ? result.estimatedInstrumentLineShape : settings.initialInstrumentLineShape;
-    InstrumentLineshapeEstimationFromDoas ilsEstimator{ result.pixelToWavelengthMapping, currentEstimateOfInstrumentLineShape };
-
-    InstrumentLineshapeEstimationFromDoas::LineShapeEstimationSettings estimationSettings;
-    estimationSettings.startPixel = (size_t)std::round(novac::GetFractionalIndex(result.pixelToWavelengthMapping, settings.estimateInstrumentLineShapeWavelengthRegion.first));
-    estimationSettings.endPixel = (size_t)std::round(novac::GetFractionalIndex(result.pixelToWavelengthMapping, settings.estimateInstrumentLineShapeWavelengthRegion.second));
-    if (estimationSettings.startPixel > estimationSettings.endPixel)
+    try
     {
-        std::swap(estimationSettings.startPixel, estimationSettings.endPixel);
+        novac::CCrossSectionData& currentEstimateOfInstrumentLineShape = (result.estimatedInstrumentLineShape.GetSize() > 0) ? result.estimatedInstrumentLineShape : settings.initialInstrumentLineShape;
+        InstrumentLineshapeEstimationFromDoas ilsEstimator{ result.pixelToWavelengthMapping, currentEstimateOfInstrumentLineShape };
+
+        InstrumentLineshapeEstimationFromDoas::LineShapeEstimationSettings estimationSettings;
+        estimationSettings.startPixel = (size_t)std::round(novac::GetFractionalIndex(result.pixelToWavelengthMapping, settings.estimateInstrumentLineShapeWavelengthRegion.first));
+        estimationSettings.endPixel = (size_t)std::round(novac::GetFractionalIndex(result.pixelToWavelengthMapping, settings.estimateInstrumentLineShapeWavelengthRegion.second));
+        if (estimationSettings.startPixel > estimationSettings.endPixel)
+        {
+            std::swap(estimationSettings.startPixel, estimationSettings.endPixel);
+        }
+
+        auto startTime = std::chrono::steady_clock::now();
+        auto estimationResult = ilsEstimator.EstimateInstrumentLineShape(fraunhoferSetup, *calibrationState.measuredSpectrum, estimationSettings);
+        auto stopTime = std::chrono::steady_clock::now();
+
+        // Output for debugging
+        std::cout << "Instrument line shape estimation took " << std::chrono::duration_cast<std::chrono::milliseconds>(stopTime - startTime).count() << " ms" << std::endl;
+        std::cout << " Result: (w: " << estimationResult.result.lineShape.w << ", k: " << estimationResult.result.lineShape.k << ") found in " << estimationResult.attempts.size() << " iterations." << std::endl;
+        // Save the result.
+        result.estimatedInstrumentLineShapeParameters = std::make_unique<novac::SuperGaussianLineShape>(estimationResult.result.lineShape);
+        result.estimatedInstrumentLineShape = SampleInstrumentLineShape(estimationResult.result.lineShape);
+        result.estimatedInstrumentLineShapePixelRange.first = estimationSettings.startPixel;
+        result.estimatedInstrumentLineShapePixelRange.second = estimationSettings.endPixel;
     }
-
-    auto startTime = std::chrono::steady_clock::now();
-    auto estimationResult = ilsEstimator.EstimateInstrumentLineShape(fraunhoferSetup, *calibrationState.measuredSpectrum, estimationSettings);
-    auto stopTime = std::chrono::steady_clock::now();
-
-    // Output for debugging
-    std::cout << "Instrument line shape estimation took " << std::chrono::duration_cast<std::chrono::milliseconds>(stopTime - startTime).count() << " ms" << std::endl;
-    std::cout << " Result: (w: " << estimationResult.result.lineShape.w << ", k: " << estimationResult.result.lineShape.k << ") found in " << estimationResult.attempts.size() << " iterations." << std::endl;
-
-    // Save the result.
-    result.estimatedInstrumentLineShapeParameters = std::make_unique<novac::SuperGaussianLineShape>(estimationResult.result.lineShape);
-    result.estimatedInstrumentLineShape = SampleInstrumentLineShape(estimationResult.result.lineShape);
-    result.estimatedInstrumentLineShapePixelRange.first = estimationSettings.startPixel;
-    result.estimatedInstrumentLineShapePixelRange.second = estimationSettings.endPixel;
+    catch (std::exception& e)
+    {
+        std::cout << "Instrument line shape estimation failed: " << e.what() << std::endl;
+    }
 }
 
 }

@@ -41,6 +41,10 @@ std::pair<double, double> MinMax(const std::vector<double>& values, std::pair<si
     If values.size() == 0 then 0.0 is returned. */
 double Sum(const std::vector<double>& values);
 
+/** @return the sum of all the values between start and end.
+    If values.size() == 0 then 0.0 is returned. */
+double Sum(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end);
+
 /** @return the sum of the absolutes of all the given values.
     If values.size() == 0 then 0.0 is returned. */
 double SumAbs(const std::vector<double>& values);
@@ -67,6 +71,10 @@ void Exp(std::vector<double>& values);
 /** @return the Average of all the given values
     If values.size() == 0 then 0.0 is returned. */
 double Average(const std::vector<double>& values);
+
+/** @return the Average of all the values between start and end.
+    If values.size() == 0 then 0.0 is returned. */
+double Average(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end);
 
 /** @return the average of all the given values weighted with the inverse of each of the error.
     If values.size() == 0 or values.size() != errors.size() then 0.0 is returned. */

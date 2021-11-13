@@ -3,7 +3,7 @@
 
 using namespace novac;
 
-TEST_CASE("Resample")
+TEST_CASE("Resample CCrossSectionData")
 {
     novac::CCrossSectionData sut;
 
@@ -20,6 +20,4 @@ TEST_CASE("Resample")
         REQUIRE(result[4] == Approx(sut.m_crossSection[4]));
         REQUIRE(result[9] == Approx(sut.m_crossSection[9]));
     }
-
-
 }

@@ -95,8 +95,8 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, As
 
     const bool autoReleaseData = false;
     std::vector<double> localX{ mercuryLine.m_wavelength };
-    MathFit::CVector xData{ &localX[0], mercuryLine.m_length, 1, autoReleaseData };
-    MathFit::CVector yData{ &localY[0], mercuryLine.m_length, 1, autoReleaseData };
+    MathFit::CVector xData{ &localX[0], static_cast<int>(mercuryLine.m_length), 1, autoReleaseData };
+    MathFit::CVector yData{ &localY[0], static_cast<int>(mercuryLine.m_length), 1, autoReleaseData };
 
 
     MathFit::CAsymmetricGaussFunction gaussianToFit;
@@ -125,7 +125,7 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, Su
     {
         return FUNCTION_FIT_RETURN_CODE::EMPTY_INPUT;
     }
-    else if (mercuryLine.m_wavelength.size() != mercuryLine.m_length)
+    else if (mercuryLine.m_wavelength.size() != static_cast<size_t>(mercuryLine.m_length))
     {
         return FUNCTION_FIT_RETURN_CODE::MISSING_WAVELENGTH_CALIBRATION;
     }
@@ -134,8 +134,8 @@ FUNCTION_FIT_RETURN_CODE FitInstrumentLineShape(const CSpectrum& mercuryLine, Su
     std::vector<double> localY{ mercuryLine.m_data, mercuryLine.m_data + mercuryLine.m_length };
 
     const bool autoReleaseData = false;
-    MathFit::CVector xData{ &localX[0], mercuryLine.m_length, 1, autoReleaseData };
-    MathFit::CVector yData{ &localY[0], mercuryLine.m_length, 1, autoReleaseData };
+    MathFit::CVector xData{ &localX[0], static_cast<int>(mercuryLine.m_length), 1, autoReleaseData };
+    MathFit::CVector yData{ &localY[0], static_cast<int>(mercuryLine.m_length), 1, autoReleaseData };
 
     // First create an initial estimation of the location, width and amplitude of the Gaussian
     MathFit::CGaussFunction regularGaussian;
@@ -249,6 +249,16 @@ std::vector<double> SampleInstrumentLineShape(const SuperGaussianLineShape& line
     return GetFunctionValues(superGauss, x, baseline);
 }
 
+CCrossSectionData SampleInstrumentLineShape(const GaussianLineShape& lineShape)
+{
+    // Use the fact that a Gaussian line shape is just a special case of a super-gaussian.
+    SuperGaussianLineShape superGaussianLineShape;
+    superGaussianLineShape.k = 2.0;
+    superGaussianLineShape.w = lineShape.sigma * std::sqrt(2.0);
+
+    return SampleInstrumentLineShape(superGaussianLineShape);
+}
+
 CCrossSectionData SampleInstrumentLineShape(const SuperGaussianLineShape& lineShape)
 {
     const double amplitude = lineShape.k / (2.0 * lineShape.w * std::lgamma(1. / lineShape.k));
@@ -261,10 +271,9 @@ CCrossSectionData SampleInstrumentLineShape(const SuperGaussianLineShape& lineSh
 
     CCrossSectionData result;
 
-    const size_t length = 37;
+    const size_t length = 101;
     const double range = 3 * lineShape.Fwhm();
     const double xMin = -range * 0.5;
-    const double delta = range / static_cast<double>(length - 1);
 
     result.m_waveLength.resize(length);
     for (size_t ii = 0; ii < length; ++ii)

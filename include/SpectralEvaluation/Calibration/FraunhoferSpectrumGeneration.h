@@ -14,10 +14,19 @@ namespace novac
 
 class CSpectrum;
 class CCrossSectionData;
+struct WavelengthRange;
 
 class IFraunhoferSpectrumGenerator
 {
 public:
+
+    /// <summary>
+    /// Returns the wavelength range over which subsequent calls to 'GetFraunhoferSpectrum' with the provided
+    /// pixel-to-wavelength calibration will be valid. This is determined both by the provided range and by the
+    /// range of the included solar atlas.
+    /// </summary>
+    virtual WavelengthRange GetFraunhoferRange(const std::vector<double>& wavelengthCalibration) = 0;
+
     /// <summary>
     /// Creates a Fraunhofer reference spectrum using the provided pixel-to-wavelength mapping and measured instrument line shape.
     /// This will determine the fwhm of the provided instrument line shape and use this value to determine the convolution grid.
@@ -78,6 +87,8 @@ public:
             crossSectionsToInclude[ii].totalColumn = highResolutionCrossSections[ii].second;
         }
     }
+
+    virtual WavelengthRange GetFraunhoferRange(const std::vector<double>& wavelengthCalibration) override;
 
     virtual std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
         const std::vector<double>& pixelToWavelengthMapping,

@@ -160,10 +160,6 @@ bool FitPolynomial(novac::PolynomialFit& polyFit, const std::vector<Corresponden
     return polyFit.FitPolynomial(selectedPixelValues, selectedWavelengths, resultingPolynomial);
 }
 
-
-/// <summary>
-/// Returns true if the provided polynomial can be a possible calibration for a spectrometer with the given detector size.
-/// </summary>
 bool IsPossiblePixelToWavelengthCalibrationPolynomial(const std::vector<double>& candidatePolynomial, size_t numberOfPixels)
 {
     // Attempt to check if the polynomial is monotonically increasing by checking that the derivative is always positive
@@ -217,6 +213,24 @@ bool IsPossiblePixelToWavelengthCalibrationPolynomial(const std::vector<double>&
     // No problem found, seems legit.
     return true;
 }
+
+bool IsPossiblePixelToWavelengthCalibration(const std::vector<double>& pixelToWavelengthMapping)
+{
+    if (pixelToWavelengthMapping.size() < 2)
+    {
+        return false;
+    }
+    for (size_t ii = 1; ii < pixelToWavelengthMapping.size(); ++ii)
+    {
+        if (pixelToWavelengthMapping[ii] < pixelToWavelengthMapping[ii - 1])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 
 // ---------------------------------- RansacWavelengthCalibrationSetup ----------------------------------
 RansacWavelengthCalibrationSetup::RansacWavelengthCalibrationSetup(RansacWavelengthCalibrationSettings calibrationSettings) :

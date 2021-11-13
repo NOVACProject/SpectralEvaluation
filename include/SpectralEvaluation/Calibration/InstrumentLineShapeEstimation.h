@@ -11,6 +11,20 @@ class CSpectrum;
 class CCrossSectionData;
 class IFraunhoferSpectrumGenerator;
 class DoasFit;
+struct IndexRange;
+
+class InstrumentLineShapeEstimationException : public std::exception
+{
+private:
+    const char* const m_msg = "";
+
+public:
+    InstrumentLineShapeEstimationException(const char* msg) :
+        m_msg(msg)
+    {}
+
+    const char* what() const noexcept override final { return m_msg; }
+};
 
 /// <summary>
 /// Abstract base class for the different instrument line shape estimators.
@@ -104,22 +118,8 @@ public:
     LineShapeEstimationState EstimateInstrumentLineShape(IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen, const CSpectrum& measuredSpectrum, novac::CCrossSectionData& estimatedLineShape, double& fwhm);
 
 private:
-    /// <summary>
-    /// The first pixel to include when checking the properties of the spectrum. 
-    /// Often do the signal in the spectra decline at short wavelengths and this is a means to disregard points with low intensity.
-    /// TODO: Settable or adaptable to input
-    /// </summary>
-    const size_t measuredPixelStart = 1000;
 
-    /// <summary>
-    /// The last pixel to include when checking the properties of the spectrum. 
-    /// Often do the signal in the spectra decline at long wavelengths and this is a means to disregard points with low intensity.
-    /// This must be larger than measuredPixelStart.
-    /// TODO: Settable or adaptable to input
-    /// </summary>
-    const size_t measuredPixelStop = 4095;
-
-    double GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum, const std::string& spectrumName) const;
+    double GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum, const IndexRange& pixelRange, const std::string& spectrumName) const;
 };
 
 
@@ -185,7 +185,7 @@ private:
 
     struct LineShapeUpdate
     {
-        double error;           // This is the chi2 of the DOAS fit without the parameter adjustment.
+        double currentError;    // This is the chi2 of the DOAS fit without the parameter adjustment.
         double residualSize;    // This is the chi2 of the DOAS fit with the parameter adjustment.
         double shift;           // This is the shift of the DOAS fit with the parameter adjustment.
         std::vector<double> parameterDelta; // The retrieved parameter adjustment.
@@ -198,11 +198,28 @@ private:
     /// </summary>
     SuperGaussianLineShape initialLineShapeFunction;
 
-    LineShapeUpdate CalculateGradient(
+    /// <summary>
+    /// Attempts to calculate the gradient of the parameters of the instrument line shape fit
+    /// by calling CalculateGradientAndCurrentError.
+    /// </summary>
+    LineShapeUpdate GetGradient(
         IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
         const CSpectrum& measuredSpectrum,
         const SuperGaussianLineShape& currentLineShape,
-        const LineShapeEstimationSettings& settings);
+        const LineShapeEstimationSettings& settings,
+        bool& allowSpectrumShift);
+
+    /// <summary>
+    /// Calculates the gradient of the parameters of the instrument line shape using a DOAS fit.
+    /// At the same time an currentError measure at the current location is calculated (by reusing the same objects).
+    /// @throws DoasFitException if the fit fails.
+    /// </summary>
+    LineShapeUpdate CalculateGradientAndCurrentError(
+        IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+        const CSpectrum& measuredSpectrum,
+        const SuperGaussianLineShape& currentLineShape,
+        const LineShapeEstimationSettings& settings,
+        bool allowShift = true);
 
 };
 
@@ -210,5 +227,10 @@ private:
 /// Estimates the Full Width at Half Maximum of a given lineshape function.
 /// </summary>
 double GetFwhm(const novac::CCrossSectionData& lineshape);
+
+/// <summary>
+/// Estimates the Full Width at Half Maximum of a given lineshape function.
+/// </summary>
+double GetFwhm(const std::vector<double>& lineshapeWavelength, const std::vector<double>& lineShapeIntensity);
 
 }

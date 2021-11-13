@@ -9,6 +9,7 @@ set(SPECTRUM_FILE_HEADERS
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/File/SpectrumIO.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/File/STDFile.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/File/TXTFile.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/File/XmlUtil.h
     PARENT_SCOPE)
 
 
@@ -19,4 +20,5 @@ set(SPECTRUM_FILE_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/SpectrumIO.cpp
     ${CMAKE_CURRENT_LIST_DIR}/STDFile.cpp
     ${CMAKE_CURRENT_LIST_DIR}/TXTFile.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/XmlUtil.cpp
     PARENT_SCOPE)

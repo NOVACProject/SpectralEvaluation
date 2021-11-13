@@ -17,7 +17,7 @@ std::vector<double> GeneratePixelToWavelengthMapping(double lambdaMin, double la
     return result;
 }
 
-static double GaussianFwhmToSigma(double fwhm)
+double GaussianFwhmToSigma(double fwhm)
 {
     return fwhm / (2.0 * std::sqrt(2.0 * std::log(2.0)));
 }

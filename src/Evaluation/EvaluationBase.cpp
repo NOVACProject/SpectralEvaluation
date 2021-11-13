@@ -170,11 +170,11 @@ void CEvaluationBase::RemoveOffset(double *spectrum, int sumChn, bool UV)
 void CEvaluationBase::PrepareSpectra(double *sky, double *meas, const CFitWindow &window)
 {
 
-    if (window.fitType == FIT_HP_DIV)
+    if (window.fitType == FIT_TYPE::FIT_HP_DIV)
         return PrepareSpectra_HP_Div(sky, meas, window);
-    if (window.fitType == FIT_HP_SUB)
+    if (window.fitType == FIT_TYPE::FIT_HP_SUB)
         return PrepareSpectra_HP_Sub(sky, meas, window);
-    if (window.fitType == FIT_POLY)
+    if (window.fitType == FIT_TYPE::FIT_POLY)
         return PrepareSpectra_Poly(sky, meas, window);
 }
 
@@ -254,12 +254,12 @@ int CEvaluationBase::SetSkySpectrum(const CCrossSectionData& spec, bool removeOf
         RemoveOffset(m_sky.m_crossSection.data(), m_sky.GetSize(), m_window.UV);
     }
 
-    if (m_window.fitType == FIT_HP_SUB)
+    if (m_window.fitType == FIT_TYPE::FIT_HP_SUB)
     {
         HighPassBinomial(m_sky.m_crossSection.data(), m_sky.GetSize(), 500);
     }
 
-    if (m_window.fitType == FIT_POLY && m_window.includeIntensitySpacePolyominal)
+    if (m_window.fitType == FIT_TYPE::FIT_POLY && m_window.includeIntensitySpacePolyominal)
     {
         CreateReferenceForIntensitySpacePolynomial(m_sky.m_crossSection);
     }
@@ -289,20 +289,13 @@ int CEvaluationBase::SetSkySpectrum(const CCrossSectionData& spec, bool removeOf
         }
     }
 
-    // Take the log of the sky-spectrum
-    if (m_window.fitType != FIT_HP_DIV)
+    if (m_window.fitType != FIT_TYPE::FIT_HP_DIV)
     {
+        // Take the log of the sky-spectrum
         Log(m_sky.m_crossSection.data(), m_sky.GetSize());
-    }
 
-    // Include the sky-spectrum in the fit
-    if (m_window.fitType != FIT_HP_DIV)
-    {
+        // Include the sky-spectrum in the fit
         CreateReferenceForSkySpectrum();
-    }
-
-    if (m_window.fitType != FIT_HP_DIV)
-    {
         CreateReferenceSpectra();
     }
 
@@ -363,7 +356,7 @@ void CEvaluationBase::CreateReferenceForSkySpectrum()
     }
 
     // Check the options for the column value
-    const double concentrationMultiplier = (m_window.fitType == FIT_POLY) ? -1.0 : 1.0;
+    const double concentrationMultiplier = (m_window.fitType == FIT_TYPE::FIT_POLY) ? -1.0 : 1.0;
     m_skyReference->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, concentrationMultiplier * m_skyReference->GetAmplitudeScale());
 
     // Check the options for the shift & squeeze
@@ -473,12 +466,12 @@ int CEvaluationBase::Evaluate(const CSpectrum &measured, int numSteps)
 
 int CEvaluationBase::Evaluate(const double* measured, size_t measuredLength, int measuredStartChannel, int numSteps)
 {
-    assert(vXData.GetSize() >= measuredLength);
+    assert(static_cast<size_t>(vXData.GetSize()) >= measuredLength);
 
     m_lastError = "";
 
     // Check so that the length of the spectra agree with each other
-    if (m_window.specLength != measuredLength)
+    if (static_cast<size_t>(m_window.specLength) != measuredLength)
     {
         m_lastError = "Failed to evaluate: the length of the measured spectrum does not equal the spectrum length of the fit-window used.";
         return 1;
@@ -707,13 +700,13 @@ int CEvaluationBase::EvaluateShift(const CSpectrum &measured, double &shift, dou
     //----------------------------------------------------------------
 
     RemoveOffset(measArray, m_window.specLength, m_window.UV);
-    if (m_window.fitType == FIT_HP_DIV || m_window.fitType == FIT_HP_SUB)
+    if (m_window.fitType == FIT_TYPE::FIT_HP_DIV || m_window.fitType == FIT_TYPE::FIT_HP_SUB)
     {
         HighPassBinomial(measArray, m_window.specLength, 500);
     }
     Log(measArray, m_window.specLength);
 
-    if (m_window.fitType == FIT_POLY)
+    if (m_window.fitType == FIT_TYPE::FIT_POLY)
     {
         for (int j = 0; j < m_window.specLength; ++j)
         {
@@ -778,7 +771,7 @@ int CEvaluationBase::EvaluateShift(const CSpectrum &measured, double &shift, dou
     }
 
     // Chech the options for the column value
-    const double concentrationMultiplier = (m_window.fitType == FIT_POLY) ? -1.0 : 1.0;
+    const double concentrationMultiplier = (m_window.fitType == FIT_TYPE::FIT_POLY) ? -1.0 : 1.0;
     solarSpec->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, concentrationMultiplier * solarSpec->GetAmplitudeScale());
 
     // Fix the squeeze

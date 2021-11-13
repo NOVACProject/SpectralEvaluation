@@ -2,14 +2,28 @@
 #include <SpectralEvaluation/Calibration/ReferenceSpectrumConvolution.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/Spectra/WavelengthRange.h>
 #include <SpectralEvaluation/VectorUtils.h>
-
 #include <chrono>
 #include <iostream>
+#include <algorithm>
 
+#undef min
+#undef max
 
 namespace novac
 {
+
+WavelengthRange FraunhoferSpectrumGeneration::GetFraunhoferRange(const std::vector<double>& pixelToWavelengthMapping)
+{
+    ReadSolarCrossSection();
+
+    const WavelengthRange resultingRange(
+        std::max(pixelToWavelengthMapping.front(), this->solarCrossSection->m_waveLength.front()),
+        std::min(pixelToWavelengthMapping.back(), this->solarCrossSection->m_waveLength.back()));
+
+    return resultingRange;
+}
 
 std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
     const std::vector<double>& pixelToWavelengthMapping,

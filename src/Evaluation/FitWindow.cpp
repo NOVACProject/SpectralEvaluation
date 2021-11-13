@@ -127,7 +127,7 @@ void CFitWindow::Clear()
     channel = 0;
     specLength = 2048;
     startChannel = 0;
-    fitType = FIT_HP_DIV;
+    fitType = FIT_TYPE::FIT_HP_DIV;
     shiftSky = true;
     interlaceStep = 1;
     name = "SO2";
@@ -188,7 +188,7 @@ void HighPassFilterReferences(CFitWindow& window)
         HighPassFilterReferences(c);
     }
 
-    if (window.fitType != novac::FIT_HP_DIV && window.fitType != novac::FIT_HP_SUB)
+    if (window.fitType != novac::FIT_TYPE::FIT_HP_DIV && window.fitType != novac::FIT_TYPE::FIT_HP_SUB)
     {
         return;
     }
