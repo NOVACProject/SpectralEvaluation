@@ -13,18 +13,13 @@
 #include <SpectralEvaluation/Calibration/InstrumentLineShape.h>
 #include <SpectralEvaluation/Math/IndexRange.h>
 
-// TODO: Remove, this is included for debugging only.
-#include <SpectralEvaluation/File/File.h>
-
-// TODO: Remove with the CrossSectionSpectrumGenerator
-#include <SpectralEvaluation/Calibration/ReferenceSpectrumConvolution.h>
-
 #undef min
 #undef max
 
 #include <algorithm>
 #include <memory>
 #include <cmath>
+#include <sstream>
 
 namespace novac
 {
@@ -466,15 +461,12 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
                 const double currentValue = GetParameterValue(lastLineShape, parameterIdx);
                 SetParameterValue(parameterizedLineShape, parameterIdx, currentValue - currentStepSize * update.parameterDelta[parameterIdx]);
             }
-
-            // gradually decrease the step size as we approach the solution
-            // stepSize *= 0.9;
         }
     }
 
     if (!successfullyConverged)
     {
-        // throw??
+        std::cout << "Instrument line shape estimation did not reach an optimum solution during the " << iterationCount << " iterations." << std::endl;
     }
 
     result.result = optimumResult;
@@ -560,6 +552,14 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     const double fwhm = currentLineShape.Fwhm();
 
     auto currentFraunhoferSpectrum = fraunhoferSpectrumGen.GetFraunhoferSpectrum(this->pixelToWavelengthMapping, sampledLineShape, fwhm, false);
+    if (currentFraunhoferSpectrum == nullptr || currentFraunhoferSpectrum->m_length == 0)
+    {
+        std::stringstream message;
+        message << "Failed to generate synthetic fraunhofer spectrum for instrument line shape: ";
+        message << "(w: " << currentLineShape.w << ", k: " << currentLineShape.k << ")";
+
+        throw InstrumentLineShapeEstimationException(message.str());
+    }
 
     // Log the Fraunhofer reference (to get Optical Depth)
     std::vector<double> filteredFraunhoferSpectrum{ currentFraunhoferSpectrum->m_data, currentFraunhoferSpectrum->m_data + currentFraunhoferSpectrum->m_length };
