@@ -19,6 +19,7 @@ struct SpectrumDataPoint;
 struct Correspondence;
 struct RansacWavelengthCalibrationResult;
 class FraunhoferSpectrumGeneration;
+class ICrossSectionSpectrumGenerator;
 class ParametricInstrumentLineShape;
 
 enum class InstrumentLineshapeEstimationOption
@@ -57,11 +58,44 @@ struct SpectrometerCalibrationResult
     std::vector<double> pixelToWavelengthMappingCoefficients;
 
     /// <summary>
+    /// A basic error estimate for the pixel-to-wavelength mapping.
+    /// This is the R2 of the polynomial fit to the included inliers.
+    /// </summary>
+    double pixelToWavelengthMappingError;
+
+    /// <summary>
+    /// The maximum pixel difference between any two inliers into the
+    /// pixel-to-wavelength mapping polynomial. A large value shows that the result
+    /// is valid over a larger pixel range.
+    /// </summary>
+    double pixelToWavelengthMappingPixelRange;
+
+    /// <summary>
+    /// The total number of inliers into the pixel-to-wavelength mapping polynomial.
+    /// </summary>
+    size_t pixelToWavelengthMappingInliers;
+
+    /// <summary>
     /// The estimation of the instrument line shape.
     /// This is only set if the instrument line shape is set to be estimated 
     //  in the process, otherwise this is empty.
     /// </summary>
     novac::CCrossSectionData estimatedInstrumentLineShape;
+
+    /// <summary>
+    /// An estimation of the error in the produced line shape.
+    /// This is the chi2 of the DOAS fit where a synthetically generated Fraunhofer spectrum (and a Ring spectrum derived from it) 
+    /// were fitted to the measured spectrum. 
+    /// </summary>
+    double estimatedInstrumentLineShapeError = 0.0;
+
+    /// <summary>
+    /// The shift applied while fitting the instrument line shape.
+    /// This is the shift of the DOAS fit where a synthetically generated Fraunhofer spectrum (and a Ring spectrum derived from it) 
+    /// were fitted to the measured spectrum.
+    /// A high value here indicates errors in the wavelength calibration.
+    /// </summary>
+    double estimatedInstrumentLineShapeShift = 0.0;
 
     /// <summary>
     /// The Range of pixels over which the instrument line shape was estimated.
@@ -101,6 +135,15 @@ struct WavelengthCalibrationSettings
     /// Only cross sections with a total column != 0 will be included.
     /// </summary>
     std::vector<std::pair<std::string, double>> crossSections;
+
+    /// <summary>
+    /// A set of high resolved cross sections to include into the fit when 
+    /// fitting an instrument line shape. This should include references which are
+    /// strongly absorbing in the wavelength range used to estimate the instrument line shape.
+    /// NOTICE: Only the first cross section here is used so far.
+    /// This is primarily used to remove the impact of Ozone on the fitted instrument line shape.
+    /// </summary>
+    std::vector<std::string> crossSectionsForInstrumentLineShapeFitting;
 
     /// <summary>
     /// The option for how, and if, the instrument line shape should also be estimated 
@@ -253,7 +296,7 @@ private:
     /// <summary>
     /// Creates an estimate of the instrument line shape of the measured spectrum by fitting a SuperGaussian to the measured spectrum.
     /// </summary>
-    void EstimateInstrumentLineShapeAsSuperGaussian(novac::SpectrometerCalibrationResult& result, novac::FraunhoferSpectrumGeneration& fraunhoferSetup);
+    void EstimateInstrumentLineShapeAsSuperGaussian(novac::SpectrometerCalibrationResult& result, novac::FraunhoferSpectrumGeneration& fraunhoferSetup, novac::ICrossSectionSpectrumGenerator* ozoneSetup = nullptr);
 
 };
 

@@ -13,7 +13,7 @@
 namespace novac
 {
 
-double SuperGaussianLineShape::Fwhm() const { return 2.0 * w * std::pow(0.69314718056, 1.0 / k); }
+double SuperGaussianLineShape::Fwhm() const { return 2.0 * std::abs(w) * std::pow(0.69314718056, 1.0 / k); }
 
 template<class T>
 FUNCTION_FIT_RETURN_CODE FitFunction(MathFit::CVector& xData, MathFit::CVector& yData, T& functionToFit)
@@ -254,18 +254,18 @@ CCrossSectionData SampleInstrumentLineShape(const GaussianLineShape& lineShape)
     // Use the fact that a Gaussian line shape is just a special case of a super-gaussian.
     SuperGaussianLineShape superGaussianLineShape;
     superGaussianLineShape.k = 2.0;
-    superGaussianLineShape.w = lineShape.sigma * std::sqrt(2.0);
+    superGaussianLineShape.w = std::abs(lineShape.sigma) * std::sqrt(2.0);
 
     return SampleInstrumentLineShape(superGaussianLineShape);
 }
 
 CCrossSectionData SampleInstrumentLineShape(const SuperGaussianLineShape& lineShape)
 {
-    const double amplitude = lineShape.k / (2.0 * lineShape.w * std::lgamma(1. / lineShape.k));
+    const double amplitude = lineShape.k / (2.0 * std::abs(lineShape.w) * std::lgamma(1. / lineShape.k));
 
     MathFit::CSuperGaussFunction superGauss;
     superGauss.SetCenter(0.0);
-    superGauss.SetW(lineShape.w);
+    superGauss.SetW(std::abs(lineShape.w));
     superGauss.SetK(lineShape.k);
     superGauss.SetScale(amplitude);
 

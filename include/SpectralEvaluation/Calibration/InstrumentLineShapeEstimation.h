@@ -10,6 +10,7 @@ namespace novac
 class CSpectrum;
 class CCrossSectionData;
 class IFraunhoferSpectrumGenerator;
+class ICrossSectionSpectrumGenerator;
 class DoasFit;
 struct IndexRange;
 
@@ -21,6 +22,10 @@ private:
 public:
     InstrumentLineShapeEstimationException(const char* msg) :
         m_msg(msg)
+    {}
+
+    InstrumentLineShapeEstimationException(const std::string& msg) :
+        m_msg(msg.c_str())
     {}
 
     const char* what() const noexcept override final { return m_msg; }
@@ -197,9 +202,10 @@ public:
     /// <returns>The fitted line shape</returns>
     /// <throws>std::invalid_argument if the initial line shape hasn't been provided.</throws>
     LineShapeEstimationResult EstimateInstrumentLineShape(
-        IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
         const CSpectrum& measuredSpectrum,
-        const LineShapeEstimationSettings& settings);
+        const LineShapeEstimationSettings& settings,
+        IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+        ICrossSectionSpectrumGenerator* ozoneSpectrumGen = nullptr);
 
 private:
 
@@ -224,6 +230,7 @@ private:
     /// </summary>
     LineShapeUpdate GetGradient(
         IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+        ICrossSectionSpectrumGenerator* ozoneSpectrumGen,
         const CSpectrum& measuredSpectrum,
         const SuperGaussianLineShape& currentLineShape,
         const LineShapeEstimationSettings& settings,
@@ -236,10 +243,16 @@ private:
     /// </summary>
     LineShapeUpdate CalculateGradientAndCurrentError(
         IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+        ICrossSectionSpectrumGenerator* ozoneSpectrumGen,
         const CSpectrum& measuredSpectrum,
         const SuperGaussianLineShape& currentLineShape,
         const LineShapeEstimationSettings& settings,
         bool allowShift = true);
+
+    /// <summary>
+    /// Returns false if the provided parameterDelta and stepSize will result in invalid parameter setttings (typically negative values).
+    /// </summary>
+    static bool UpdatedParametersAreValid(const SuperGaussianLineShape& currentLineShape, const std::vector<double>& parameterDelta, double stepSize);
 
 };
 

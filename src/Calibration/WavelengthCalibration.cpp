@@ -6,6 +6,7 @@
 #include <SpectralEvaluation/Calibration/ReferenceSpectrumConvolution.h>
 #include <SpectralEvaluation/Calibration/WavelengthCalibrationByRansac.h>
 #include <SpectralEvaluation/Calibration/FraunhoferSpectrumGeneration.h>
+#include <SpectralEvaluation/Calibration/CrossSectionSpectrumGenerator.h>
 #include <SpectralEvaluation/Calibration/InstrumentLineShapeEstimation.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Evaluation/WavelengthFit.h>
@@ -446,6 +447,13 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
     calibrationState.originalFraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(settings.initialPixelToWavelengthMapping, settings.initialInstrumentLineShape);
     calibrationState.fraunhoferSpectrum = std::make_unique<CSpectrum>(*calibrationState.originalFraunhoferSpectrum); // create a copy which we can modify
 
+    // Get the ozone setup.
+    std::unique_ptr<CrossSectionSpectrumGenerator> ozoneSetup;
+    if (settings.crossSectionsForInstrumentLineShapeFitting.size() > 0)
+    {
+        ozoneSetup = std::make_unique< CrossSectionSpectrumGenerator>(settings.crossSectionsForInstrumentLineShapeFitting.front());
+    }
+
     SpectrometerCalibrationResult result;
     result.pixelToWavelengthMapping = settings.initialPixelToWavelengthMapping;
 
@@ -471,6 +479,9 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
         // Save the result
         result.pixelToWavelengthMappingCoefficients = ransacResult.bestFittingModelCoefficients;
         result.pixelToWavelengthMapping = GetPixelToWavelengthMapping(ransacResult.bestFittingModelCoefficients, settings.initialPixelToWavelengthMapping.size());
+        result.pixelToWavelengthMappingError = ransacResult.smallestError;
+        result.pixelToWavelengthMappingInliers = ransacResult.highestNumberOfInliers;
+        result.pixelToWavelengthMappingPixelRange = ransacResult.largestPixelSpan;
         calibrationState.correspondenceIsInlier = ransacResult.correspondenceIsInlier;
 
         {
@@ -487,7 +498,7 @@ SpectrometerCalibrationResult WavelengthCalibrationSetup::DoWavelengthCalibratio
         // Update the estimated instrument line shape
         if (this->settings.estimateInstrumentLineShape == InstrumentLineshapeEstimationOption::SuperGaussian)
         {
-            EstimateInstrumentLineShapeAsSuperGaussian(result, fraunhoferSetup);
+            EstimateInstrumentLineShapeAsSuperGaussian(result, fraunhoferSetup, ozoneSetup.get());
         }
         else if (this->settings.estimateInstrumentLineShape == InstrumentLineshapeEstimationOption::ApproximateGaussian)
         {
@@ -561,7 +572,10 @@ void WavelengthCalibrationSetup::EstimateInstrumentLineShapeAsApproximateGaussia
     result.estimatedInstrumentLineShapeParameters = std::make_unique<novac::GaussianLineShape>(estimationResult.lineShape);
 }
 
-void WavelengthCalibrationSetup::EstimateInstrumentLineShapeAsSuperGaussian(novac::SpectrometerCalibrationResult& result, novac::FraunhoferSpectrumGeneration& fraunhoferSetup)
+void WavelengthCalibrationSetup::EstimateInstrumentLineShapeAsSuperGaussian(
+    novac::SpectrometerCalibrationResult& result,
+    novac::FraunhoferSpectrumGeneration& fraunhoferSetup,
+    novac::ICrossSectionSpectrumGenerator* ozoneSetup)
 {
     // The super-gaussian estimation requires that there is an initial estimate of the instrument line shape.
     //  If there isn't any, then create an initial guess using the approximate-gaussian approach.
@@ -584,7 +598,7 @@ void WavelengthCalibrationSetup::EstimateInstrumentLineShapeAsSuperGaussian(nova
         }
 
         auto startTime = std::chrono::steady_clock::now();
-        auto estimationResult = ilsEstimator.EstimateInstrumentLineShape(fraunhoferSetup, *calibrationState.measuredSpectrum, estimationSettings);
+        auto estimationResult = ilsEstimator.EstimateInstrumentLineShape(*calibrationState.measuredSpectrum, estimationSettings, fraunhoferSetup, ozoneSetup);
         auto stopTime = std::chrono::steady_clock::now();
 
         // Output for debugging
@@ -593,6 +607,8 @@ void WavelengthCalibrationSetup::EstimateInstrumentLineShapeAsSuperGaussian(nova
         // Save the result.
         result.estimatedInstrumentLineShapeParameters = std::make_unique<novac::SuperGaussianLineShape>(estimationResult.result.lineShape);
         result.estimatedInstrumentLineShape = SampleInstrumentLineShape(estimationResult.result.lineShape);
+        result.estimatedInstrumentLineShapeError = estimationResult.result.error;
+        result.estimatedInstrumentLineShapeShift = estimationResult.result.shift;
         result.estimatedInstrumentLineShapePixelRange.first = estimationSettings.startPixel;
         result.estimatedInstrumentLineShapePixelRange.second = estimationSettings.endPixel;
     }
