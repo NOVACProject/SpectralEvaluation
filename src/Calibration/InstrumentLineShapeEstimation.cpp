@@ -431,7 +431,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
         {
             // we're done
             successfullyConverged = true;
-            std::cout << "Instrument line shape estimation successfully converged." << std::endl;
+            std::cout << "Instrument line shape estimation successfully converged after " << iterationCount << " iterations." << std::endl;
             break;
         }
 

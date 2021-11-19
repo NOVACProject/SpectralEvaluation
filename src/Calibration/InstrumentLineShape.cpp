@@ -254,18 +254,18 @@ CCrossSectionData SampleInstrumentLineShape(const GaussianLineShape& lineShape)
     // Use the fact that a Gaussian line shape is just a special case of a super-gaussian.
     SuperGaussianLineShape superGaussianLineShape;
     superGaussianLineShape.k = 2.0;
-    superGaussianLineShape.w = lineShape.sigma * std::sqrt(2.0);
+    superGaussianLineShape.w = std::abs(lineShape.sigma) * std::sqrt(2.0);
 
     return SampleInstrumentLineShape(superGaussianLineShape);
 }
 
 CCrossSectionData SampleInstrumentLineShape(const SuperGaussianLineShape& lineShape)
 {
-    const double amplitude = lineShape.k / (2.0 * lineShape.w * std::lgamma(1. / lineShape.k));
+    const double amplitude = lineShape.k / (2.0 * std::abs(lineShape.w) * std::lgamma(1. / lineShape.k));
 
     MathFit::CSuperGaussFunction superGauss;
     superGauss.SetCenter(0.0);
-    superGauss.SetW(lineShape.w);
+    superGauss.SetW(std::abs(lineShape.w));
     superGauss.SetK(lineShape.k);
     superGauss.SetScale(amplitude);
 

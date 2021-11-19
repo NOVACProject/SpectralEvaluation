@@ -120,6 +120,7 @@ void NormalizeArea(const std::vector<double>& input, double xStep, std::vector<d
 
 /** Finds the (fractional) index where the values in the provided vector crosses the y='valueToFind' line
     in the index-range [startIdx, stopIdx[.
+    This assumes that the provided vector of values is sorted in increasing order.
      Returns -1.0 if the value cannot be found OR startIdx >= stopIdx OR startIdx >= values.size() */
 double FindValue(const std::vector<double>& values, double valueToFind, size_t startIdx, size_t stopIdx);
 
