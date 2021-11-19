@@ -141,6 +141,7 @@ struct WavelengthCalibrationSettings
     /// fitting an instrument line shape. This should include references which are
     /// strongly absorbing in the wavelength range used to estimate the instrument line shape.
     /// NOTICE: Only the first cross section here is used so far.
+    /// This is primarily used to remove the impact of Ozone on the fitted instrument line shape.
     /// </summary>
     std::vector<std::string> crossSectionsForInstrumentLineShapeFitting;
 
