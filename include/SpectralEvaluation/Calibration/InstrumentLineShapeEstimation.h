@@ -245,6 +245,11 @@ private:
         const LineShapeEstimationSettings& settings,
         bool allowShift = true);
 
+    /// <summary>
+    /// Returns false if the provided parameterDelta and stepSize will result in invalid parameter setttings (typically negative values).
+    /// </summary>
+    static bool UpdatedParametersAreValid(const SuperGaussianLineShape& currentLineShape, const std::vector<double>& parameterDelta, double stepSize);
+
 };
 
 /// <summary>

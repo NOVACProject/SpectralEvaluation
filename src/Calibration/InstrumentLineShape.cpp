@@ -13,7 +13,7 @@
 namespace novac
 {
 
-double SuperGaussianLineShape::Fwhm() const { return 2.0 * w * std::pow(0.69314718056, 1.0 / k); }
+double SuperGaussianLineShape::Fwhm() const { return 2.0 * std::abs(w) * std::pow(0.69314718056, 1.0 / k); }
 
 template<class T>
 FUNCTION_FIT_RETURN_CODE FitFunction(MathFit::CVector& xData, MathFit::CVector& yData, T& functionToFit)

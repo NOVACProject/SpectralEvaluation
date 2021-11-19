@@ -48,6 +48,7 @@ public:
     virtual std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
         const std::vector<double>& wavelengthCalibration,
         const novac::CCrossSectionData& measuredInstrumentLineShape,
+        double fwhmOfInstrumentLineShape,
         bool normalize) = 0;
 
     /// <summary>
@@ -97,6 +98,7 @@ public:
     virtual std::unique_ptr<CSpectrum> GetFraunhoferSpectrum(
         const std::vector<double>& pixelToWavelengthMapping,
         const novac::CCrossSectionData& measuredInstrumentLineShape,
+        double fwhmOfInstrumentLineShape,
         bool normalize) override;
 
     virtual std::unique_ptr<CSpectrum> GetDifferentialFraunhoferSpectrum(

@@ -435,9 +435,11 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
             break;
         }
 
-        if (update.currentError > lastUpdate.currentError)
+        if (update.currentError > lastUpdate.currentError ||
+            !UpdatedParametersAreValid(lastLineShape, update.parameterDelta, stepSize))
         {
-            // The update resulted in a worse solution than the one we had earlier, step back and make a smaller step size.
+            // The update resulted in a worse solution than the one we had earlier, or an invalid solution.
+            //  Step back and make a smaller step size.
             stepSize *= 0.5;
 
             std::cout << " Updated resulted in a worse result than last iteration, reducing step size to " << stepSize << " and attempting again." << std::endl;
@@ -445,7 +447,8 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
             for (int parameterIdx = 0; parameterIdx < static_cast<int>(update.parameterDelta.size()); ++parameterIdx)
             {
                 const double currentValue = GetParameterValue(lastLineShape, parameterIdx);
-                SetParameterValue(parameterizedLineShape, parameterIdx, currentValue - stepSize * update.parameterDelta[parameterIdx]);
+                const double newValue = currentValue - stepSize * update.parameterDelta[parameterIdx];
+                SetParameterValue(parameterizedLineShape, parameterIdx, newValue);
             }
         }
         else
@@ -453,11 +456,15 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
             lastLineShape = parameterizedLineShape;
             lastUpdate = update;
 
+            // Limit how much we are allowed to update each of the parameters if the magnitude of the gradient is large.
+            const double gradientSize = SumAbs(update.parameterDelta);
+            const double currentStepSize = std::min(stepSize, 0.1 / gradientSize);
+
             // use the gradient to modify the parameterizedLineShape
             for (int parameterIdx = 0; parameterIdx < static_cast<int>(update.parameterDelta.size()); ++parameterIdx)
             {
                 const double currentValue = GetParameterValue(lastLineShape, parameterIdx);
-                SetParameterValue(parameterizedLineShape, parameterIdx, currentValue - stepSize * update.parameterDelta[parameterIdx]);
+                SetParameterValue(parameterizedLineShape, parameterIdx, currentValue - currentStepSize * update.parameterDelta[parameterIdx]);
             }
 
             // gradually decrease the step size as we approach the solution
@@ -473,6 +480,22 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
     result.result = optimumResult;
 
     return result;
+}
+
+bool InstrumentLineshapeEstimationFromDoas::UpdatedParametersAreValid(const SuperGaussianLineShape& currentLineShape, const std::vector<double>& parameterDelta, double stepSize)
+{
+    for (int parameterIdx = 0; parameterIdx < static_cast<int>(parameterDelta.size()); ++parameterIdx)
+    {
+        const double currentValue = GetParameterValue(currentLineShape, parameterIdx);
+        const double newValue = currentValue - stepSize * parameterDelta[parameterIdx];
+
+        if (newValue <= 0.0)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstimationFromDoas::GetGradient(
@@ -536,7 +559,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     auto sampledLineShape = SampleInstrumentLineShape(currentLineShape);
     const double fwhm = currentLineShape.Fwhm();
 
-    auto currentFraunhoferSpectrum = fraunhoferSpectrumGen.GetFraunhoferSpectrum(this->pixelToWavelengthMapping, sampledLineShape, false);
+    auto currentFraunhoferSpectrum = fraunhoferSpectrumGen.GetFraunhoferSpectrum(this->pixelToWavelengthMapping, sampledLineShape, fwhm, false);
 
     // Log the Fraunhofer reference (to get Optical Depth)
     std::vector<double> filteredFraunhoferSpectrum{ currentFraunhoferSpectrum->m_data, currentFraunhoferSpectrum->m_data + currentFraunhoferSpectrum->m_length };

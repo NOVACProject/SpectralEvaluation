@@ -35,9 +35,10 @@ std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
 std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetFraunhoferSpectrum(
     const std::vector<double>& pixelToWavelengthMapping,
     const CCrossSectionData& measuredInstrumentLineShape,
+    double fwhmOfInstrumentLineShape,
     bool normalize)
 {
-    return GetFraunhoferSpectrum(pixelToWavelengthMapping, measuredInstrumentLineShape, this->crossSectionsToInclude, 0.0, normalize);
+    return GetFraunhoferSpectrum(pixelToWavelengthMapping, measuredInstrumentLineShape, this->crossSectionsToInclude, fwhmOfInstrumentLineShape, normalize);
 }
 
 std::unique_ptr<CSpectrum> FraunhoferSpectrumGeneration::GetDifferentialFraunhoferSpectrum(
