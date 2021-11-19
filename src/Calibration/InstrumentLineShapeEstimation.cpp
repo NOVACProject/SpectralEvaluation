@@ -2,6 +2,7 @@
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Calibration/FraunhoferSpectrumGeneration.h>
+#include <SpectralEvaluation/Calibration/CrossSectionSpectrumGenerator.h>
 #include <SpectralEvaluation/Evaluation/BasicMath.h>
 #include <SpectralEvaluation/Spectra/SpectrumUtils.h>
 #include <SpectralEvaluation/Spectra/Scattering.h>
@@ -14,6 +15,9 @@
 
 // TODO: Remove, this is included for debugging only.
 #include <SpectralEvaluation/File/File.h>
+
+// TODO: Remove with the CrossSectionSpectrumGenerator
+#include <SpectralEvaluation/Calibration/ReferenceSpectrumConvolution.h>
 
 #undef min
 #undef max
@@ -29,6 +33,7 @@ static double GaussianSigmaToFwhm(double sigma)
 {
     return sigma * 2.0 * std::sqrt(2.0 * std::log(2.0));
 }
+
 
 /// ------------------------------------------------------------------------------------------
 /// --------------------------- InstrumentLineShapeEstimation --------------------------------
@@ -361,9 +366,10 @@ InstrumentLineshapeEstimationFromDoas::InstrumentLineshapeEstimationFromDoas(con
 }
 
 InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLineshapeEstimationFromDoas::EstimateInstrumentLineShape(
-    IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
     const CSpectrum& measuredSpectrum,
-    const LineShapeEstimationSettings& settings)
+    const LineShapeEstimationSettings& settings,
+    IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+    ICrossSectionSpectrumGenerator* ozoneSpectrumGen)
 {
     if (this->initialLineShapeEstimation == nullptr)
     {
@@ -403,7 +409,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
     {
         ++iterationCount;
 
-        auto update = GetGradient(fraunhoferSpectrumGen, measuredSpectrum, parameterizedLineShape, settings, allowSpectrumShift);
+        auto update = GetGradient(fraunhoferSpectrumGen, ozoneSpectrumGen, measuredSpectrum, parameterizedLineShape, settings, allowSpectrumShift);
 
         LineShapeEstimationAttempt currentAttempt;
         currentAttempt.error = update.currentError;
@@ -471,6 +477,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeEstimationResult InstrumentLines
 
 InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstimationFromDoas::GetGradient(
     IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+    ICrossSectionSpectrumGenerator* ozoneSpectrumGen,
     const CSpectrum& measuredSpectrum,
     const SuperGaussianLineShape& currentLineShape,
     const LineShapeEstimationSettings& settings,
@@ -480,7 +487,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     bool exceptionHappened = false;
     try
     {
-        update = CalculateGradientAndCurrentError(fraunhoferSpectrumGen, measuredSpectrum, currentLineShape, settings, allowSpectrumShift);
+        update = CalculateGradientAndCurrentError(fraunhoferSpectrumGen, ozoneSpectrumGen, measuredSpectrum, currentLineShape, settings, allowSpectrumShift);
     }
     catch (DoasFitException& e)
     {
@@ -502,7 +509,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
 
         // Chi2 > 2 is indicative of a _really_ bad DOAS fit. Attempt to do the DOAS fit again, but this time without allowing the shift to happen.
         // Also, this time we don't catch the exception. If an exception happens here then abort the instrument line shape estimation.
-        update = CalculateGradientAndCurrentError(fraunhoferSpectrumGen, measuredSpectrum, currentLineShape, settings, false);
+        update = CalculateGradientAndCurrentError(fraunhoferSpectrumGen, ozoneSpectrumGen, measuredSpectrum, currentLineShape, settings, false);
     }
 
     return update;
@@ -510,6 +517,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
 
 InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstimationFromDoas::CalculateGradientAndCurrentError(
     IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+    ICrossSectionSpectrumGenerator* ozoneSpectrumGen,
     const CSpectrum& measuredSpectrum,
     const SuperGaussianLineShape& currentLineShape,
     const LineShapeEstimationSettings& settings,
@@ -544,7 +552,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     doasFitSetup.ref[0].m_shiftOption = shiftOption;
     doasFitSetup.ref[0].m_shiftValue = 0.0;
 
-    // 2. Include the Ring spectrum as the second reference
+    // 2. Include the Ring spectrum as the second reference (THIS IS LOGGED, WHY??)
     auto ringSpectrum = std::make_unique<novac::CSpectrum>(Doasis::Scattering::CalcRingSpectrum(*currentFraunhoferSpectrum));
     std::vector<double> filteredRingSpectrum{ ringSpectrum->m_data, ringSpectrum->m_data + ringSpectrum->m_length };
     math.Log(filteredRingSpectrum.data(), ringSpectrum->m_length);
@@ -556,7 +564,21 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     doasFitSetup.ref[doasFitSetup.nRef].m_shiftValue = 0.0;
     doasFitSetup.nRef += 1;
 
-    // 3. Include the pseudo-absorbers derived from the derivative of the instrument-line-shape function.
+    // 3. Include the Ozone spectrum as the third reference (if required)
+    if (ozoneSpectrumGen != nullptr)
+    {
+        auto currentOzoneSpectrum = ozoneSpectrumGen->GetCrossSection(this->pixelToWavelengthMapping, sampledLineShape, false);
+        doasFitSetup.ref[doasFitSetup.nRef].m_data = std::make_unique<novac::CCrossSectionData>(*currentOzoneSpectrum);
+        doasFitSetup.ref[doasFitSetup.nRef].m_columnOption = novac::SHIFT_FREE;
+        doasFitSetup.ref[doasFitSetup.nRef].m_squeezeOption = novac::SHIFT_FIX;
+        doasFitSetup.ref[doasFitSetup.nRef].m_squeezeValue = 1.0;
+        doasFitSetup.ref[doasFitSetup.nRef].m_shiftOption = novac::SHIFT_LINK;
+        doasFitSetup.ref[doasFitSetup.nRef].m_shiftValue = 0.0;
+        doasFitSetup.nRef += 1;
+    }
+
+    // 4. Include the pseudo-absorbers derived from the derivative of the instrument-line-shape function.
+    std::vector<int> parameterIndices;
     for (int parameterIdx = 0; parameterIdx < 2; ++parameterIdx)
     {
         auto diffSampledLineShape = std::make_unique<novac::CCrossSectionData>();
@@ -572,6 +594,8 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
         {
             pseudoAbsorber->m_crossSection[ii] = IsZero(currentFraunhoferSpectrum->m_data[ii]) ? 0.0 : diffFraunhofer->m_data[ii] / currentFraunhoferSpectrum->m_data[ii];
         }
+
+        parameterIndices.push_back(doasFitSetup.nRef); // remember the index to pick out the results from
 
         doasFitSetup.ref[doasFitSetup.nRef].m_data = std::move(pseudoAbsorber);
         doasFitSetup.ref[doasFitSetup.nRef].m_columnOption = novac::SHIFT_FREE;
@@ -593,17 +617,17 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     doas.Run(filteredMeasuredSpectrum.data(), static_cast<size_t>(measuredSpectrum.m_length), doasResult);
 
     LineShapeUpdate update;
-    update.parameterDelta = std::vector<double>{ doasResult.referenceResult[2].column, doasResult.referenceResult[3].column };
+    update.parameterDelta = std::vector<double>{ doasResult.referenceResult[parameterIndices.front()].column, doasResult.referenceResult[parameterIndices.back()].column };
     update.residualSize = doasResult.chiSquare;
     update.shift = doasResult.referenceResult[0].shift;
 
     // Now also estimate the currentError by doing the DOAS fit without the Pseudo-absorbers
     {
-        doasFitSetup.ref[2].m_columnOption = novac::SHIFT_FIX;
-        doasFitSetup.ref[2].m_columnValue = 0.0;
+        doasFitSetup.ref[parameterIndices.front()].m_columnOption = novac::SHIFT_FIX;
+        doasFitSetup.ref[parameterIndices.front()].m_columnValue = 0.0;
 
-        doasFitSetup.ref[3].m_columnOption = novac::SHIFT_FIX;
-        doasFitSetup.ref[3].m_columnValue = 0.0;
+        doasFitSetup.ref[parameterIndices.back()].m_columnOption = novac::SHIFT_FIX;
+        doasFitSetup.ref[parameterIndices.back()].m_columnValue = 0.0;
 
         doas.Setup(doasFitSetup);
 

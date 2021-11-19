@@ -45,6 +45,7 @@ RansacWavelengthCalibrationResult::RansacWavelengthCalibrationResult(const Ransa
     highestNumberOfInliers(other.highestNumberOfInliers),
     correspondenceIsInlier(other.correspondenceIsInlier),
     smallestError(other.smallestError),
+    largestPixelSpan(other.largestPixelSpan),
     numberOfPossibleCorrelations(other.numberOfPossibleCorrelations)
 {
 }
@@ -56,6 +57,7 @@ RansacWavelengthCalibrationResult& RansacWavelengthCalibrationResult::operator=(
     this->highestNumberOfInliers = other.highestNumberOfInliers;
     this->correspondenceIsInlier = std::vector<bool>(begin(other.correspondenceIsInlier), end(other.correspondenceIsInlier));
     this->smallestError = other.smallestError;
+    this->largestPixelSpan = other.largestPixelSpan;
     this->numberOfPossibleCorrelations = other.numberOfPossibleCorrelations;
 
     return *this;

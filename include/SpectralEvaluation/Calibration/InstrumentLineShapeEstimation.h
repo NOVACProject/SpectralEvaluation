@@ -10,6 +10,7 @@ namespace novac
 class CSpectrum;
 class CCrossSectionData;
 class IFraunhoferSpectrumGenerator;
+class ICrossSectionSpectrumGenerator;
 class DoasFit;
 struct IndexRange;
 
@@ -197,9 +198,10 @@ public:
     /// <returns>The fitted line shape</returns>
     /// <throws>std::invalid_argument if the initial line shape hasn't been provided.</throws>
     LineShapeEstimationResult EstimateInstrumentLineShape(
-        IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
         const CSpectrum& measuredSpectrum,
-        const LineShapeEstimationSettings& settings);
+        const LineShapeEstimationSettings& settings,
+        IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+        ICrossSectionSpectrumGenerator* ozoneSpectrumGen = nullptr);
 
 private:
 
@@ -224,6 +226,7 @@ private:
     /// </summary>
     LineShapeUpdate GetGradient(
         IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+        ICrossSectionSpectrumGenerator* ozoneSpectrumGen,
         const CSpectrum& measuredSpectrum,
         const SuperGaussianLineShape& currentLineShape,
         const LineShapeEstimationSettings& settings,
@@ -236,6 +239,7 @@ private:
     /// </summary>
     LineShapeUpdate CalculateGradientAndCurrentError(
         IFraunhoferSpectrumGenerator& fraunhoferSpectrumGen,
+        ICrossSectionSpectrumGenerator* ozoneSpectrumGen,
         const CSpectrum& measuredSpectrum,
         const SuperGaussianLineShape& currentLineShape,
         const LineShapeEstimationSettings& settings,

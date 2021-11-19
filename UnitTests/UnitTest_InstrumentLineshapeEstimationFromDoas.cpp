@@ -36,7 +36,7 @@ TEST_CASE("EstimateInstrumentLineShape with measured spectrum being Gaussian of 
         InstrumentLineshapeEstimationFromDoas sut{ pixelToWavelengthMapping, actualnstrumentLineShape };
 
         // Act
-        const auto output = sut.EstimateInstrumentLineShape(fraunhoferSpectrumGenerator, *measuredSpectrum, settings);
+        const auto output = sut.EstimateInstrumentLineShape(*measuredSpectrum, settings, fraunhoferSpectrumGenerator);
 
         // Assert
         REQUIRE(fabs(actualFwhm - output.result.lineShape.Fwhm()) < 0.01 * actualFwhm); // 1% margin
@@ -52,7 +52,7 @@ TEST_CASE("EstimateInstrumentLineShape with measured spectrum being Gaussian of 
         InstrumentLineshapeEstimationFromDoas sut{ pixelToWavelengthMapping, initialGuessForInstrumentLineShape };
 
         // Act
-        const auto output = sut.EstimateInstrumentLineShape(fraunhoferSpectrumGenerator, *measuredSpectrum, settings);
+        const auto output = sut.EstimateInstrumentLineShape(*measuredSpectrum, settings, fraunhoferSpectrumGenerator);
 
         // Assert that the result is nearly gaussian with nearly the correct fwhm.
         // Since the initial fwhm guess is rather far off the tolerance can be quite large.
@@ -69,7 +69,7 @@ TEST_CASE("EstimateInstrumentLineShape with measured spectrum being Gaussian of 
         InstrumentLineshapeEstimationFromDoas sut{ pixelToWavelengthMapping, initialGuessForInstrumentLineShape };
 
         // Act
-        const auto output = sut.EstimateInstrumentLineShape(fraunhoferSpectrumGenerator, *measuredSpectrum, settings);
+        const auto output = sut.EstimateInstrumentLineShape(*measuredSpectrum, settings, fraunhoferSpectrumGenerator);
 
         // Assert that the result is nearly gaussian with nearly the correct fwhm.
         // Since the initial fwhm guess is rather far off the tolerance can be quite large.
@@ -107,7 +107,7 @@ TEST_CASE("EstimateInstrumentLineShape with measured spectrum being Super Gaussi
         InstrumentLineshapeEstimationFromDoas sut{ pixelToWavelengthMapping, actualnstrumentLineShape };
 
         // Act
-        const auto output = sut.EstimateInstrumentLineShape(fraunhoferSpectrumGenerator, *measuredSpectrum, settings);
+        const auto output = sut.EstimateInstrumentLineShape(*measuredSpectrum, settings, fraunhoferSpectrumGenerator);
 
         // Assert
         REQUIRE(fabs(actualFwhm - output.result.lineShape.Fwhm()) < 0.01 * actualFwhm); // 1% margin
@@ -123,7 +123,7 @@ TEST_CASE("EstimateInstrumentLineShape with measured spectrum being Super Gaussi
         InstrumentLineshapeEstimationFromDoas sut{ pixelToWavelengthMapping, initialGuessForInstrumentLineShape };
 
         // Act
-        const auto output = sut.EstimateInstrumentLineShape(fraunhoferSpectrumGenerator, *measuredSpectrum, settings);
+        const auto output = sut.EstimateInstrumentLineShape(*measuredSpectrum, settings, fraunhoferSpectrumGenerator);
 
         // Assert that the result has nearly the correct power and nearly the correct fwhm.
         // Since the initial fwhm guess is rather far off the tolerance can be quite large.
@@ -140,7 +140,7 @@ TEST_CASE("EstimateInstrumentLineShape with measured spectrum being Super Gaussi
         InstrumentLineshapeEstimationFromDoas sut{ pixelToWavelengthMapping, initialGuessForInstrumentLineShape };
 
         // Act
-        const auto output = sut.EstimateInstrumentLineShape(fraunhoferSpectrumGenerator, *measuredSpectrum, settings);
+        const auto output = sut.EstimateInstrumentLineShape(*measuredSpectrum, settings, fraunhoferSpectrumGenerator);
 
         // Assert that the result has nearly the correct power and nearly the correct fwhm.
         // Since the initial fwhm guess is rather far off the tolerance can be quite large.
