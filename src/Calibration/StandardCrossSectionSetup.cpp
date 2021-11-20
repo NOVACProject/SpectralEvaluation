@@ -19,7 +19,11 @@ StandardCrossSectionSetup::StandardCrossSectionSetup(const std::string& director
         StandardReference currentReference;
 
         std::string xmlFileLocation = directory;
-        xmlFileLocation.append("/StandardCrossSections/");
+        if (xmlFileLocation.back() != '/' && xmlFileLocation.back() != '\\')
+        {
+            xmlFileLocation.append("/");
+        }
+        xmlFileLocation.append("StandardCrossSections/");
 
         std::string xmlFileName = xmlFileLocation;
         xmlFileName.append("StandardCrossSections.xml");
