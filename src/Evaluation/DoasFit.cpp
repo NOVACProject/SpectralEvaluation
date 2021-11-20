@@ -116,6 +116,15 @@ void DoasFit::Setup(const CFitWindow& setup)
     // 1) Create the references
     for (int i = 0; i < setup.nRef; i++)
     {
+        if (setup.ref[i].m_data == nullptr)
+        {
+            throw std::invalid_argument("Error in setting up DOAS fit, reference is null.");
+        }
+        if (setup.ref[i].m_data->GetSize() == 0)
+        {
+            throw std::invalid_argument("Error in setting up DOAS fit, reference does not contain any data.");
+        }
+
         auto newRef = DefaultReferenceSpectrumFunction();
 
         // set the spectral data of the reference spectrum to the object. This also causes an internal
@@ -352,7 +361,7 @@ void DoasFit::Run(const double* measuredData, size_t measuredLength, DoasResult&
             message << " Message: '" + std::string{ e.mMessage } + "'";
         }
 
-        throw DoasFitException("Failed to evaluate: fit failed.");
+        throw DoasFitException(message.str());
     }
 }
 
