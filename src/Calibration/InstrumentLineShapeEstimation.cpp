@@ -590,7 +590,7 @@ InstrumentLineshapeEstimationFromDoas::LineShapeUpdate InstrumentLineshapeEstima
     // 3. Include the Ozone spectrum as the third reference (if required)
     if (ozoneSpectrumGen != nullptr)
     {
-        auto currentOzoneSpectrum = ozoneSpectrumGen->GetCrossSection(this->pixelToWavelengthMapping, sampledLineShape, false);
+        auto currentOzoneSpectrum = ozoneSpectrumGen->GetCrossSection(this->pixelToWavelengthMapping, sampledLineShape, fwhm, false);
         doasFitSetup.ref[doasFitSetup.nRef].m_data = std::make_unique<novac::CCrossSectionData>(*currentOzoneSpectrum);
         doasFitSetup.ref[doasFitSetup.nRef].m_columnOption = novac::SHIFT_FREE;
         doasFitSetup.ref[doasFitSetup.nRef].m_squeezeOption = novac::SHIFT_FIX;
