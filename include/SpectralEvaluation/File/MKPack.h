@@ -60,25 +60,25 @@ namespace novac
             @param ut - will on return contain the compressed spectrum
             @param size - the number of data-points in the uncompressed spectrum
             @return - the number of data-points in the compressed spectrum */
-        std::uint16_t mk_compress(long *in, std::uint8_t *ut, std::uint16_t size);
+        std::uint16_t mk_compress(long* in, std::uint8_t* ut, std::uint16_t size);
 
         /** Uncompress the given input-buffer to the given output-buffer
                 @param inpek - the input-buffer
                 @param kvar - the number of data-points to be written to the output-buffer
                 @param ut - will in return contain the uncompressed spectrum
                 @return -  the number of data-points in the uncompressed spectrum ???? */
-        long UnPack(std::uint8_t *inpek, long kvar, long *ut);
+        long UnPack(std::uint8_t* inpek, long kvar, long* ut);
 
     private:
-        void SetBit(std::uint8_t *pek, long bit);
-        void ClearBit(std::uint8_t *pek, long bit);
+        void SetBit(std::uint8_t* pek, long bit);
+        void ClearBit(std::uint8_t* pek, long bit);
 
-        void WriteBits(std::int16_t a, std::int16_t curr, long *inpek, std::uint8_t *utpek, long bitnr);
+        void WriteBits(std::int16_t a, std::int16_t curr, long* inpek, std::uint8_t* utpek, long bitnr);
         std::int16_t BitsPrec(long i);
 
-        void PackSeg(std::uint8_t *utpek, long *kvar);
+        void PackSeg(std::uint8_t* utpek, long* kvar);
 
         long m_bitnr = 0;
-        long *m_strt = nullptr;
+        long* m_strt = nullptr;
     };
 }
