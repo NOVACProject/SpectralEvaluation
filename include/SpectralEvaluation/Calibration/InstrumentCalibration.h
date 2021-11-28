@@ -39,7 +39,11 @@ namespace novac
         std::vector<double> instrumentLineShape;
 
         /** A sampling grid for the instrument line shape.
-            Must have equal length as 'instrumentLineShape' */
+            Must have equal length as 'instrumentLineShape'.
+            These values can either be absolute wavelengths -
+                i.e. values which all fall into the range [pixelToWavelengthMapping.front(), pixelToWavelengthMapping.back()]
+            Or they can be relative to the center wavelength -
+                i.e. instrumentLineShapeGrid.front() < 0 and instrumentLineShapeGrid.back() > 0 */
         std::vector<double> instrumentLineShapeGrid;
 
         /** The wavelength where the current instrument line shape is representative. */
