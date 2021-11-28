@@ -487,48 +487,6 @@ namespace novac
         return novac::CSTDFile::WriteSpectrum(*spectrumToSave, fullFilePath, extendedFileInfo);
     }
 
-    bool ReadInstrumentCalibration(const std::string& fullFilePath, CSpectrum& instrumentLineShape, std::vector<double>& pixelToWavelengthMapping)
-    {
-        CSTDFile::ExtendedFormatInformation extendedFormatInformation;
-
-        CSpectrum tmpSpectrum;
-        if (!CSTDFile::ReadSpectrum(tmpSpectrum, fullFilePath, extendedFormatInformation))
-        {
-            return false;
-        }
-
-        if (extendedFormatInformation.MaxChannel <= extendedFormatInformation.MinChannel ||
-            tmpSpectrum.m_wavelength.size() != static_cast<size_t>(tmpSpectrum.m_length))
-        {
-            // not a correct format of the data
-            return false;
-        }
-
-        // assign the output data
-        pixelToWavelengthMapping = tmpSpectrum.m_wavelength;
-        instrumentLineShape.m_info = tmpSpectrum.m_info;
-        instrumentLineShape.m_length = extendedFormatInformation.MaxChannel - extendedFormatInformation.MinChannel;
-        memcpy(instrumentLineShape.m_data, tmpSpectrum.m_data + extendedFormatInformation.MinChannel, instrumentLineShape.m_length * sizeof(double));
-
-        // Differentiate the wavelength wrt the peak
-        instrumentLineShape.m_wavelength = std::vector<double>(begin(tmpSpectrum.m_wavelength) + extendedFormatInformation.MinChannel, begin(tmpSpectrum.m_wavelength) + extendedFormatInformation.MaxChannel);
-
-        std::vector<double> specData{ instrumentLineShape.m_data, instrumentLineShape.m_data + instrumentLineShape.m_length };
-        const double centerPixel = Centroid(specData);
-
-        double centerWavelength = 0.0;
-        if (!novac::LinearInterpolation(instrumentLineShape.m_wavelength, centerPixel, centerWavelength))
-        {
-            return false;
-        }
-        for (double& lambda : instrumentLineShape.m_wavelength)
-        {
-            lambda -= centerWavelength;
-        }
-
-        return true;
-    }
-
     bool ReadInstrumentCalibration(const std::string& fullFilePath, InstrumentCalibration& result)
     {
         result.Clear();

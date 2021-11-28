@@ -54,11 +54,6 @@ namespace novac
         @throws std::invalid_argument if errors in the calibration makes it possible to save. */
     bool SaveInstrumentCalibration(const std::string& fullFilePath, const InstrumentCalibration& calibration);
 
-    /** Reads a saved instrument line shape and pixel-to-wavelength mapping from an instrument calibration file in extended STD-format.
-    *   TODO: Try to replace with the overload below taking an InstrumentCalibration instead.
-        @return true on success. */
-    bool ReadInstrumentCalibration(const std::string& fullFilePath, CSpectrum& instrumentLineShape, std::vector<double>& pixelToWavelengthMapping);
-
     /** Reads an instrument calibration from a file in the extended STD-format.
         The read in data will be filled into 'result'.
         @return true on success. */
