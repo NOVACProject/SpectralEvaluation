@@ -529,23 +529,35 @@ namespace novac
         return true;
     }
 
-    double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum, double maximumIntensity)
+    double GetMaximumSaturationRatioOfSpectrum(
+        const CSpectrum& spectrum,
+        double maximumIntensity,
+        int fromPixel,
+        int toPixel)
     {
+        fromPixel = std::max(0, std::min(fromPixel, static_cast<int>(spectrum.m_length)));
+        if (toPixel == 0)
+        {
+            toPixel = spectrum.m_length;
+        }
+        toPixel = std::max(fromPixel, std::min(toPixel, static_cast<int>(spectrum.m_length)));
+
         if (spectrum.m_info.m_numSpec > 0)
         {
-            return spectrum.MaxValue(0, spectrum.m_length) / (maximumIntensity * spectrum.m_info.m_numSpec);
+            return spectrum.MaxValue(fromPixel, toPixel) / (maximumIntensity * spectrum.m_info.m_numSpec);
         }
         else
         {
-            return spectrum.MaxValue(0, spectrum.m_length) / maximumIntensity;
+            return spectrum.MaxValue(fromPixel, toPixel) / maximumIntensity;
         }
     }
 
     double GetMaximumSaturationRatioOfSpectrum(
         const CSpectrum& spectrum,
-        const SpectrometerModel& model)
+        const SpectrometerModel& model,
+        int fromPixel, int toPixel)
     {
-        return GetMaximumSaturationRatioOfSpectrum(spectrum, model.maximumIntensity);
+        return GetMaximumSaturationRatioOfSpectrum(spectrum, model.maximumIntensity, fromPixel, toPixel);
     }
 
     double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum)

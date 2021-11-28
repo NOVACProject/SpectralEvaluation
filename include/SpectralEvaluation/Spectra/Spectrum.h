@@ -229,13 +229,19 @@ namespace novac
         information in order to retrieve the maximum possible intensity. */
     double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum);
 
-    /** @return the maximum saturation ratio of the provided spectrum, in the entire spectrum length.
-        This uses the provided spectrometer model information to retrieve the maximum possible intensity. */
-    double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum, const SpectrometerModel& model);
+    /** @return the maximum saturation ratio of the provided spectrum, in the entire spectrum length or in a provided region.
+        This uses the provided spectrometer model information to retrieve the maximum possible intensity.
+        @param spectrum The spectrum to esstimate the saturation ratio of
+        @param model The actual spectrometer model which produced this spectrum.
+        @param fromPixel The first pixel to include into this measurement
+        @param toPixel The last pixel to include into this measurement. Default is 0 which corresponds to the entire spectrum length. */
+    double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum, const SpectrometerModel& model, int fromPixel = 0, int toPixel = 0);
 
-    /** @return the maximum saturation ratio of the provided spectrum, in the entire spectrum length.
-        This uses the provided maximum possible intensity for one spectrum. */
-    double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum, double maximumIntensity);
+    /** @return the maximum saturation ratio of the provided spectrum, in the entire spectrum length or in a provided region.
+        @param maximumIntensity The maximum intensity which the spectrometer can produce.
+        @param fromPixel The first pixel to include into this measurement
+        @param toPixel The last pixel to include into this measurement. Default is 0 which corresponds to the entire spectrum length. */
+    double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum, double maximumIntensity, int fromPixel = 0, int toPixel = 0);
 
     /** Normalizes the intensity of the provided spectrum to the range [0, 1] */
     void Normalize(CSpectrum& spectrum);

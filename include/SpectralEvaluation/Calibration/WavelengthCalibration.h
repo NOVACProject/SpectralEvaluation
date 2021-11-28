@@ -14,290 +14,290 @@
 namespace novac
 {
 
-class CSpectrum;
-struct SpectrumDataPoint;
-struct Correspondence;
-struct RansacWavelengthCalibrationResult;
-class FraunhoferSpectrumGeneration;
-class ICrossSectionSpectrumGenerator;
-class ParametricInstrumentLineShape;
+    class CSpectrum;
+    struct SpectrumDataPoint;
+    struct Correspondence;
+    struct RansacWavelengthCalibrationResult;
+    class FraunhoferSpectrumGeneration;
+    class ICrossSectionSpectrumGenerator;
+    class ParametricInstrumentLineShape;
 
-enum class InstrumentLineshapeEstimationOption
-{
-    /// <summary>
-    /// Do not make any estimate of the instrument line shape.
-    /// </summary>
-    None = 0,
-
-    /// <summary>
-    /// Estimate the instrument line shape as an approximate Gaussian function,
-    ///  based on the general distance between peaks/valleys.
-    /// </summary>
-    ApproximateGaussian,
-
-    /// <summary>
-    /// Estimate the instrument line shape as a Gaussian function, 
-    /// by minimizing the residual between the generated fraunhofer spectrum and the measured.
-    /// </summary>
-    SuperGaussian
-};
-
-/// <summary>
-/// This is the result of running the wavelength calibration routine.
-/// </summary>
-struct SpectrometerCalibrationResult
-{
-    /// <summary>
-    /// The final estimate for the pixel to wavelength mapping.
-    /// </summary>
-    std::vector<double> pixelToWavelengthMapping;
-
-    /// <summary>
-    /// The coefficients of the pixel-to-wavelength mapping polynomial
-    /// </summary>
-    std::vector<double> pixelToWavelengthMappingCoefficients;
-
-    /// <summary>
-    /// A basic error estimate for the pixel-to-wavelength mapping.
-    /// This is the R2 of the polynomial fit to the included inliers.
-    /// </summary>
-    double pixelToWavelengthMappingError;
-
-    /// <summary>
-    /// The maximum pixel difference between any two inliers into the
-    /// pixel-to-wavelength mapping polynomial. A large value shows that the result
-    /// is valid over a larger pixel range.
-    /// </summary>
-    double pixelToWavelengthMappingPixelRange;
-
-    /// <summary>
-    /// The total number of inliers into the pixel-to-wavelength mapping polynomial.
-    /// </summary>
-    size_t pixelToWavelengthMappingInliers;
-
-    /// <summary>
-    /// The estimation of the instrument line shape.
-    /// This is only set if the instrument line shape is set to be estimated 
-    //  in the process, otherwise this is empty.
-    /// </summary>
-    novac::CCrossSectionData estimatedInstrumentLineShape;
-
-    /// <summary>
-    /// An estimation of the error in the produced line shape.
-    /// This is the chi2 of the DOAS fit where a synthetically generated Fraunhofer spectrum (and a Ring spectrum derived from it) 
-    /// were fitted to the measured spectrum. 
-    /// </summary>
-    double estimatedInstrumentLineShapeError = 0.0;
-
-    /// <summary>
-    /// The shift applied while fitting the instrument line shape.
-    /// This is the shift of the DOAS fit where a synthetically generated Fraunhofer spectrum (and a Ring spectrum derived from it) 
-    /// were fitted to the measured spectrum.
-    /// A high value here indicates errors in the wavelength calibration.
-    /// </summary>
-    double estimatedInstrumentLineShapeShift = 0.0;
-
-    /// <summary>
-    /// The Range of pixels over which the instrument line shape was estimated.
-    /// </summary>
-    std::pair<size_t, size_t> estimatedInstrumentLineShapePixelRange;
-
-    /// <summary>
-    /// The parameterization of the estimated instrument line shape.
-    /// This is only set if the instrument line shape is set to be estimated 
-    //  in the process, otherwise this is empty.
-    /// </summary>
-    std::unique_ptr<novac::ParametricInstrumentLineShape> estimatedInstrumentLineShapeParameters;
-};
-
-struct WavelengthCalibrationSettings
-{
-    /// <summary>
-    /// The intial estimate for the pixel to wavelength mapping.
-    /// </summary>
-    std::vector<double> initialPixelToWavelengthMapping;
-
-    /// <summary>
-    /// The initial estimate for the instrument line shape (measured or estimated).
-    /// </summary>
-    novac::CCrossSectionData initialInstrumentLineShape;
-
-    /// <summary>
-    /// The path to the high resolved solar atlas to be used.
-    ///  Assumed that this has the wavelength unit of nm air.
-    /// </summary>
-    std::string highResSolarAtlas;
-
-    /// <summary>
-    /// A set of high resolved cross sections to include into the generation
-    /// of the fraunhofer spectrum. Each pair makes up a path to the cross section
-    /// file on disk and a total column of the cross section to use.
-    /// Only cross sections with a total column != 0 will be included.
-    /// </summary>
-    std::vector<std::pair<std::string, double>> crossSections;
-
-    /// <summary>
-    /// A set of high resolved cross sections to include into the fit when 
-    /// fitting an instrument line shape. This should include references which are
-    /// strongly absorbing in the wavelength range used to estimate the instrument line shape.
-    /// NOTICE: Only the first cross section here is used so far.
-    /// This is primarily used to remove the impact of Ozone on the fitted instrument line shape.
-    /// </summary>
-    std::vector<std::string> crossSectionsForInstrumentLineShapeFitting;
-
-    /// <summary>
-    /// The option for how, and if, the instrument line shape should also be estimated 
-    /// during the wavelength calibration procedure.
-    /// </summary>
-    InstrumentLineshapeEstimationOption estimateInstrumentLineShape = InstrumentLineshapeEstimationOption::None;
-
-    /// <summary>
-    /// The wavelength region in which the instrument line shape is estimated (if estimateInstrumentLineShape != None)
-    /// </summary>
-    std::pair<double, double> estimateInstrumentLineShapeWavelengthRegion;
-};
-
-class WavelengthCalibrationFailureException : public std::exception
-{
-private:
-    const char* const m_msg = "";
-
-public:
-    WavelengthCalibrationFailureException(const char* msg) :
-        m_msg(msg)
-    {}
-
-    const char* what() const noexcept override final { return m_msg; }
-};
-
-/// <summary>
-/// Reads the pixel-to-wavelength mapping from a .clb calibration 
-///     data file which is expected to contain a single column of data.
-/// Notice, if the file contains two columns then this will return the second!
-/// </summary>
-std::vector<double> GetPixelToWavelengthMappingFromFile(const std::string& clbFile);
-
-/// <summary>
-/// Generates a pixel-to-wavelength mapping for each pixel on the detector given
-/// the wavelength calibration polynomial and the number of pixels.
-/// </summary>
-std::vector<double> GetPixelToWavelengthMapping(const std::vector<double>& polynomialCoefficients, size_t detectorSize);
-
-/// <summary>
-/// Returns true if the provided polynomial can be a possible calibration for a spectrometer with the given detector size.
-/// This verifies that the provided polynomial is monotonically increasing in the pixel interval [0, numberOfPixels-1]
-/// </summary>
-bool IsPossiblePixelToWavelengthCalibrationPolynomial(const std::vector<double>& candidatePolynomial, size_t numberOfPixels);
-
-/// <summary>
-/// Returns true if the provided vector is be a possible calibration for a spectrometer.
-/// This checks the mappings to make sure that they are monotonically increasing.
-/// </summary>
-bool IsPossiblePixelToWavelengthCalibration(const std::vector<double>& pixelToWavelengthMapping);
-
-
-/// <summary>
-/// This is a helper structure used to extract the internal state of the pixel-to-wavelength calibration
-/// of a spectrometer from a measured mercury spectrum.
-/// </summary>
-struct MercurySpectrumCalibrationState
-{
-    /// <summary>
-    /// This lists all the peaks found in the mercury spectrum (defined in pixels).
-    /// </summary>
-    std::vector<SpectrumDataPoint> peaks;
-
-    /// <summary>
-    /// This is a list of peaks found in the spectrum but for which we didn't find a
-    /// suitable emission line in the theoretical spectrum, or the line seems to be not fully resolved.
-    /// </summary>
-    std::vector<SpectrumDataPoint> rejectedPeaks;
-
-    /// <summary>
-    /// If the Mercury calibration failed, then this will be filled in with the reason why
-    /// </summary>
-    std::string errorMessage;
-};
-
-/**
- * @brief Performs a wavelength calibration of a spectrometer using a measured mercury spectrum.
- *  This will identify the peaks in the measured spectrum and fit a polynomial to them such that the
- *  pixel-to-wavelength mapping for the entire spectrum can be calculated.
- * @param measuredMercurySpectrum The measured spectrum
- * @param polynomialOrder The order of the polynomial to fit (in the range 1-3).
- * @param initialPixelToWavelength The initial guess for the pixel to wavelength calibration of the spectrum,
- *  This will be used to constrain the identification of the mercury lines.
- * @param result Will on successful return be filled with the resulting pixel-to-wavelength calibration.
- * @param state If not null, then this will be filled with information on how the calibration did perform.
- * @return True if the calibration was successful. */
-bool MercuryCalibration(
-    const CSpectrum& measuredMercurySpectrum,
-    int polynomialOrder,
-    const std::vector<double>& initialPixelToWavelength,
-    SpectrometerCalibrationResult& result,
-    MercurySpectrumCalibrationState* state = nullptr);
-
-/// <summary>
-/// WavelengthCalibrationSetup is the setup of a calibration run
-///     and contains all necessary elements to perform the calibration.
-/// </summary>
-class WavelengthCalibrationSetup
-{
-public:
-    WavelengthCalibrationSetup(const WavelengthCalibrationSettings& calibrationSettings);
-
-    /// <summary>
-    /// This performs the actual calibration of a measured spectrum against a 
-    ///   high resolution fraunhofer spectrum assuming that the provided instrument line shape
-    ///   is the correct line shape for the instrument.
-    /// @throws std::invalid_argument if any of the incoming parameters is invalid.
-    /// @throws WavelengthCalibrationFailureException if the calibration fails.
-    /// </summary>
-    SpectrometerCalibrationResult DoWavelengthCalibration(const CSpectrum& measuredSpectrum);
-
-    /// <summary>
-    /// Simple structure used to save the internal state of the wavelength calibration. For inspection and debugging
-    /// </summary>
-    struct SpectrumeterCalibrationState
+    enum class InstrumentLineshapeEstimationOption
     {
-        std::unique_ptr<CSpectrum> measuredSpectrum;
-        std::unique_ptr<CSpectrum> fraunhoferSpectrum;
-        std::unique_ptr<CSpectrum> originalFraunhoferSpectrum;
-        std::vector<novac::SpectrumDataPoint> measuredKeypoints;
-        std::vector<novac::SpectrumDataPoint> fraunhoferKeypoints;
-        std::vector<double> measuredSpectrumEnvelopePixels;
-        std::vector<double> measuredSpectrumEnvelopeIntensities;
-        std::vector<novac::Correspondence> allCorrespondences;
-        std::vector<bool> correspondenceIsInlier;
+        /// <summary>
+        /// Do not make any estimate of the instrument line shape.
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        /// Estimate the instrument line shape as an approximate Gaussian function,
+        ///  based on the general distance between peaks/valleys.
+        /// </summary>
+        ApproximateGaussian,
+
+        /// <summary>
+        /// Estimate the instrument line shape as a Gaussian function, 
+        /// by minimizing the residual between the generated fraunhofer spectrum and the measured.
+        /// </summary>
+        SuperGaussian
     };
 
     /// <summary>
-    /// Helper function which retrieves the state and result of the last call to 'DoWavelengthCalibration', for debugging.
+    /// This is the result of running the wavelength calibration routine.
     /// </summary>
-    const WavelengthCalibrationSetup::SpectrumeterCalibrationState& GetLastCalibrationSetup() { return this->calibrationState; }
+    struct SpectrometerCalibrationResult
+    {
+        /// <summary>
+        /// The final estimate for the pixel to wavelength mapping.
+        /// </summary>
+        std::vector<double> pixelToWavelengthMapping;
 
-private:
+        /// <summary>
+        /// The coefficients of the pixel-to-wavelength mapping polynomial
+        /// </summary>
+        std::vector<double> pixelToWavelengthMappingCoefficients;
 
-    WavelengthCalibrationSettings settings;
+        /// <summary>
+        /// A basic error estimate for the pixel-to-wavelength mapping.
+        /// This is the R2 of the polynomial fit to the included inliers.
+        /// </summary>
+        double pixelToWavelengthMappingError;
 
-    SpectrumeterCalibrationState calibrationState;
+        /// <summary>
+        /// The maximum pixel difference between any two inliers into the
+        /// pixel-to-wavelength mapping polynomial. A large value shows that the result
+        /// is valid over a larger pixel range.
+        /// </summary>
+        double pixelToWavelengthMappingPixelRange;
+
+        /// <summary>
+        /// The total number of inliers into the pixel-to-wavelength mapping polynomial.
+        /// </summary>
+        size_t pixelToWavelengthMappingInliers;
+
+        /// <summary>
+        /// The estimation of the instrument line shape.
+        /// This is only set if the instrument line shape is set to be estimated 
+        //  in the process, otherwise this is empty.
+        /// </summary>
+        novac::CCrossSectionData estimatedInstrumentLineShape;
+
+        /// <summary>
+        /// An estimation of the error in the produced line shape.
+        /// This is the chi2 of the DOAS fit where a synthetically generated Fraunhofer spectrum (and a Ring spectrum derived from it) 
+        /// were fitted to the measured spectrum. 
+        /// </summary>
+        double estimatedInstrumentLineShapeError = 0.0;
+
+        /// <summary>
+        /// The shift applied while fitting the instrument line shape.
+        /// This is the shift of the DOAS fit where a synthetically generated Fraunhofer spectrum (and a Ring spectrum derived from it) 
+        /// were fitted to the measured spectrum.
+        /// A high value here indicates errors in the wavelength calibration.
+        /// </summary>
+        double estimatedInstrumentLineShapeShift = 0.0;
+
+        /// <summary>
+        /// The Range of pixels over which the instrument line shape was estimated.
+        /// </summary>
+        std::pair<size_t, size_t> estimatedInstrumentLineShapePixelRange;
+
+        /// <summary>
+        /// The parameterization of the estimated instrument line shape.
+        /// This is only set if the instrument line shape is set to be estimated 
+        //  in the process, otherwise this is empty.
+        /// </summary>
+        std::unique_ptr<novac::ParametricInstrumentLineShape> estimatedInstrumentLineShapeParameters;
+    };
+
+    struct WavelengthCalibrationSettings
+    {
+        /// <summary>
+        /// The intial estimate for the pixel to wavelength mapping.
+        /// </summary>
+        std::vector<double> initialPixelToWavelengthMapping;
+
+        /// <summary>
+        /// The initial estimate for the instrument line shape (measured or estimated).
+        /// </summary>
+        novac::CCrossSectionData initialInstrumentLineShape;
+
+        /// <summary>
+        /// The path to the high resolved solar atlas to be used.
+        ///  Assumed that this has the wavelength unit of nm air.
+        /// </summary>
+        std::string highResSolarAtlas;
+
+        /// <summary>
+        /// A set of high resolved cross sections to include into the generation
+        /// of the fraunhofer spectrum. Each pair makes up a path to the cross section
+        /// file on disk and a total column of the cross section to use.
+        /// Only cross sections with a total column != 0 will be included.
+        /// </summary>
+        std::vector<std::pair<std::string, double>> crossSections;
+
+        /// <summary>
+        /// A set of high resolved cross sections to include into the fit when 
+        /// fitting an instrument line shape. This should include references which are
+        /// strongly absorbing in the wavelength range used to estimate the instrument line shape.
+        /// NOTICE: Only the first cross section here is used so far.
+        /// This is primarily used to remove the impact of Ozone on the fitted instrument line shape.
+        /// </summary>
+        std::vector<std::string> crossSectionsForInstrumentLineShapeFitting;
+
+        /// <summary>
+        /// The option for how, and if, the instrument line shape should also be estimated 
+        /// during the wavelength calibration procedure.
+        /// </summary>
+        InstrumentLineshapeEstimationOption estimateInstrumentLineShape = InstrumentLineshapeEstimationOption::None;
+
+        /// <summary>
+        /// The wavelength region in which the instrument line shape is estimated (if estimateInstrumentLineShape != None)
+        /// </summary>
+        std::pair<double, double> estimateInstrumentLineShapeWavelengthRegion;
+    };
+
+    class WavelengthCalibrationFailureException : public std::exception
+    {
+    private:
+        const char* const m_msg = "";
+
+    public:
+        WavelengthCalibrationFailureException(const char* msg) :
+            m_msg(msg)
+        {}
+
+        const char* what() const noexcept override final { return m_msg; }
+    };
 
     /// <summary>
-    /// Creates a wavelength to intensity spline of the measured spectrum using the current wavelength calibration result
-    /// and correct the current generated Fraunhofer spectrum with it. This improves the accuracy of finding the spectrum peaks/valleys.
+    /// Reads the pixel-to-wavelength mapping from a .clb calibration 
+    ///     data file which is expected to contain a single column of data.
+    /// Notice, if the file contains two columns then this will return the second!
     /// </summary>
-    void UpdateFraunhoferSpectrumWithApparentSensitivity(novac::RansacWavelengthCalibrationResult& ransacResult);
+    std::vector<double> GetPixelToWavelengthMappingFromFile(const std::string& clbFile);
 
     /// <summary>
-    /// Creates an estimate of the instrument line shape of the measured spectrum as an approximate gaussian by judging the average distance between keypoints.
+    /// Generates a pixel-to-wavelength mapping for each pixel on the detector given
+    /// the wavelength calibration polynomial and the number of pixels.
     /// </summary>
-    void EstimateInstrumentLineShapeAsApproximateGaussian(novac::SpectrometerCalibrationResult& result, novac::FraunhoferSpectrumGeneration& fraunhoferSetup);
+    std::vector<double> GetPixelToWavelengthMapping(const std::vector<double>& polynomialCoefficients, size_t detectorSize);
 
     /// <summary>
-    /// Creates an estimate of the instrument line shape of the measured spectrum by fitting a SuperGaussian to the measured spectrum.
+    /// Returns true if the provided polynomial can be a possible calibration for a spectrometer with the given detector size.
+    /// This verifies that the provided polynomial is monotonically increasing in the pixel interval [0, numberOfPixels-1]
     /// </summary>
-    void EstimateInstrumentLineShapeAsSuperGaussian(novac::SpectrometerCalibrationResult& result, novac::FraunhoferSpectrumGeneration& fraunhoferSetup, novac::ICrossSectionSpectrumGenerator* ozoneSetup = nullptr);
+    bool IsPossiblePixelToWavelengthCalibrationPolynomial(const std::vector<double>& candidatePolynomial, size_t numberOfPixels);
 
-};
+    /// <summary>
+    /// Returns true if the provided vector is be a possible calibration for a spectrometer.
+    /// This checks the mappings to make sure that they are monotonically increasing.
+    /// </summary>
+    bool IsPossiblePixelToWavelengthCalibration(const std::vector<double>& pixelToWavelengthMapping);
+
+
+    /// <summary>
+    /// This is a helper structure used to extract the internal state of the pixel-to-wavelength calibration
+    /// of a spectrometer from a measured mercury spectrum.
+    /// </summary>
+    struct MercurySpectrumCalibrationState
+    {
+        /// <summary>
+        /// This lists all the peaks found in the mercury spectrum (defined in pixels).
+        /// </summary>
+        std::vector<SpectrumDataPoint> peaks;
+
+        /// <summary>
+        /// This is a list of peaks found in the spectrum but for which we didn't find a
+        /// suitable emission line in the theoretical spectrum, or the line seems to be not fully resolved.
+        /// </summary>
+        std::vector<SpectrumDataPoint> rejectedPeaks;
+
+        /// <summary>
+        /// If the Mercury calibration failed, then this will be filled in with the reason why
+        /// </summary>
+        std::string errorMessage;
+    };
+
+    /**
+     * @brief Performs a wavelength calibration of a spectrometer using a measured mercury spectrum.
+     *  This will identify the peaks in the measured spectrum and fit a polynomial to them such that the
+     *  pixel-to-wavelength mapping for the entire spectrum can be calculated.
+     * @param measuredMercurySpectrum The measured spectrum
+     * @param polynomialOrder The order of the polynomial to fit (in the range 1-3).
+     * @param initialPixelToWavelength The initial guess for the pixel to wavelength calibration of the spectrum,
+     *  This will be used to constrain the identification of the mercury lines.
+     * @param result Will on successful return be filled with the resulting pixel-to-wavelength calibration.
+     * @param state If not null, then this will be filled with information on how the calibration did perform.
+     * @return True if the calibration was successful. */
+    bool MercuryCalibration(
+        const CSpectrum& measuredMercurySpectrum,
+        int polynomialOrder,
+        const std::vector<double>& initialPixelToWavelength,
+        SpectrometerCalibrationResult& result,
+        MercurySpectrumCalibrationState* state = nullptr);
+
+    /// <summary>
+    /// WavelengthCalibrationSetup is the setup of a calibration run
+    ///     and contains all necessary elements to perform the calibration.
+    /// </summary>
+    class WavelengthCalibrationSetup
+    {
+    public:
+        WavelengthCalibrationSetup(const WavelengthCalibrationSettings& calibrationSettings);
+
+        /// <summary>
+        /// This performs the actual calibration of a measured spectrum against a 
+        ///   high resolution fraunhofer spectrum assuming that the provided instrument line shape
+        ///   is the correct line shape for the instrument.
+        /// @throws std::invalid_argument if any of the incoming parameters is invalid.
+        /// @throws WavelengthCalibrationFailureException if the calibration fails.
+        /// </summary>
+        SpectrometerCalibrationResult DoWavelengthCalibration(const CSpectrum& measuredSpectrum);
+
+        /// <summary>
+        /// Simple structure used to save the internal state of the wavelength calibration. For inspection and debugging
+        /// </summary>
+        struct SpectrumeterCalibrationState
+        {
+            std::unique_ptr<CSpectrum> measuredSpectrum;
+            std::unique_ptr<CSpectrum> fraunhoferSpectrum;
+            std::unique_ptr<CSpectrum> originalFraunhoferSpectrum;
+            std::vector<novac::SpectrumDataPoint> measuredKeypoints;
+            std::vector<novac::SpectrumDataPoint> fraunhoferKeypoints;
+            std::vector<double> measuredSpectrumEnvelopePixels;
+            std::vector<double> measuredSpectrumEnvelopeIntensities;
+            std::vector<novac::Correspondence> allCorrespondences;
+            std::vector<bool> correspondenceIsInlier;
+        };
+
+        /// <summary>
+        /// Helper function which retrieves the state and result of the last call to 'DoWavelengthCalibration', for debugging.
+        /// </summary>
+        const WavelengthCalibrationSetup::SpectrumeterCalibrationState& GetLastCalibrationSetup() { return this->calibrationState; }
+
+    private:
+
+        WavelengthCalibrationSettings settings;
+
+        SpectrumeterCalibrationState calibrationState;
+
+        /// <summary>
+        /// Creates a wavelength to intensity spline of the measured spectrum using the current wavelength calibration result
+        /// and correct the current generated Fraunhofer spectrum with it. This improves the accuracy of finding the spectrum peaks/valleys.
+        /// </summary>
+        void UpdateFraunhoferSpectrumWithApparentSensitivity(novac::RansacWavelengthCalibrationResult& ransacResult);
+
+        /// <summary>
+        /// Creates an estimate of the instrument line shape of the measured spectrum as an approximate gaussian by judging the average distance between keypoints.
+        /// </summary>
+        void EstimateInstrumentLineShapeAsApproximateGaussian(novac::SpectrometerCalibrationResult& result, novac::FraunhoferSpectrumGeneration& fraunhoferSetup);
+
+        /// <summary>
+        /// Creates an estimate of the instrument line shape of the measured spectrum by fitting a SuperGaussian to the measured spectrum.
+        /// </summary>
+        void EstimateInstrumentLineShapeAsSuperGaussian(novac::SpectrometerCalibrationResult& result, novac::FraunhoferSpectrumGeneration& fraunhoferSetup, novac::ICrossSectionSpectrumGenerator* ozoneSetup = nullptr);
+
+    };
 
 }
