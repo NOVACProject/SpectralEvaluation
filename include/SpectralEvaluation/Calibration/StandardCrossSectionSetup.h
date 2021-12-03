@@ -11,6 +11,7 @@ namespace novac
     class StandardCrossSectionSetup
     {
     public:
+
         StandardCrossSectionSetup(const std::string& directory);
 
         /** Creates list of the names of the standard references */
@@ -30,6 +31,11 @@ namespace novac
             @throws std::invalid_argument if index >= NumberOfReferences(). */
         bool IsReferenceInVacuum(size_t index) const;
 
+        /** Returns true if the standard cross section with the given index is an additional (non-gas) absorber.
+        *   Typically true for the Ring-spectrum, but also for some other pseudo-absorbers.
+            @throws std::invalid_argument if index >= NumberOfReferences(). */
+        bool IsAdditionalAbsorber(size_t index) const;
+
         /** Returns the full file name of the Fraunhofer reference - if any exists.
             @returns empty-string if no Fraunhofer reference exists. */
         std::string FraunhoferReferenceFileName() const;
@@ -41,6 +47,8 @@ namespace novac
             std::string fileName;
             std::string specieName;
             bool isVacuum = true;
+            // isAdditionalAbsorber is true for non-gaseous absorbers, eg. Ring
+            bool isAdditionalAbsorber = false;
         };
 
         struct FraunhoferReference

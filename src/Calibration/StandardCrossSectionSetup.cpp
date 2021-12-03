@@ -38,10 +38,21 @@ namespace novac
                     // Add the currently read reference to the end, if it points to a valid location.
                     if (IsExistingFile(currentReference.fileName))
                     {
+                        currentReference.isAdditionalAbsorber = false;
                         m_standardReferences.push_back(currentReference);
                     }
                 }
-                else if (line.find("CrossSection") != std::string::npos)
+                if (line.find("/AdditionalAbsorber") != std::string::npos)
+                {
+                    // Add the currently read reference to the end, if it points to a valid location.
+                    if (IsExistingFile(currentReference.fileName))
+                    {
+                        currentReference.isAdditionalAbsorber = true;
+                        m_standardReferences.push_back(currentReference);
+                    }
+                }
+                else if (line.find("CrossSection") != std::string::npos ||
+                         line.find("AdditionalAbsorber") != std::string::npos)
                 {
                     // Start the reading over with a new reference
                     currentReference = StandardReference();
@@ -144,6 +155,16 @@ namespace novac
         }
 
         return m_standardReferences[index].isVacuum;
+    }
+
+    bool StandardCrossSectionSetup::IsAdditionalAbsorber(size_t index) const
+    {
+        if (index >= m_standardReferences.size())
+        {
+            ThrowInvalidIndexException(index, m_standardReferences.size());
+        }
+
+        return m_standardReferences[index].isAdditionalAbsorber;
     }
 
     std::string StandardCrossSectionSetup::FraunhoferReferenceFileName() const
