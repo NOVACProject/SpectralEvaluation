@@ -450,7 +450,7 @@ namespace novac
         extendedFileInfo.MaxChannel = static_cast<int>(instrumentLineShapeSpectrumEndPixel);
         extendedFileInfo.MathLow = extendedFileInfo.MinChannel;
         extendedFileInfo.MathHigh = extendedFileInfo.MaxChannel;
-        extendedFileInfo.Marker = calibration.instrumentLineShapeCenter;
+        extendedFileInfo.Marker = WavelengthToPixel(calibration.pixelToWavelengthMapping, calibration.instrumentLineShapeCenter);
 
         // If there is a parameterized instrument line shape function
         if (calibration.instrumentLineShapeParameter != nullptr)
