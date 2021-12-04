@@ -2,7 +2,11 @@
 #undef max
 
 #include <algorithm>
+#include <cmath>
 #include <numeric>
+#include <sstream>
+#include <stdexcept>
+#include <stdio.h>
 #include <SpectralEvaluation/DialogControllers/InstrumentLineshapeCalibrationController.h>
 #include <SpectralEvaluation/File/File.h>
 #include <SpectralEvaluation/File/STDFile.h>
@@ -39,7 +43,9 @@ void InstrumentLineshapeCalibrationController::Update()
     novac::CSpectrum hgSpectrum;
     if (!novac::ReadSpectrum(m_inputSpectrumPath, hgSpectrum))
     {
-        throw std::invalid_argument("Cannot read a spectrum from the provided input file.");
+        std::stringstream message;
+        message << "Cannot read a spectrum from the provided input file: '" << m_inputSpectrumPath << "'";
+        throw std::invalid_argument(message.str());
     }
     m_inputspectrumInformation = hgSpectrum.m_info; //< remember the meta-data of the spectrum
 
@@ -230,8 +236,12 @@ void InstrumentLineshapeCalibrationController::FitFunctionToLineShape(size_t pea
 std::pair<std::string, std::string> FormatProperty(const char* name, double value)
 {
     char formattedValue[128];
+#ifdef _MSC_VER
     sprintf_s(formattedValue, sizeof(formattedValue), "%.9g", value);
-
+#else
+    sprintf(formattedValue, "%.9g", value);
+#endif
+ 
     return std::make_pair(std::string(name), std::string(formattedValue));
 }
 

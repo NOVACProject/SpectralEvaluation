@@ -24,6 +24,7 @@ set(SPECTRALEVAUATION_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include CACHE STRIN
 # Create a library from the SpectralEvaluation classes
 add_subdirectory(src/Calibration)
 add_subdirectory(src/Configuration)
+add_subdirectory(src/DialogControllers)
 add_subdirectory(src/Evaluation)
 add_subdirectory(src/Fit)
 add_subdirectory(src/FitExtensions)
@@ -50,6 +51,8 @@ add_library(NovacSpectralEvaluation
     ${SPECTRUM_MATH_SOURCES}
     ${SPECTRUM_CONFIGURATION_HEADERS}
     ${SPECTRUM_CONFIGURATION_SOURCES}
+    ${DIALOGCONTROLLERS_HEADERS}
+    ${DIALOGCONTROLLERS_SOURCES}
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Air.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/DateTime.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Definitions.h

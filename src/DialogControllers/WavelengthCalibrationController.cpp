@@ -429,7 +429,7 @@ void MobileDoasWavelengthCalibrationController::ReadInput(novac::CSpectrum& meas
 void NovacProgramWavelengthCalibrationController::ReadInput(novac::CSpectrum& measuredSpectrum)
 {
     novac::CScanFileHandler pakFileHandler;
-    if (!pakFileHandler.CheckScanFile(this->m_inputSpectrumFile))
+    if (!pakFileHandler.CheckScanFile(m_inputSpectrumFile))
     {
         std::stringstream msg;
         msg << "Cannot read the provided input spectrum file. Error:  " << pakFileHandler.m_lastError;

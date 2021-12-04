@@ -1,6 +1,7 @@
 #undef min
 #undef max
 #include <algorithm>
+#include <stdexcept>
 
 #include <SpectralEvaluation/DialogControllers/ReferenceCreationController.h>
 #include <SpectralEvaluation/StringUtils.h>
@@ -111,7 +112,7 @@ void ReferenceCreationController::ConvolveReference(const novac::InstrumentCalib
     novac::CCrossSectionData highResReference;
     if (!novac::ReadCrossSectionFile(m_highResolutionCrossSection, highResReference))
     {
-        throw std::exception("Failed to read the reference file");
+        throw std::invalid_argument("Failed to read the reference file");
     }
 
     // Do the convolution
