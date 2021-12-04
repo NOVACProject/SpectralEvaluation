@@ -985,7 +985,7 @@ namespace MathFit
 		*/
 		int mSizeInternal;
 		/**
-		* Holds a list of linked parameter defintions used for forward updateing of linkes parameters.
+		* Holds a list of linked parameter definitions used for forward updateing of linkes parameters.
 		*/
 		CParameterLinkItem* mLink;
 	};
