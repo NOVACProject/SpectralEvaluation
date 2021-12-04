@@ -10,13 +10,13 @@
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 #include <SpectralEvaluation/File/File.h>
+#include <SpectralEvaluation/File/ScanFileHandler.h>
 #include <SpectralEvaluation/Calibration/Correspondence.h>
 #include <SpectralEvaluation/Calibration/InstrumentCalibration.h>
 #include <SpectralEvaluation/Calibration/WavelengthCalibration.h>
 #include <SpectralEvaluation/Calibration/InstrumentLineShapeEstimation.h>
 #include <SpectralEvaluation/Calibration/FraunhoferSpectrumGeneration.h>
 #include <SpectralEvaluation/Calibration/WavelengthCalibrationByRansac.h>
-
 
 std::string ToString(double value)
 {
@@ -423,6 +423,31 @@ void MobileDoasWavelengthCalibrationController::ReadInput(novac::CSpectrum& meas
     {
         measuredSpectrum.Sub(darkSpectrum);
         Log("Read and subtracted dark spectrum: ", m_darkSpectrumFile);
+    }
+}
+
+void NovacProgramWavelengthCalibrationController::ReadInput(novac::CSpectrum& measuredSpectrum)
+{
+    novac::CScanFileHandler pakFileHandler;
+    if (!pakFileHandler.CheckScanFile(this->m_inputSpectrumFile))
+    {
+        std::stringstream msg;
+        msg << "Cannot read the provided input spectrum file. Error:  " << pakFileHandler.m_lastError;
+        throw std::invalid_argument(msg.str());
+    }
+
+    if (pakFileHandler.GetSky(measuredSpectrum))
+    {
+        throw std::invalid_argument("Cannot read the provided input spectrum file");
+    }
+    Log("Read measured spectrum: ", m_inputSpectrumFile);
+
+    // subtract the dark-spectrum (if this exists)
+    novac::CSpectrum darkSpectrum;
+    if (!pakFileHandler.GetDark(darkSpectrum))
+    {
+        measuredSpectrum.Sub(darkSpectrum);
+        Log("Read and subtracted dark spectrum");
     }
 
 }

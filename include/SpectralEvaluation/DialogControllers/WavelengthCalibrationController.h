@@ -28,9 +28,6 @@ public:
         SuperGaussian = 1
     };
 
-    /** The full path to the spectrum to calibrate (should be a .pak file) */
-    std::string m_inputSpectrumFile;
-
     /** The full path to the high resolved solar spectrum */
     std::string m_solarSpectrumFile;
 
@@ -162,8 +159,28 @@ public:
     MobileDoasWavelengthCalibrationController()
         : WavelengthCalibrationController() { }
 
+
+    /** The full path to the spectrum to calibrate (should be a .pak file) */
+    std::string m_inputSpectrumFile;
+
     /** The full path to the dark spectrum of the spectrum to calibrate */
     std::string m_darkSpectrumFile;
+
+protected:
+
+    virtual void ReadInput(novac::CSpectrum& measurement) override;
+
+};
+
+class NovacProgramWavelengthCalibrationController : public WavelengthCalibrationController
+{
+public:
+    NovacProgramWavelengthCalibrationController()
+        : WavelengthCalibrationController() { }
+
+
+    /** The full path to the spectrum to calibrate (should be a .pak file) */
+    std::string m_inputSpectrumFile;
 
 protected:
 
