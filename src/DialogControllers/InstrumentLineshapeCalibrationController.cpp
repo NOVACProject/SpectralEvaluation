@@ -11,6 +11,10 @@
 #include <SpectralEvaluation/Calibration/WavelengthCalibration.h>
 #include <SpectralEvaluation/VectorUtils.h>
 
+// From WavelengthCalibrationController...
+std::vector<std::pair<std::string, std::string>> GetFunctionDescription(const novac::ParametricInstrumentLineShape* lineShapeFunction);
+
+
 InstrumentLineshapeCalibrationController::InstrumentLineshapeCalibrationController()
     : m_inputSpectrumPath(""), m_darkSpectrumPath(""), m_inputSpectrumContainsWavelength(false)
 {
@@ -152,43 +156,6 @@ std::unique_ptr<novac::CSpectrum> InstrumentLineshapeCalibrationController::Extr
     return hgLine;
 }
 
-std::string ToString(double value)
-{
-    char buffer[64];
-    sprintf(buffer, "%0.3lf", value);
-    return std::string(buffer);
-}
-
-std::vector<std::pair<std::string, std::string>> GetFunctionDescription(const novac::ParametricInstrumentLineShape* lineShapeFunction)
-{
-    std::vector<std::pair<std::string, std::string>> result;
-
-    if (lineShapeFunction == nullptr)
-    {
-        return result;
-    }
-    else if (lineShapeFunction->Type() == novac::InstrumentLineShapeFunctionType::Gaussian)
-    {
-        const auto func = static_cast<const novac::GaussianLineShape*>(lineShapeFunction);
-        result.push_back(std::make_pair("type", "Gaussian"));
-        result.push_back(std::make_pair("sigma", ToString(func->sigma)));
-        result.push_back(std::make_pair("fwhm", ToString(func->Fwhm())));
-    }
-    else if (lineShapeFunction->Type() == novac::InstrumentLineShapeFunctionType::SuperGaussian)
-    {
-        const auto func = static_cast<const novac::SuperGaussianLineShape*>(lineShapeFunction);
-        result.push_back(std::make_pair("type", "Super Gaussian"));
-        result.push_back(std::make_pair("w", ToString(func->w)));
-        result.push_back(std::make_pair("k", ToString(func->k)));
-        result.push_back(std::make_pair("fwhm", ToString(func->Fwhm())));
-    }
-    else
-    {
-        // unknown type...
-    }
-
-    return result;
-}
 
 std::vector<std::pair<std::string, std::string>> InstrumentLineshapeCalibrationController::GetFittedFunctionDescription() const
 {
