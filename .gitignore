@@ -2,3 +2,6 @@ build
 backups
 /bin/Release
 /bin/Debug
+.vs/
+.vscode/
+/bin/SpectralEvaluationTests
