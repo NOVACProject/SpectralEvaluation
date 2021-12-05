@@ -30,6 +30,8 @@ namespace novac
 
         virtual std::vector<double> ListParameters() const = 0;
 
+        virtual double Fwhm() const = 0;
+
         /** Creates a copy of this instance. The copy must be delete:d to avoid memory leaks. */
         virtual ParametricInstrumentLineShape* Clone() const = 0;
     };
@@ -52,7 +54,7 @@ namespace novac
         double center = 0.0;
 
         // The full width at half maximum.
-        double Fwhm() const { return sigma * 2.35482004; }
+        virtual double Fwhm() const override { return sigma * 2.35482004; }
 
         InstrumentLineShapeFunctionType Type() const override { return InstrumentLineShapeFunctionType::Gaussian; }
 
@@ -78,6 +80,8 @@ namespace novac
         InstrumentLineShapeFunctionType Type() const override { return InstrumentLineShapeFunctionType::AsymmetricGaussian; }
 
         virtual std::vector<double> ListParameters() const override { return std::vector<double>{ sigmaLeft, sigmaRight }; }
+
+        virtual double Fwhm() const override { return 0.0; /* Not yet implemented */ }
 
         virtual ParametricInstrumentLineShape* Clone() const override
         {
@@ -106,7 +110,7 @@ namespace novac
         double center = 0.0;
 
         // The full width at half maximum.
-        double Fwhm() const;
+        virtual double Fwhm() const override;
 
         InstrumentLineShapeFunctionType Type() const override { return InstrumentLineShapeFunctionType::SuperGaussian; }
 
