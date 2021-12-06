@@ -182,6 +182,20 @@ namespace novac
         return false;
     }
 
+    double GetSpectrumMaximumIntensity(const CSpectrum& spectrum)
+    {
+        if (EqualsIgnoringCase(spectrum.m_info.m_specModelName, "S2000"))
+        {
+            // Default spectrometer model. May or may not be correct
+            const auto& model = CSpectrometerDatabase::GetInstance().GuessModelFromSerial(spectrum.m_info.m_device);
+            return model.maximumIntensity;
+        }
+        else
+        {
+            // The model is not the default, assume this is correct.
+            return CSpectrometerDatabase::GetInstance().GetModel(spectrum.m_info.m_specModelName).maximumIntensity;
+        }
+    }
 
     int ScanEvaluationBase::GetIndexOfSpectrumWithBestIntensity(const CFitWindow& fitWindow, CScanFileHandler& scan)
     {
@@ -196,7 +210,7 @@ namespace novac
         scan.GetSky(sky);
         double bestSaturation = -1.0;
         const double skyFitIntensity = sky.MaxValue(fitWindow.fitLow, fitWindow.fitHigh);
-        const double maxInt = CSpectrometerDatabase::GetInstance().GetModel(sky.m_info.m_specModelName).maximumIntensity;
+        const double maxInt = GetSpectrumMaximumIntensity(sky);
 
         const double skyFitSaturation = (sky.NumSpectra() > 0) ? (skyFitIntensity / (sky.NumSpectra() * maxInt)) : skyFitIntensity / maxInt;
 
