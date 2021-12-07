@@ -4,12 +4,11 @@
 #include <string>
 #include <vector>
 #include <SpectralEvaluation/Spectra/WavelengthRange.h>
-#include <SpectralEvaluation/Spectra/SpectrumInfo.h>
+#include <SpectralEvaluation/Spectra/Spectrum.h>
 
 namespace novac
 {
     class InstrumentCalibration;
-    class CSpectrum;
 }
 
 /**
@@ -154,6 +153,8 @@ protected:
 
 };
 
+/** Subclass of WavelengthCalibrationController which takes the path to a measured spectrum
+    and a measured dark spectrum as input */
 class MobileDoasWavelengthCalibrationController : public WavelengthCalibrationController
 {
 public:
@@ -161,7 +162,7 @@ public:
         : WavelengthCalibrationController() { }
 
 
-    /** The full path to the spectrum to calibrate (should be a .pak file) */
+    /** The full path to the spectrum to calibrate */
     std::string m_inputSpectrumFile;
 
     /** The full path to the dark spectrum of the spectrum to calibrate */
@@ -170,7 +171,21 @@ public:
 protected:
 
     virtual void ReadInput(novac::CSpectrum& measurement) override;
-
 };
 
+/** Subclass of WavelengthCalibrationController which doesn't read the data from disk but
+    uses a spectrum in memory as target for the calibration. */
+class InMemoryWavelengthCalibrationController : public WavelengthCalibrationController
+{
+public:
+    InMemoryWavelengthCalibrationController()
+        : WavelengthCalibrationController() { }
+
+    /** The spectrum to calibrate. Notice that this may be modified during the calibration. */
+    novac::CSpectrum m_measuredSpectrum;
+
+protected:
+
+    virtual void ReadInput(novac::CSpectrum& measurement) override;
+};
 

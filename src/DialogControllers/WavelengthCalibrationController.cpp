@@ -425,3 +425,8 @@ void MobileDoasWavelengthCalibrationController::ReadInput(novac::CSpectrum& meas
     }
 }
 
+void InMemoryWavelengthCalibrationController::ReadInput(novac::CSpectrum& measuredSpectrum)
+{
+    measuredSpectrum = m_measuredSpectrum;
+}
+
