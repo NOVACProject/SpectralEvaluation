@@ -23,12 +23,13 @@ std::unique_ptr<CSpectrum> CrossSectionSpectrumGenerator::GetCrossSection(
     const std::vector<double>& pixelToWavelengthMapping,
     const novac::CCrossSectionData& measuredInstrumentLineShape)
 {
-    return GetCrossSection(pixelToWavelengthMapping, measuredInstrumentLineShape, true);
+    return GetCrossSection(pixelToWavelengthMapping, measuredInstrumentLineShape, 0.0, true);
 }
 
 std::unique_ptr<CSpectrum> CrossSectionSpectrumGenerator::GetCrossSection(
     const std::vector<double>& pixelToWavelengthMapping,
     const novac::CCrossSectionData& measuredInstrumentLineShape,
+    double fwhmOfInstrumentLineShape,
     bool normalize)
 {
     ReadCrossSection();
@@ -41,7 +42,9 @@ std::unique_ptr<CSpectrum> CrossSectionSpectrumGenerator::GetCrossSection(
         *m_highResolutionCrossSection,
         convolvedReferenceSpectrumData,
         WavelengthConversion::None,
-        ConvolutionMethod::Fft);
+        ConvolutionMethod::Fft,
+        fwhmOfInstrumentLineShape,
+        normalize);
 
     std::unique_ptr<CSpectrum> convolvedReferenceSpectrum = std::make_unique<CSpectrum>(pixelToWavelengthMapping, convolvedReferenceSpectrumData);
     if (normalize)

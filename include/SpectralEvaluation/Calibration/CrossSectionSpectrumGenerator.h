@@ -46,6 +46,7 @@ public:
     virtual std::unique_ptr<CSpectrum> GetCrossSection(
         const std::vector<double>& wavelengthCalibration,
         const novac::CCrossSectionData& measuredInstrumentLineShape,
+        double fwhmOfInstrumentLineShape,
         bool normalize) = 0;
 };
 
@@ -72,6 +73,8 @@ public:
     /// <param name="pixelToWavelengthMapping">The wavelength (in nm air) for each pixel on the detector.</param>
     /// <param name="measuredInstrumentLineShape">A measurement of the instrument line shape</param>
     /// <returns>The high resolution absorption cross section spectrum convolved with the measured slf and resample to the provided grid.</returns>
+    /// <throws>std::invalid_argument if the measuredInstrumentLineShape does not have a valid wavelength calibration 
+    ///     or the fwhm could not be determined from the instrument line shape. </throws>
     virtual std::unique_ptr<CSpectrum> GetCrossSection(
         const std::vector<double>& wavelengthCalibration,
         const novac::CCrossSectionData& measuredInstrumentLineShape) override;
@@ -83,9 +86,12 @@ public:
     /// <param name="pixelToWavelengthMapping">The wavelength (in nm air) for each pixel on the detector.</param>
     /// <param name="measuredInstrumentLineShape">A measurement of the instrument line shape</param>
     /// <returns>The high resolution absorption cross section spectrum convolved with the measured slf and resample to the provided grid.</returns>
+    /// <throws>std::invalid_argument if the measuredInstrumentLineShape does not have a valid wavelength calibration 
+    ///     or the fwhm was not provided and could not be determined from the instrument line shape. </throws>
     virtual std::unique_ptr<CSpectrum> GetCrossSection(
         const std::vector<double>& wavelengthCalibration,
         const novac::CCrossSectionData& measuredInstrumentLineShape,
+        double fwhmOfInstrumentLineShape,
         bool normalize) override;
 
 private:

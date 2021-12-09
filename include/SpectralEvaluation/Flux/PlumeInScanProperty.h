@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Defintions.h"
+#include "../Definitions.h"
 #include <vector>
 #include <string>
 

@@ -147,33 +147,38 @@ bool ConvolveReference(
     CCrossSectionData& result,
     WavelengthConversion conversion)
 {
-    CCrossSectionData pixelToWavelengthMapping;
-    if (!ReadCrossSectionFile(pixelToWavelengthMappingFile, pixelToWavelengthMapping, true))
+    try
     {
+        CCrossSectionData pixelToWavelengthMapping;
+        if (!ReadCrossSectionFile(pixelToWavelengthMappingFile, pixelToWavelengthMapping, true))
+        {
+            return false;
+        }
+
+        CCrossSectionData slf;
+        if (!ReadCrossSectionFile(slfFile, slf))
+        {
+            return false;
+        }
+
+        CCrossSectionData highResReference;
+        if (!ReadCrossSectionFile(highResReferenceFile, highResReference))
+        {
+            return false;
+        }
+
+        ConvolveReference(pixelToWavelengthMapping.m_waveLength, slf, highResReference, result.m_crossSection, conversion);
+
+        // save the wavelengths as well
+        result.m_waveLength = pixelToWavelengthMapping.m_waveLength;
+
+        return true;
+    }
+    catch (std::exception& e)
+    {
+        std::cout << "Exception in ConvolveReference: " << e.what() << std::endl;
         return false;
     }
-
-    CCrossSectionData slf;
-    if (!ReadCrossSectionFile(slfFile, slf))
-    {
-        return false;
-    }
-
-    CCrossSectionData highResReference;
-    if (!ReadCrossSectionFile(highResReferenceFile, highResReference))
-    {
-        return false;
-    }
-
-    if (!ConvolveReference(pixelToWavelengthMapping.m_waveLength, slf, highResReference, result.m_crossSection, conversion))
-    {
-        return false;
-    }
-
-    // save the wavelengths as well
-    result.m_waveLength = pixelToWavelengthMapping.m_waveLength;
-
-    return true;
 }
 
 void CreateGaussian(double gaussianSigma, double deltaLambda, CCrossSectionData& gaussian)
@@ -206,32 +211,37 @@ bool ConvolveReferenceGaussian(
     CCrossSectionData& result,
     WavelengthConversion conversion)
 {
-    CCrossSectionData pixelToWavelengthMapping;
-    if (!ReadCrossSectionFile(pixelToWavelengthMappingFile, pixelToWavelengthMapping, true))
+    try
     {
+        CCrossSectionData pixelToWavelengthMapping;
+        if (!ReadCrossSectionFile(pixelToWavelengthMappingFile, pixelToWavelengthMapping, true))
+        {
+            return false;
+        }
+
+        CCrossSectionData highResReference;
+        if (!ReadCrossSectionFile(highResReferenceFile, highResReference))
+        {
+            return false;
+        }
+
+        // Generate a gaussian with high enough resolution
+        CCrossSectionData slf;
+        const double slfDeltaLambda = std::min(0.25 * Resolution(highResReference.m_waveLength), gaussianSigma * 0.125);
+        CreateGaussian(gaussianSigma, slfDeltaLambda, slf);
+
+        ConvolveReference(pixelToWavelengthMapping.m_waveLength, slf, highResReference, result.m_crossSection, conversion);
+
+        // save the wavelengths as well
+        result.m_waveLength = pixelToWavelengthMapping.m_waveLength;
+
+        return true;
+    }
+    catch (std::exception& e)
+    {
+        std::cout << "Exception in ConvolveReferenceGaussian: " << e.what() << std::endl;
         return false;
     }
-
-    CCrossSectionData highResReference;
-    if (!ReadCrossSectionFile(highResReferenceFile, highResReference))
-    {
-        return false;
-    }
-
-    // Generate a gaussian with high enough resolution
-    CCrossSectionData slf;
-    const double slfDeltaLambda = std::min(0.25 * Resolution(highResReference.m_waveLength), gaussianSigma * 0.125);
-    CreateGaussian(gaussianSigma, slfDeltaLambda, slf);
-
-    if (!ConvolveReference(pixelToWavelengthMapping.m_waveLength, slf, highResReference, result.m_crossSection, conversion))
-    {
-        return false;
-    }
-
-    // save the wavelengths as well
-    result.m_waveLength = pixelToWavelengthMapping.m_waveLength;
-
-    return true;
 }
 
 void Convert(const CCrossSectionData& highResReference, WavelengthConversion conversion, CCrossSectionData& result)
@@ -330,7 +340,7 @@ size_t GetNonReduciblePrime(size_t number)
     return number;
 }
 
-bool ConvolveReference(
+void ConvolveReference(
     const std::vector<double>& pixelToWavelengthMapping,
     const CCrossSectionData& slf,
     const CCrossSectionData& highResReference,
@@ -342,13 +352,11 @@ bool ConvolveReference(
 {
     if (slf.m_waveLength.size() != slf.m_crossSection.size())
     {
-        std::cout << " Error in call to 'ConvolveReference', the SLF must have as many values as wavelength values." << std::endl;
-        return false;
+        throw std::invalid_argument(" Error in call to 'ConvolveReference', the SLF must have as many values as wavelength values.");
     }
     if (highResReference.m_waveLength.size() != highResReference.m_crossSection.size())
     {
-        std::cout << " Error in call to 'ConvolveReference', the reference must have as many values as wavelength values." << std::endl;
-        return false;
+        throw std::invalid_argument(" Error in call to 'ConvolveReference', the reference must have as many values as wavelength values.");
     }
 
     // If desired, convert the high-res reference from vacuum to air
@@ -362,8 +370,7 @@ bool ConvolveReference(
     }
     if (fwhmOfInstrumentLineShape < std::numeric_limits<float>::epsilon())
     {
-        std::cout << " Error in call to 'ConvolveReference', the estimated fwhm of the instrument line shape is zero." << std::endl;
-        return false;
+        throw std::invalid_argument(" Error in call to 'ConvolveReference', the estimated fwhm of the instrument line shape is zero.");
     }
     const double minimumAllowedResolution = 0.02 * fwhmOfInstrumentLineShape; // do use at least 50 points per FWHM of the SLF
     const double maximumAllowedResolution = 0.01 * fwhmOfInstrumentLineShape; // do not use more than 100 points per FWHM of the SLF
@@ -459,8 +466,6 @@ bool ConvolveReference(
     convolutionGrid.Generate(resultSpec.m_waveLength);
 
     Resample(resultSpec, pixelToWavelengthMapping, result);
-
-    return true;
 }
 
 bool ConvolveReference_Fast(

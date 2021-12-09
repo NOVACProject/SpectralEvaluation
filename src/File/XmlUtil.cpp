@@ -20,7 +20,6 @@ std::string GetStopTag(const char* elementName)
     return tag;
 }
 
-// TODO: Unit-test
 int ParseXmlInteger(const char* xmlTag, const std::string& entireLine, int defaultValue)
 {
     if (xmlTag == nullptr || strlen(xmlTag) == 0)

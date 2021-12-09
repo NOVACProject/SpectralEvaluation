@@ -19,6 +19,10 @@ public:
         m_msg(msg)
     {}
 
+    DoasFitException(const std::string& msg) :
+        m_msg(msg.c_str())
+    {}
+
     const char* what() const noexcept override final { return m_msg; }
 };
 

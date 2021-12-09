@@ -7,11 +7,13 @@ cmake_minimum_required (VERSION 3.6)
 add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/main.cpp
     ${CMAKE_CURRENT_LIST_DIR}/catch.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_File.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_InstrumentCalibrationInStdFile.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTest_ScanFileHandler.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTest_SpectrumIO.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_InstrumentLineshapeCalibrationController.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_ScanFileHandler.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_SpectrumIO.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_StdFile.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_WavelengthCalibration.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_WavelengthCalibrationController.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Air.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Convolution.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Correspondence.cpp
