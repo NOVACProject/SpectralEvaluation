@@ -98,6 +98,7 @@ namespace novac
         static SpectrometerModel SpectrometerModel_QE65000() { return SpectrometerModel{ "QE65000", 65535, false, false }; }
         static SpectrometerModel SpectrometerModel_MAYAPRO() { return SpectrometerModel{ "MAYAPRO", 65535, false, false }; }
         static SpectrometerModel SpectrometerModel_AVASPEC() { return SpectrometerModel{ "AVASPEC", 262143, false, true }; }
+        static SpectrometerModel SpectrometerModel_FLAME() { return SpectrometerModel{ "FLAME", 65536, false, true }; }
 
     private:
         CSpectrometerDatabase();
@@ -108,9 +109,9 @@ namespace novac
 
     /// ----------- Free Functions, useful for spectrometer related questions ----------- 
 
-    // Calculates the maximum intensity necessary to display a spectrum with the 
-    //  provided collection properties, based on the number of spectra measured and
-    //  the spectrometer model.
+    /** Calculates the maximum intensity necessary to display a spectrum with the
+        provided collection properties, based on the number of spectra measured and
+        the spectrometer model. */
     double FullDynamicRangeForSpectrum(const CSpectrumInfo& info);
 
 }

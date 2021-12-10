@@ -40,6 +40,9 @@ namespace novac
 
         SpectrometerModel AVASPEC = SpectrometerModel_AVASPEC();
         modelDb.push_back(AVASPEC);
+
+        SpectrometerModel FLAME = SpectrometerModel_FLAME();
+        modelDb.push_back(FLAME);
     }
 
     SpectrometerModel CSpectrometerDatabase::GuessModelFromSerial(const std::string& deviceSerialNumber)
@@ -79,6 +82,10 @@ namespace novac
         else if (Contains(deviceSerialNumber, "M1") && deviceSerialNumber.size() == 9)
         {
             return CSpectrometerDatabase::SpectrometerModel_AVASPEC();
+        }
+        else if (Contains(deviceSerialNumber, "FLM"))
+        {
+            return CSpectrometerDatabase::SpectrometerModel_FLAME();
         }
         else
         {
