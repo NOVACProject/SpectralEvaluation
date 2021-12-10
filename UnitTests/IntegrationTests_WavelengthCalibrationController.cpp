@@ -1,4 +1,4 @@
-#include <SpectralEvaluation/DialogControllers/WavelengthCalibrationController.h>
+#include <SpectralEvaluation/DialogControllers/NovacProgramWavelengthCalibrationController.h>
 #include <SpectralEvaluation/Calibration/InstrumentCalibration.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/File/File.h>
