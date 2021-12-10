@@ -489,4 +489,20 @@ namespace novac
         }
     }
 
+    double WavelengthToFractionalPixel(const std::vector<double>& pixelToWavelengthMapping, double wavelength)
+    {
+        if (wavelength <= pixelToWavelengthMapping.front())
+        {
+            return 0.0;
+        }
+        else if (wavelength > pixelToWavelengthMapping.back())
+        {
+            return static_cast<double>(pixelToWavelengthMapping.size() - 1);
+        }
+        else
+        {
+            return novac::GetFractionalIndex(pixelToWavelengthMapping, wavelength);
+        }
+    }
+
 }

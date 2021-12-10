@@ -75,13 +75,13 @@ public:
 
     /** Saves the resulting instrument line shape information as a .std file.
         Notice that both 'Update' and 'FitFunctionToLineShape' must have been called prior to this. */
-    void SaveResultAsStd(size_t peakIdx, const std::string& filename);
+    void SaveResultAsStd(const std::string& filename);
 
     /** Saves the resulting pixel-to-wavelength mapping information as a .clb file. */
     void SaveResultAsClb(const std::string& filename);
 
     /** Saves the resulting instrument line shape information as a .slf file. */
-    void SaveResultAsSlf(size_t peakIdx, const std::string& filename);
+    void SaveResultAsSlf(const std::string& filename);
 
 private:
     void ClearFittedLineShape();

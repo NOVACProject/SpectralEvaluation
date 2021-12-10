@@ -171,9 +171,9 @@ namespace novac
 
         struct LineShapeUpdate
         {
-            double currentError;    // This is the chi2 of the DOAS fit without the parameter adjustment.
-            double residualSize;    // This is the chi2 of the DOAS fit with the parameter adjustment.
-            double shift;           // This is the shift of the DOAS fit with the parameter adjustment.
+            double currentError = 0.0;    // This is the chi2 of the DOAS fit without the parameter adjustment.
+            double residualSize = 0.0;    // This is the chi2 of the DOAS fit with the parameter adjustment.
+            double shift = 0.0;           // This is the shift of the DOAS fit with the parameter adjustment.
             std::vector<double> parameterDelta; // The retrieved parameter adjustment.
         };
 

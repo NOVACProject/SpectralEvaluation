@@ -68,12 +68,12 @@ namespace novac
         /// pixel-to-wavelength mapping polynomial. A large value shows that the result
         /// is valid over a larger pixel range.
         /// </summary>
-        double pixelToWavelengthMappingPixelRange;
+        double pixelToWavelengthMappingPixelRange = 0.0;
 
         /// <summary>
         /// The total number of inliers into the pixel-to-wavelength mapping polynomial.
         /// </summary>
-        size_t pixelToWavelengthMappingInliers;
+        size_t pixelToWavelengthMappingInliers = 0;
 
         /// <summary>
         /// The estimation of the instrument line shape.

@@ -18,11 +18,10 @@ namespace novac
         return GetTestDataDirectory() + std::string("SO2_Bogumil(2003)_293K_239-395nm.txt");
     }
 
-    static std::string GetQDoasConvolvedSO2CrossSectionFile()
-    {
-        return GetTestDataDirectory() + std::string("SO2_QDOAS.xs");
-    }
-
+    // static std::string GetQDoasConvolvedSO2CrossSectionFile()
+    // {
+    //     return GetTestDataDirectory() + std::string("SO2_QDOAS.xs");
+    // }
 
     TEST_CASE("ReadCrossSectionFile with simple two column cross section file", "[ReadCrossSectionFile][IntegrationTest]")
     {

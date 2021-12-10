@@ -22,10 +22,10 @@
 
 namespace novac
 {
-
     // General functions declared elsewhere.
     std::pair<double, double> GetFwhm(const std::vector<double>& lineShape);
     size_t WavelengthToPixel(const std::vector<double>& pixelToWavelengthMapping, double wavelength);;
+    double WavelengthToFractionalPixel(const std::vector<double>& pixelToWavelengthMapping, double wavelength);;
 
     bool IsExistingFile(const std::string& fullFileName)
     {
@@ -453,11 +453,14 @@ namespace novac
 
         if (calibration.instrumentLineShapeCenter > 0.0)
         {
-            extendedFileInfo.Marker = WavelengthToPixel(calibration.pixelToWavelengthMapping, calibration.instrumentLineShapeCenter);
+            extendedFileInfo.Marker = WavelengthToFractionalPixel(calibration.pixelToWavelengthMapping, calibration.instrumentLineShapeCenter);
         }
         else
         {
-            extendedFileInfo.Marker = instrumentLineShapeCenterPixel;
+            const double startPixel = WavelengthToFractionalPixel(calibration.pixelToWavelengthMapping, instrumentLineShapeStartWavelength);
+            const double endPixel = 1 + WavelengthToFractionalPixel(calibration.pixelToWavelengthMapping, instrumentLineShapeEndWavelength);
+
+            extendedFileInfo.Marker = 0.5 * (startPixel + endPixel);
         }
 
         // If there is a parameterized instrument line shape function

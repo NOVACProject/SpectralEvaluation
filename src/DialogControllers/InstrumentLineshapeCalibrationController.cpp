@@ -245,14 +245,8 @@ std::pair<std::string, std::string> FormatProperty(const char* name, double valu
     return std::make_pair(std::string(name), std::string(formattedValue));
 }
 
-void InstrumentLineshapeCalibrationController::SaveResultAsStd(size_t peakIdx, const std::string& filename)
+void InstrumentLineshapeCalibrationController::SaveResultAsStd(const std::string& filename)
 {
-    // Extract the spectrum in the format we want to use
-    if (peakIdx >= m_peaksFound.size())
-    {
-        throw std::invalid_argument("Invalid index of mercury peak, please select a peak and try again");
-    }
-
     // Create an instrument calibration with a normalized intensity of the instrument line shape
     novac::InstrumentCalibration calibrationWithNormalizedInstrumentLineShape;
     calibrationWithNormalizedInstrumentLineShape.pixelToWavelengthMapping = m_resultingCalibration->pixelToWavelengthMapping;
@@ -280,7 +274,7 @@ void InstrumentLineshapeCalibrationController::SaveResultAsClb(const std::string
     novac::SaveDataToFile(filename, m_resultingCalibration->pixelToWavelengthMapping);
 }
 
-void InstrumentLineshapeCalibrationController::SaveResultAsSlf(size_t peakIdx, const std::string& filename)
+void InstrumentLineshapeCalibrationController::SaveResultAsSlf(const std::string& filename)
 {
     novac::CCrossSectionData instrumentLineShape;
     instrumentLineShape.m_crossSection = m_resultingCalibration->instrumentLineShape;

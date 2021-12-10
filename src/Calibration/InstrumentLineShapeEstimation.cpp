@@ -206,7 +206,6 @@ namespace novac
     {
         // Version 2, getting the median distance between zero crossings of the spectrum in the region [measuredPixelStart, measuredPixelStop]
         // start by normalizing the data by removing the median value
-        const size_t spectrumLength = static_cast<size_t>(spectrum.m_length);
         std::vector<double> normalizedData{ spectrum.m_data + pixelRange.from, spectrum.m_data + pixelRange.to };
         std::vector<double> copyOfData{ begin(normalizedData), end(normalizedData) };
         auto median = Median(copyOfData);

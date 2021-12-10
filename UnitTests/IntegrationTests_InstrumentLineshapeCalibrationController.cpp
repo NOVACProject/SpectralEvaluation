@@ -107,12 +107,13 @@ namespace novac
 
         SECTION("SaveResultAsStd - No function fitted - saves the measured instrument line shape to a file")
         {
-            sut.m_readWavelengthCalibrationFromFile = false; // i.e. perform a calibration 
+            sut.m_readWavelengthCalibrationFromFile = false; // i.e. perform a calibration
             sut.Update();   // read the files and locate the emission lines
+            // save peak number 2, the 302nm, to file. This is the call which determines the peak to save below
             sut.FitFunctionToLineShape(2, InstrumentLineshapeCalibrationController::LineShapeFunction::None);
 
             // Act
-            sut.SaveResultAsStd(2, GetInstrumentCalibrationStdFileName()); // save peak number 2, the 302nm, to file.
+            sut.SaveResultAsStd(GetInstrumentCalibrationStdFileName());
 
             // Now read in the calibration again from file and make sure that we get the expected result back. 
             InstrumentCalibration readCalibration;
@@ -133,12 +134,13 @@ namespace novac
 
         SECTION("SaveResultAsStd - Super Gaussian function fitted - saves the gaussian instrument line shape to a file")
         {
-            sut.m_readWavelengthCalibrationFromFile = false; // i.e. perform a calibration 
+            sut.m_readWavelengthCalibrationFromFile = false; // i.e. perform a calibration
             sut.Update();   // read the files and locate the emission lines
+            // save peak number 2, the 302nm, to file. This is the call which determines the peak to save below
             sut.FitFunctionToLineShape(2, InstrumentLineshapeCalibrationController::LineShapeFunction::SuperGauss);
 
             // Act
-            sut.SaveResultAsStd(2, GetInstrumentCalibrationStdFileName()); // save peak number 2, the 302nm, to file.
+            sut.SaveResultAsStd(GetInstrumentCalibrationStdFileName()); // save peak number 2, the 302nm, to file.
 
             // Now read in the calibration again from file and make sure that we get the expected result back. 
             InstrumentCalibration readCalibration;
