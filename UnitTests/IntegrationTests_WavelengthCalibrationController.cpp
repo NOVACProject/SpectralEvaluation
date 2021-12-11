@@ -54,7 +54,7 @@ namespace novac
         // Make sure that RunCalibration produces a correct pixel to wavelength polynomial.
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial.size() == 4);
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[0] == Approx(278.618).margin(0.01));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[0] == Approx(278.618).margin(0.1));
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[1] == Approx(0.0855182).margin(1e-6));
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2] == Approx(-6.24709e-06).margin(1e-9));
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3] == Approx(-3.76497e-10).margin(1e-14));
