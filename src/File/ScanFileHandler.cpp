@@ -251,7 +251,6 @@ namespace novac
             return 1;
     }
 
-    /** Gets the sky spectrum of the scan */
     int CScanFileHandler::GetSky(CSpectrum& spec) const {
         spec = m_sky;
 
@@ -261,7 +260,6 @@ namespace novac
             return 1;
     }
 
-    /** Gets the offset spectrum of the scan - if any */
     int CScanFileHandler::GetOffset(CSpectrum& spec) const {
         spec = m_offset;
 

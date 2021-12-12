@@ -67,7 +67,8 @@ namespace novac
         void DecrementOneDay();
 
         /** Calculates the difference, in seconds, between two times.
-                If t2 is later than t1, then the result will be negative. */
+                If t2 is later than t1, then the result will be negative.
+                If either of the two is an invalid time (e.g. month=0 or month=14) then zero is returned. */
         static double Difference(const CDateTime& t1, const CDateTime& t2);
 
         /** Attempts to parse the date found in the string 'dateStr', the resulting

@@ -146,8 +146,6 @@ namespace novac
         this->second = (unsigned char)tim->tm_sec;
     }
 
-    /** Calculates the difference, in seconds, between two times.
-            If t2 is later than t1, then the result will be negative. */
     double CDateTime::Difference(const CDateTime& t1, const CDateTime& t2) {
         struct tm tid1, tid2;
         tid1.tm_year = t1.year - 1900;

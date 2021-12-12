@@ -338,8 +338,8 @@ namespace novac
             // The fit is good enough to use the values
             for (int it = 0; it < improvedFitWindow.nRef; ++it)
             {
-                improvedFitWindow.ref[it].m_shiftOption = SHIFT_FIX;
-                improvedFitWindow.ref[it].m_squeezeOption = SHIFT_FIX;
+                improvedFitWindow.ref[it].m_shiftOption = SHIFT_TYPE::SHIFT_FIX;
+                improvedFitWindow.ref[it].m_squeezeOption = SHIFT_TYPE::SHIFT_FIX;
                 improvedFitWindow.ref[it].m_shiftValue = shift;
                 improvedFitWindow.ref[it].m_squeezeValue = squeeze;
             }
