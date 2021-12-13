@@ -97,7 +97,7 @@ namespace novac
         static SpectrometerModel SpectrometerModel_HR4000() { return SpectrometerModel{ "HR4000", 16535, false, false }; }
         static SpectrometerModel SpectrometerModel_QE65000() { return SpectrometerModel{ "QE65000", 65535, false, false }; }
         static SpectrometerModel SpectrometerModel_MAYAPRO() { return SpectrometerModel{ "MAYAPRO", 65535, false, false }; }
-        static SpectrometerModel SpectrometerModel_AVASPEC() { return SpectrometerModel{ "AVASPEC", 262143, false, true }; }
+        static SpectrometerModel SpectrometerModel_AVASPEC() { return SpectrometerModel{ "AVASPEC", 16383, false, true }; }
         static SpectrometerModel SpectrometerModel_FLAME() { return SpectrometerModel{ "FLAME", 65536, false, true }; }
 
     private:
