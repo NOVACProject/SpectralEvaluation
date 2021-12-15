@@ -73,6 +73,12 @@ public:
     /** An elementary log, will contain debugging information from running the calibration. */
     std::vector<std::string> m_log;
 
+    /** An optional override of the check for the maximum intensity of the spectrometer model.
+        Sometimes the intensity is specified by the user directly and not taken from the device (e.g. directory reading mode in MobileDoas)
+        and in this case we do not want to use the information in the spectrum about the model for calculating a saturation ratio.
+        This value will be used if set to a value > 0.0 . */
+    double m_spectrometerMaximumIntensityForSingleReadout = -1.0;
+
     struct WavelengthCalibrationDebugState
     {
         WavelengthCalibrationDebugState(size_t estimatedSize)
@@ -146,6 +152,8 @@ protected:
     /** Checks the provided (dark corrected) spectrum and makes sure that it is good enough for the calibration to succeed.
         @throws an std::invalid_argument exception if the spectrum isn't good enough.  */
     void CheckSpectrumQuality(const novac::CSpectrum& spectrum) const;
+
+    double GetSpectrometerMaxIntensityForSingleReadout(const novac::CSpectrum& spectrum, std::string& modelName) const;
 
     void Log(const std::string& message);
     void Log(const std::string& message, double value);
