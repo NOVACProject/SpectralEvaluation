@@ -54,17 +54,17 @@ namespace novac
         // Make sure that RunCalibration produces a correct pixel to wavelength polynomial.
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial.size() == 4);
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[0] == Approx(278.618).margin(0.1));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[1] == Approx(0.0855182).margin(1e-6));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2] == Approx(-6.24709e-06).margin(1e-9));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3] == Approx(-3.76497e-10).margin(1e-14));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[0] == Approx(278.6).margin(0.2));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[1] == Approx(0.086).margin(1e-3));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2] == Approx(-6.2e-06).margin(1e-6));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3] == Approx(-3.8e-10).margin(2e-11));
         }
 
         // Make sure that RunCalibration produces a correct pixel to wavelength mapping.
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.size() == 2048);
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(278.618).margin(0.01));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(424.268).margin(0.01));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(278.618).margin(0.2));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(424.268).margin(0.2));
         }
 
         // Make sure that GetFinalCalibration keeps input instrument line shape.

@@ -52,7 +52,7 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
 
     // Get some parameters regarding the scan and the spectrometer
     auto model = CSpectrometerDatabase::GetInstance().GetModel(skySpectrum.m_info.m_specModelName);
-    this->m_maximumSpectrometerIntensity = model.maximumIntensity;
+    this->m_maximumSpectrometerIntensity = model.maximumIntensityForSingleReadout;
 
     if (!IsSuitableScanForRatioEvaluation(skySpectrum, darkSpectrum, scanResult, properties))
     {
@@ -175,7 +175,7 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& properties)
 {
-    if (scanResult.m_spec.size() < m_settings.minNumberOfSpectraInPlume + m_settings.numberOfSpectraOutsideOfPlume)
+    if (static_cast<int>(scanResult.m_spec.size()) < m_settings.minNumberOfSpectraInPlume + m_settings.numberOfSpectraOutsideOfPlume)
     {
         return false; // not enough spectra
     }

@@ -429,8 +429,8 @@ namespace novac
         // Magic parameters...
         const double minimumPeakIntensityInMeasuredSpectrum = 0.02; // in the normalized units.
         const double minimumPeakIntensityInFraunhoferReference = 0.01; // in the normalized units.
-        novac::RansacWavelengthCalibrationSettings ransacSettings; // Magic method parameters. These needs to be optimized...
-        novac::CorrespondenceSelectionSettings correspondenceSelectionSettings; // Magic selection parameters...
+        novac::RansacWavelengthCalibrationSettings ransacSettings;
+        novac::CorrespondenceSelectionSettings correspondenceSelectionSettings;
 
         // Setup
         novac::RansacWavelengthCalibrationSetup ransacCalibrationSetup{ ransacSettings };

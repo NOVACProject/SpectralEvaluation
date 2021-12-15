@@ -56,9 +56,9 @@ std::vector<std::pair<std::string, std::string>> GetFunctionDescription(const no
 }
 
 WavelengthCalibrationController::WavelengthCalibrationController()
-    : m_calibrationDebug(0U),
-    m_instrumentLineShapeFitOption(InstrumentLineShapeFitOption::None),
-    m_instrumentLineShapeFitRegion(330.0, 350.0)
+    : m_instrumentLineShapeFitOption(InstrumentLineShapeFitOption::None),
+    m_instrumentLineShapeFitRegion(330.0, 350.0),
+    m_calibrationDebug(0U)
 {
 }
 
