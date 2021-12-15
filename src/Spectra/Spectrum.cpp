@@ -542,14 +542,7 @@ namespace novac
         }
         toPixel = std::max(fromPixel, std::min(toPixel, static_cast<int>(spectrum.m_length)));
 
-        if (spectrum.m_info.m_numSpec > 0)
-        {
-            return spectrum.MaxValue(fromPixel, toPixel) / (maximumIntensity * spectrum.m_info.m_numSpec);
-        }
-        else
-        {
-            return spectrum.MaxValue(fromPixel, toPixel) / maximumIntensity;
-        }
+        return spectrum.MaxValue(fromPixel, toPixel) / maximumIntensity;
     }
 
     double GetMaximumSaturationRatioOfSpectrum(
@@ -557,13 +550,15 @@ namespace novac
         const SpectrometerModel& model,
         int fromPixel, int toPixel)
     {
-        return GetMaximumSaturationRatioOfSpectrum(spectrum, model.maximumIntensity, fromPixel, toPixel);
+        const double maximumIntensity = model.FullDynamicRangeForSpectrum(spectrum.m_info);
+        return GetMaximumSaturationRatioOfSpectrum(spectrum, maximumIntensity, fromPixel, toPixel);
     }
 
     double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum)
     {
         auto model = CSpectrometerDatabase::GetInstance().GetModel(spectrum.m_info.m_specModelName);
-        return GetMaximumSaturationRatioOfSpectrum(spectrum, model.maximumIntensity);
+        const double maximumIntensity = model.FullDynamicRangeForSpectrum(spectrum.m_info);
+        return GetMaximumSaturationRatioOfSpectrum(spectrum, maximumIntensity);
     }
 
     void Normalize(CSpectrum& spectrum)

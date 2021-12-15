@@ -125,7 +125,7 @@ namespace novac
         scan.ResetCounter();
 
         // Get the maximum intensity of this spectrometer model (with a little bit of margin)
-        const double spectrometerDynamicRange = (CSpectrometerDatabase::GetInstance().GetModel(tmp.m_info.m_specModelName).maximumIntensity - 20);
+        const double spectrometerDynamicRange = (CSpectrometerDatabase::GetInstance().GetModel(tmp.m_info.m_specModelName).maximumIntensityForSingleReadout - 20);
 
         double spectrumIntensityInFitRegion = tmp.MaxValue(fitLow, fitHigh);
         if (spectrumIntensityInFitRegion < spectrometerDynamicRange * tmp.NumSpectra() && !tmp.IsDark())
@@ -188,12 +188,12 @@ namespace novac
         {
             // Default spectrometer model. May or may not be correct
             const auto& model = CSpectrometerDatabase::GetInstance().GuessModelFromSerial(spectrum.m_info.m_device);
-            return model.maximumIntensity;
+            return model.maximumIntensityForSingleReadout;
         }
         else
         {
             // The model is not the default, assume this is correct.
-            return CSpectrometerDatabase::GetInstance().GetModel(spectrum.m_info.m_specModelName).maximumIntensity;
+            return CSpectrometerDatabase::GetInstance().GetModel(spectrum.m_info.m_specModelName).maximumIntensityForSingleReadout;
         }
     }
 

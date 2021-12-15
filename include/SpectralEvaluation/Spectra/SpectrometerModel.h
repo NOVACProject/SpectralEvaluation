@@ -19,20 +19,21 @@ namespace novac
         };
 
         SpectrometerModel()
-            : modelName("S2000"), maximumIntensity(4095), numberOfChannels(1)
+            : modelName("S2000"), maximumIntensityForSingleReadout(4095), numberOfChannels(1)
         {
         }
 
         SpectrometerModel(const std::string& name, double maxIntensity, bool custom = true, bool averages = false)
-            :modelName(name), maximumIntensity(maxIntensity), numberOfChannels(1), isCustom(custom), averagesSpectra(averages)
+            :modelName(name), maximumIntensityForSingleReadout(maxIntensity), numberOfChannels(1), isCustom(custom), averagesSpectra(averages)
         {
         }
 
         // The given name for this spectrometer model. Name comparisons are not case sensitive.
         std::string modelName = "S2000";
 
-        // The maximum intensity of this device, defines the dynamic range.
-        double maximumIntensity = 4096;
+        // The maximum intensity of a single readout of this device, defines the dynamic range of the ADC.
+        // NB: To get the maximum intensity of a particular spectrum call FullDynamicRangeForSpectrum
+        double maximumIntensityForSingleReadout = 4096;
 
         // The number of pixels on the detector.
         int numberOfPixels = 2048;
@@ -49,7 +50,13 @@ namespace novac
         // @return true if this model is not well defined.
         bool IsUnknown() const { return modelName.size() == 0; }
 
+        /** For models where averagesSpectra is true, the maximum intensity of any spectrum equals the maximumIntensityForSingleReadout.
+            For models where averagesSpectra is false, the maximum intensity of any spectrum equals maximumIntensityForSingleReadout * number of spectra */
         bool averagesSpectra = false;
+
+        /** Calculates the maximum possible intensity of the given spectrum,
+            based on the number of spectra measured and the current spectrometer model. */
+        double FullDynamicRangeForSpectrum(const CSpectrumInfo& info) const;
     };
 
     class CSpectrometerDatabase
@@ -97,7 +104,7 @@ namespace novac
         static SpectrometerModel SpectrometerModel_HR4000() { return SpectrometerModel{ "HR4000", 16535, false, false }; }
         static SpectrometerModel SpectrometerModel_QE65000() { return SpectrometerModel{ "QE65000", 65535, false, false }; }
         static SpectrometerModel SpectrometerModel_MAYAPRO() { return SpectrometerModel{ "MAYAPRO", 65535, false, false }; }
-        static SpectrometerModel SpectrometerModel_AVASPEC() { return SpectrometerModel{ "AVASPEC", 16383, false, true }; }
+        static SpectrometerModel SpectrometerModel_AVASPEC() { return SpectrometerModel{ "AVASPEC", 16383, false, false }; }
         static SpectrometerModel SpectrometerModel_FLAME() { return SpectrometerModel{ "FLAME", 65536, false, true }; }
 
     private:

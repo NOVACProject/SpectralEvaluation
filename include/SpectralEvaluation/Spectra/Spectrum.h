@@ -238,9 +238,12 @@ namespace novac
     double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum, const SpectrometerModel& model, int fromPixel = 0, int toPixel = 0);
 
     /** @return the maximum saturation ratio of the provided spectrum, in the entire spectrum length or in a provided region.
-        @param maximumIntensity The maximum intensity which the spectrometer can produce.
+        @param maximumIntensity The maximum intensity which the spectrometer can produce FOR THE NUMBER OF READOUTS IN THE PROVIDED SPECTRUM
+            i.e. if the spectrometer averages spectra then this is same as the maximum intensity of one spectrum,
+                 if the spectrometer co-adds spectra then this is the maximum intensity of one spectrum times the number of readouts.
         @param fromPixel The first pixel to include into this measurement
-        @param toPixel The last pixel to include into this measurement. Default is 0 which corresponds to the entire spectrum length. */
+        @param toPixel The last pixel to include into this measurement. Default is 0 which corresponds to the entire spectrum length.
+        @return a fraction between zero (totally dark) and one (saturated) descriving the peak intensity of the spectrum in the given range. */
     double GetMaximumSaturationRatioOfSpectrum(const CSpectrum& spectrum, double maximumIntensity, int fromPixel = 0, int toPixel = 0);
 
     /** Normalizes the intensity of the provided spectrum to the range [0, 1] */

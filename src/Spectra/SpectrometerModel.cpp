@@ -15,6 +15,23 @@ namespace novac
     {
     }
 
+    double SpectrometerModel::FullDynamicRangeForSpectrum(const CSpectrumInfo& info) const
+    {
+        if (this->averagesSpectra)
+        {
+            return this->maximumIntensityForSingleReadout;
+        }
+        else if (info.m_numSpec > 0)
+        {
+            return this->maximumIntensityForSingleReadout * info.m_numSpec;
+        }
+        else
+        {
+            // the number of co-added spectra can sometimes be wrongly set to zero. Handle this case as well...
+            return (long)(this->maximumIntensityForSingleReadout * (info.m_peakIntensity / this->maximumIntensityForSingleReadout));
+        }
+    }
+
     CSpectrometerDatabase::CSpectrometerDatabase()
     {
         SpectrometerModel s2000 = SpectrometerModel_S2000();
@@ -168,20 +185,7 @@ namespace novac
     double FullDynamicRangeForSpectrum(const CSpectrumInfo& info)
     {
         SpectrometerModel model = CSpectrometerDatabase::GetInstance().GuessModelFromSerial(info.m_device);
-
-        if (model.averagesSpectra)
-        {
-            return model.maximumIntensity;
-        }
-        else if (info.m_numSpec > 0)
-        {
-            return model.maximumIntensity * info.m_numSpec;
-        }
-        else
-        {
-            // the number of co-added spectra can sometimes be wrongly set to zero. Handle this case as well...
-            return (long)(model.maximumIntensity * (info.m_peakIntensity / model.maximumIntensity));
-        }
+        return model.FullDynamicRangeForSpectrum(info);
     }
 
 }

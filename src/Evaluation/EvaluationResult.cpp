@@ -84,7 +84,7 @@ bool CEvaluationResult::CheckGoodnessOfFit(const CSpectrumInfo& info, float chi2
     m_evaluationStatus &= ~MARK_BAD_EVALUATION;
 
     // The maximum intensity for one spectrum (# bits in the ADC)
-    const double maxInt = CSpectrometerDatabase::GetInstance().GetModel(info.m_specModelName).maximumIntensity;
+    const double maxInt = CSpectrometerDatabase::GetInstance().GetModel(info.m_specModelName).maximumIntensityForSingleReadout;
 
     // The maximum saturation-level in the fit-region
     double fitSaturation = 0.0;
