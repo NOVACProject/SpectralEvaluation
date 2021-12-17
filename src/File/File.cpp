@@ -109,6 +109,10 @@ namespace novac
 
     bool ReadCrossSectionFile(const std::string& fullFilePath, CCrossSectionData& result, bool saveAsWavelength)
     {
+        if (fullFilePath.size() == 0)
+        {
+            throw std::invalid_argument("Attempted to read a cross section from an empty file.");
+        }
         const std::string fileEnding = Right(fullFilePath, 4);
         if (EqualsIgnoringCase(fileEnding, ".std"))
         {
