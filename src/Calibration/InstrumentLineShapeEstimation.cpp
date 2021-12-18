@@ -454,10 +454,10 @@ namespace novac
 
                 std::cout << " Updated resulted in a worse result than last iteration, reducing step size to " << stepSize << " and attempting again." << std::endl;
 
-                for (int parameterIdx = 0; parameterIdx < static_cast<int>(update.parameterDelta.size()); ++parameterIdx)
+                for (int parameterIdx = 0; parameterIdx < static_cast<int>(lastUpdate.parameterDelta.size()); ++parameterIdx)
                 {
                     const double currentValue = GetParameterValue(lastLineShape, parameterIdx);
-                    const double newValue = currentValue - stepSize * update.parameterDelta[parameterIdx];
+                    const double newValue = currentValue - stepSize * lastUpdate.parameterDelta[parameterIdx];
                     SetParameterValue(parameterizedLineShape, parameterIdx, newValue);
                 }
             }

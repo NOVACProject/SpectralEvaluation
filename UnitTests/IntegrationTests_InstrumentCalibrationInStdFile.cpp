@@ -10,9 +10,9 @@ namespace novac
 static std::string GetInstrumentCalibrationStdFileName()
 {
 #ifdef _MSC_VER
-    return std::string("../TestData/InstrumentCalibration.std");
+    return std::string("../TestData/Temporary_InstrumentCalibration.std");
 #else
-    return std::string("TestData/InstrumentCalibration.std");
+    return std::string("TestData/Temporary_InstrumentCalibration.std");
 #endif // _MSC_VER
 }
 

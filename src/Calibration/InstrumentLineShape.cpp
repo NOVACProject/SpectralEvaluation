@@ -378,12 +378,20 @@ void NormalizeAbsArea(std::vector<double>& data)
 std::vector<double> PartialDerivative(const SuperGaussianLineShape& lineShape, const std::vector<double>& x, int parameter)
 {
     const double baseline = 0.0;
-    const double delta = 0.01;
+    const double delta = 0.005;
 
-    MathFit::CSuperGaussFunction originalLineShape;
-    Setup(lineShape, originalLineShape);
-    auto x0 = GetFunctionValues(originalLineShape, x, baseline);
-    NormalizeArea(x0, x0);
+    MathFit::CSuperGaussFunction backwardLineShape;
+    Setup(lineShape, backwardLineShape);
+    if (parameter == 0)
+    {
+        backwardLineShape.SetW(lineShape.w - delta);
+    }
+    else
+    {
+        backwardLineShape.SetK(lineShape.k - delta);
+    }
+    auto xB = GetFunctionValues(backwardLineShape, x, baseline);
+    NormalizeArea(xB, xB);
 
     MathFit::CSuperGaussFunction forwardLineShape;
     Setup(lineShape, forwardLineShape);
@@ -399,11 +407,11 @@ std::vector<double> PartialDerivative(const SuperGaussianLineShape& lineShape, c
     NormalizeArea(xF, xF);
 
     std::vector<double> result;
-    result.resize(x0.size());
+    result.resize(xB.size());
 
     for (size_t ii = 0; ii < result.size(); ++ii)
     {
-        result[ii] = (xF[ii] - x0[ii]) / (delta);
+        result[ii] = (xF[ii] - xB[ii]) / (2 * delta);
     }
 
     return result;

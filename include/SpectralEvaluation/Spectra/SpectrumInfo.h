@@ -42,7 +42,7 @@ public:
     float m_compass = 0.0F;
 
     /** The battery voltage when this spectrum was read out. */
-    float m_batteryVoltage;
+    float m_batteryVoltage = 0.0F;
 
     /** The time the spectrum collection began */
     CDateTime m_startTime;

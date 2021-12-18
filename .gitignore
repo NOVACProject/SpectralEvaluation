@@ -5,3 +5,4 @@ backups
 .vs/
 .vscode/
 /bin/SpectralEvaluationTests
+/bin/TestData/Temporary_InstrumentCalibration.std
