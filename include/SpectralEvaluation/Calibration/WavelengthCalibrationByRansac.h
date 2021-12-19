@@ -27,7 +27,7 @@ namespace novac
         /// The width, in pixels, around each keypoint which will be used to gauge the error in the correspondence.
         /// The default value of 20 is retrieved as 2x the average keypoint distance in tested spectra and should hence cover the entire width of a valley / peak.
         /// </summary>
-        size_t pixelRegionSizeForCorrespondenceErrorMeasurement = 20;
+        size_t pixelRegionSizeForCorrespondenceErrorMeasurement = 40;
 
         /// <summary>
         /// The maximum pixel error in the initial pixel-to-wavelength calibration guess.
@@ -41,7 +41,7 @@ namespace novac
         /// The relative number of correspondences to select out of the total.
         /// 0.2 corresponds to selecting the 20% correspondences with the lowest error.
         /// </summary>
-        double percentageOfCorrespondencesToSelect = 0.3;
+        double percentageOfCorrespondencesToSelect = 0.2;
 
         /// <summary>
         /// The first pixel to include in the calibration routine. 
@@ -114,9 +114,9 @@ namespace novac
         /// <summary>
         /// how close a keypoint needs to be for it to be considered an inlier. In nm
         /// </summary>
-        double inlierLimitInWavelength = 0.2;
+        double inlierLimitInWavelength = 0.01;
 
-        bool refine = true;
+        bool refine = false;
 
         /// <summary>
         /// The number of threads to divide the work up into.

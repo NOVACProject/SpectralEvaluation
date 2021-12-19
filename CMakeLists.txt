@@ -80,6 +80,7 @@ target_include_directories(NovacSpectralEvaluation PUBLIC ${SPECTRALEVAUATION_IN
 
 #Organize the files into folders, for ease of use
 source_group("Header Files\\Calibration"            FILES ${SPECTRUM_CALIBRATION_HEADERS})
+source_group("Header Files\\DialogControls"         FILES ${DIALOGCONTROLLERS_HEADERS})
 source_group("Header Files\\Configuration"          FILES ${SPECTRUM_CONFIGURATION_HEADERS})
 source_group("Header Files\\Evaluation"             FILES ${SPECTRUM_EVALUATION_HEADERS})
 source_group("Header Files\\File"                   FILES ${SPECTRUM_FILE_HEADERS})
@@ -91,6 +92,7 @@ source_group("Header Files\\Spectra"                FILES ${SPECTRUM_CLASS_HEADE
 
 
 source_group("Source Files\\Calibration"            FILES ${SPECTRUM_CALIBRATION_SOURCES})
+source_group("Source Files\\DialogControls"         FILES ${DIALOGCONTROLLERS_SOURCES})
 source_group("Source Files\\Configuration"          FILES ${SPECTRUM_CONFIGURATION_SOURCES})
 source_group("Source Files\\Evaluation"             FILES ${SPECTRUM_EVALUATION_SOURCES})
 source_group("Source Files\\File"                   FILES ${SPECTRUM_FILE_SOURCES})

@@ -78,17 +78,13 @@ namespace novac
             std::vector<std::pair<double, double>> attempts;
         };
 
-        InstrumentLineShapeEstimationFromKeypointDistance(const std::vector<double>& initialPixelToWavelengthMapping, size_t firstPixelToUse = 1000, size_t lastPixelToUse = 4095)
-            : InstrumentLineShapeEstimation(initialPixelToWavelengthMapping),
-            m_measuredPixelStart(firstPixelToUse),
-            m_measuredPixelStop(lastPixelToUse)
+        InstrumentLineShapeEstimationFromKeypointDistance(const std::vector<double>& initialPixelToWavelengthMapping)
+            : InstrumentLineShapeEstimation(initialPixelToWavelengthMapping)
         {
         }
 
-        InstrumentLineShapeEstimationFromKeypointDistance(const std::vector<double>& initialPixelToWavelengthMapping, const novac::CCrossSectionData& initialLineShape, size_t firstPixelToUse = 1000, size_t lastPixelToUse = 4095)
-            : InstrumentLineShapeEstimation(initialPixelToWavelengthMapping, initialLineShape),
-            m_measuredPixelStart(firstPixelToUse),
-            m_measuredPixelStop(lastPixelToUse)
+        InstrumentLineShapeEstimationFromKeypointDistance(const std::vector<double>& initialPixelToWavelengthMapping, const novac::CCrossSectionData& initialLineShape)
+            : InstrumentLineShapeEstimation(initialPixelToWavelengthMapping, initialLineShape)
         {
         }
 
@@ -105,15 +101,8 @@ namespace novac
 
         double GetMedianKeypointDistanceFromSpectrum(const CSpectrum& spectrum, const IndexRange& pixelRange, const std::string& spectrumName) const;
 
-        /** The first pixel to include when checking the properties of the spectrum.
-             Often do the signal in the spectra decline at short wavelengths and this is a means to disregard points with low intensity.
-             Notice that this is set to zero in the test-cases as those spectra does not have an intensity problem. */
-        size_t m_measuredPixelStart = 1000;
-
-        /** The last pixel to include when checking the properties of the spectrum.
-             Often do the signal in the spectra decline at long wavelengths and this is a means to disregard points with low intensity.
-             This must be larger than measuredPixelStart. */
-        size_t m_measuredPixelStop = 4095;
+        /** Returns the first and the last index value where the spectrum is consistently above the provided threshold */
+        static IndexRange Threshold(const std::vector<double>& spectrum, double threshold);
 
     };
 

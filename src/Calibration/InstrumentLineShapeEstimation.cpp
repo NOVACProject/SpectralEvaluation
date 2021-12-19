@@ -69,11 +69,20 @@ namespace novac
         {
             throw std::invalid_argument("Cannot create an initial estimate for the instrument line shape, no overlap between the instruments wavelength range and the solar spectrum's wavelength range.");
         }
+
+        std::vector<double> spectrumData{ spectrum.m_data, spectrum.m_data + spectrum.m_length };
+        const double maximumSpectrumValue = Max(spectrumData);
+        const IndexRange goodIntensityRange = Threshold(spectrumData, 0.2 * maximumSpectrumValue);
+
         const IndexRange comparisonIndexRange
         {
-            std::max(m_measuredPixelStart, WavelengthToPixel(this->pixelToWavelengthMapping, comparisonWavelengthRange.low)),
-            std::min(m_measuredPixelStop, WavelengthToPixel(this->pixelToWavelengthMapping, comparisonWavelengthRange.high))
+            std::max(goodIntensityRange.from, WavelengthToPixel(this->pixelToWavelengthMapping, comparisonWavelengthRange.low)),
+            std::min(goodIntensityRange.to, WavelengthToPixel(this->pixelToWavelengthMapping, comparisonWavelengthRange.high))
         };
+        if (comparisonIndexRange.Empty())
+        {
+            throw std::invalid_argument("Cannot create an initial estimate for the instrument line shape, no overlay between the goood intensity range of the spectrum and the solar spectrum's wavelength range.");
+        }
 
         // Prepare a high-pass filtered version of the measured spectrum, removing all baseline
         CBasicMath math;
@@ -194,6 +203,28 @@ namespace novac
         fwhm = GaussianSigmaToFwhm(estimatedGaussianSigma);
 
         return state;
+    }
+
+    IndexRange InstrumentLineShapeEstimationFromKeypointDistance::Threshold(const std::vector<double>& spectrum, double threshold)
+    {
+        IndexRange range{ 0, 0 };
+        bool foundFirstValueAboveThreshold = false;
+        const size_t halfAverageLength = 7;
+        for (size_t idx = halfAverageLength; idx < spectrum.size() - halfAverageLength - 1; ++idx)
+        {
+            const double curAverage = Average(begin(spectrum) + idx - halfAverageLength, begin(spectrum) + idx + halfAverageLength);
+            if (curAverage > threshold)
+            {
+                if (!foundFirstValueAboveThreshold)
+                {
+                    range.from = idx;
+                    foundFirstValueAboveThreshold = true;
+                }
+                range.to = idx;
+            }
+        }
+
+        return range;
     }
 
     bool LineIntersects(const std::vector<double>& data, size_t index, double threshold)
@@ -566,6 +597,8 @@ namespace novac
         auto sampledLineShape = SampleInstrumentLineShape(currentLineShape);
         const double fwhm = currentLineShape.Fwhm();
 
+        // TODO: This algorithm could be made faster if the fraunhofer spectrum isn't created on the _entire_ pixel-to-wavelength mapping
+        // but only a wavelength range slightly larger than the one used for the DOAS fit.
         auto currentFraunhoferSpectrum = fraunhoferSpectrumGen.GetFraunhoferSpectrum(this->pixelToWavelengthMapping, sampledLineShape, fwhm, false);
         if (currentFraunhoferSpectrum == nullptr || currentFraunhoferSpectrum->m_length == 0)
         {
