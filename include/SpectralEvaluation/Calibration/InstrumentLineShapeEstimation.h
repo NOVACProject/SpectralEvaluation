@@ -114,9 +114,9 @@ namespace novac
     {
     public:
 
-        InstrumentLineshapeEstimationFromDoas(const std::vector<double>& initialPixelToWavelengthMapping, const novac::CCrossSectionData& initialLineShape);
+        InstrumentLineshapeEstimationFromDoas(const std::vector<double>& initialPixelToWavelengthMapping, const novac::CCrossSectionData& initialLineShape, bool addDebugOutput = false);
 
-        InstrumentLineshapeEstimationFromDoas(const std::vector<double>& initialPixelToWavelengthMapping, const novac::SuperGaussianLineShape& initialLineShape);
+        InstrumentLineshapeEstimationFromDoas(const std::vector<double>& initialPixelToWavelengthMapping, const novac::SuperGaussianLineShape& initialLineShape, bool addDebugOutput = false);
 
         struct LineShapeEstimationAttempt
         {
@@ -157,6 +157,9 @@ namespace novac
             ICrossSectionSpectrumGenerator* ozoneSpectrumGen = nullptr);
 
     private:
+
+        /** Set to true to enable debugging output to stdout */
+        bool debugOutput = false;
 
         struct LineShapeUpdate
         {

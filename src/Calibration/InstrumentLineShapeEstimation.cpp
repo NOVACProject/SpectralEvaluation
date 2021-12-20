@@ -388,19 +388,18 @@ namespace novac
     /// --------------------------- InstrumentLineshapeEstimationFromDoas --------------------------------
     /// --------------------------------------------------------------------------------------------------
 
-    InstrumentLineshapeEstimationFromDoas::InstrumentLineshapeEstimationFromDoas(const std::vector<double>& initialPixelToWavelengthMapping, const novac::CCrossSectionData& initialLineShape)
-        : InstrumentLineShapeEstimation(initialPixelToWavelengthMapping, initialLineShape)
+    InstrumentLineshapeEstimationFromDoas::InstrumentLineshapeEstimationFromDoas(const std::vector<double>& initialPixelToWavelengthMapping, const novac::CCrossSectionData& initialLineShape, bool addDebugOutput)
+        : InstrumentLineShapeEstimation(initialPixelToWavelengthMapping, initialLineShape), debugOutput(addDebugOutput)
     {
         // Get an estimation of parameters of the Super-Gaussian from the initial line shape estimation
         if (FUNCTION_FIT_RETURN_CODE::SUCCESS != FitInstrumentLineShape(*this->initialLineShapeEstimation, this->initialLineShapeFunction))
         {
-            // TODO: change type of exception
-            throw std::invalid_argument("Failed to fit a super gaussian line shape to measured data.");
+            throw InstrumentLineShapeEstimationException("Failed to fit a super gaussian line shape to measured data.");
         }
     }
 
-    InstrumentLineshapeEstimationFromDoas::InstrumentLineshapeEstimationFromDoas(const std::vector<double>& initialPixelToWavelengthMapping, const novac::SuperGaussianLineShape& initialLineShape)
-        : InstrumentLineShapeEstimation(initialPixelToWavelengthMapping)
+    InstrumentLineshapeEstimationFromDoas::InstrumentLineshapeEstimationFromDoas(const std::vector<double>& initialPixelToWavelengthMapping, const novac::SuperGaussianLineShape& initialLineShape, bool addDebugOutput)
+        : InstrumentLineShapeEstimation(initialPixelToWavelengthMapping), debugOutput(addDebugOutput)
     {
         this->initialLineShapeFunction = initialLineShape;
         this->initialLineShapeEstimation = std::make_unique<novac::CCrossSectionData>(SampleInstrumentLineShape(initialLineShape));
@@ -432,7 +431,10 @@ namespace novac
         LineShapeEstimationResult result;
 
         SuperGaussianLineShape parameterizedLineShape = this->initialLineShapeFunction;
-        std::cout << " Initial super gaussian is (w: " << parameterizedLineShape.w << ", k: " << parameterizedLineShape.k << " giving fwhm: " << parameterizedLineShape.Fwhm() << ")" << std::endl;
+        if (debugOutput)
+        {
+            std::cout << " Initial super gaussian is (w: " << parameterizedLineShape.w << ", k: " << parameterizedLineShape.k << " giving fwhm: " << parameterizedLineShape.Fwhm() << ")" << std::endl;
+        }
 
         InstrumentLineshapeEstimationFromDoas::LineShapeUpdate lastUpdate;
         lastUpdate.residualSize = std::numeric_limits<double>::max();
@@ -458,8 +460,11 @@ namespace novac
             currentAttempt.lineShape = parameterizedLineShape;
             result.attempts.push_back(currentAttempt);
 
-            std::cout << " Super gaussian (w: " << parameterizedLineShape.w << ", k: " << parameterizedLineShape.k << ", fwhm: " << parameterizedLineShape.Fwhm() << ") gave currentError : " << update.currentError << " (with pa : " << update.residualSize << ") and shift : " << update.shift << std::endl;
-            std::cout << "    Delta is (w: " << update.parameterDelta[0] << ", k: " << update.parameterDelta[1] << ") " << std::endl;
+            if (debugOutput)
+            {
+                std::cout << " Super gaussian (w: " << parameterizedLineShape.w << ", k: " << parameterizedLineShape.k << ", fwhm: " << parameterizedLineShape.Fwhm() << ") gave currentError : " << update.currentError << " (with pa : " << update.residualSize << ") and shift : " << update.shift << std::endl;
+                std::cout << "    Delta is (w: " << update.parameterDelta[0] << ", k: " << update.parameterDelta[1] << ") " << std::endl;
+            }
 
             if (update.currentError < optimumResult.error)
             {
@@ -472,7 +477,10 @@ namespace novac
             {
                 // we're done
                 successfullyConverged = true;
-                std::cout << "Instrument line shape estimation successfully converged after " << iterationCount << " iterations." << std::endl;
+                if (debugOutput)
+                {
+                    std::cout << "Instrument line shape estimation successfully converged after " << iterationCount << " iterations." << std::endl;
+                }
                 break;
             }
 
@@ -483,7 +491,10 @@ namespace novac
                 //  Step back and make a smaller step size.
                 stepSize *= 0.5;
 
-                std::cout << " Updated resulted in a worse result than last iteration, reducing step size to " << stepSize << " and attempting again." << std::endl;
+                if (debugOutput)
+                {
+                    std::cout << " Updated resulted in a worse result than last iteration, reducing step size to " << stepSize << " and attempting again." << std::endl;
+                }
 
                 for (int parameterIdx = 0; parameterIdx < static_cast<int>(lastUpdate.parameterDelta.size()); ++parameterIdx)
                 {
@@ -510,7 +521,7 @@ namespace novac
             }
         }
 
-        if (!successfullyConverged)
+        if (debugOutput && !successfullyConverged)
         {
             std::cout << "Instrument line shape estimation did not reach an optimum solution during the " << iterationCount << " iterations." << std::endl;
         }

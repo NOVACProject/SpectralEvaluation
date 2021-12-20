@@ -200,7 +200,13 @@ namespace novac
             return 29;		// years dividable by 4 and not by 100 are leap-years
     }
 
-    void CDateTime::Increment(int secs) {
+    void CDateTime::Increment(int secs)
+    {
+        if (secs < 0)
+        {
+            return Decrement(-secs);
+        }
+
         // calculate the number of seconds since midnight this is...
         long nSecsSinceMidnight = second + 60 * minute + 3600 * hour;
 
@@ -234,8 +240,13 @@ namespace novac
         }
     }
 
-    /** Decrements the current time with the supplied number of seconds */
-    void CDateTime::Decrement(int secs) {
+    void CDateTime::Decrement(int secs)
+    {
+        if (secs < 0)
+        {
+            return Increment(-secs);
+        }
+
         // calculate the number of seconds since midnight this is...
         long nSecsSinceMidnight = second + 60 * minute + 3600 * hour;
 

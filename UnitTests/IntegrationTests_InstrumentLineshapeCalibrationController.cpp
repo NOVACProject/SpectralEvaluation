@@ -7,22 +7,23 @@
 
 namespace novac
 {
-    static std::string GetTestFileName()
+    static std::string GetTestDataDirectory()
     {
 #ifdef _MSC_VER
-        return std::string("../TestData/hglampnov152021.std");
+        return std::string("../TestData/MercurySpectra/");
 #else
-        return std::string("./TestData/hglampnov152021.std");
-#endif // _MSC_VER
+        return std::string("TestData/MercurySpectra/");
+#endif // _MSC_VER 
+    }
+
+    static std::string GetTestFileName()
+    {
+        return GetTestDataDirectory() + std::string("hglampnov152021.std");
     }
 
     static std::string GetDarkFileName()
     {
-#ifdef _MSC_VER
-        return std::string("../TestData/hglampnov152021_dark.std");
-#else
-        return std::string("./TestData/hglampnov152021_dark.std");
-#endif // _MSC_VER
+        return GetTestDataDirectory() + std::string("hglampnov152021_dark.std");
     }
 
     static std::string GetInstrumentCalibrationStdFileName()

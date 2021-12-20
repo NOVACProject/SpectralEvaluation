@@ -17,9 +17,9 @@ namespace novac
     static std::string MercurySpectrumFileName()
     {
 #ifdef _MSC_VER
-        return std::string("../TestData/hglampnov152021.std");
+        return std::string("../TestData/MercurySpectra/hglampnov152021.std");
 #else
-        return std::string("./TestData/hglampnov152021.std");
+        return std::string("./TestData/MercurySpectra/hglampnov152021.std");
 #endif // _MSC_VER
     }
 
