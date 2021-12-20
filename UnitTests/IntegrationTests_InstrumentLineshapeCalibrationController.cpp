@@ -16,33 +16,28 @@ namespace novac
 #endif // _MSC_VER 
     }
 
-    static std::string GetTestFileName()
+    static std::string GetTestFileName_MercurySpectrumWithoutWavelengthCalibration()
     {
         return GetTestDataDirectory() + std::string("hglampnov152021.std");
     }
 
-    static std::string GetDarkFileName()
+    static std::string GetDarkFileName_MercurySpectrumWithoutWavelengthCalibration()
     {
         return GetTestDataDirectory() + std::string("hglampnov152021_dark.std");
     }
 
     static std::string GetInstrumentCalibrationStdFileName()
     {
-#ifdef _MSC_VER
-        return std::string("../TestData/Temporary_InstrumentCalibration.std");
-#else
-        return std::string("TestData/Temporary_InstrumentCalibration.std");
-#endif // _MSC_VER
+        return GetTestDataDirectory() + std::string("Temporary_InstrumentCalibration.std");
     }
-
 
     TEST_CASE(
         "InstrumentLineshapeCalibrationController with simple mercury spectrum file with no wavelength calibration in file",
         "[InstrumentLineshapeCalibrationController][IntegrationTest]")
     {
         InstrumentLineshapeCalibrationController sut;
-        sut.m_inputSpectrumPath = GetTestFileName();
-        sut.m_darkSpectrumPath = GetDarkFileName();
+        sut.m_inputSpectrumPath = GetTestFileName_MercurySpectrumWithoutWavelengthCalibration();
+        sut.m_darkSpectrumPath = GetDarkFileName_MercurySpectrumWithoutWavelengthCalibration();
 
         SECTION("Update - reads dark corrected mercury spectrum and locates emission lines.")
         {
@@ -164,4 +159,5 @@ namespace novac
             REQUIRE(GetFwhm(readCalibration.instrumentLineShapeGrid, readCalibration.instrumentLineShape) == Approx(0.70).margin(0.01));
         }
     }
+
 }
