@@ -72,7 +72,11 @@ namespace novac
         {
             return CSpectrometerDatabase::SpectrometerModel_S2000();
         }
-        else if (Contains(deviceSerialNumber, "USB2") || Contains(deviceSerialNumber, "USB2+") || Contains(deviceSerialNumber, "USB+"))
+        else if (Contains(deviceSerialNumber, "USB2+") || Contains(deviceSerialNumber, "USB+"))
+        {
+            return CSpectrometerDatabase::SpectrometerModel_USB2000Plus();
+        }
+        else if (Contains(deviceSerialNumber, "USB2"))
         {
             return CSpectrometerDatabase::SpectrometerModel_USB2000();
         }

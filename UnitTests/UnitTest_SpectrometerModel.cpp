@@ -71,11 +71,18 @@ namespace novac
             REQUIRE("USB2000" == result.modelName);
         }
 
-        SECTION("USB2+F03188 is USB2000")
+        SECTION("USB2+F03188 is USB2000+")
         {
             const auto result = CSpectrometerDatabase::GuessModelFromSerial("USB2+F03188");
 
-            REQUIRE("USB2000" == result.modelName);
+            REQUIRE("USB2000+" == result.modelName);
+        }
+
+        SECTION("USB2+U12835 is USB2000+")
+        {
+            const auto result = CSpectrometerDatabase::GuessModelFromSerial("USB2+U12835");
+
+            REQUIRE("USB2000+" == result.modelName);
         }
 
         SECTION("USB2G789 is USB2000")

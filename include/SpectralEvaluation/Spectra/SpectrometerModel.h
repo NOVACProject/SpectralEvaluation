@@ -23,6 +23,12 @@ namespace novac
         {
         }
 
+        // Adds a not-custom spectrometer model (for internal use)
+        SpectrometerModel(const std::string& name, double maxIntensity, int pixelsOnDetector = 2048, bool averages = false)
+            :modelName(name), maximumIntensityForSingleReadout(maxIntensity), numberOfPixels(pixelsOnDetector), numberOfChannels(1), isCustom(false), averagesSpectra(averages)
+        {
+        }
+
         SpectrometerModel(const std::string& name, double maxIntensity, bool custom = true, bool averages = false)
             :modelName(name), maximumIntensityForSingleReadout(maxIntensity), numberOfChannels(1), isCustom(custom), averagesSpectra(averages)
         {
@@ -99,10 +105,11 @@ namespace novac
         static SpectrometerModel SpectrometerModel_Unknown() { return SpectrometerModel{ "UNKNOWN", 4095, false, false }; }
         static SpectrometerModel SpectrometerModel_S2000() { return SpectrometerModel{ "S2000", 4095, false, false }; }
         static SpectrometerModel SpectrometerModel_USB2000() { return SpectrometerModel{ "USB2000", 4095, false, false }; }
+        static SpectrometerModel SpectrometerModel_USB2000Plus() { return SpectrometerModel{ "USB2000+", 65535, false, false }; }
         static SpectrometerModel SpectrometerModel_USB4000() { return SpectrometerModel{ "USB4000", 65535, false, false }; }
         static SpectrometerModel SpectrometerModel_HR2000() { return SpectrometerModel{ "HR2000", 4095, false, false }; }
         static SpectrometerModel SpectrometerModel_HR4000() { return SpectrometerModel{ "HR4000", 16535, false, false }; }
-        static SpectrometerModel SpectrometerModel_QE65000() { return SpectrometerModel{ "QE65000", 65535, false, false }; }
+        static SpectrometerModel SpectrometerModel_QE65000() { return SpectrometerModel{ "QE65000", 65535, 1024, false }; }
         static SpectrometerModel SpectrometerModel_MAYAPRO() { return SpectrometerModel{ "MAYAPRO", 65535, false, false }; }
         static SpectrometerModel SpectrometerModel_AVASPEC() { return SpectrometerModel{ "AVASPEC", 16383, false, false }; }
         static SpectrometerModel SpectrometerModel_FLAME() { return SpectrometerModel{ "FLAME", 65536, false, true }; }
