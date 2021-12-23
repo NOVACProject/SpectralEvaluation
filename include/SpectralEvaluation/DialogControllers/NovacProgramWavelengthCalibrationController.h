@@ -6,7 +6,11 @@ class NovacProgramWavelengthCalibrationController : public WavelengthCalibration
 {
 public:
     NovacProgramWavelengthCalibrationController()
-        : WavelengthCalibrationController() { }
+        : WavelengthCalibrationController()
+    {
+        // NovacProgram will always add spectra together
+        m_spectraAreAverages = false;
+    }
 
     /** The full path to the spectrum to calibrate (should be a .pak file) */
     std::string m_inputSpectrumFile;

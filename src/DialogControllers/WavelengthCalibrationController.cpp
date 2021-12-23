@@ -365,6 +365,7 @@ double WavelengthCalibrationController::GetSpectrometerMaxIntensityForSingleRead
     {
         // Make sure that the spectrometer model is up-to-date
         auto model = novac::CSpectrometerDatabase::GetInstance().GuessModelFromSerial(spectrum.m_info.m_device);
+        model.averagesSpectra = m_spectraAreAverages;
         modelName = model.modelName;
         return novac::GetMaximumSaturationRatioOfSpectrum(spectrum, model);
     }

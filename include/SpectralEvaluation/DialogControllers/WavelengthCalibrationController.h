@@ -79,6 +79,11 @@ public:
         This value will be used if set to a value > 0.0 . */
     double m_spectrometerMaximumIntensityForSingleReadout = -1.0;
 
+    /** Set to false if the spectrometer (or the software running the spectrometer) averages the spectra
+        instead of adding them.
+        Typically, MobileDoas averages and NovacProgram adds. */
+    bool m_spectraAreAverages = false;
+
     struct WavelengthCalibrationDebugState
     {
         WavelengthCalibrationDebugState(size_t estimatedSize)
@@ -167,8 +172,11 @@ class MobileDoasWavelengthCalibrationController : public WavelengthCalibrationCo
 {
 public:
     MobileDoasWavelengthCalibrationController()
-        : WavelengthCalibrationController() { }
-
+        : WavelengthCalibrationController()
+    {
+        // MobileDOAS will always average spectra together
+        m_spectraAreAverages = true;
+    }
 
     /** The full path to the spectrum to calibrate */
     std::string m_inputSpectrumFile;
