@@ -78,7 +78,7 @@ namespace novac
         SpectrometerModel GetModel(int modelIndex);
 
         /** Attempts to guess the spectrometer model from a provided serialnumber. */
-        SpectrometerModel GuessModelFromSerial(const std::string& deviceSerialNumber);
+        static SpectrometerModel GuessModelFromSerial(const std::string& deviceSerialNumber);
 
         /** @return The index of the provided spectrometer model in the list returned by 'ListModels()'.
             The model name comparison is not case sensitive.
@@ -96,7 +96,7 @@ namespace novac
             @return true if successful */
         bool AddModel(const SpectrometerModel& newModel);
 
-        static SpectrometerModel SpectrometerModel_Unknown() { return SpectrometerModel{ "", 4095, false, false }; }
+        static SpectrometerModel SpectrometerModel_Unknown() { return SpectrometerModel{ "UNKNOWN", 4095, false, false }; }
         static SpectrometerModel SpectrometerModel_S2000() { return SpectrometerModel{ "S2000", 4095, false, false }; }
         static SpectrometerModel SpectrometerModel_USB2000() { return SpectrometerModel{ "USB2000", 4095, false, false }; }
         static SpectrometerModel SpectrometerModel_USB4000() { return SpectrometerModel{ "USB4000", 65535, false, false }; }

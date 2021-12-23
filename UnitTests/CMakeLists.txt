@@ -35,6 +35,7 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Interpolation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_PolynomialFit.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_RatioEvaluation.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_SpectrometerModel.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_SpectrumUtils.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Utils.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_VectorUtils.cpp
