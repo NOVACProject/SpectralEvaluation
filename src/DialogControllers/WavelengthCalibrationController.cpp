@@ -367,6 +367,11 @@ double WavelengthCalibrationController::GetSpectrometerMaxIntensityForSingleRead
         auto model = novac::CSpectrometerDatabase::GetInstance().GuessModelFromSerial(spectrum.m_info.m_device);
         model.averagesSpectra = m_spectraAreAverages;
         modelName = model.modelName;
+
+        if (model.modelName == "UNKNOWN")
+        {
+            return std::numeric_limits<double>::quiet_NaN();
+        }
         return novac::GetMaximumSaturationRatioOfSpectrum(spectrum, model);
     }
 }
@@ -375,6 +380,12 @@ void WavelengthCalibrationController::CheckSpectrumQuality(const novac::CSpectru
 {
     std::string modelName;
     const double maximumSaturationRatio = GetSpectrometerMaxIntensityForSingleReadout(spectrum, modelName);
+
+    if (std::isnan(maximumSaturationRatio))
+    {
+        // unknown spectrometer model.
+        return;
+    }
 
     if (maximumSaturationRatio > 0.85)
     {

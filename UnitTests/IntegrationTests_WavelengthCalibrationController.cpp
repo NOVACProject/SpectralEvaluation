@@ -63,6 +63,27 @@ namespace novac
         return GetTestDataDirectory() + std::string("MAYP11440/MAYP11440_SO2_293K_Bogumil_334nm.txt");
     }
 
+
+    static std::string GetMeasuredSpectrumName_I2J0093()
+    {
+        return GetTestDataDirectory() + std::string("I2P0093/00000_0.STD");
+    }
+
+    static std::string GetDarkSpectrumName_I2P0093()
+    {
+        return GetTestDataDirectory() + std::string("I2P0093/dark_0.STD");
+    }
+
+    static std::string GetInitialPixelToWavelengthCalibration_I2P0093()
+    {
+        return GetTestDataDirectory() + std::string("I2P0093/I2P0093_Master.clb");
+    }
+
+    static std::string GetInitialInstrumentLineShape_I2P0093()
+    {
+        return GetTestDataDirectory() + std::string("I2P0093/I2P0093_302nm_Master.slf");
+    }
+
     static std::string GetSolarAtlasFile()
     {
         return GetTestDataDirectory() + std::string("SOLARFL_296-440nm.xs");
@@ -176,6 +197,61 @@ namespace novac
             CCrossSectionData actualInstrumentLineShape;
             ReadCrossSectionFile(GetInitialInstrumentLineShapefile_I2J8549(), actualInstrumentLineShape);
             REQUIRE(GetFwhm(actualInstrumentLineShape) == Approx(superGaussian->Fwhm()).margin(0.05));
+        }
+    }
+
+    TEST_CASE(
+        "NovacProgramWavelengthCalibrationController (measured I2P0093 spectrum) with fitted instrument line shape ",
+        "[NovacProgramWavelengthCalibrationController][WavelengthCalibrationController][IntegrationTest][LongRunningTest]")
+    {
+        MobileDoasWavelengthCalibrationController sut;
+        sut.m_inputSpectrumFile = GetMeasuredSpectrumName_I2J0093();
+        sut.m_darkSpectrumFile = GetDarkSpectrumName_I2P0093();
+        sut.m_initialCalibrationFile = GetInitialPixelToWavelengthCalibration_I2P0093();
+        sut.m_initialLineShapeFile = GetInitialInstrumentLineShape_I2P0093();
+        sut.m_instrumentLineShapeFitOption = WavelengthCalibrationController::InstrumentLineShapeFitOption::SuperGaussian;
+        sut.m_solarSpectrumFile = GetSolarAtlasFile();
+
+        // Act
+        sut.RunCalibration();
+        REQUIRE(nullptr != sut.m_resultingCalibration);
+
+        // Make sure that RunCalibration produces a correct pixel to wavelength polyno  mial.
+        {
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial.size() == 4);
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[0] == Approx(278.0).margin(1.5));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[1] == Approx(0.086).margin(1e-2));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2] == Approx(-7.2e-06).margin(2e-6));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3] == Approx(-1.5e-10).margin(3e-10));
+        }
+
+        // Make sure that RunCalibration produces a correct pixel to wavelength mapping.
+        //  (notice that the uncertainty is highest for the first and the last pixels)
+        {
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.size() == 2048);
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(278.0).margin(0.3));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(421.6).margin(0.3));
+        }
+
+        // Make sure that RunCalibration produces a highly accurate pixel to wavelength mapping in the DOAS range
+        //  (notice that the uncertainty is smaller in the range where the intensity is good)
+        {
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[500] == Approx(318.860).margin(0.1));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[700] == Approx(334.222).margin(0.1));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[900] == Approx(348.974).margin(0.1));
+        }
+
+        // Make sure that RunCalibration produces a correct instrument line shape parametrization.
+        {
+            const auto* superGaussian = dynamic_cast<novac::SuperGaussianLineShape*>(sut.m_resultingCalibration->instrumentLineShapeParameter);
+
+            REQUIRE(superGaussian != nullptr);
+            REQUIRE(superGaussian->k == Approx(2.16).margin(0.4));
+            REQUIRE(superGaussian->w == Approx(0.34).margin(0.05));
+
+            CCrossSectionData actualInstrumentLineShape;
+            ReadCrossSectionFile(GetInitialInstrumentLineShape_I2P0093(), actualInstrumentLineShape);
+            REQUIRE(GetFwhm(actualInstrumentLineShape) > 0.1 + superGaussian->Fwhm()); // the initial isn't that good here..
         }
     }
 
