@@ -225,6 +225,10 @@ void InstrumentLineshapeCalibrationController::FitFunctionToLineShape(size_t pea
     {
         m_resultingCalibration->instrumentLineShapeGrid = hgLine->m_wavelength;
         m_resultingCalibration->instrumentLineShape = std::vector<double>(hgLine->m_data, hgLine->m_data + hgLine->m_length);
+        for (double& value : m_resultingCalibration->instrumentLineShape)
+        {
+            value += baseline;
+        }
         m_resultingCalibration->instrumentLineShapeCenter = m_peaksFound[peakIdx].wavelength;
     }
     else
@@ -241,7 +245,7 @@ std::pair<std::string, std::string> FormatProperty(const char* name, double valu
 #else
     sprintf(formattedValue, "%.9g", value);
 #endif
- 
+
     return std::make_pair(std::string(name), std::string(formattedValue));
 }
 
