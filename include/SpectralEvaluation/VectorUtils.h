@@ -83,6 +83,10 @@ double WeightedAverage(const std::vector<double>& values, const std::vector<doub
 /** Calculates the average of all the given values and subtracts it from the data. */
 void RemoveMean(std::vector<double>& values);
 
+/** Fits a line to all the given values and subtracts it from the data.
+    Similar to 'RemoveMean' but uses a polynomial of order one instead of zero. */
+void RemoveSlope(std::vector<double>& values);
+
 /** @return the Median of all the given values.
     This will sort the provided vector.
     If values.size() == 0 then 0.0 is returned. */

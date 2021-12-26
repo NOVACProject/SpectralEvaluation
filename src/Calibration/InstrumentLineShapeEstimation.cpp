@@ -16,6 +16,7 @@
 #undef min
 #undef max
 
+#include <assert.h>
 #include <algorithm>
 #include <memory>
 #include <cmath>
@@ -608,9 +609,22 @@ namespace novac
         auto sampledLineShape = SampleInstrumentLineShape(currentLineShape);
         const double fwhm = currentLineShape.Fwhm();
 
-        // TODO: This algorithm could be made faster if the fraunhofer spectrum isn't created on the _entire_ pixel-to-wavelength mapping
+        // Trick here: this algorithm is made faster by not calculating the fraunhofer spectrum on the _entire_ pixel-to-wavelength mapping
         // but only a wavelength range slightly larger than the one used for the DOAS fit.
-        auto currentFraunhoferSpectrum = fraunhoferSpectrumGen.GetFraunhoferSpectrum(this->pixelToWavelengthMapping, sampledLineShape, fwhm, false);
+        const size_t margin = 100;
+        const IndexRange indexRangeToUse{
+            settings.startPixel < margin ? (size_t)0 : settings.startPixel - margin,
+            std::min(pixelToWavelengthMapping.size() - 1, (size_t)settings.endPixel + margin) };
+
+        if (indexRangeToUse.from > 0)
+        {
+            doasFitSetup.fitLow -= static_cast<int>(indexRangeToUse.from);
+            doasFitSetup.fitHigh -= static_cast<int>(indexRangeToUse.from);
+        }
+
+        const std::vector<double> selectedPixelToWavelengthMapping(begin(pixelToWavelengthMapping) + indexRangeToUse.from, begin(pixelToWavelengthMapping) + indexRangeToUse.to);
+
+        auto currentFraunhoferSpectrum = fraunhoferSpectrumGen.GetFraunhoferSpectrum(selectedPixelToWavelengthMapping, sampledLineShape, fwhm, false);
         if (currentFraunhoferSpectrum == nullptr || currentFraunhoferSpectrum->m_length == 0)
         {
             std::stringstream message;
@@ -634,7 +648,7 @@ namespace novac
         doasFitSetup.ref[0].m_shiftOption = shiftOption;
         doasFitSetup.ref[0].m_shiftValue = 0.0;
 
-        // 2. Include the Ring spectrum as the second reference (THIS IS LOGGED, WHY??)
+        // 2. Include the Ring spectrum as the second reference.
         auto ringSpectrum = std::make_unique<novac::CSpectrum>(Doasis::Scattering::CalcRingSpectrum(*currentFraunhoferSpectrum));
         std::vector<double> filteredRingSpectrum{ ringSpectrum->m_data, ringSpectrum->m_data + ringSpectrum->m_length };
         math.Log(filteredRingSpectrum.data(), ringSpectrum->m_length);
@@ -649,7 +663,7 @@ namespace novac
         // 3. Include the Ozone spectrum as the third reference (if required)
         if (ozoneSpectrumGen != nullptr)
         {
-            auto currentOzoneSpectrum = ozoneSpectrumGen->GetCrossSection(this->pixelToWavelengthMapping, sampledLineShape, fwhm, false);
+            auto currentOzoneSpectrum = ozoneSpectrumGen->GetCrossSection(selectedPixelToWavelengthMapping, sampledLineShape, fwhm, false);
             doasFitSetup.ref[doasFitSetup.nRef].m_data = std::make_unique<novac::CCrossSectionData>(*currentOzoneSpectrum);
             doasFitSetup.ref[doasFitSetup.nRef].m_columnOption = novac::SHIFT_TYPE::SHIFT_FREE;
             doasFitSetup.ref[doasFitSetup.nRef].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
@@ -667,11 +681,11 @@ namespace novac
             diffSampledLineShape->m_waveLength = sampledLineShape.m_waveLength;
             diffSampledLineShape->m_crossSection = PartialDerivative(currentLineShape, sampledLineShape.m_waveLength, parameterIdx);
 
-            auto diffFraunhofer = fraunhoferSpectrumGen.GetDifferentialFraunhoferSpectrum(this->pixelToWavelengthMapping, *diffSampledLineShape, fwhm);
+            auto diffFraunhofer = fraunhoferSpectrumGen.GetDifferentialFraunhoferSpectrum(selectedPixelToWavelengthMapping, *diffSampledLineShape, fwhm);
 
             auto pseudoAbsorber = std::make_unique<novac::CCrossSectionData>();
             pseudoAbsorber->m_crossSection.resize(currentFraunhoferSpectrum->m_length);
-            pseudoAbsorber->m_waveLength = std::vector<double>(begin(this->pixelToWavelengthMapping), end(this->pixelToWavelengthMapping));
+            pseudoAbsorber->m_waveLength = std::vector<double>(begin(selectedPixelToWavelengthMapping), end(selectedPixelToWavelengthMapping));
             for (size_t ii = 0; ii < pseudoAbsorber->m_crossSection.size(); ++ii)
             {
                 pseudoAbsorber->m_crossSection[ii] = IsZero(currentFraunhoferSpectrum->m_data[ii]) ? 0.0 : diffFraunhofer->m_data[ii] / currentFraunhoferSpectrum->m_data[ii];
@@ -692,11 +706,11 @@ namespace novac
         doas.Setup(doasFitSetup);
 
         // Log the Measured spectrum (to get Optical Depth)
-        std::vector<double> filteredMeasuredSpectrum{ measuredSpectrum.m_data, measuredSpectrum.m_data + measuredSpectrum.m_length };
-        math.Log(filteredMeasuredSpectrum.data(), measuredSpectrum.m_length);
+        std::vector<double> filteredMeasuredSpectrum{ measuredSpectrum.m_data + indexRangeToUse.from, measuredSpectrum.m_data + indexRangeToUse.to };
+        math.Log(filteredMeasuredSpectrum.data(), static_cast<int>(filteredMeasuredSpectrum.size()));
 
         DoasResult doasResult;
-        doas.Run(filteredMeasuredSpectrum.data(), static_cast<size_t>(measuredSpectrum.m_length), doasResult);
+        doas.Run(filteredMeasuredSpectrum.data(), indexRangeToUse.Length(), doasResult);
 
         LineShapeUpdate update;
         update.parameterDelta = std::vector<double>{ doasResult.referenceResult[parameterIndices.front()].column, doasResult.referenceResult[parameterIndices.back()].column };
@@ -714,7 +728,7 @@ namespace novac
             doas.Setup(doasFitSetup);
 
             DoasResult newDoasResult;
-            doas.Run(filteredMeasuredSpectrum.data(), static_cast<size_t>(measuredSpectrum.m_length), newDoasResult);
+            doas.Run(filteredMeasuredSpectrum.data(), indexRangeToUse.Length(), newDoasResult);
             update.currentError = newDoasResult.chiSquare;
         }
 

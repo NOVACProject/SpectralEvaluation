@@ -165,7 +165,10 @@ namespace MathFit
 		~CVector()
 		{
 			if(mAutoRelease && mData != 0)
+			{
 				delete mData;
+				mData = nullptr;
+			}
 			ReleaseDoublePtr();
 			ReleaseFloatPtr();
 		}

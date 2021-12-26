@@ -63,6 +63,25 @@ namespace novac
         return GetTestDataDirectory() + std::string("MAYP11440/MAYP11440_SO2_293K_Bogumil_334nm.txt");
     }
 
+    static std::string GetMeasuredSpectrumName_FLMS14634()
+    {
+        return GetTestDataDirectory() + std::string("FLMS14634/00007_0.STD");
+    }
+
+    static std::string GetDarkSpectrumName_FLMS14634()
+    {
+        return GetTestDataDirectory() + std::string("FLMS14634/dark_0.STD");
+    }
+
+    static std::string GetInitialPixelToWavelengthCalibration_FLMS14634()
+    {
+        return GetTestDataDirectory() + std::string("FLMS14634/FLMS14634.clb");
+    }
+
+    static std::string GetInitialInstrumentLineShapefile_FLMS14634()
+    {
+        return GetTestDataDirectory() + std::string("FLMS14634/FLMS14634_302nm.slf");
+    }
 
     static std::string GetMeasuredSpectrumName_I2J0093()
     {
@@ -104,21 +123,26 @@ namespace novac
         sut.RunCalibration();
         REQUIRE(nullptr != sut.m_resultingCalibration);
 
+        // Make sure we have a good quality result
+        {
+            REQUIRE(sut.m_calibrationDebug.inlierCorrespondencePixels.size() > 30);
+        }
+
         // Make sure that RunCalibration produces a correct pixel to wavelength polynomial.
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial.size() == 4);
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[0] == Approx(278.6).margin(1.5));
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[1] == Approx(0.086).margin(1e-2));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2] == Approx(-6.2e-06).margin(2e-6));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3] == Approx(-3.8e-10).margin(2e-10));
+            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2]) < 1e-5);
+            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3]) < 1e-9);
         }
 
         // Make sure that RunCalibration produces a correct pixel to wavelength mapping.
         //  (notice that the uncertainty is highest for the first and the last pixels)
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.size() == 2048);
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(278.618).margin(0.3));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(424.268).margin(0.3));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(278.618).margin(0.7));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(424.268).margin(0.7));
         }
 
         // Make sure that RunCalibration produces a highly accurate pixel to wavelength mapping in the DOAS range
@@ -161,21 +185,26 @@ namespace novac
         sut.RunCalibration();
         REQUIRE(nullptr != sut.m_resultingCalibration);
 
+        // Make sure we have a good quality result
+        {
+            REQUIRE(sut.m_calibrationDebug.inlierCorrespondencePixels.size() > 30);
+        }
+
         // Make sure that RunCalibration produces a correct pixel to wavelength polynomial.
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial.size() == 4);
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[0] == Approx(278.6).margin(1.5));
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[1] == Approx(0.086).margin(1e-2));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2] == Approx(-6.2e-06).margin(2e-6));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3] == Approx(-3.8e-10).margin(3e-10));
+            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2]) < 1e-5);
+            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3]) < 1e-9);
         }
 
         // Make sure that RunCalibration produces a correct pixel to wavelength mapping.
         //  (notice that the uncertainty is highest for the first and the last pixels)
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.size() == 2048);
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(278.618).margin(0.3));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(424.268).margin(0.3));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(278.618).margin(0.7));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(424.268).margin(0.7));
         }
 
         // Make sure that RunCalibration produces a highly accurate pixel to wavelength mapping in the DOAS range
@@ -216,21 +245,26 @@ namespace novac
         sut.RunCalibration();
         REQUIRE(nullptr != sut.m_resultingCalibration);
 
+        // Make sure we have a good quality result
+        {
+            REQUIRE(sut.m_calibrationDebug.inlierCorrespondencePixels.size() > 30);
+        }
+
         // Make sure that RunCalibration produces a correct pixel to wavelength polyno  mial.
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial.size() == 4);
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[0] == Approx(278.0).margin(1.5));
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[1] == Approx(0.086).margin(1e-2));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2] == Approx(-7.2e-06).margin(2e-6));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3] == Approx(-1.5e-10).margin(3e-10));
+            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2]) < 1e-5);
+            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3]) < 1e-9);
         }
 
         // Make sure that RunCalibration produces a correct pixel to wavelength mapping.
         //  (notice that the uncertainty is highest for the first and the last pixels)
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.size() == 2048);
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(278.0).margin(0.3));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(421.6).margin(0.3));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(278.0).margin(0.7));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(421.6).margin(0.7));
         }
 
         // Make sure that RunCalibration produces a highly accurate pixel to wavelength mapping in the DOAS range
@@ -273,21 +307,26 @@ namespace novac
         sut.RunCalibration();
         REQUIRE(nullptr != sut.m_resultingCalibration);
 
+        // Make sure we have a good quality result
+        {
+            REQUIRE(sut.m_calibrationDebug.inlierCorrespondencePixels.size() > 30);
+        }
+
         // Make sure that RunCalibration produces a correct pixel to wavelength polynomial.
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial.size() == 4);
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[0] == Approx(265.7).margin(1.0));
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[1] == Approx(0.094).margin(2e-2));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2] == Approx(-2.0e-06).margin(4e-6));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3] == Approx(-8.5e-9).margin(1e-8));
+            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2]) < 1e-5);
+            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3]) < 1e-9);
         }
 
         // Make sure that RunCalibration produces a correct pixel to wavelength mapping
         //  (notice that the uncertainty is highest for the first and the last pixels)
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.size() == 2048);
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(265.7).margin(1.0));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(440.3).margin(1.0));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(265.7).margin(0.7));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(440.3).margin(0.7));
         }
 
         // Make sure that RunCalibration produces a highly accurate pixel to wavelength mapping in the DOAS range
@@ -326,21 +365,26 @@ namespace novac
         sut.RunCalibration();
         REQUIRE(nullptr != sut.m_resultingCalibration);
 
+        // Make sure we have a good quality result
+        {
+            REQUIRE(sut.m_calibrationDebug.inlierCorrespondencePixels.size() > 30);
+        }
+
         // Make sure that RunCalibration produces a correct pixel to wavelength polynomial.
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial.size() == 4);
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[0] == Approx(265.7).margin(1.0));
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[1] == Approx(0.094).margin(2e-2));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2] == Approx(-2.0e-06).margin(4e-6));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3] == Approx(-8.5e-9).margin(1e-8));
+            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2]) < 1e-5);
+            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3]) < 1e-9);
         }
 
         // Make sure that RunCalibration produces a correct pixel to wavelength mapping
         //  (notice that the uncertainty is highest for the first and the last pixels)
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.size() == 2048);
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(265.7).margin(1.0));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(440.3).margin(1.0));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(265.7).margin(0.7));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(440.3).margin(0.7));
         }
 
         // Make sure that RunCalibration produces a highly accurate pixel to wavelength mapping in the DOAS range
@@ -380,21 +424,26 @@ namespace novac
         sut.RunCalibration();
         REQUIRE(nullptr != sut.m_resultingCalibration);
 
+        // Make sure we have a good quality result
+        {
+            REQUIRE(sut.m_calibrationDebug.inlierCorrespondencePixels.size() > 30);
+        }
+
         // Make sure that RunCalibration produces a correct pixel to wavelength polynomial.
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial.size() == 4);
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[0] == Approx(280.2).margin(0.3));
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[1] == Approx(0.052).margin(2e-2));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2] == Approx(-2.13e-6).margin(4e-6));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3] == Approx(-1.44e-10).margin(2e-10));
+            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2]) < 1e-5);
+            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3]) < 1e-9);
         }
 
         // Make sure that RunCalibration produces a correct pixel to wavelength mapping
         //  (notice that the uncertainty is highest for the first and the last pixels)
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.size() == 2068);
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(280.2).margin(0.3));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(377.5).margin(0.3));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(280.2).margin(0.7));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(377.5).margin(0.7));
         }
 
         // Make sure that RunCalibration produces a highly accurate pixel to wavelength mapping in the DOAS range
@@ -412,6 +461,63 @@ namespace novac
             REQUIRE(superGaussian != nullptr);
             REQUIRE(superGaussian->k == Approx(3.21).margin(0.4));
             REQUIRE(superGaussian->w == Approx(0.231).margin(0.05));
+        }
+    }
+
+    TEST_CASE(
+        "NovacProgramWavelengthCalibrationController (measured FLMS14634 spectrum) with fitted instrument line shape ",
+        "[NovacProgramWavelengthCalibrationController][WavelengthCalibrationController][IntegrationTest][LongRunningTest][Flame]")
+    {
+        MobileDoasWavelengthCalibrationController sut;
+        sut.m_inputSpectrumFile = GetMeasuredSpectrumName_FLMS14634();
+        sut.m_darkSpectrumFile = GetDarkSpectrumName_FLMS14634();
+        sut.m_initialCalibrationFile = GetInitialPixelToWavelengthCalibration_FLMS14634(); // notice that the initial error here is very large in parts of the spectrum.
+        sut.m_initialLineShapeFile = GetInitialInstrumentLineShapefile_FLMS14634();
+        sut.m_instrumentLineShapeFitOption = WavelengthCalibrationController::InstrumentLineShapeFitOption::SuperGaussian;
+        sut.m_solarSpectrumFile = GetSolarAtlasFile();
+
+        // Act
+        sut.RunCalibration();
+        REQUIRE(nullptr != sut.m_resultingCalibration);
+
+        // Make sure we have a good quality result
+        {
+            // TODO: Find a way to improve this
+            REQUIRE(sut.m_calibrationDebug.inlierCorrespondencePixels.size() > 20);
+        }
+
+        // Make sure that RunCalibration produces a correct pixel to wavelength polynomial.
+        {
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial.size() == 4);
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[0] == Approx(278.2).margin(1.5));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[1] == Approx(0.082).margin(1e-2));
+            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2]) < 1e-5);
+            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3]) < 1e-9);
+        }
+
+        // Make sure that RunCalibration produces a correct pixel to wavelength mapping.
+        //  (notice that the uncertainty is highest for the first and the last pixels)
+        {
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.size() == 2048);
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(278.2).margin(0.7));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(420.7).margin(0.7));
+        }
+
+        // Make sure that RunCalibration produces a highly accurate pixel to wavelength mapping in the DOAS range
+        //  (notice that the uncertainty is smaller in the range where the intensity is good)
+        {
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[500] == Approx(317.778).margin(0.1));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[700] == Approx(332.847).margin(0.1));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[900] == Approx(347.428).margin(0.1));
+        }
+
+        // Make sure that RunCalibration produces a correct instrument line shape parametrization.
+        {
+            const auto* superGaussian = dynamic_cast<novac::SuperGaussianLineShape*>(sut.m_resultingCalibration->instrumentLineShapeParameter);
+
+            REQUIRE(superGaussian != nullptr);
+            REQUIRE(superGaussian->k == Approx(1.86).margin(0.4));
+            REQUIRE(superGaussian->w == Approx(0.35).margin(0.05));
         }
     }
 }

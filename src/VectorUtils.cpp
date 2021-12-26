@@ -1,4 +1,5 @@
 #include <SpectralEvaluation/VectorUtils.h>
+#include <SpectralEvaluation/Math/PolynomialFit.h>
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -290,6 +291,27 @@ void RemoveMean(std::vector<double>& values)
     for (double& value : values)
     {
         value -= mean;
+    }
+}
+
+void RemoveSlope(std::vector<double>& values)
+{
+    novac::PolynomialFit polyFit{ 1 };
+
+    std::vector<double> indices;
+    indices.resize(values.size());
+    for (int ii = 0; ii < static_cast<int>(values.size()); ++ii)
+    {
+        indices[ii] = static_cast<double>(ii);
+    }
+
+    std::vector<double> polyomialCoefficients;
+    polyFit.FitPolynomial(indices, values, polyomialCoefficients);
+
+    for (int ii = 0; ii < static_cast<int>(values.size()); ++ii)
+    {
+        const double baseline = novac::PolynomialValueAt(polyomialCoefficients, static_cast<double>(ii));
+        values[ii] -= baseline;
     }
 }
 
