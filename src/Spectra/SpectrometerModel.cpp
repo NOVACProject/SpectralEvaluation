@@ -40,6 +40,9 @@ namespace novac
         SpectrometerModel USB2000 = SpectrometerModel_USB2000();
         modelDb.push_back(USB2000);
 
+        SpectrometerModel USB2000Plus = SpectrometerModel_USB2000Plus();
+        modelDb.push_back(USB2000Plus);
+
         SpectrometerModel USB4000 = SpectrometerModel_USB4000();
         modelDb.push_back(USB4000);
 
