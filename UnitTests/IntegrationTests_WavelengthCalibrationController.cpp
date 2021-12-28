@@ -220,7 +220,7 @@ namespace novac
             const auto* superGaussian = dynamic_cast<novac::SuperGaussianLineShape*>(sut.m_resultingCalibration->instrumentLineShapeParameter);
 
             REQUIRE(superGaussian != nullptr);
-            REQUIRE(superGaussian->k == Approx(2.5).margin(0.4));
+            REQUIRE(superGaussian->k == Approx(2.5).margin(0.6));
             REQUIRE(superGaussian->w == Approx(0.292).margin(0.05));
 
             CCrossSectionData actualInstrumentLineShape;
@@ -383,8 +383,8 @@ namespace novac
         //  (notice that the uncertainty is highest for the first and the last pixels)
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.size() == 2048);
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(265.7).margin(0.7));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(440.3).margin(0.7));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(265.7).margin(1.5));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(440.3).margin(1.5));
         }
 
         // Make sure that RunCalibration produces a highly accurate pixel to wavelength mapping in the DOAS range
