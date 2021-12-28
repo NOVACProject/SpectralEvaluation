@@ -118,6 +118,12 @@ namespace novac
         return *this;
     }
 
+    std::ostream& operator<<(std::ostream& os, const CDateTime& dt)
+    {
+        os << (int)dt.year << '.' << (int)dt.month << '.' << (int)dt.day << 'T' << (int)dt.hour << ":" << (int)dt.minute << ":" << (int)dt.second;
+        return os;
+    }
+
     void CDateTime::SetToNow() {
         struct tm* tim;
         time_t t;

@@ -3,6 +3,8 @@
 #ifndef DATETIME_H
 #define DATETIME_H
 
+#include <iostream>
+
 namespace novac
 {
     class CDateTime
@@ -45,6 +47,8 @@ namespace novac
         bool operator<=(const CDateTime& t2) const;
         bool operator>(const CDateTime& t2) const;
         bool operator>=(const CDateTime& t2) const;
+
+        friend std::ostream& operator<<(std::ostream& os, const CDateTime& dt);
 
         // --------------- METHODS --------------------
 
