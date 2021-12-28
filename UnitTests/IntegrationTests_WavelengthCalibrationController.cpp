@@ -499,8 +499,8 @@ namespace novac
         //  (notice that the uncertainty is highest for the first and the last pixels)
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.size() == 2048);
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(278.2).margin(0.7));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(420.7).margin(0.7));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(278.2).margin(1.5));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(420.7).margin(1.5));
         }
 
         // Make sure that RunCalibration produces a highly accurate pixel to wavelength mapping in the DOAS range
