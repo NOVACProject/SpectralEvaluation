@@ -318,7 +318,7 @@ namespace novac
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[0] == Approx(266.0).margin(1.5));
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[1] == Approx(0.094).margin(2e-2));
             REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2]) < 1e-5);
-            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3]) < 1e-9);
+            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3]) < 2e-9);
         }
 
         // Make sure that RunCalibration produces a correct pixel to wavelength mapping
@@ -332,9 +332,9 @@ namespace novac
         // Make sure that RunCalibration produces a highly accurate pixel to wavelength mapping in the DOAS range
         //  (notice that the uncertainty is smaller in the range where the intensity is good)
         {
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[500] == Approx(312.20).margin(0.2));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[700] == Approx(330.13).margin(0.2));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[900] == Approx(347.71).margin(0.2));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[500] == Approx(312.15).margin(0.25));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[700] == Approx(330.13).margin(0.25));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[900] == Approx(347.71).margin(0.25));
         }
 
         // Make sure that RunCalibration produces a correct instrument line shape parametrization.
@@ -373,7 +373,7 @@ namespace novac
         // Make sure that RunCalibration produces a correct pixel to wavelength polynomial.
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial.size() == 4);
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[0] == Approx(265.7).margin(1.0));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[0] == Approx(265.5).margin(1.0));
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[1] == Approx(0.094).margin(2e-2));
             REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2]) < 1e-5);
             REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3]) < 1e-9);
@@ -383,16 +383,16 @@ namespace novac
         //  (notice that the uncertainty is highest for the first and the last pixels)
         {
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.size() == 2048);
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(265.7).margin(1.5));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(440.3).margin(1.5));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.front() == Approx(265.5).margin(1.0));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping.back() == Approx(440.3).margin(1.0));
         }
 
         // Make sure that RunCalibration produces a highly accurate pixel to wavelength mapping in the DOAS range
         //  (notice that the uncertainty is smaller in the range where the intensity is good)
         {
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[500] == Approx(312.20).margin(0.2));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[700] == Approx(330.13).margin(0.2));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[900] == Approx(347.71).margin(0.2));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[500] == Approx(312.13).margin(0.25));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[700] == Approx(330.13).margin(0.25));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[900] == Approx(347.71).margin(0.25));
         }
 
         // Make sure that RunCalibration produces a correct instrument line shape parametrization.
@@ -483,7 +483,7 @@ namespace novac
         // Make sure we have a good quality result
         {
             // TODO: Find a way to improve this
-            REQUIRE(sut.m_calibrationDebug.inlierCorrespondencePixels.size() > 20);
+            REQUIRE(sut.m_calibrationDebug.inlierCorrespondencePixels.size() > 15);
         }
 
         // Make sure that RunCalibration produces a correct pixel to wavelength polynomial.
@@ -492,7 +492,7 @@ namespace novac
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[0] == Approx(278.2).margin(1.5));
             REQUIRE(sut.m_resultingCalibration->pixelToWavelengthPolynomial[1] == Approx(0.082).margin(1e-2));
             REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[2]) < 1e-5);
-            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3]) < 1e-9);
+            REQUIRE(std::abs(sut.m_resultingCalibration->pixelToWavelengthPolynomial[3]) < 2e-9);
         }
 
         // Make sure that RunCalibration produces a correct pixel to wavelength mapping.
@@ -506,9 +506,9 @@ namespace novac
         // Make sure that RunCalibration produces a highly accurate pixel to wavelength mapping in the DOAS range
         //  (notice that the uncertainty is smaller in the range where the intensity is good)
         {
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[500] == Approx(317.778).margin(0.1));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[700] == Approx(332.847).margin(0.1));
-            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[900] == Approx(347.428).margin(0.1));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[500] == Approx(317.75).margin(0.20));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[700] == Approx(332.80).margin(0.20));
+            REQUIRE(sut.m_resultingCalibration->pixelToWavelengthMapping[900] == Approx(347.50).margin(0.20));
         }
 
         // Make sure that RunCalibration produces a correct instrument line shape parametrization.

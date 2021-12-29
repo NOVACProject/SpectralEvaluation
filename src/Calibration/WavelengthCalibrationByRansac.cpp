@@ -251,16 +251,36 @@ namespace novac
 
         RansacWavelengthCalibrationResult result(settings.modelPolynomialOrder);
         result.numberOfPossibleCorrelations = possibleCorrespondences.size();
-        result.highestNumberOfInliers = 0U;
-        result.smallestError = std::numeric_limits<double>::max();
+        if (settings.initialModelCoefficients.size() == settings.modelPolynomialOrder + 1)
+        {
+            // We have an initial guess for the pixel-to-wavelength mapping. Measure how good it is.
+            std::vector<Correspondence> inlierCorrespondences;
+            bool isMonotonicallyIncreasing = true;
+            result.highestNumberOfInliers = CountInliers(
+                                                settings.initialModelCoefficients,
+                                                possibleCorrespondencesOrderedByMeasuredKeypoint,
+                                                settings.inlierLimitInWavelength,
+                                                inlierCorrespondences,
+                                                result.smallestError,
+                                                isMonotonicallyIncreasing);
+
+            if (!isMonotonicallyIncreasing)
+            {
+                result.highestNumberOfInliers = 0U;
+                result.smallestError = std::numeric_limits<double>::max();
+            }
+        }
+        else
+        {
+            result.highestNumberOfInliers = 0U;
+            result.smallestError = std::numeric_limits<double>::max();
+        }
 
         // variables in the loop, such that we don't have to recreate them every time
         const size_t ransacSampleSize = (settings.sampleSize > 0) ? settings.sampleSize : (settings.modelPolynomialOrder + 1);
         std::vector<double> selectedPixelValues(ransacSampleSize);
         std::vector<double> selectedWavelengths(ransacSampleSize);
         std::vector<double> suggestionForPolynomial;
-        std::vector<double> polynomialDerivative;
-        std::vector<std::complex<double>> polynomialRoots;
         std::vector<Correspondence> selectedCorrespondences;
 
         for (int iteration = 0; iteration < numberOfIterations; ++iteration)
@@ -287,8 +307,7 @@ namespace novac
             size_t numberOfInliers = CountInliers(suggestionForPolynomial, possibleCorrespondencesOrderedByMeasuredKeypoint, settings.inlierLimitInWavelength, inlierCorrespondences, meanErrorOfModel, isMonotonicallyIncreasing);
             const double inlierPixelSpan = GetMeasuredValueSpan(inlierCorrespondences);
 
-            if (iteration == 0 ||
-                (numberOfInliers > result.highestNumberOfInliers && isMonotonicallyIncreasing) ||
+            if ((numberOfInliers > result.highestNumberOfInliers && isMonotonicallyIncreasing) ||
                 (numberOfInliers == result.highestNumberOfInliers && isMonotonicallyIncreasing && inlierPixelSpan > result.largestPixelSpan) ||
                 (numberOfInliers == result.highestNumberOfInliers && isMonotonicallyIncreasing && std::abs(inlierPixelSpan - result.largestPixelSpan) < 0.1 && meanErrorOfModel < result.smallestError))
             {
@@ -413,7 +432,7 @@ namespace novac
     {
         const auto possibleCorrespondencesOrderedByMeasuredKeypoint = ArrangeByMeasuredKeypoint(possibleCorrespondences);
 
-        if (possibleCorrespondences.size() < 5 * settings.modelPolynomialOrder)
+        if (possibleCorrespondences.size() < 10 * settings.modelPolynomialOrder)
         {
             // No use in random sampling, simply pick all the possible combinations.
             return RunDeterministicCalibration(possibleCorrespondences, possibleCorrespondencesOrderedByMeasuredKeypoint);

@@ -78,19 +78,28 @@ namespace novac
     {
         size_t modelPolynomialOrder = 3;
 
+        /** The initial estimation of the pixel-to-wavelength mapping polynomial.
+            The coefficients make up a polynomial and are stored with the 0th order coefficient first.
+            This may be empty if there is no initial guess.
+            If not empty, then the size must equal (modelPolynomialOrder + 1). */
+        std::vector<double> initialModelCoefficients;
+
         int numberOfRansacIterations = 5000000;
 
         /** The number of correspondences to select in one iteration.
             Default (0) corresponds to (modelPolynomialOrder + 1) */
         size_t sampleSize = 0;
 
-        /** The number of pixels on the detector which generated this spectrum */
+        /** The number of pixels on the detector which generated this spectrum
+            (used to determine if a polynomial is a valid pixel-to-wavelength mapping). */
         size_t detectorSize = 2048;
 
-        /** how close a keypoint needs to be for it to be considered an inlier. In nm */
-        double inlierLimitInWavelength = 0.01;
+        /** how close a keypoint needs to be to the model prediction for it to be considered an inlier.
+            In nm. This should be related to the actual resolution of the instrument. */
+        double inlierLimitInWavelength = 0.1;
 
-        bool refine = false;
+        /** If true, then the model will be updated with the found inliers */
+        bool refine = true;
 
         /** The number of threads to divide the work up into.
             Special value: 0 corresponds to automatic.
@@ -160,5 +169,4 @@ namespace novac
         RansacWavelengthCalibrationResult RunDeterministicCalibration(const std::vector<Correspondence>& possibleCorrespondences, const std::vector<std::vector<Correspondence>>& possibleCorrespondencesOrderedByMeasuredKeypoint) const;
 
     };
-
 }

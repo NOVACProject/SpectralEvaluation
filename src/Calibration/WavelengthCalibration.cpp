@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <chrono>
 #include <fstream>
+#include <numeric>
 #include <SpectralEvaluation/Calibration/Correspondence.h>
 #include <SpectralEvaluation/Calibration/WavelengthCalibration.h>
 #include <SpectralEvaluation/Calibration/ReferenceSpectrumConvolution.h>
@@ -327,11 +328,13 @@ namespace novac
         calibrationSettings.detectorSize = static_cast<size_t>(measuredMercurySpectrum.m_length);
         calibrationSettings.refine = false;
 
-#ifdef DEBUG
-        calibrationSettings.numberOfThreads = 4; // auto
-#else
+#ifdef _MSC_VER
+#ifdef _DEBUG
         calibrationSettings.numberOfThreads = 1;
+#else
+        calibrationSettings.numberOfThreads = 0; // auto
 #endif // DEBUG
+#endif
 
         RansacWavelengthCalibrationSetup calibrationSetup{ calibrationSettings };
 
@@ -432,8 +435,17 @@ namespace novac
         novac::RansacWavelengthCalibrationSettings ransacSettings;
         novac::CorrespondenceSelectionSettings correspondenceSelectionSettings;
 
-        // Setup
-        novac::RansacWavelengthCalibrationSetup ransacCalibrationSetup{ ransacSettings };
+        // Create the initial guess for the model polynomial
+        {
+            novac::PolynomialFit polyFit{ static_cast<int>(ransacSettings.modelPolynomialOrder) };
+            std::vector<double> pixels;
+            pixels.resize(settings.initialPixelToWavelengthMapping.size());
+            std::iota(begin(pixels), end(pixels), 0);
+            polyFit.FitPolynomial(pixels, settings.initialPixelToWavelengthMapping, ransacSettings.initialModelCoefficients);
+        }
+        const double nanometersPerPixel = (settings.initialPixelToWavelengthMapping.back() - settings.initialPixelToWavelengthMapping.front()) / (double)settings.initialPixelToWavelengthMapping.size();
+        std::cout << "Wavelength calibration has resolution of " << nanometersPerPixel << " [nm/pixel]. Setting inlier threshold to : " << 0.5 * nanometersPerPixel << std::endl;
+        ransacSettings.inlierLimitInWavelength = 0.5 * nanometersPerPixel;
 
         // Start by removing any remaining baseline from the measured spectrum and normalizing the intensity of it, such that we can compare it to the fraunhofer spectrum.
         this->calibrationState.measuredSpectrum = std::make_unique<CSpectrum>(measuredSpectrum);
@@ -476,6 +488,7 @@ namespace novac
             }
 
             // The actual wavelength calibration by ransac
+            novac::RansacWavelengthCalibrationSetup ransacCalibrationSetup{ ransacSettings };
             auto startTime = std::chrono::steady_clock::now();
             auto ransacResult = ransacCalibrationSetup.DoWavelengthCalibration(calibrationState.allCorrespondences);
             auto stopTime = std::chrono::steady_clock::now();
@@ -487,6 +500,9 @@ namespace novac
             result.pixelToWavelengthMappingInliers = ransacResult.highestNumberOfInliers;
             result.pixelToWavelengthMappingPixelRange = ransacResult.largestPixelSpan;
             calibrationState.correspondenceIsInlier = ransacResult.correspondenceIsInlier;
+
+            // Also save the result as the initial guess for the next round of iterations.
+            ransacSettings.initialModelCoefficients = ransacResult.bestFittingModelCoefficients;
 
             {
                 // Output for debugging
@@ -510,7 +526,7 @@ namespace novac
             }
 
             // Adjust the selection parameter for the maximum error in the wavelength calibration such that the search space decreases for each iteration
-            correspondenceSelectionSettings.maximumPixelDistanceForPossibleCorrespondence = std::max(10, correspondenceSelectionSettings.maximumPixelDistanceForPossibleCorrespondence / 2);
+            correspondenceSelectionSettings.maximumPixelDistanceForPossibleCorrespondence = std::max(10, correspondenceSelectionSettings.maximumPixelDistanceForPossibleCorrespondence / 10);
 
             if (iterationIdx < numberOfIterations - 1)
             {
