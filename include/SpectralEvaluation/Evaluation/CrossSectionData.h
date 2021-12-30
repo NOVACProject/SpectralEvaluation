@@ -30,7 +30,7 @@ namespace novac
         /** Converts a CSpectrum to a CCrossSectionData */
         CCrossSectionData(const CSpectrum& spectrum);
 
-        CCrossSectionData &operator=(const CCrossSectionData &other);
+        CCrossSectionData& operator=(const CCrossSectionData& other);
 
         // ----------------------- DATA -----------------------
 
@@ -47,15 +47,15 @@ namespace novac
 
         /** Sets the cross-section information to the values in the
             supplied array */
-        void Set(double *wavelength, double *crossSection, unsigned long pointNum);
+        void Set(double* wavelength, double* crossSection, unsigned long pointNum);
 
         /** Sets the cross-section information to the values in the
             supplied array */
-        void Set(double *crossSection, unsigned long pointNum);
+        void Set(double* crossSection, unsigned long pointNum);
 
         /** Sets the cross-section information to the values in the
             supplied array */
-        void Set(MathFit::CVector &crossSection, unsigned long pointNum);
+        void Set(MathFit::CVector& crossSection, unsigned long pointNum);
 
         /** Gets the cross section at the given pixel */
         double GetAt(unsigned int index) const;
@@ -73,7 +73,7 @@ namespace novac
         /** Reads the cross section from a file
             @return 0 on success
             @return non-zero value on fail */
-        int ReadCrossSectionFile(const std::string &fileName);
+        int ReadCrossSectionFile(const std::string& fileName);
 
         /** Saves the contents of this cross section to file.
             @return 0 on success. */
@@ -90,7 +90,7 @@ namespace novac
         If 'scaleToPpmm' is true then the reference is mutliplied by 2.5e15 before the filtering and divide by the same number after. */
     int HighPassFilter(CCrossSectionData& crossSection, bool scaleToPpmm = true);
 
-    /** Performs a high-pass filtering of a ring spectrum. 
+    /** Performs a high-pass filtering of a ring spectrum.
         This will:
             1) high-pass filter (binomial, 500 passes).
             2) log the cross section. */
@@ -106,7 +106,7 @@ namespace novac
         The result will be sampled on the same wavelength range (given by crossSection.m_wavelength)
             with a uniform step-size of 'resolution'.
         @param crossSection the cross section to resample.
-        @param resolution the desired new resolution. 
+        @param resolution the desired new resolution.
         @param result will be filled with the resampled cross section. */
     void Resample(const CCrossSectionData& crossSection, double resolution, std::vector<double>& result);
 
@@ -118,11 +118,11 @@ namespace novac
         @param result will be filled with the resampled cross section. */
     void Resample(const CCrossSectionData& crossSection, const std::vector<double>& newGrid, std::vector<double>& result);
 
-    /** Shifts the provided data the given number of pixels (positive values corresponds to shifting towards 
+    /** Shifts the provided data the given number of pixels (positive values corresponds to shifting towards
         higher indices). This will approximate the data using a cubic spline and then shift the spline. */
     void Shift(std::vector<double>& data, double pixelCount);
 
-    /** Creates a simple gaussian function centered in the middle of the resulting CCrossSectionData 
+    /** Creates a simple gaussian function centered in the middle of the resulting CCrossSectionData
         @param gaussianSigma The sigma parameter of the Gaussian to generate
         @param deltaLambda The difference wavelength between two neighbouring points in the generated
             gaussian.m_waveLength array */

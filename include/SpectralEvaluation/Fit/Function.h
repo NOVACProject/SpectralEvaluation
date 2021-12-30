@@ -184,7 +184,7 @@ namespace MathFit
 			int i, j;
 			for(i = j = 0; j < iErrorSize; j++)
 			{
-				while(mXData.GetAt(i) < vXValues.GetAt(j))
+				while(i < iXSizeBase && mXData.GetAt(i) < vXValues.GetAt(j))
 					++i;
 
 				// no valid error available

@@ -586,7 +586,7 @@ private:
 	/**
 	 * Contains the defintion of the error types.
 	 */
-	static char* mLogLevelMsg[];
+	static const char* mLogLevelMsg[];
 	/**
 	 * Contains the output's file name.
 	 */

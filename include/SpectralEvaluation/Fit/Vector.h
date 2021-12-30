@@ -165,7 +165,10 @@ namespace MathFit
 		~CVector()
 		{
 			if(mAutoRelease && mData != 0)
+			{
 				delete mData;
+				mData = nullptr;
+			}
 			ReleaseDoublePtr();
 			ReleaseFloatPtr();
 		}
@@ -934,7 +937,8 @@ namespace MathFit
 				return 0;
 
 			// calculate the polynomial using the horner scheme
-			fRes = GetAt(iGrade--) * iGrade;
+			fRes = GetAt(iGrade) * iGrade;
+			--iGrade;
 			for(; iGrade >= 1; iGrade--)
 				fRes = (fRes * fXValue) + iGrade * GetAt(iGrade);
 
@@ -979,7 +983,9 @@ namespace MathFit
 		TFitData Max(int iOffset = 0, int iLength = -1)
 		{
 			if(iLength < 0)
-				iLength = mLength;
+			{
+				iLength = mLength - iOffset;
+			}
 
 			MATHFIT_ASSERT(iOffset >= 0 && (iOffset + iLength) <= mLength && iLength > 0);
 

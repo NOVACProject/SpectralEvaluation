@@ -4,8 +4,8 @@
 
 namespace Configuration
 {
-struct CDarkSettings;
-struct CSkySettings;
+    struct CDarkSettings;
+    struct CSkySettings;
 }
 
 namespace novac
@@ -18,7 +18,7 @@ namespace novac
     /** Reads a spectrum from .std or .txt files. @return true if successful */
     bool ReadSpectrumFromFile(const std::string& fullFilename, CSpectrum& spec);
 
-    /** ScanEvaluationBase is the base class for the ScanEvaluation-classes found in 
+    /** ScanEvaluationBase is the base class for the ScanEvaluation-classes found in
         NovacPPP and NovacProgram. This collects the common elements between the two program */
     class ScanEvaluationBase
     {
@@ -39,17 +39,17 @@ namespace novac
             @return a new evaluator (with a new fit-window set) to use to evaluate this scan with the shift/squeeze fixed to a good value.
             @return nullptr if the determination failed. */
         CEvaluationBase* FindOptimumShiftAndSqueezeFromFraunhoferReference(
-            const CFitWindow &fitWindow,
+            const CFitWindow& fitWindow,
             const Configuration::CDarkSettings& darkSettings,
             const Configuration::CSkySettings& skySettings,
             CScanFileHandler& scan);
 
-        /** @return the index of the spectrum with the 'most suitable intensity for fitting', i.e. this is the 
+        /** @return the index of the spectrum with the 'most suitable intensity for fitting', i.e. this is the
             spectrum with the highest intensity which isn't (close to being) saturated. */
-        static int GetIndexOfSpectrumWithBestIntensity(const CFitWindow &fitWindow, CScanFileHandler& scan);
+        static int GetIndexOfSpectrumWithBestIntensity(const CFitWindow& fitWindow, CScanFileHandler& scan);
 
     protected:
-        /** This is the lower edge of the fit region used in the last evaluation performed (in pixels). 
+        /** This is the lower edge of the fit region used in the last evaluation performed (in pixels).
             Used for reference and further processing. */
         int m_fitLow = 320;
 
@@ -66,17 +66,17 @@ namespace novac
         /** Retrieves the dark spectrum to use for the provided spectrum given the settings from the user.
             @return true on success.
             This will set m_lastErrorMessage if failed to get the spectrum. */
-        bool GetDark(CScanFileHandler& scan, const CSpectrum &spec, CSpectrum &dark, const Configuration::CDarkSettings* darkSettings);
+        bool GetDark(CScanFileHandler& scan, const CSpectrum& spec, CSpectrum& dark, const Configuration::CDarkSettings* darkSettings);
 
         /** This returns the sky spectrum that is to be used in the fitting.
             Which spectrum to be used is taken from the given settings.
-            @return true on success. 
+            @return true on success.
             This will set m_lastErrorMessage if failed to get the spectrum. */
-        bool GetSky(CScanFileHandler& scan, const Configuration::CSkySettings& settings, CSpectrum &sky);
+        bool GetSky(CScanFileHandler& scan, const Configuration::CSkySettings& settings, CSpectrum& sky);
 
         /** Creates a spectrum which is the average of all non-saturated and not-dark spectra in the given scan.
             @return true on successful spectrum creation. */
-        bool GetSkySpectrumFromAverageOfGoodSpectra(CScanFileHandler& scan, CSpectrum &sky) const;
+        bool GetSkySpectrumFromAverageOfGoodSpectra(CScanFileHandler& scan, CSpectrum& sky) const;
 
         /** Reads a 'sky' spectrum from file. This can read the 'sky' spectrum in one .pak
             file or one spectrum from a .std file.

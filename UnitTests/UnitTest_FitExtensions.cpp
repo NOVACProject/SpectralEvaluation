@@ -3,16 +3,18 @@
 #include <SpectralEvaluation/Fit/GaussFunction.h>
 
 // -------- SuperGaussFunction --------
-TEST_CASE("SuperGaussFunction : Power equals two, idential to Gaussian Function", "[FitExtensions]")
+TEST_CASE("SuperGaussFunction : Power equals two, idential to ApproximateGaussian Function", "[FitExtensions]")
 {
+    const double gaussianSigma = 2.3;
+    
     MathFit::CGaussFunction gauss;
     gauss.SetCenter(5.5);
-    gauss.SetSigma(2.3);
+    gauss.SetSigma(gaussianSigma);
 
     MathFit::CSuperGaussFunction sut;
     sut.SetCenter(5.5);
-    sut.SetSigma(2.3);
-    sut.SetPower(2.0);
+    sut.SetW(gaussianSigma * std::sqrt(2.0)); // there's a difference in the interpretation of the parameters.
+    sut.SetK(2.0);
 
     SECTION("GetValue returns same")
     {

@@ -1,4 +1,5 @@
 #include <SpectralEvaluation/VectorUtils.h>
+#include <SpectralEvaluation/Math/PolynomialFit.h>
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -30,6 +31,34 @@ double Max(const std::vector<double>& values)
 {
     size_t idx = 0U;
     return Max(values, idx);
+}
+
+double MaxAbs(const std::vector<double>& values, size_t& idx)
+{
+    idx = 0;
+
+    if (values.size() == 0)
+    {
+        return 0.0;
+    }
+
+    double m = std::abs(values[0]);
+    for (size_t ii = 1; ii < values.size(); ++ii)
+    {
+        if (std::abs(values[ii]) > m)
+        {
+            m = std::abs(values[ii]);
+            idx = ii;
+        }
+    }
+
+    return m;
+}
+
+double MaxAbs(const std::vector<double>& values)
+{
+    size_t idx = 0U;
+    return MaxAbs(values, idx);
 }
 
 double Min(const std::vector<double>& values, size_t& idx)
@@ -98,16 +127,34 @@ std::pair<double, double> MinMax(const std::vector<double>& values, std::pair<si
     return std::pair<double, double>(minValue, maxValue);
 }
 
-double Sum(const std::vector<double>& values)
+double Sum(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end)
 {
     double sum = 0.0;
-    for (size_t ii = 0; ii < values.size(); ++ii)
+    for (auto it = start; it < end; ++it)
     {
-        sum += values[ii];
+        sum += *it;
     }
 
     return sum;
 }
+
+double Sum(const std::vector<double>& values)
+{
+    return Sum(begin(values), end(values));
+}
+
+
+double SumAbs(const std::vector<double>& values)
+{
+    double sum = 0.0;
+    for (size_t ii = 0; ii < values.size(); ++ii)
+    {
+        sum += std::abs(values[ii]);
+    }
+
+    return sum;
+}
+
 
 double SumOfSquaredDifferences(const std::vector<double>& a, const std::vector<double>& b)
 {
@@ -163,18 +210,29 @@ void Exp(std::vector<double>& values)
     }
 }
 
-double Average(const std::vector<double>& values)
+double Average(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end)
 {
-    if (values.size() == 0)
+    if (start > end)
     {
         return 0.0;
     }
-    if (values.size() == 1)
+    if (start == end)
     {
-        return values.front();
+        return *start;
     }
-    const double sum = Sum(values);
-    return (sum / (double)values.size());
+    double sum = 0.0;
+    double numberOfValues = 0.0;
+    for (auto it = start; it < end; ++it)
+    {
+        sum += *it;
+        numberOfValues += 1;
+    }
+    return sum / numberOfValues;
+}
+
+double Average(const std::vector<double>& values)
+{
+    return Average(begin(values), end(values));
 }
 
 double MinOfAbsolutes(const std::vector<double>& values)
@@ -236,6 +294,27 @@ void RemoveMean(std::vector<double>& values)
     }
 }
 
+void RemoveSlope(std::vector<double>& values)
+{
+    novac::PolynomialFit polyFit{ 1 };
+
+    std::vector<double> indices;
+    indices.resize(values.size());
+    for (int ii = 0; ii < static_cast<int>(values.size()); ++ii)
+    {
+        indices[ii] = static_cast<double>(ii);
+    }
+
+    std::vector<double> polyomialCoefficients;
+    polyFit.FitPolynomial(indices, values, polyomialCoefficients);
+
+    for (int ii = 0; ii < static_cast<int>(values.size()); ++ii)
+    {
+        const double baseline = novac::PolynomialValueAt(polyomialCoefficients, static_cast<double>(ii));
+        values[ii] -= baseline;
+    }
+}
+
 double Median(std::vector<double>& values)
 {
     if (values.size() == 0)
@@ -291,6 +370,20 @@ void FindNLowest(const std::vector<double>& input, size_t N, std::vector<double>
     std::nth_element(begin(temp), begin(temp) + N, end(temp));
     result = std::vector<double>(begin(temp), begin(temp) + N);
     std::sort(begin(result), end(result));
+}
+
+void Normalize(std::vector<double>& values)
+{
+    const double minValue = Min(values);
+    const double maxValue = Max(values);
+
+    if (std::abs(minValue) > std::numeric_limits<double>::epsilon() || std::abs(maxValue - 1.0) > std::numeric_limits<double>::epsilon())
+    {
+        for (size_t ii = 0; ii < values.size(); ++ii)
+        {
+            values[ii] = (values[ii] - minValue) / (maxValue - minValue);
+        }
+    }
 }
 
 void Normalize(const std::vector<double>& input, std::vector<double>& output)
@@ -353,9 +446,9 @@ double FindValue(const std::vector<double>& values, double valueToFind, size_t s
         return (double)startIdx;
     }
 
-    stopIdx = std::min(stopIdx, values.size());
+    stopIdx = std::min(stopIdx, values.size() - 1);
 
-    for (size_t idx = startIdx + 1; idx < stopIdx; ++idx)
+    for (size_t idx = startIdx + 1; idx <= stopIdx; ++idx)
     {
         const double lastValue = values[idx - 1];
         const double thisValue = values[idx];
@@ -435,3 +528,14 @@ std::vector<double> GenerateVector(double minValue, double maxValue, size_t leng
     return result;
 }
 
+bool Contains(const std::vector<size_t>& data, size_t value)
+{
+    for (size_t v : data)
+    {
+        if (v == value)
+        {
+            return true;
+        }
+    }
+    return false;
+}

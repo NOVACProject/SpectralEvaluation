@@ -1,5 +1,7 @@
 #include <SpectralEvaluation/Interpolation.h>
 #include <cmath>
+#include <SpectralEvaluation/Fit/Vector.h>
+#include <SpectralEvaluation/Fit/CubicSplineFunction.h>
 
 namespace novac
 {
@@ -127,7 +129,8 @@ bool TriLinearInterpolation(const std::vector<double>& values, const std::vector
     return true;
 }
 
-double GetFractionalIndex(const std::vector<float>& values, double valueToFind)
+template<class T>
+double GetFractionalIndex(const std::vector<T>& values, double valueToFind)
 {
     for (size_t ii = 1; ii < values.size(); ++ii)
     {
@@ -142,7 +145,61 @@ double GetFractionalIndex(const std::vector<float>& values, double valueToFind)
     }
 
     // not found
-    return NAN; // not found.
+    return NAN;
+}
+
+double GetFractionalIndex(const std::vector<float>& values, double valueToFind)
+{
+    return GetFractionalIndex<float>(values, valueToFind);
+}
+
+double GetFractionalIndex(const std::vector<double>& values, double valueToFind)
+{
+    return GetFractionalIndex<double>(values, valueToFind);
+}
+
+void Resample(const std::vector<double>& oldX, const std::vector<double>& oldY, const std::vector<double>& newX, std::vector<double>& result)
+{
+    if (oldX.size() != oldY.size())
+    {
+        throw std::invalid_argument("Cannot resample a dataset where the length of x does not equal the length of y.");
+    }
+    if (newX.size() == 0 || oldX.size() == 0)
+    {
+        result.clear();
+        return;
+    }
+
+    const double oldXMin = oldX.front();
+    const double oldXMax = oldX.back();
+    if (oldXMin >= oldXMax)
+    {
+        throw std::invalid_argument("The provided x-axis vector must be monotonically increasing.");
+    }
+
+    std::vector<double> xCopy(begin(oldX), end(oldX)); // a non-const local copy
+    std::vector<double> yCopy(begin(oldY), end(oldY)); // a non-const local copy
+    MathFit::CVector slfX(xCopy.data(), (int)xCopy.size(), 1, false);
+    MathFit::CVector slfY(yCopy.data(), (int)yCopy.size(), 1, false);
+
+    // Create a spline from the slit-function.
+    MathFit::CCubicSplineFunction spline(slfX, slfY);
+
+    // do the resampling...
+    result.resize(newX.size());
+    for (size_t ii = 0; ii < newX.size(); ++ii)
+    {
+        const double x = newX[ii];
+
+        if (x >= oldXMin && x <= oldXMax)
+        {
+            result[ii] = spline.GetValue(x);
+        }
+        else
+        {
+            result[ii] = 0.0;
+        }
+    }
 }
 
 }

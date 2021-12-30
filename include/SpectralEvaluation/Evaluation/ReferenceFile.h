@@ -7,7 +7,7 @@
 namespace novac
 {
     /* the options for the shift and squeeze */
-    enum SHIFT_TYPE{
+    enum class SHIFT_TYPE{
         SHIFT_FREE,     /* Include the shift and squeeze in the fit */
         SHIFT_FIX,      /* Set the shift/squeee to a fixed value */
         SHIFT_LINK,     /* Links the shift/squeeze to the value of another reference */
@@ -67,7 +67,7 @@ namespace novac
         double m_gasFactor = 2.66;
 
         /** The option for the column value. */
-        SHIFT_TYPE m_columnOption = SHIFT_FREE;
+        SHIFT_TYPE m_columnOption = SHIFT_TYPE::SHIFT_FREE;
 
         /** The value for the column value (only used if m_columnOption is not SHIFT_FREE) */
         double m_columnValue = 0.0;
@@ -78,7 +78,7 @@ namespace novac
         double m_columnMaxValue = 0.0;
 
         /** The option for the shift */
-        SHIFT_TYPE m_shiftOption = SHIFT_FIX;
+        SHIFT_TYPE m_shiftOption = SHIFT_TYPE::SHIFT_FIX;
 
         /** The value for the shift */
         double m_shiftValue = 0.0;
@@ -89,7 +89,7 @@ namespace novac
         double m_shiftMaxValue = 0.0;
 
         /** The option for the squeeze */
-        SHIFT_TYPE m_squeezeOption = SHIFT_FIX;
+        SHIFT_TYPE m_squeezeOption = SHIFT_TYPE::SHIFT_FIX;
 
         /** The value for the squeeze */
         double m_squeezeValue = 1.0;

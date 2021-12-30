@@ -119,7 +119,7 @@ void CReferenceFile::SetColumn(SHIFT_TYPE option, double value, double value2)
     this->m_columnOption = option;
     this->m_columnValue = value;
 
-    if (SHIFT_LIMIT == option)
+    if (SHIFT_TYPE::SHIFT_LIMIT == option)
     {
         this->m_columnMaxValue = value2;
     }
@@ -130,7 +130,7 @@ void CReferenceFile::SetShift(SHIFT_TYPE option, double value, double value2)
     this->m_shiftOption = option;
     this->m_shiftValue = value;
 
-    if (SHIFT_LIMIT == option)
+    if (SHIFT_TYPE::SHIFT_LIMIT == option)
     {
         this->m_shiftMaxValue = value2;
     }
@@ -141,7 +141,7 @@ void CReferenceFile::SetSqueeze(SHIFT_TYPE option, double value, double value2)
     this->m_squeezeOption = option;
     this->m_squeezeValue = value;
 
-    if (SHIFT_LIMIT == option)
+    if (SHIFT_TYPE::SHIFT_LIMIT == option)
     {
         this->m_squeezeMaxValue = value2;
     }

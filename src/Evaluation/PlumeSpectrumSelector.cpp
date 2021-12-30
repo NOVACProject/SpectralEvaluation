@@ -52,7 +52,7 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
 
     // Get some parameters regarding the scan and the spectrometer
     auto model = CSpectrometerDatabase::GetInstance().GetModel(skySpectrum.m_info.m_specModelName);
-    this->m_maximumSpectrometerIntensity = model.maximumIntensity;
+    this->m_maximumSpectrometerIntensity = model.maximumIntensityForSingleReadout;
 
     if (!IsSuitableScanForRatioEvaluation(skySpectrum, darkSpectrum, scanResult, properties))
     {
@@ -140,7 +140,7 @@ void PlumeSpectrumSelector::SelectSpectra(
     referenceSpectra.clear();
     inPlumeSpectra.clear();
 
-    if (scanResult.m_spec.size() <= m_settings.numberOfSpectraOutsideOfPlume + m_settings.minNumberOfSpectraInPlume)
+    if (static_cast<int>(scanResult.m_spec.size()) <= m_settings.numberOfSpectraOutsideOfPlume + m_settings.minNumberOfSpectraInPlume)
     {
         return; // Cannot retrieve a region, too few spectra...
     }
@@ -148,14 +148,14 @@ void PlumeSpectrumSelector::SelectSpectra(
     // Find a proprosal for the in-plume region.
     auto inPlumeProposal = FindSpectraInPlume(scanResult, properties);
     inPlumeProposal = FilterSpectraUsingIntensity(inPlumeProposal, scanFile, darkSpectrum);
-    if (inPlumeProposal.size() < m_settings.minNumberOfSpectraInPlume)
+    if (static_cast<int>(inPlumeProposal.size()) < m_settings.minNumberOfSpectraInPlume)
     {
         return;
     }
 
     // Find the reference spectra as the spectra with lowest column value (ignore the sky and the dark spectra here..) 
     auto referenceProposal = FindSpectraOutOfPlume(scanFile, darkSpectrum, scanResult, inPlumeProposal);
-    if (referenceProposal.size() < m_settings.numberOfSpectraOutsideOfPlume)
+    if (static_cast<int>(referenceProposal.size()) < m_settings.numberOfSpectraOutsideOfPlume)
     {
         return;
     }
@@ -175,7 +175,7 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& properties)
 {
-    if (scanResult.m_spec.size() < m_settings.minNumberOfSpectraInPlume + m_settings.numberOfSpectraOutsideOfPlume)
+    if (static_cast<int>(scanResult.m_spec.size()) < m_settings.minNumberOfSpectraInPlume + m_settings.numberOfSpectraOutsideOfPlume)
     {
         return false; // not enough spectra
     }
@@ -215,7 +215,7 @@ std::vector<size_t> PlumeSpectrumSelector::FindSpectraInPlume(
     }
 
     // limit the number of spectra
-    while (indices.size() > m_settings.maxNumberOfSpectraInPlume)
+    while (indices.size() > static_cast<size_t>(m_settings.maxNumberOfSpectraInPlume))
     {
         auto first = begin(indices);
         auto last = begin(indices) + indices.size() - 1;
@@ -265,7 +265,7 @@ std::vector<size_t> PlumeSpectrumSelector::FindSpectraOutOfPlume(
         {
             referenceSpectraProposal.push_back(idx);
 
-            if (referenceSpectraProposal.size() == m_settings.numberOfSpectraOutsideOfPlume)
+            if (referenceSpectraProposal.size() == static_cast<size_t>(m_settings.numberOfSpectraOutsideOfPlume))
             {
                 return referenceSpectraProposal;
             }

@@ -1,5 +1,5 @@
 #include <SpectralEvaluation/Flux/Flux.h>
-#include <SpectralEvaluation/Defintions.h>
+#include <SpectralEvaluation/Definitions.h>
 
 #include <cmath>
 

@@ -163,9 +163,8 @@ TEST_CASE("ConvolveReference returns expected output - simple input", "[Convolve
 
     SECTION("Result has correct length")
     {
-        bool retVal = ConvolveReference(wavelMapping, slf, highResReference, result);
+        ConvolveReference(wavelMapping, slf, highResReference, result);
 
-        REQUIRE(retVal == true);
         REQUIRE(result.size() == wavelMapping.size());
     }
 
@@ -176,10 +175,9 @@ TEST_CASE("ConvolveReference returns expected output - simple input", "[Convolve
         const double idxInWavelMappingF = FindValue(wavelMapping, wavelengthOfSpike, 0U, wavelMapping.size());
         const size_t idxInWavelMapping = (size_t)std::round(idxInWavelMappingF);
 
-        bool retVal = ConvolveReference(wavelMapping, slf, highResReference, result);
+        ConvolveReference(wavelMapping, slf, highResReference, result);
 
         const double expectedAmplitude = 0.01;
-        REQUIRE(retVal == true);
         REQUIRE(fabs(result[idxInWavelMapping] - expectedAmplitude) < 0.01); // the spike must be at the correct point
     }
 
@@ -213,10 +211,9 @@ TEST_CASE("ConvolveReference returns expected output - simple input", "[Convolve
             v *= 123.0;
         }
 
-        bool retVal = ConvolveReference(wavelMapping, slf, highResReference, result);
+        ConvolveReference(wavelMapping, slf, highResReference, result);
 
         const double expectedAmplitude = 0.01;
-        REQUIRE(retVal == true);
         REQUIRE(fabs(result[idxInWavelMapping] - expectedAmplitude) < 0.01); // the spike must be at the correct point and still have amplitude = 1
     }
 
@@ -244,9 +241,8 @@ TEST_CASE("ConvolveReference (FFT) returns expected output - simple input", "[Co
     SECTION("Result has correct length")
     {
         std::vector<double> result;
-        bool retVal = ConvolveReference(wavelMapping, slf, highResReference, result, WavelengthConversion::None, ConvolutionMethod::Fft);
+        ConvolveReference(wavelMapping, slf, highResReference, result, WavelengthConversion::None, ConvolutionMethod::Fft);
 
-        REQUIRE(retVal == true);
         REQUIRE(result.size() == wavelMapping.size());
     }
 
@@ -282,9 +278,8 @@ TEST_CASE("ConvolveReference returns expected output - reference lambda_max < sp
 
     SECTION("Result has correct length")
     {
-        bool retVal = ConvolveReference(wavelMapping, slf, highResReference, result);
+        ConvolveReference(wavelMapping, slf, highResReference, result);
 
-        REQUIRE(retVal == true);
         REQUIRE(result.size() == wavelMapping.size());
     }
 
@@ -294,9 +289,8 @@ TEST_CASE("ConvolveReference returns expected output - reference lambda_max < sp
         const double idxInWavelMappingF = FindValue(wavelMapping, highResReference.m_waveLength.back(), 0U, wavelMapping.size());
         const size_t idxInWavelMapping = (size_t)std::round(idxInWavelMappingF);
 
-        bool retVal = ConvolveReference(wavelMapping, slf, highResReference, result);
+        ConvolveReference(wavelMapping, slf, highResReference, result);
 
-        REQUIRE(retVal == true);
         REQUIRE(fabs(result[idxInWavelMapping + 50]) < 0.01); // the result must be zero after the refer
     }
 }

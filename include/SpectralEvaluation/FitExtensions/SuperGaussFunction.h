@@ -2,7 +2,7 @@
 * Contains a defintion of an super-Gaussian function object.
 *
 * @author		Mattias Johansson
-* @version		2020/06/29
+* @version		2021/09/04
 */
 
 #pragma once
@@ -14,7 +14,7 @@ namespace MathFit
 /**
 * This object represents a super-Gaussian function.
 * The super-Gaussian function is a generalization of the Gaussian function but allows for a higher order power:
-*   \begin{verbatim}f(x)=s*exp(-1/2*[(x-a)/sigma]^P)\end{verbatim}
+*   \begin{verbatim}f(x)=s*exp(-[(x-a)/w]^k)\end{verbatim}
 * Where P=2 yields a regular Gaussian function.
 */
 class CSuperGaussFunction : public IParamFunction
@@ -23,8 +23,8 @@ private:
     const int LinearParamIdx_Scale = 0;
 
     const int NonLinearParamIdx_Center = 0;
-    const int NonLinearParamIdx_Sigma = 1;
-    const int NonLinearParamIdx_Power = 2;
+    const int NonLinearParamIdx_w = 1;
+    const int NonLinearParamIdx_k = 2;
 
 public:
     /**
@@ -52,10 +52,8 @@ public:
     */
     virtual TFitData GetValue(TFitData fXValue)
     {
-        const TFitData q = std::abs((fXValue - GetCenter()) / GetSigma()); // std::abs is necessary due to limitations in std::pow
-        const TFitData val = std::pow(q, GetPower());
-
-        return GetScale() * (TFitData)exp(-0.5 * val);
+        const TFitData q = std::abs((fXValue - GetCenter()) / GetW());
+        return GetScale() * (TFitData)exp(-std::pow(q, GetK()));
     }
 
     /**
@@ -73,14 +71,13 @@ public:
         const int iXSize = vXValues.GetSize();
         const double center = GetCenter();
         const double scale = GetScale();
-        const double sigma = GetSigma();
-        const double power = GetPower();
+        const double w = GetW();
+        const double k = GetK();
 
         for (int i = 0; i < iXSize; i++)
         {
-            const TFitData q = std::abs((vXValues.GetAt(i) - center) / sigma); // std::abs is necessary due to limitations in std::pow
-            const TFitData exponent = -0.5 * std::pow(q, power);
-            vYTargetVector.SetAt(i, scale * (TFitData)exp(exponent));
+            const TFitData q = std::abs((vXValues.GetAt(i) - center) / w);
+            vYTargetVector.SetAt(i, scale * (TFitData)exp(-std::pow(q, k)));
         }
 
         return vYTargetVector;
@@ -107,8 +104,8 @@ public:
     {
         TFitData fVal = GetValue(fXValue);
         fVal *= -(fXValue - GetCenter());
-        fVal *= GetPower();
-        fVal /= 2.0 * std::pow(GetSigma(), GetPower());
+        fVal *= GetK();
+        fVal /= std::pow(GetW(), GetK());
 
         return fVal;
     }
@@ -126,7 +123,7 @@ public:
     virtual CVector& GetSlopes(CVector& vXValues, CVector& vSlopeVector)
     {
         const int iXSize = vXValues.GetSize();
-        const double factor = GetPower() / (2.0 * std::pow(GetSigma(), GetPower()));
+        const double factor = GetK() / (std::pow(GetW(), GetK()));
 
         for (int i = 0; i < iXSize; i++)
         {
@@ -151,9 +148,9 @@ public:
     virtual TFitData GetLinearBasisFunction(TFitData fXValue, int /*iParamID*/, bool /*bFixedID = true*/)
     {
         // get the function value without the scale factor
-        const TFitData val = std::pow(std::abs((fXValue - GetCenter()) / GetSigma()), GetPower());
+        const TFitData val = std::pow(std::abs((fXValue - GetCenter()) / GetW()), GetK());
 
-        return (TFitData)exp(-0.5 * val);
+        return (TFitData)exp(-val);
     }
 
     /**
@@ -167,19 +164,19 @@ public:
     }
 
     /**
-    * Returns the sigma parameter
+    * Returns the width parameter (w).
     */
-    TFitData GetSigma()
+    TFitData GetW()
     {
-        return mNonlinearParams.GetAllParameter().GetAt(NonLinearParamIdx_Sigma);
+        return mNonlinearParams.GetAllParameter().GetAt(NonLinearParamIdx_w);
     }
 
     /**
-    * Returns the power parameter (P)
+    * Returns the power parameter (k)
     */
-    TFitData GetPower()
+    TFitData GetK()
     {
-        return mNonlinearParams.GetAllParameter().GetAt(NonLinearParamIdx_Power);
+        return mNonlinearParams.GetAllParameter().GetAt(NonLinearParamIdx_k);
     }
 
     /**
@@ -198,8 +195,7 @@ public:
         }
         else
         {
-            TFitData fVal = fSqrPI * 0.5 * GetSigma();
-            return 1 / fVal;
+            return GetK() / (2.0 * GetW() * std::lgamma(1.0 / GetK()));
         }
     }
 
@@ -224,19 +220,19 @@ public:
     }
 
     /**
-    * Sets the sigma value.
+    * Sets the w value.
     */
-    void SetSigma(TFitData newValue)
+    void SetW(TFitData newValue)
     {
-        mNonlinearParams.SetParameter(NonLinearParamIdx_Sigma, newValue);
+        mNonlinearParams.SetParameter(NonLinearParamIdx_w, newValue);
     }
 
     /**
     * Sets the power value.
     */
-    void SetPower(TFitData newValue)
+    void SetK(TFitData newValue)
     {
-        mNonlinearParams.SetParameter(NonLinearParamIdx_Power, newValue);
+        mNonlinearParams.SetParameter(NonLinearParamIdx_k, newValue);
     }
 
     /**
@@ -266,8 +262,8 @@ public:
     {
         mNonlinearParams.SetSize(3);
         mNonlinearParams.SetParameter(NonLinearParamIdx_Center, 0.0); // default: center = 0.0
-        mNonlinearParams.SetParameter(NonLinearParamIdx_Sigma, 1.0);  // default: sigma = 1.0
-        mNonlinearParams.SetParameter(NonLinearParamIdx_Power, 2.0);  // default: power = 2.0 (standard Gaussian)
+        mNonlinearParams.SetParameter(NonLinearParamIdx_w, 1.0);  // default: w = 1.0
+        mNonlinearParams.SetParameter(NonLinearParamIdx_k, 2.0);  // default: k = 2.0 (standard Gaussian)
     }
 
 private:

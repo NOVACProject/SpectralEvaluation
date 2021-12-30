@@ -64,20 +64,7 @@ void CEvaluationBase::ClearRefereneSpectra()
     m_ref.clear();
 }
 
-CReferenceSpectrumFunction* DefaultReferenceSpectrumFunction()
-{
-    auto newRef = new CReferenceSpectrumFunction();
-
-    // reset all reference's parameters
-    newRef->ResetLinearParameter();
-    newRef->ResetNonlinearParameter();
-
-    // enable amplitude normalization. This should normally be done in order to avoid numerical
-    // problems during fitting.
-    newRef->SetNormalize(true);
-
-    return newRef;
-}
+CReferenceSpectrumFunction* DefaultReferenceSpectrumFunction();
 
 int CEvaluationBase::CreateReferenceSpectra()
 {
@@ -111,16 +98,16 @@ int CEvaluationBase::CreateReferenceSpectra()
         // Chech the options for the column value
         switch (m_window.ref[i].m_columnOption)
         {
-        case SHIFT_FIX:     m_ref[i]->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, m_window.ref[i].m_columnValue * m_ref[i]->GetAmplitudeScale()); break;
-        case SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_columnValue]->LinkParameter(CReferenceSpectrumFunction::CONCENTRATION, *m_ref[i], CReferenceSpectrumFunction::CONCENTRATION); break;
+        case SHIFT_TYPE::SHIFT_FIX:     m_ref[i]->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, m_window.ref[i].m_columnValue * m_ref[i]->GetAmplitudeScale()); break;
+        case SHIFT_TYPE::SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_columnValue]->LinkParameter(CReferenceSpectrumFunction::CONCENTRATION, *m_ref[i], CReferenceSpectrumFunction::CONCENTRATION); break;
         }
 
         // Check the options for the shift
         switch (m_window.ref[i].m_shiftOption)
         {
-        case SHIFT_FIX:     m_ref[i]->FixParameter(CReferenceSpectrumFunction::SHIFT, m_window.ref[i].m_shiftValue); break;
-        case SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_shiftValue]->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_ref[i], CReferenceSpectrumFunction::SHIFT); break;
-        case SHIFT_LIMIT:   m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)m_window.ref[i].m_shiftValue, (TFitData)m_window.ref[i].m_shiftMaxValue, 1); break;
+        case SHIFT_TYPE::SHIFT_FIX:     m_ref[i]->FixParameter(CReferenceSpectrumFunction::SHIFT, m_window.ref[i].m_shiftValue); break;
+        case SHIFT_TYPE::SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_shiftValue]->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_ref[i], CReferenceSpectrumFunction::SHIFT); break;
+        case SHIFT_TYPE::SHIFT_LIMIT:   m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)m_window.ref[i].m_shiftValue, (TFitData)m_window.ref[i].m_shiftMaxValue, 1); break;
         default:            m_ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SHIFT, (TFitData)0.0);
             m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)-10.0, (TFitData)10.0, (TFitData)1e0); break; // TODO: Get these limits as parameters!
         }
@@ -128,9 +115,9 @@ int CEvaluationBase::CreateReferenceSpectra()
         // Check the options for the squeeze
         switch (m_window.ref[i].m_squeezeOption)
         {
-        case SHIFT_FIX:     m_ref[i]->FixParameter(CReferenceSpectrumFunction::SQUEEZE, m_window.ref[i].m_squeezeValue); break;
-        case SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_squeezeValue]->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_ref[i], CReferenceSpectrumFunction::SQUEEZE); break;
-        case SHIFT_LIMIT:   m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)m_window.ref[i].m_squeezeValue, (TFitData)m_window.ref[i].m_squeezeMaxValue, 1e7); break;
+        case SHIFT_TYPE::SHIFT_FIX:     m_ref[i]->FixParameter(CReferenceSpectrumFunction::SQUEEZE, m_window.ref[i].m_squeezeValue); break;
+        case SHIFT_TYPE::SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_squeezeValue]->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_ref[i], CReferenceSpectrumFunction::SQUEEZE); break;
+        case SHIFT_TYPE::SHIFT_LIMIT:   m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)m_window.ref[i].m_squeezeValue, (TFitData)m_window.ref[i].m_squeezeMaxValue, 1e7); break;
         default:            m_ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SQUEEZE, (TFitData)1.0);
             m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)0.98, (TFitData)1.02, (TFitData)1e0); break; // TODO: Get these limits as parameters!
         }
@@ -183,11 +170,11 @@ void CEvaluationBase::RemoveOffset(double *spectrum, int sumChn, bool UV)
 void CEvaluationBase::PrepareSpectra(double *sky, double *meas, const CFitWindow &window)
 {
 
-    if (window.fitType == FIT_HP_DIV)
+    if (window.fitType == FIT_TYPE::FIT_HP_DIV)
         return PrepareSpectra_HP_Div(sky, meas, window);
-    if (window.fitType == FIT_HP_SUB)
+    if (window.fitType == FIT_TYPE::FIT_HP_SUB)
         return PrepareSpectra_HP_Sub(sky, meas, window);
-    if (window.fitType == FIT_POLY)
+    if (window.fitType == FIT_TYPE::FIT_POLY)
         return PrepareSpectra_Poly(sky, meas, window);
 }
 
@@ -267,12 +254,12 @@ int CEvaluationBase::SetSkySpectrum(const CCrossSectionData& spec, bool removeOf
         RemoveOffset(m_sky.m_crossSection.data(), m_sky.GetSize(), m_window.UV);
     }
 
-    if (m_window.fitType == FIT_HP_SUB)
+    if (m_window.fitType == FIT_TYPE::FIT_HP_SUB)
     {
         HighPassBinomial(m_sky.m_crossSection.data(), m_sky.GetSize(), 500);
     }
 
-    if (m_window.fitType == FIT_POLY && m_window.includeIntensitySpacePolyominal)
+    if (m_window.fitType == FIT_TYPE::FIT_POLY && m_window.includeIntensitySpacePolyominal)
     {
         CreateReferenceForIntensitySpacePolynomial(m_sky.m_crossSection);
     }
@@ -302,20 +289,13 @@ int CEvaluationBase::SetSkySpectrum(const CCrossSectionData& spec, bool removeOf
         }
     }
 
-    // Take the log of the sky-spectrum
-    if (m_window.fitType != FIT_HP_DIV)
+    if (m_window.fitType != FIT_TYPE::FIT_HP_DIV)
     {
+        // Take the log of the sky-spectrum
         Log(m_sky.m_crossSection.data(), m_sky.GetSize());
-    }
 
-    // Include the sky-spectrum in the fit
-    if (m_window.fitType != FIT_HP_DIV)
-    {
+        // Include the sky-spectrum in the fit
         CreateReferenceForSkySpectrum();
-    }
-
-    if (m_window.fitType != FIT_HP_DIV)
-    {
         CreateReferenceSpectra();
     }
 
@@ -376,7 +356,7 @@ void CEvaluationBase::CreateReferenceForSkySpectrum()
     }
 
     // Check the options for the column value
-    const double concentrationMultiplier = (m_window.fitType == FIT_POLY) ? -1.0 : 1.0;
+    const double concentrationMultiplier = (m_window.fitType == FIT_TYPE::FIT_POLY) ? -1.0 : 1.0;
     m_skyReference->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, concentrationMultiplier * m_skyReference->GetAmplitudeScale());
 
     // Check the options for the shift & squeeze
@@ -486,12 +466,12 @@ int CEvaluationBase::Evaluate(const CSpectrum &measured, int numSteps)
 
 int CEvaluationBase::Evaluate(const double* measured, size_t measuredLength, int measuredStartChannel, int numSteps)
 {
-    assert(vXData.GetSize() >= measuredLength);
+    assert(static_cast<size_t>(vXData.GetSize()) >= measuredLength);
 
     m_lastError = "";
 
     // Check so that the length of the spectra agree with each other
-    if (m_window.specLength != measuredLength)
+    if (static_cast<size_t>(m_window.specLength) != measuredLength)
     {
         m_lastError = "Failed to evaluate: the length of the measured spectrum does not equal the spectrum length of the fit-window used.";
         return 1;
@@ -720,13 +700,13 @@ int CEvaluationBase::EvaluateShift(const CSpectrum &measured, double &shift, dou
     //----------------------------------------------------------------
 
     RemoveOffset(measArray, m_window.specLength, m_window.UV);
-    if (m_window.fitType == FIT_HP_DIV || m_window.fitType == FIT_HP_SUB)
+    if (m_window.fitType == FIT_TYPE::FIT_HP_DIV || m_window.fitType == FIT_TYPE::FIT_HP_SUB)
     {
         HighPassBinomial(measArray, m_window.specLength, 500);
     }
     Log(measArray, m_window.specLength);
 
-    if (m_window.fitType == FIT_POLY)
+    if (m_window.fitType == FIT_TYPE::FIT_POLY)
     {
         for (int j = 0; j < m_window.specLength; ++j)
         {
@@ -791,7 +771,7 @@ int CEvaluationBase::EvaluateShift(const CSpectrum &measured, double &shift, dou
     }
 
     // Chech the options for the column value
-    const double concentrationMultiplier = (m_window.fitType == FIT_POLY) ? -1.0 : 1.0;
+    const double concentrationMultiplier = (m_window.fitType == FIT_TYPE::FIT_POLY) ? -1.0 : 1.0;
     solarSpec->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, concentrationMultiplier * solarSpec->GetAmplitudeScale());
 
     // Fix the squeeze

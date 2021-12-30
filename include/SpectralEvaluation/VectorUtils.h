@@ -15,6 +15,10 @@ double Max(const std::vector<double>& values, size_t& idx);
     If values.size() == 0 then 0.0 is returned. */
 double Max(const std::vector<double>& values);
 
+/** @return the maximum absolute value in the provided vector.
+    If values.size() == 0 then 0.0 is returned. */
+double MaxAbs(const std::vector<double>& values);
+
 /** @return the minimum value in the provided vector.
     @param idx will be filled with the index where the minimum value is found.
     If values.size() == 0 then 0.0 is returned and idx is set to zero. */
@@ -36,6 +40,14 @@ std::pair<double, double> MinMax(const std::vector<double>& values, std::pair<si
 /** @return the sum of all the given values
     If values.size() == 0 then 0.0 is returned. */
 double Sum(const std::vector<double>& values);
+
+/** @return the sum of all the values between start and end.
+    If values.size() == 0 then 0.0 is returned. */
+double Sum(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end);
+
+/** @return the sum of the absolutes of all the given values.
+    If values.size() == 0 then 0.0 is returned. */
+double SumAbs(const std::vector<double>& values);
 
 /** @return the sum the squared differences between the two provided vectors.
     If a.size() == 0 then 0.0 is returned.
@@ -60,12 +72,20 @@ void Exp(std::vector<double>& values);
     If values.size() == 0 then 0.0 is returned. */
 double Average(const std::vector<double>& values);
 
+/** @return the Average of all the values between start and end.
+    If values.size() == 0 then 0.0 is returned. */
+double Average(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end);
+
 /** @return the average of all the given values weighted with the inverse of each of the error.
     If values.size() == 0 or values.size() != errors.size() then 0.0 is returned. */
 double WeightedAverage(const std::vector<double>& values, const std::vector<double>& errors);
 
 /** Calculates the average of all the given values and subtracts it from the data. */
 void RemoveMean(std::vector<double>& values);
+
+/** Fits a line to all the given values and subtracts it from the data.
+    Similar to 'RemoveMean' but uses a polynomial of order one instead of zero. */
+void RemoveSlope(std::vector<double>& values);
 
 /** @return the Median of all the given values.
     This will sort the provided vector.
@@ -89,6 +109,9 @@ void FindNLowest(const std::vector<double>& input, size_t N, std::vector<double>
     If input.size() == 0 then output.size() will also be zero. */
 void Normalize(const std::vector<double>& input, std::vector<double>& output);
 
+/** Normalizes a vector of values such that the highest value will be 1.0 and the lowest 0.0. */
+void Normalize(std::vector<double>& values);
+
 /** Normalizes a vector of values such that the lowest value will be 0.0 and the
     sum of all the values will be 1.0.
     If input.size() == 0 then output.size() will also be zero. */
@@ -101,6 +124,7 @@ void NormalizeArea(const std::vector<double>& input, double xStep, std::vector<d
 
 /** Finds the (fractional) index where the values in the provided vector crosses the y='valueToFind' line
     in the index-range [startIdx, stopIdx[.
+    This assumes that the provided vector of values is sorted in increasing order.
      Returns -1.0 if the value cannot be found OR startIdx >= stopIdx OR startIdx >= values.size() */
 double FindValue(const std::vector<double>& values, double valueToFind, size_t startIdx, size_t stopIdx);
 
@@ -115,4 +139,7 @@ double Resolution(const std::vector<double>& wavelGrid);
 
 /** Generates a linear mapping from minValue to maxValue with 'length' values. */
 std::vector<double> GenerateVector(double minValue, double maxValue, size_t length);
+
+/** Returns true if the provided vector contains the provided value. */
+bool Contains(const std::vector<size_t>& data, size_t value);
 

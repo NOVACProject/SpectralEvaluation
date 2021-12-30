@@ -34,24 +34,56 @@ double CalculateFhwm(const CCrossSectionData& slf)
 /* Performs a convolution between the input and core and stores the result in 'result' */
 void ConvolutionCore(const std::vector<double>& input, const std::vector<double>& core, std::vector<double>& result)
 {
-    const size_t refSize = input.size();
+    const size_t inputSize = input.size();
     const size_t coreSize = core.size();
 
-    result.resize(refSize + coreSize - 1, 0.0);
+    result.resize(inputSize + coreSize - 1, 0.0);
 
-    // The actual convolution. Here a dead-simple raw convolution calculation. This can be made faster using FFT if required.
-    //  Get the pointers to the data, this avoids range-checking for each and every value (at least in debug mode)
+    // The actual convolution. Here a dead-simple raw convolution calculation. This can be made faster if required.
+    // The convolution is separated into three parts, the beginning, the middle and the end, for efficiently reasons since
+    // some math in the inner loop can be avoided in the major loop this way.
+    //  Get the pointers to the data, this avoids range-checking for each and every value.
     const double* inputPtr = input.data();
     const double* corePtr = core.data();
     double* resultPtr = result.data();
-    for (size_t n = 0; n < refSize + coreSize - 1; ++n)
-    {
-        result[n] = 0;
 
-        const size_t kmin = (n >= coreSize - 1) ? n - (coreSize - 1) : 0;
-        const size_t kmax = (n < refSize - 1) ? n : refSize - 1;
+    // The first part, until the entire core fits into the input.
+    for (std::int64_t n = coreSize / 2; n < (std::int64_t)coreSize - 1; ++n)
+    {
+        resultPtr[n] = 0;
+
+        const std::int64_t kmin = n - (coreSize - 1);
+        const std::int64_t kmax = n;
+
+        for (std::int64_t k = std::max(kmin, (std::int64_t)0); k <= kmax; k++)
+        {
+            resultPtr[n] += inputPtr[k] * corePtr[std::max(n - k, (std::int64_t)0)];
+        }
+    }
+
+    // The middle, this is normally the longest part of the convolution.
+    for (size_t n = coreSize - 1; n < inputSize - 1; ++n)
+    {
+        resultPtr[n] = 0;
+
+        const size_t kmin = n - (coreSize - 1);
+        const size_t kmax = n;
 
         for (size_t k = kmin; k <= kmax; k++)
+        {
+            resultPtr[n] += inputPtr[k] * corePtr[n - k];
+        }
+    }
+
+    // The end
+    for (size_t n = inputSize - 1; n < inputSize + coreSize - 1; ++n)
+    {
+        resultPtr[n] = 0;
+
+        const size_t kmin = n - (coreSize - 1);
+        const size_t kmax = n;
+
+        for (size_t k = kmin; k <= std::min(kmax, inputSize - 1); k++)
         {
             resultPtr[n] += inputPtr[k] * corePtr[n - k];
         }
@@ -115,33 +147,38 @@ bool ConvolveReference(
     CCrossSectionData& result,
     WavelengthConversion conversion)
 {
-    CCrossSectionData pixelToWavelengthMapping;
-    if (!ReadCrossSectionFile(pixelToWavelengthMappingFile, pixelToWavelengthMapping, true))
+    try
     {
+        CCrossSectionData pixelToWavelengthMapping;
+        if (!ReadCrossSectionFile(pixelToWavelengthMappingFile, pixelToWavelengthMapping, true))
+        {
+            return false;
+        }
+
+        CCrossSectionData slf;
+        if (!ReadCrossSectionFile(slfFile, slf))
+        {
+            return false;
+        }
+
+        CCrossSectionData highResReference;
+        if (!ReadCrossSectionFile(highResReferenceFile, highResReference))
+        {
+            return false;
+        }
+
+        ConvolveReference(pixelToWavelengthMapping.m_waveLength, slf, highResReference, result.m_crossSection, conversion);
+
+        // save the wavelengths as well
+        result.m_waveLength = pixelToWavelengthMapping.m_waveLength;
+
+        return true;
+    }
+    catch (std::exception& e)
+    {
+        std::cout << "Exception in ConvolveReference: " << e.what() << std::endl;
         return false;
     }
-
-    CCrossSectionData slf;
-    if (!ReadCrossSectionFile(slfFile, slf))
-    {
-        return false;
-    }
-
-    CCrossSectionData highResReference;
-    if (!ReadCrossSectionFile(highResReferenceFile, highResReference))
-    {
-        return false;
-    }
-
-    if (!ConvolveReference(pixelToWavelengthMapping.m_waveLength, slf, highResReference, result.m_crossSection, conversion))
-    {
-        return false;
-    }
-
-    // save the wavelengths as well
-    result.m_waveLength = pixelToWavelengthMapping.m_waveLength;
-
-    return true;
 }
 
 void CreateGaussian(double gaussianSigma, double deltaLambda, CCrossSectionData& gaussian)
@@ -174,32 +211,37 @@ bool ConvolveReferenceGaussian(
     CCrossSectionData& result,
     WavelengthConversion conversion)
 {
-    CCrossSectionData pixelToWavelengthMapping;
-    if (!ReadCrossSectionFile(pixelToWavelengthMappingFile, pixelToWavelengthMapping, true))
+    try
     {
+        CCrossSectionData pixelToWavelengthMapping;
+        if (!ReadCrossSectionFile(pixelToWavelengthMappingFile, pixelToWavelengthMapping, true))
+        {
+            return false;
+        }
+
+        CCrossSectionData highResReference;
+        if (!ReadCrossSectionFile(highResReferenceFile, highResReference))
+        {
+            return false;
+        }
+
+        // Generate a gaussian with high enough resolution
+        CCrossSectionData slf;
+        const double slfDeltaLambda = std::min(0.25 * Resolution(highResReference.m_waveLength), gaussianSigma * 0.125);
+        CreateGaussian(gaussianSigma, slfDeltaLambda, slf);
+
+        ConvolveReference(pixelToWavelengthMapping.m_waveLength, slf, highResReference, result.m_crossSection, conversion);
+
+        // save the wavelengths as well
+        result.m_waveLength = pixelToWavelengthMapping.m_waveLength;
+
+        return true;
+    }
+    catch (std::exception& e)
+    {
+        std::cout << "Exception in ConvolveReferenceGaussian: " << e.what() << std::endl;
         return false;
     }
-
-    CCrossSectionData highResReference;
-    if (!ReadCrossSectionFile(highResReferenceFile, highResReference))
-    {
-        return false;
-    }
-
-    // Generate a gaussian with high enough resolution
-    CCrossSectionData slf;
-    const double slfDeltaLambda = std::min(0.25 * Resolution(highResReference.m_waveLength), gaussianSigma * 0.125);
-    CreateGaussian(gaussianSigma, slfDeltaLambda, slf);
-
-    if (!ConvolveReference(pixelToWavelengthMapping.m_waveLength, slf, highResReference, result.m_crossSection, conversion))
-    {
-        return false;
-    }
-
-    // save the wavelengths as well
-    result.m_waveLength = pixelToWavelengthMapping.m_waveLength;
-
-    return true;
 }
 
 void Convert(const CCrossSectionData& highResReference, WavelengthConversion conversion, CCrossSectionData& result)
@@ -298,24 +340,23 @@ size_t GetNonReduciblePrime(size_t number)
     return number;
 }
 
-
-bool ConvolveReference(
+void ConvolveReference(
     const std::vector<double>& pixelToWavelengthMapping,
     const CCrossSectionData& slf,
     const CCrossSectionData& highResReference,
     std::vector<double>& result,
     WavelengthConversion conversion,
-    ConvolutionMethod method)
+    ConvolutionMethod method,
+    double fwhmOfInstrumentLineShape,
+    bool normalizeSlf)
 {
     if (slf.m_waveLength.size() != slf.m_crossSection.size())
     {
-        std::cout << " Error in call to 'ConvolveReference', the SLF must have as many values as wavelength values." << std::endl;
-        return false;
+        throw std::invalid_argument(" Error in call to 'ConvolveReference', the SLF must have as many values as wavelength values.");
     }
     if (highResReference.m_waveLength.size() != highResReference.m_crossSection.size())
     {
-        std::cout << " Error in call to 'ConvolveReference', the reference must have as many values as wavelength values." << std::endl;
-        return false;
+        throw std::invalid_argument(" Error in call to 'ConvolveReference', the reference must have as many values as wavelength values.");
     }
 
     // If desired, convert the high-res reference from vacuum to air
@@ -323,9 +364,16 @@ bool ConvolveReference(
     Convert(highResReference, conversion, convertedHighResReference);
 
     // We need to make sure we work on the correct resolution, the highest possible to get the most accurate results.
-    const double fwhmOfSlf = GetFwhm(slf);
-    const double minimumAllowedResolution = 0.02 * fwhmOfSlf; // do use at least 50 points per FWHM of the SLF
-    const double maximumAllowedResolution = 0.01 * fwhmOfSlf; // do not use more than 100 points per FWHM of the SLF
+    if (fwhmOfInstrumentLineShape < std::numeric_limits<float>::epsilon())
+    {
+        fwhmOfInstrumentLineShape = GetFwhm(slf);
+    }
+    if (fwhmOfInstrumentLineShape < std::numeric_limits<float>::epsilon())
+    {
+        throw std::invalid_argument(" Error in call to 'ConvolveReference', the estimated fwhm of the instrument line shape is zero.");
+    }
+    const double minimumAllowedResolution = 0.02 * fwhmOfInstrumentLineShape; // do use at least 50 points per FWHM of the SLF
+    const double maximumAllowedResolution = 0.01 * fwhmOfInstrumentLineShape; // do not use more than 100 points per FWHM of the SLF
     const double resolutionOfReference = Resolution(convertedHighResReference.m_waveLength);
     const double highestResolution = std::max(std::min(resolutionOfReference, maximumAllowedResolution), minimumAllowedResolution);
 
@@ -340,25 +388,34 @@ bool ConvolveReference(
         // For the sake of efficiency of the fft below, find the length which contain as many factors of two, tree and five as possible
         //  while still being between minimumAllowedResolution and maximumAllowedResolution.
         // This is done by finding the smallest length for which the remainder after removing all 2, 3 and 5 prime factors is minimal (usually one).
-        const size_t minimumLength = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / minimumAllowedResolution);
         const size_t maximumLength = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / maximumAllowedResolution);
 
-        size_t testLength = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / highestResolution);
-        size_t optimumLength = testLength;
-        size_t optimumRemainder = GetNonReduciblePrime(testLength);
+        size_t testLengthForConvolutionGrid = 2 * (size_t)((convolutionGrid.maxValue - convolutionGrid.minValue) / highestResolution);
+        size_t optimumConvolutionGridLength = testLengthForConvolutionGrid;
+        convolutionGrid.length = testLengthForConvolutionGrid;
+        size_t slfLength = 1 + (size_t)(std::round((slf.m_waveLength.back() - slf.m_waveLength.front()) / convolutionGrid.Resolution()));
+        size_t fftLength = testLengthForConvolutionGrid + slfLength - 1; // take into account that what we're calculating the fft of isn't just the input length but the input + slf - 1.
+        size_t optimumRemainder = GetNonReduciblePrime(fftLength);
 
-        while (testLength < maximumLength)
+        while (testLengthForConvolutionGrid < maximumLength)
         {
-            ++testLength;
-            const size_t remainder = GetNonReduciblePrime(testLength);
+            ++testLengthForConvolutionGrid;
+
+            convolutionGrid.length = testLengthForConvolutionGrid;
+            slfLength = 1 + (size_t)(std::round((slf.m_waveLength.back() - slf.m_waveLength.front()) / convolutionGrid.Resolution()));
+            fftLength = testLengthForConvolutionGrid + slfLength - 1;
+
+            const size_t remainder = GetNonReduciblePrime(fftLength);
 
             if (remainder < optimumRemainder)
             {
                 optimumRemainder = remainder;
-                optimumLength = testLength;
+                optimumConvolutionGridLength = testLengthForConvolutionGrid;
             }
         }
-        convolutionGrid.length = optimumLength;
+        convolutionGrid.length = optimumConvolutionGridLength;
+
+        // std::cout << "Convolution is using length: " << optimumConvolutionGridLength << " with smallest remainder: " << optimumRemainder << std::endl;
     }
     else
     {
@@ -376,8 +433,15 @@ bool ConvolveReference(
 
     // To preserve the energy, we need to normalize the slit-function to the range [0->1]
     std::vector<double> normalizedSlf;
-    NormalizeArea(resampledSlf, normalizedSlf);
-    assert(normalizedSlf.size() == resampledSlf.size());
+    if (normalizeSlf)
+    {
+        NormalizeArea(resampledSlf, normalizedSlf);
+        assert(normalizedSlf.size() == resampledSlf.size());
+    }
+    else
+    {
+        normalizedSlf = resampledSlf;
+    }
 
     const size_t refSize = uniformHighResReference.size();
     const size_t coreSize = normalizedSlf.size();
@@ -387,7 +451,6 @@ bool ConvolveReference(
     if (method == ConvolutionMethod::Direct)
     {
         ConvolutionCore(uniformHighResReference, normalizedSlf, intermediate);
-
     }
     else if (method == ConvolutionMethod::Fft)
     {
@@ -403,8 +466,6 @@ bool ConvolveReference(
     convolutionGrid.Generate(resultSpec.m_waveLength);
 
     Resample(resultSpec, pixelToWavelengthMapping, result);
-
-    return true;
 }
 
 bool ConvolveReference_Fast(
