@@ -86,6 +86,11 @@ namespace novac
             return GetTestDataDirectory() + std::string("FLMS14634/FLMS14634_302nm.slf");
         }
 
+        static std::string GetSyntheticFraunhoferSpectrumName_FLMS14634()
+        {
+            return GetTestDataDirectory() + std::string("FLMS14634/FLMS14634_Fraunhofer.txt");
+        }
+
         static std::string GetMeasuredSpectrumName_I2J0093()
         {
             return GetTestDataDirectory() + std::string("I2P0093/00000_0.STD");

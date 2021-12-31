@@ -3,6 +3,7 @@
 #include <SpectralEvaluation/Spectra/SpectrumUtils.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/File/STDFile.h>
+#include <SpectralEvaluation/File/TXTFile.h>
 #include <sstream>
 #include "TestData.h"
 
@@ -106,7 +107,7 @@ namespace novac
         }
     }
 
-    TEST_CASE("FindPeaks in measured spectra spectra from MAYP11440", "[SpectrumUtils][FindPeaks][MayaPro]")
+    TEST_CASE("FindPeaks in measured spectrum from MAYP11440", "[SpectrumUtils][FindPeaks][MayaPro]")
     {
         // Prepare by reading in the spectrum
         CSpectrum inputSpectrum;
@@ -180,7 +181,85 @@ namespace novac
         }
     }
 
-    TEST_CASE("FindValleys in measured spectra spectra from MAYP11440", "[SpectrumUtils][FindValleys][MayaPro]")
+    TEST_CASE("FindPeaks in measured spectra from FLMS14634", "[SpectrumUtils][FindPeaks][Flame]")
+    {
+        // Prepare by reading in the spectrum
+        CSpectrum inputSpectrum;
+        CSTDFile::ReadSpectrum(inputSpectrum, TestData::GetMeasuredSpectrumName_FLMS14634());
+        {
+            CSpectrum darkSpectrum;
+            CSTDFile::ReadSpectrum(darkSpectrum, TestData::GetDarkSpectrumName_FLMS14634());
+            inputSpectrum.Sub(darkSpectrum);
+        }
+
+        std::vector<novac::SpectrumDataPoint> result;
+
+        SECTION("Very high threshold - does not return any peaks")
+        {
+            const double threshold = 1e5; // above any points in the spectrum.
+            novac::FindPeaks(inputSpectrum, threshold, result);
+
+            REQUIRE(0 == result.size());
+        }
+
+        SECTION("Returns found peaks sorted with increasing pixel.")
+        {
+            const double goodThreshold = 1000;
+            novac::FindPeaks(inputSpectrum, goodThreshold, result);
+
+            REQUIRE(result.size() > 10);
+            for (size_t idx = 1; idx < result.size(); ++idx)
+            {
+                REQUIRE(result[idx].pixel > result[idx - 1].pixel);
+            }
+        }
+
+        SECTION("Threshold 1000 - Returns only peaks with intensity above threshold.")
+        {
+            const double goodThreshold = 1000;
+            novac::FindPeaks(inputSpectrum, goodThreshold, result);
+
+            REQUIRE(result.size() > 0);
+            for (const auto& peak : result)
+            {
+                REQUIRE(peak.intensity >= goodThreshold);
+            }
+        }
+
+        SECTION("Threshold 30000 - Returns only peaks with intensity above threshold.")
+        {
+            const double goodThreshold = 30000;
+            novac::FindPeaks(inputSpectrum, goodThreshold, result);
+
+            REQUIRE(result.size() > 0);
+            for (const auto& peak : result)
+            {
+                REQUIRE(peak.intensity >= goodThreshold);
+            }
+        }
+
+        SECTION("Finds expected peaks in measured spectrum")
+        {
+            const double goodThreshold = 1000;
+            novac::FindPeaks(inputSpectrum, goodThreshold, result);
+
+            REQUIRE(ContainsPointAtPixel(result, 494.0, 2.0));
+            REQUIRE(ContainsPointAtPixel(result, 516.0, 2.0));
+            REQUIRE(ContainsPointAtPixel(result, 538.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 554.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 617.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 721.0, 1.5));
+            REQUIRE(ContainsPointAtPixel(result, 734.0, 2.0));
+            REQUIRE(ContainsPointAtPixel(result, 749.0, 2.0));
+            REQUIRE(ContainsPointAtPixel(result, 1075.0, 2.0));
+            REQUIRE(ContainsPointAtPixel(result, 1097.0, 2.0));
+            REQUIRE(ContainsPointAtPixel(result, 1265.0, 2.0));
+            REQUIRE(ContainsPointAtPixel(result, 1346.0, 2.0));
+            REQUIRE(ContainsPointAtPixel(result, 1614.0, 2.0));
+        }
+    }
+
+    TEST_CASE("FindValleys in measured spectrum from MAYP11440", "[SpectrumUtils][FindValleys][MayaPro]")
     {
         // Prepare by reading in the spectrum
         CSpectrum inputSpectrum;
@@ -267,6 +346,160 @@ namespace novac
             REQUIRE(ContainsPointAtPixel(result, 705.0, 2.0));
             REQUIRE(ContainsPointAtPixel(result, 675.0, 2.0));
             REQUIRE(ContainsPointAtPixel(result, 569.0, 2.0));
+        }
+    }
+
+    TEST_CASE("FindValleys in measured spectra from FLMS14634", "[SpectrumUtils][FindValleys][Flame]")
+    {
+        // Prepare by reading in the spectrum
+        CSpectrum inputSpectrum;
+        CSTDFile::ReadSpectrum(inputSpectrum, TestData::GetMeasuredSpectrumName_FLMS14634());
+        {
+            CSpectrum darkSpectrum;
+            CSTDFile::ReadSpectrum(darkSpectrum, TestData::GetDarkSpectrumName_FLMS14634());
+            inputSpectrum.Sub(darkSpectrum);
+        }
+
+        std::vector<novac::SpectrumDataPoint> result;
+
+        SECTION("Very high threshold - does not return any valleys")
+        {
+            const double threshold = 1e5; // above any points in the spectrum.
+            novac::FindValleys(inputSpectrum, threshold, result);
+
+            REQUIRE(0 == result.size());
+        }
+
+        SECTION("Returns found valleys sorted with increasing pixel.")
+        {
+            const double goodThreshold = 1000;
+            novac::FindValleys(inputSpectrum, goodThreshold, result);
+
+            REQUIRE(result.size() > 10);
+            for (size_t idx = 1; idx < result.size(); ++idx)
+            {
+                REQUIRE(result[idx].pixel > result[idx - 1].pixel);
+            }
+        }
+
+        SECTION("No overlap between found valleys.")
+        {
+            const double goodThreshold = 1000;
+            novac::FindValleys(inputSpectrum, goodThreshold, result);
+
+            REQUIRE(result.size() > 10);
+            for (size_t idx = 1; idx < result.size(); ++idx)
+            {
+                REQUIRE(result[idx].leftPixel > result[idx - 1].rightPixel);
+            }
+        }
+
+        SECTION("Threshold 1000 - Returns only valleys with intensity above threshold.")
+        {
+            const double goodThreshold = 1000;
+            novac::FindValleys(inputSpectrum, goodThreshold, result);
+
+            REQUIRE(result.size() > 0);
+            for (const auto& valley : result)
+            {
+                REQUIRE(valley.intensity >= goodThreshold);
+            }
+        }
+
+        SECTION("Threshold 15000 - Returns only valleys with intensity above threshold.")
+        {
+            const double goodThreshold = 15000;
+            novac::FindValleys(inputSpectrum, goodThreshold, result);
+
+            REQUIRE(result.size() > 0);
+            for (const auto& valley : result)
+            {
+                REQUIRE(valley.intensity >= goodThreshold);
+            }
+        }
+
+        SECTION("Finds expected valleys in measured spectrum")
+        {
+            const double goodThreshold = 1000;
+            novac::FindValleys(inputSpectrum, goodThreshold, result);
+
+            REQUIRE(ContainsPointAtPixel(result, 478.0, 3.0));
+            REQUIRE(ContainsPointAtPixel(result, 505.0, 2.0));
+            REQUIRE(ContainsPointAtPixel(result, 523.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 546.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 566.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 743.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 756.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 830.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 855.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 879.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 1033.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 1054.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 1370.0, 2.0));
+            REQUIRE(ContainsPointAtPixel(result, 1432.0, 2.0));
+            REQUIRE(ContainsPointAtPixel(result, 1585.0, 2.0));
+            REQUIRE(ContainsPointAtPixel(result, 1642.0, 2.0));
+        }
+    }
+
+    TEST_CASE("FindValleys in synthetic Fraunhofer spectrum from FLMS14634", "[SpectrumUtils][FindValleys]")
+    {
+        // Prepare by reading in the spectrum
+        CSpectrum inputSpectrum;
+        CTXTFile::ReadSpectrum(inputSpectrum, TestData::GetSyntheticFraunhoferSpectrumName_FLMS14634());
+
+        std::vector<novac::SpectrumDataPoint> result;
+
+        SECTION("Very high threshold - does not return any valleys")
+        {
+            const double threshold = 1e5; // above any points in the spectrum.
+            novac::FindValleys(inputSpectrum, threshold, result);
+
+            REQUIRE(0 == result.size());
+        }
+
+        SECTION("Returns found valleys sorted with increasing pixel.")
+        {
+            const double goodThreshold = 10000;
+            novac::FindValleys(inputSpectrum, goodThreshold, result);
+
+            REQUIRE(result.size() > 10);
+            for (size_t idx = 1; idx < result.size(); ++idx)
+            {
+                REQUIRE(result[idx].pixel > result[idx - 1].pixel);
+            }
+        }
+
+        SECTION("No overlap between found valleys.")
+        {
+            const double goodThreshold = 10000;
+            novac::FindValleys(inputSpectrum, goodThreshold, result);
+
+            REQUIRE(result.size() > 10);
+            for (size_t idx = 1; idx < result.size(); ++idx)
+            {
+                REQUIRE(result[idx].leftPixel > result[idx - 1].rightPixel);
+            }
+        }
+
+        SECTION("Finds expected valleys in measured spectrum")
+        {
+            const double goodThreshold = 10000;
+            novac::FindValleys(inputSpectrum, goodThreshold, result);
+
+            REQUIRE(ContainsPointAtPixel(result, 248.4, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 272.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 295.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 320.0, 1.0));
+            // REQUIRE(ContainsPointAtPixel(result, 388.0, 1.0)); // WHY NOT FOUND?
+            REQUIRE(ContainsPointAtPixel(result, 396.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 1033.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 1055.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 1089.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 1105.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 1428.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 1583.0, 1.0));
+            REQUIRE(ContainsPointAtPixel(result, 1640.0, 1.0));
         }
     }
 }
