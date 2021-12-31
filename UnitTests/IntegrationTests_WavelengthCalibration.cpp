@@ -1,21 +1,13 @@
 #include <SpectralEvaluation/Calibration/WavelengthCalibration.h>
 #include "catch.hpp"
+#include "TestData.h"
 
 namespace novac
 {
-    static std::string GetTestDataDirectory()
-    {
-#ifdef _MSC_VER
-        return std::string("../TestData/");
-#else
-        return std::string("TestData/");
-#endif // _MSC_VER 
-    }
-
     TEST_CASE("GetPixelToWavelengthMappingFromFile Clb file with only one column.",
     "[GetPixelToWavelengthMappingFromFile][WavelengthCalibration][IntegrationTest]")
     {
-        const std::string filename = GetTestDataDirectory() + "D2J2200/D2J2200_Master.clb";
+        const std::string filename = TestData::GetInitialPixelToWavelengthCalibration_D2J2200();
 
         const auto result = GetPixelToWavelengthMappingFromFile(filename);
 
@@ -27,7 +19,7 @@ namespace novac
     TEST_CASE("GetPixelToWavelengthMappingFromFile Txt file with two columns.",
     "[GetPixelToWavelengthMappingFromFile][WavelengthCalibration][IntegrationTest]")
     {
-        const std::string filename = GetTestDataDirectory() + "D2J2200/Hg_D2J2200_all.Master.Sample.txt";
+        const std::string filename = TestData::GetMeasuredMercurySpectrum_D2J2200();
 
         const auto result = GetPixelToWavelengthMappingFromFile(filename);
 

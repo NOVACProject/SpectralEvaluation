@@ -55,7 +55,7 @@ namespace novac
         }
 
         const double intensityRange = spectrum.MaxValue() - spectrum.MinValue();
-        const double minPeakHeight = intensityRange / 3000.0; // TODO: Find a reasonable value here!
+        const double minPeakHeight = intensityRange / 300.0; // TODO: Find a reasonable value here!
         const size_t minPeakWidth = 5; // TODO: Find a reasonable value here!
 
         CBasicMath math;
@@ -151,7 +151,7 @@ namespace novac
         }
 
         const double intensityRange = spectrum.MaxValue() - spectrum.MinValue();
-        const double minValleyDepth = intensityRange / 3000.0; // TODO: Find a reasonable value here!
+        const double minValleyDepth = intensityRange / 300.0; // TODO: Find a reasonable value here!
         const size_t minValleyidth = 5; // TODO: Find a reasonable value here!
 
         std::vector<double> lowPassFilteredSpectrum(spectrum.m_data, spectrum.m_data + spectrum.m_length);

@@ -7,6 +7,7 @@ cmake_minimum_required (VERSION 3.6)
 add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/main.cpp
     ${CMAKE_CURRENT_LIST_DIR}/catch.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/TestData.h
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_File.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_InstrumentCalibrationInStdFile.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_InstrumentLineshapeCalibrationController.cpp

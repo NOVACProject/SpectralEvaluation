@@ -1,33 +1,16 @@
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/File/STDFile.h>
 #include "catch.hpp"
+#include "TestData.h"
 #include <string.h>
 
 namespace novac
 {
-    std::string GetStdFileName()
-    {
-#ifdef _MSC_VER
-        return std::string("../TestData/WavelengthCalibratedStdFile.std");
-#else
-        return std::string("TestData/WavelengthCalibratedStdFile.std");
-#endif // _MSC_VER
-    }
-
-    static std::string MercurySpectrumFileName()
-    {
-#ifdef _MSC_VER
-        return std::string("../TestData/MercurySpectra/hglampnov152021.std");
-#else
-        return std::string("./TestData/MercurySpectra/hglampnov152021.std");
-#endif // _MSC_VER
-    }
-
     // -------- Reading all the properties from an extended Std file --------
     TEST_CASE("Wavelength calibrated std file", "[StdFile][InstrumentCalibration][IntegrationTest]")
     {
         CSpectrum spectrum;
-        CSTDFile::ReadSpectrum(spectrum, GetStdFileName());
+        CSTDFile::ReadSpectrum(spectrum, TestData::GetWavelengthCalibratedStdFileName());
 
         SECTION("Correct length of spectrum read")
         {
@@ -88,7 +71,7 @@ namespace novac
     TEST_CASE("Mercury spectrum in std file", "[StdFile][InstrumentCalibration][IntegrationTest]")
     {
         CSpectrum spectrum;
-        const bool returnValue = CSTDFile::ReadSpectrum(spectrum, MercurySpectrumFileName());
+        const bool returnValue = CSTDFile::ReadSpectrum(spectrum, TestData::GetMercurySpectrumWithoutWavelengthCalibration());
 
         SECTION("ReadSpectrum returns success")
         {
