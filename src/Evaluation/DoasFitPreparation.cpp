@@ -7,6 +7,12 @@ using namespace novac;
 
 std::vector<double> DoasFitPreparation::PrepareSkySpectrum(const CSpectrum& skySpectrum, FIT_TYPE doasFitType)
 {
+    const IndexRange defaultRange{ 50, 200 };
+    return PrepareSkySpectrum(skySpectrum, doasFitType, defaultRange);
+}
+
+std::vector<double> DoasFitPreparation::PrepareSkySpectrum(const CSpectrum& skySpectrum, FIT_TYPE doasFitType, const IndexRange& offsetRemovalRange)
+{
     if (doasFitType == FIT_TYPE::FIT_HP_DIV)
     {
         throw std::invalid_argument("Cannot prepare the sky spectrum for a HP_DIV type of doas fit, the sky spectrum should not be included for this type of fit.");
@@ -18,8 +24,11 @@ std::vector<double> DoasFitPreparation::PrepareSkySpectrum(const CSpectrum& skyS
 
     std::vector<double> filteredSkySpectrum{ skySpectrum.m_data, skySpectrum.m_data + spectrumLength };
 
-    // Remove the offset. TODO: Make the range an input parameter
-    RemoveOffset(filteredSkySpectrum, 50, 200);
+    // Remove the offset.
+    RemoveOffset(
+        filteredSkySpectrum,
+        static_cast<int>(offsetRemovalRange.from),
+        static_cast<int>(offsetRemovalRange.to));
 
     if (doasFitType == FIT_TYPE::FIT_HP_SUB)
     {
@@ -33,6 +42,12 @@ std::vector<double> DoasFitPreparation::PrepareSkySpectrum(const CSpectrum& skyS
 
 std::vector<double> DoasFitPreparation::PrepareMeasuredSpectrum(const CSpectrum& measuredSpectrum, const CSpectrum& skySpectrum, FIT_TYPE doasFitType)
 {
+    const IndexRange defaultRange{ 50, 200 };
+    return PrepareMeasuredSpectrum(measuredSpectrum, skySpectrum, doasFitType, defaultRange);
+}
+
+std::vector<double> DoasFitPreparation::PrepareMeasuredSpectrum(const CSpectrum& measuredSpectrum, const CSpectrum& skySpectrum, FIT_TYPE doasFitType, const IndexRange& offsetRemovalRange)
+{
     if (measuredSpectrum.m_length != skySpectrum.m_length)
     {
         throw std::invalid_argument("Cannot prepare the measured spectrum for a DOAS fit if the measured and the sky spectra does not have equal length.");
@@ -44,8 +59,11 @@ std::vector<double> DoasFitPreparation::PrepareMeasuredSpectrum(const CSpectrum&
 
     std::vector<double> filteredMeasSpectrum{ measuredSpectrum.m_data, measuredSpectrum.m_data + spectrumLength };
 
-    // Always start by removing the offset. TODO: Make the range an input parameter
-    RemoveOffset(filteredMeasSpectrum, 50, 200);
+    // Always start by removing the offset.
+    RemoveOffset(
+        filteredMeasSpectrum,
+        static_cast<int>(offsetRemovalRange.from),
+        static_cast<int>(offsetRemovalRange.to));
 
     if (doasFitType == FIT_TYPE::FIT_HP_DIV)
     {

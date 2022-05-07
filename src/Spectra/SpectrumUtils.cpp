@@ -55,8 +55,8 @@ namespace novac
         }
 
         const double intensityRange = spectrum.MaxValue() - spectrum.MinValue();
-        const double minPeakHeight = intensityRange / 3000.0; // TODO: Find a reasonable value here!
-        const size_t minPeakWidth = 5; // TODO: Find a reasonable value here!
+        const double minPeakHeight = intensityRange / 300.0; // Threshold found to be reasonable by checking measured data.
+        const size_t minPeakWidth = 5; // Threshold found to be reasonable by checking measured data.
 
         CBasicMath math;
         std::vector<double> lowPassFilteredSpectrum(spectrum.m_data, spectrum.m_data + spectrum.m_length);
@@ -140,7 +140,7 @@ namespace novac
         }
     }
 
-    // TODO: Combine FindPeaks and FindValleys into one method, since they do the same processing...
+    // Consider combining FindPeaks and FindValleys into one method, since they do the same processing...
     void FindValleys(const CSpectrum& spectrum, double minimumIntensity, std::vector<SpectrumDataPoint>& result)
     {
         result.clear();
@@ -151,8 +151,8 @@ namespace novac
         }
 
         const double intensityRange = spectrum.MaxValue() - spectrum.MinValue();
-        const double minValleyDepth = intensityRange / 3000.0; // TODO: Find a reasonable value here!
-        const size_t minValleyidth = 5; // TODO: Find a reasonable value here!
+        const double minValleyDepth = intensityRange / 300.0; // Threshold found to be reasonable by checking measured data.
+        const size_t minValleyWidth = 5; // Threshold found to be reasonable by checking measured data.
 
         std::vector<double> lowPassFilteredSpectrum(spectrum.m_data, spectrum.m_data + spectrum.m_length);
         CBasicMath math;
@@ -197,7 +197,7 @@ namespace novac
                 const double valleyDepth = std::min(lowPassFilteredSpectrum[startIdx], lowPassFilteredSpectrum[endIdx]) - lowPassFilteredSpectrum[ii];
                 const size_t valleyWidth = endIdx - startIdx;
 
-                if (valleyDepth > minValleyDepth && valleyWidth >= minValleyidth)
+                if (valleyDepth > minValleyDepth && valleyWidth >= minValleyWidth)
                 {
                     // Get the centroid position of the valley
                     std::vector<double> peakValues{ lowPassFilteredSpectrum.data() + startIdx, lowPassFilteredSpectrum.data() + endIdx };

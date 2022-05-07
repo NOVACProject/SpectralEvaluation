@@ -4,40 +4,17 @@
 #include <SpectralEvaluation/File/File.h>
 #include <SpectralEvaluation/Calibration/InstrumentLineShapeEstimation.h>
 #include "catch.hpp"
+#include "TestData.h"
 
 namespace novac
 {
-    static std::string GetTestDataDirectory()
-    {
-#ifdef _MSC_VER
-        return std::string("../TestData/MercurySpectra/");
-#else
-        return std::string("TestData/MercurySpectra/");
-#endif // _MSC_VER 
-    }
-
-    static std::string GetTestFileName_MercurySpectrumWithoutWavelengthCalibration()
-    {
-        return GetTestDataDirectory() + std::string("hglampnov152021.std");
-    }
-
-    static std::string GetDarkFileName_MercurySpectrumWithoutWavelengthCalibration()
-    {
-        return GetTestDataDirectory() + std::string("hglampnov152021_dark.std");
-    }
-
-    static std::string GetInstrumentCalibrationStdFileName()
-    {
-        return GetTestDataDirectory() + std::string("Temporary_InstrumentCalibration.std");
-    }
-
     TEST_CASE(
         "InstrumentLineshapeCalibrationController with simple mercury spectrum file with no wavelength calibration in file",
         "[InstrumentLineshapeCalibrationController][IntegrationTest]")
     {
         InstrumentLineshapeCalibrationController sut;
-        sut.m_inputSpectrumPath = GetTestFileName_MercurySpectrumWithoutWavelengthCalibration();
-        sut.m_darkSpectrumPath = GetDarkFileName_MercurySpectrumWithoutWavelengthCalibration();
+        sut.m_inputSpectrumPath = TestData::GetMercurySpectrumWithoutWavelengthCalibration();
+        sut.m_darkSpectrumPath = TestData::GetMercurySpectrumWithoutWavelengthCalibration_DarkSpectrumFile();
 
         SECTION("Update - reads dark corrected mercury spectrum and locates emission lines.")
         {
@@ -109,11 +86,11 @@ namespace novac
             sut.FitFunctionToLineShape(2, InstrumentLineshapeCalibrationController::LineShapeFunction::None);
 
             // Act
-            sut.SaveResultAsStd(GetInstrumentCalibrationStdFileName());
+            sut.SaveResultAsStd(TestData::GetTemporaryInstrumentCalibrationStdFileName());
 
             // Now read in the calibration again from file and make sure that we get the expected result back. 
             InstrumentCalibration readCalibration;
-            bool readSuccessfully = ReadInstrumentCalibration(GetInstrumentCalibrationStdFileName(), readCalibration);
+            bool readSuccessfully = ReadInstrumentCalibration(TestData::GetTemporaryInstrumentCalibrationStdFileName(), readCalibration);
 
             REQUIRE(readSuccessfully);
 
@@ -136,11 +113,11 @@ namespace novac
             sut.FitFunctionToLineShape(2, InstrumentLineshapeCalibrationController::LineShapeFunction::SuperGauss);
 
             // Act
-            sut.SaveResultAsStd(GetInstrumentCalibrationStdFileName()); // save peak number 2, the 302nm, to file.
+            sut.SaveResultAsStd(TestData::GetTemporaryInstrumentCalibrationStdFileName()); // save peak number 2, the 302nm, to file.
 
             // Now read in the calibration again from file and make sure that we get the expected result back. 
             InstrumentCalibration readCalibration;
-            bool readSuccessfully = ReadInstrumentCalibration(GetInstrumentCalibrationStdFileName(), readCalibration);
+            bool readSuccessfully = ReadInstrumentCalibration(TestData::GetTemporaryInstrumentCalibrationStdFileName(), readCalibration);
 
             REQUIRE(readSuccessfully);
 

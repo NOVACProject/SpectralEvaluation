@@ -31,10 +31,6 @@ namespace novac
             Value here has been determined from experimentation. */
         int maximumPixelDistanceForPossibleCorrespondence = 500;
 
-        /** The relative number of correspondences to select out of the total.
-            0.2 corresponds to selecting the 20% correspondences with the lowest error. */
-        double percentageOfCorrespondencesToSelect = 0.2;
-
         /** The first pixel to include in the calibration routine.
             Often do the signal in the spectra decline at short wavelengths and this is a means to disregard points with low intensity. */
         size_t measuredPixelStart = 200;
@@ -48,11 +44,16 @@ namespace novac
     /** Measures the similarity between the two spectra at the two indices given by the correspondence.
         The similarity is measured as a sum of squared differences between the two
         spectra in the region around the given pixels.
-        A lower return value corresponds to a higher similarity
+        A lower return value corresponds to a higher similarity.
         @param corr The Correspondence to measure the error of. This will be updated with the measured error.
         @param measuredSpectrum The measured spectrum of the correspondence.
         @param theoreticalSpectrum The theoretical spectrum of the correspondence.*/
-    void MeasureCorrespondenceError(novac::Correspondence& corr, const CSpectrum& measuredSpectrum, const CSpectrum& theoreticalSpectrum, const CorrespondenceSelectionSettings& settings);
+    double MeasureCorrespondenceError(
+        const CSpectrum& measuredSpectrum,
+        double pixelInMeasuredSpectrum,
+        const CSpectrum& fraunhoferSpectrum,
+        double pixelInFraunhoferSpectrum,
+        const CorrespondenceSelectionSettings& settings);
 
     struct RansacWavelengthCalibrationSettings;
 
@@ -63,8 +64,7 @@ namespace novac
         @param measuredSpectrum The measured spectrum itself.
         @param fraunhoferKeypoints The keypoints found in the fraunhofer spectrum.
         @param fraunhoferSpectrum The fraunhofer spectrum itself
-        @param settings The settings for the following Ransac wavelength calibration
-        @param percentageOfCorrespondencesToSelect A hard limit of how */
+        @param correspondenceSettings The settings for how to select the correspondences. */
     std::vector<novac::Correspondence> ListPossibleCorrespondences(
         const std::vector<novac::SpectrumDataPoint>& measuredKeypoints,
         const CSpectrum& measuredSpectrum,
@@ -84,7 +84,7 @@ namespace novac
             If not empty, then the size must equal (modelPolynomialOrder + 1). */
         std::vector<double> initialModelCoefficients;
 
-        int numberOfRansacIterations = 5000000;
+        int numberOfRansacIterations = 1000000;
 
         /** The number of correspondences to select in one iteration.
             Default (0) corresponds to (modelPolynomialOrder + 1) */

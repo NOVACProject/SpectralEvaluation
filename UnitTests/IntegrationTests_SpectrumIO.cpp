@@ -2,15 +2,14 @@
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/File/MKPack.h>
 #include "catch.hpp"
+#include "TestData.h"
 
 namespace novac
 {
-    extern std::string GetFileName();
-
     TEST_CASE("SpectrumIO CountSpectra", "[SpectrumIO][IntegrationTests]")
     {
         CSpectrumIO sut;
-        int number = sut.CountSpectra(GetFileName());
+        int number = sut.CountSpectra(TestData::GetMeasuredSpectrumName_I2J8549());
 
         REQUIRE(53 == number);
     }
@@ -36,7 +35,7 @@ namespace novac
         CSpectrum ignoredSpectrum;
         MKZYhdr header;
         int headerSize = 0;
-        int returnValue = sut.ReadSpectrum(GetFileName(), 0, ignoredSpectrum, (char*)&header, sizeof(header), &headerSize);
+        int returnValue = sut.ReadSpectrum(TestData::GetMeasuredSpectrumName_I2J8549(), 0, ignoredSpectrum, (char*)&header, sizeof(header), &headerSize);
 
         REQUIRE(returnValue);
 
@@ -58,7 +57,7 @@ namespace novac
     {
         CSpectrumIO sut;
         CSpectrum spectrum;
-        int returnValue = sut.ReadSpectrum(GetFileName(), 0, spectrum);
+        int returnValue = sut.ReadSpectrum(TestData::GetMeasuredSpectrumName_I2J8549(), 0, spectrum);
 
         REQUIRE(returnValue);
 

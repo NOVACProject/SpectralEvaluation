@@ -7,7 +7,7 @@
 namespace novac
 {
     /* the options for the shift and squeeze */
-    enum class SHIFT_TYPE{
+    enum class SHIFT_TYPE {
         SHIFT_FREE,     /* Include the shift and squeeze in the fit */
         SHIFT_FIX,      /* Set the shift/squeee to a fixed value */
         SHIFT_LINK,     /* Links the shift/squeeze to the value of another reference */
@@ -15,13 +15,21 @@ namespace novac
         SHIFT_LIMIT     /* (NovacProgram/NovacPPP) Set the shift/squeeze to free but limit it's maximum value. */
     };
 
+    /** Simple representation of the option for shift / squeeze.
+        Can e.g. be use to save the state of this option. */
+    struct ShiftOption
+    {
+        SHIFT_TYPE option = SHIFT_TYPE::SHIFT_FREE;
+
+        double value = 0.0;
+    };
 
     /** The class <b>CReferenceFile</b> is used to store
         the options for a single reference file that is
         to be included in the DOAS fit.
         Options stored are e.g. the options for the shift
         and squeeze and the path to the file containing the
-        reference-spectrum. 
+        reference-spectrum.
     */
     class CReferenceFile
     {
@@ -29,7 +37,7 @@ namespace novac
         CReferenceFile() = default;
         ~CReferenceFile() = default;
 
-        /** Creates this reference file as an in-memory copy of the 
+        /** Creates this reference file as an in-memory copy of the
             provided cross section */
         CReferenceFile(const CCrossSectionData& contents);
 
@@ -45,15 +53,15 @@ namespace novac
         std::string m_specieName = "";
 
         /** The path to the reference file.
-            This is a ready-to-use cross section on the correct wavelength grid convolved 
+            This is a ready-to-use cross section on the correct wavelength grid convolved
             with the instruments slit-function. This may or may not be high-pass filtered
             (that option is given by 'm_isFiltered' below).
-            The main option is to use this file to evaluate the spectra. 
+            The main option is to use this file to evaluate the spectra.
             This may be empty, in which case the cross section will be generated using
             m_crossSectionFile, m_slitFunctionFile and m_wavelengthCalibrationFile below. */
         std::string m_path = "";
 
-        /** The path to a high-resolved cross section which can be convolved with 
+        /** The path to a high-resolved cross section which can be convolved with
             'm_slitFunctionFile' and resampled to the wavelength in 'm_wavelengthCalibrationFile'
             to generate a reference file. If m_path is empty then these three must be provided
             in order to generate the reference on the fly. */
@@ -61,7 +69,7 @@ namespace novac
         std::string m_slitFunctionFile = "";
         std::string m_wavelengthCalibrationFile = "";
 
-        /** The magic gas-factor is the conversion factor 
+        /** The magic gas-factor is the conversion factor
             between ppmm and mg and is necessary to calculate a flux.
             The factor 2.66 is for SO2, other gases needs other values. */
         double m_gasFactor = 2.66;
@@ -100,14 +108,14 @@ namespace novac
         double m_squeezeMaxValue = 1.0;
 
         /** This is true if this cross section file is high-pass filtered already on disk
-            If this is false and the fit-type if HP_SUB or HP_DIV then the reference will be 
-            High-pass filtered when they are being read in (FitWindow::ReadReferences). 
+            If this is false and the fit-type if HP_SUB or HP_DIV then the reference will be
+            High-pass filtered when they are being read in (FitWindow::ReadReferences).
             NOTICE that in the NovacProgram are the references given for real-time evaluation always filtered
             and this flag must be set to true before running the evaluation. In NovacPPP are the references given
             always NOT filtered. */
         bool m_isFiltered = false;
 
-        /** Set this to false to not include the reference into the DOAS fit. 
+        /** Set this to false to not include the reference into the DOAS fit.
             This can be used to selectively include/exclude references. */
         bool m_include = true;
 
@@ -120,19 +128,19 @@ namespace novac
 
         /** Setting the column.
             if(SHIFT_TYPE) is SHIFT_LIMIT then 'value' is the lower limit
-            and value2 is the upper limit 
+            and value2 is the upper limit
             otherwise value2 is not used */
         void SetColumn(SHIFT_TYPE option, double value, double value2 = 1e16);
 
         /** Setting the shift
             if(SHIFT_TYPE) is SHIFT_LIMIT then 'value' is the lower limit
-            and value2 is the upper limit 
+            and value2 is the upper limit
             otherwise value2 is not used */
         void SetShift(SHIFT_TYPE option, double value, double value2 = 1e16);
 
         /** Setting the squeeze
             if(SHIFT_TYPE) is SHIFT_LIMIT then 'value' is the lower limit
-            and value2 is the upper limit 
+            and value2 is the upper limit
             otherwise value2 is not used */
         void SetSqueeze(SHIFT_TYPE option, double value, double value2 = 1e16);
 

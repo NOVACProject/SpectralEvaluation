@@ -1,22 +1,14 @@
 #include <SpectralEvaluation/File/ScanFileHandler.h>
 #include <SpectralEvaluation/StringUtils.h>
 #include "catch.hpp"
+#include "TestData.h"
 
 namespace novac
 {
-    std::string GetFileName()
-    {
-#ifdef _MSC_VER
-        return std::string("../TestData/I2J8549/I2J8549_170216_1230_0.pak");
-#else
-        return std::string("TestData/I2J8549/I2J8549_170216_1230_0.pak");
-#endif // _MSC_VER
-    }
-
     TEST_CASE("ScanFileHandler CheckScanFile", "[ScanFileHandler][IntegrationTests]")
     {
         CScanFileHandler sut;
-        std::string file = GetFileName();
+        std::string file = TestData::GetMeasuredSpectrumName_I2J8549();
         sut.CheckScanFile(file);
 
         SECTION("Sets filename")
@@ -49,7 +41,7 @@ namespace novac
     TEST_CASE("ScanFileHandler GetSpectrumLength", "[ScanFileHandler][IntegrationTests]")
     {
         CScanFileHandler sut;
-        std::string file = GetFileName();
+        std::string file = TestData::GetMeasuredSpectrumName_I2J8549();
         sut.CheckScanFile(file);
 
         SECTION("Gets length of spectra")
@@ -61,7 +53,7 @@ namespace novac
     TEST_CASE("ScanFileHandler GetSpectrumNumInFile", "[ScanFileHandler][IntegrationTests]")
     {
         CScanFileHandler sut;
-        std::string file = GetFileName();
+        std::string file = TestData::GetMeasuredSpectrumName_I2J8549();
         sut.CheckScanFile(file);
 
         SECTION("Gets number of spectra")
@@ -73,7 +65,7 @@ namespace novac
     TEST_CASE("ScanFileHandler GetDark", "[ScanFileHandler][IntegrationTests]")
     {
         CScanFileHandler sut;
-        std::string file = GetFileName();
+        std::string file = TestData::GetMeasuredSpectrumName_I2J8549();
         sut.CheckScanFile(file);
 
         SECTION("Reads the dark spectrum")
@@ -89,7 +81,7 @@ namespace novac
     TEST_CASE("ScanFileHandler GetSky", "[ScanFileHandler][IntegrationTests]")
     {
         CScanFileHandler sut;
-        std::string file = GetFileName();
+        std::string file = TestData::GetMeasuredSpectrumName_I2J8549();
         sut.CheckScanFile(file);
 
         SECTION("Reads the sky spectrum")
@@ -105,7 +97,7 @@ namespace novac
     TEST_CASE("ScanFileHandler GetNextSpectrum", "[ScanFileHandler][IntegrationTests]")
     {
         CScanFileHandler sut;
-        std::string file = GetFileName();
+        std::string file = TestData::GetMeasuredSpectrumName_I2J8549();
         sut.CheckScanFile(file);
 
         SECTION("Reads all spectra in the file (except sky and dark) one at a time")

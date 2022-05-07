@@ -493,6 +493,11 @@ namespace novac
             auto ransacResult = ransacCalibrationSetup.DoWavelengthCalibration(calibrationState.allCorrespondences);
             auto stopTime = std::chrono::steady_clock::now();
 
+            if (Max(ransacResult.bestFittingModelCoefficients) < 0.001) 
+            {
+                throw WavelengthCalibrationFailureException("Wavelength calibration failed, no pixel-to-wavelength calibration solution could be found.");
+            }
+
             // Save the result
             result.pixelToWavelengthMappingCoefficients = ransacResult.bestFittingModelCoefficients;
             result.pixelToWavelengthMapping = GetPixelToWavelengthMapping(ransacResult.bestFittingModelCoefficients, settings.initialPixelToWavelengthMapping.size());
@@ -528,21 +533,16 @@ namespace novac
             // Adjust the selection parameter for the maximum error in the wavelength calibration such that the search space decreases for each iteration
             correspondenceSelectionSettings.maximumPixelDistanceForPossibleCorrespondence = std::max(10, correspondenceSelectionSettings.maximumPixelDistanceForPossibleCorrespondence / 10);
 
-            if (iterationIdx < numberOfIterations - 1)
+            // Adjust the shape of the Fraunhofer spectrum using what we now know:
+            //  We have the sensitivity of the spectrometer (pixel -> intesity) from the calculated envelope
+            //  We have the pixel-to-wavelength mapping of the spectrometer from the ransac calibration
+            // Re-convolve the Fraunhofer spectrum to get it on the new pixel grid and with the new instrument line shape (if updated)
             {
-                // Adjust the shape of the Fraunhofer spectrum using what we now know:
-                //  We have the sensitivity of the spectrometer (pixel -> intesity) from the calculated envelope
-                //  We have the pixel-to-wavelength mapping of the spectrometer from the ransac calibration
-                // Re-convolve the Fraunhofer spectrum to get it on the new pixel grid and with the new instrument line shape (if updated)
-
-                std::cout << " -- Adjusting Fraunhofer Spectrum -- " << std::endl;
-                {
-                    novac::CCrossSectionData& currentEstimateOfInstrumentLineShape = (result.estimatedInstrumentLineShape.GetSize() > 0) ? result.estimatedInstrumentLineShape : settings.initialInstrumentLineShape;
-                    calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(result.pixelToWavelengthMapping, currentEstimateOfInstrumentLineShape);
-                }
-
-                UpdateFraunhoferSpectrumWithApparentSensitivity(ransacResult);
+                novac::CCrossSectionData& currentEstimateOfInstrumentLineShape = (result.estimatedInstrumentLineShape.GetSize() > 0) ? result.estimatedInstrumentLineShape : settings.initialInstrumentLineShape;
+                calibrationState.fraunhoferSpectrum = fraunhoferSetup.GetFraunhoferSpectrum(result.pixelToWavelengthMapping, currentEstimateOfInstrumentLineShape);
             }
+
+            UpdateFraunhoferSpectrumWithApparentSensitivity(ransacResult);
         }
 
         // Normalize the output, such that other programs may use the data directly.

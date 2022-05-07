@@ -92,17 +92,28 @@ namespace novac
         const CSpectrum& fraunhoferSpectrum,
         const CorrespondenceSelectionSettings& correspondenceSettings)
     {
-        // to reduce the impact of the noise present, we do a low-pass filtering of the measured spectrum first
-        std::unique_ptr<CSpectrum> lowPassFilteredSpectrum = std::make_unique<CSpectrum>(measuredSpectrum);
         ::CBasicMath math;
-        math.LowPassBinomial(lowPassFilteredSpectrum->m_data, lowPassFilteredSpectrum->m_length, 5);
+
+        // to reduce the impact of the noise present, we do a low-pass filtering of the measured spectrum.
+        // to reduce the impact from the slopes of the measured spectrum, we also do a high pass filtering
+        std::unique_ptr<CSpectrum> filteredMeasuredSpectrum = std::make_unique<CSpectrum>(measuredSpectrum);
+        math.HighPassBinomial(filteredMeasuredSpectrum->m_data, filteredMeasuredSpectrum->m_length, 500);
+        math.LowPassBinomial(filteredMeasuredSpectrum->m_data, filteredMeasuredSpectrum->m_length, 5);
+
+        // also perform a high pass filtering of the Fraunhofer spectrum, to make them compareable.
+        std::unique_ptr<CSpectrum> filteredFraunhoferSpectrum = std::make_unique<CSpectrum>(fraunhoferSpectrum);
+        math.HighPassBinomial(filteredFraunhoferSpectrum->m_data, filteredFraunhoferSpectrum->m_length, 500);
 
         std::vector<novac::Correspondence> possibleCorrespondences;
-        std::vector<double> errors; // keep track of the errors, we will use this later to filter the correspondences
+        possibleCorrespondences.reserve(3 * measuredKeypoints.size());
         for (size_t ii = 0; ii < measuredKeypoints.size(); ii++)
         {
-            if (measuredKeypoints[ii].pixel >= correspondenceSettings.measuredPixelStart && measuredKeypoints[ii].pixel <= correspondenceSettings.measuredPixelStop)
+            if (measuredKeypoints[ii].pixel >= correspondenceSettings.measuredPixelStart &&
+                measuredKeypoints[ii].pixel <= correspondenceSettings.measuredPixelStop)
             {
+                std::vector<novac::Correspondence> possibleCorrespondencesForThisMeasuredKeypoint;
+                std::vector<double> errors; // keep track of the errors, we will use this later to filter the correspondences
+
                 for (size_t jj = 0; jj < fraunhoferKeypoints.size(); jj++)
                 {
                     if (measuredKeypoints[ii].type == fraunhoferKeypoints[jj].type &&
@@ -113,36 +124,29 @@ namespace novac
                         corr.measuredValue = measuredKeypoints[ii].pixel;
                         corr.theoreticalIdx = jj;
                         corr.theoreticalValue = fraunhoferKeypoints[jj].wavelength;
-                        corr.error = novac::MeasureCorrespondenceError(*lowPassFilteredSpectrum, measuredKeypoints[ii].pixel, fraunhoferSpectrum, fraunhoferKeypoints[jj].pixel, correspondenceSettings);
-                        possibleCorrespondences.push_back(corr);
+                        corr.error = novac::MeasureCorrespondenceError(*filteredMeasuredSpectrum, measuredKeypoints[ii].pixel, *filteredFraunhoferSpectrum, fraunhoferKeypoints[jj].pixel, correspondenceSettings);
+                        possibleCorrespondencesForThisMeasuredKeypoint.push_back(corr);
 
                         errors.push_back(corr.error);
                     }
                 }
+
+                // Filter out correspondences by, for each measured keypoint, keeping only the correspondence with the lowest error.
+                if (possibleCorrespondencesForThisMeasuredKeypoint.size() > 0)
+                {
+                    if (possibleCorrespondencesForThisMeasuredKeypoint.size() > 1)
+                    {
+                        std::sort(
+                            begin(possibleCorrespondencesForThisMeasuredKeypoint),
+                            end(possibleCorrespondencesForThisMeasuredKeypoint),
+                            [](const novac::Correspondence& c1, const novac::Correspondence& c2) { return c1.error < c2.error; });
+                    }
+                    possibleCorrespondences.push_back(possibleCorrespondencesForThisMeasuredKeypoint.front());
+                }
             }
         }
 
-        if (possibleCorrespondences.size() == 0)
-        {
-            return possibleCorrespondences;
-        }
-
-        // Filter out correspondences by keeping only the ones which have an error < median(error)
-        std::sort(begin(errors), end(errors));
-        size_t idx = std::min(errors.size() - 1, (size_t)(correspondenceSettings.percentageOfCorrespondencesToSelect * errors.size()));
-        const double errorLimit = errors[idx];
-
-        std::vector<novac::Correspondence> filteredCorrespondences;
-        filteredCorrespondences.reserve(possibleCorrespondences.size());
-        for (const novac::Correspondence& corr : possibleCorrespondences)
-        {
-            if (corr.error <= errorLimit)
-            {
-                filteredCorrespondences.push_back(corr);
-            }
-        }
-
-        return filteredCorrespondences;
+        return possibleCorrespondences;
     }
 
     // ---------------------------------- Free functions used to run the calibration ----------------------------------

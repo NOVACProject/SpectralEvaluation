@@ -513,6 +513,13 @@ namespace novac
             return false;
         }
 
+        if (extendedFormatInformation.MaxChannel < extendedFormatInformation.MinChannel)
+        {
+            const auto tmp = extendedFormatInformation.MaxChannel;
+            extendedFormatInformation.MaxChannel = extendedFormatInformation.MinChannel;
+            extendedFormatInformation.MinChannel = tmp;
+        }
+
         if (extendedFormatInformation.MaxChannel <= extendedFormatInformation.MinChannel ||
             tmpSpectrum.m_wavelength.size() != static_cast<size_t>(tmpSpectrum.m_length))
         {
