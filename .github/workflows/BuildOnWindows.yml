@@ -26,7 +26,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Run CMake to Create Project Files
-      run: cmake -G "Visual Studio 16 2019" -A x64 .
+      run: cmake -G "Visual Studio 17 2022" -A x64 .
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
