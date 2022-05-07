@@ -493,6 +493,11 @@ namespace novac
             auto ransacResult = ransacCalibrationSetup.DoWavelengthCalibration(calibrationState.allCorrespondences);
             auto stopTime = std::chrono::steady_clock::now();
 
+            if (Max(ransacResult.bestFittingModelCoefficients) < 0.001) 
+            {
+                throw WavelengthCalibrationFailureException("Wavelength calibration failed, no pixel-to-wavelength calibration solution could be found.");
+            }
+
             // Save the result
             result.pixelToWavelengthMappingCoefficients = ransacResult.bestFittingModelCoefficients;
             result.pixelToWavelengthMapping = GetPixelToWavelengthMapping(ransacResult.bestFittingModelCoefficients, settings.initialPixelToWavelengthMapping.size());
