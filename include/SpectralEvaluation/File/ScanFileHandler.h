@@ -6,12 +6,13 @@
 
 namespace novac
 {
-
     class CGPSData;
 
-    /** <b>CScanFileHandler</b> is a class to read in information from the scan-files
+    /** ScanFileHandler is a class to read in information from the scan-files
         (all the spectra from one scan are supposed to be packed together in one file in Manne's 'pak'-format.
-         Each instance of 'CScanFileHandler' is capable of reading data from one .pak-file. */
+        Each instance of 'CScanFileHandler' is capable of reading data from one .pak-file.
+        Each instance of this class should be initialized by first calling 'CheckScanFile' which will read in 
+        the data on the file and then create*/
     class CScanFileHandler
     {
     public:
@@ -30,15 +31,15 @@ namespace novac
             configured for each channel). */
         unsigned char m_channel = 0;
 
-        /** The time (UMT) when the measurement started */
+        /** The time (UTC) when the measurement started */
         CDateTime m_startTime;
 
-        /** The time (UMT) when the measurement was finished */
+        /** The time (UTC) when the measurement was finished */
         CDateTime m_stopTime;
 
         /** If any error occurs in the reading of the file, this int is set to
             any of the errors defined int 'SpectrumIO.h. */
-        int m_lastError;
+        int m_lastError = 0;
 
         // ----------------------------------------------------------------------
         // --------------------- PUBLIC METHODS ---------------------------------
@@ -54,7 +55,7 @@ namespace novac
         /** Gets the next spectrum in the scan.
             If any file-error occurs the parameter 'm_lastError' will be set.
             @param spec - will on successful return be filled with the newly read spectrum.
-            @return the number of spectra read (0 if failure and 1 on success).*/
+            @return the number of spectra read (1 if successful, otherwise 0).*/
         int GetNextSpectrum(CSpectrum& spec);
 
         /** Returns the desired spectrum in the scan.
@@ -124,29 +125,29 @@ namespace novac
 
         /** The dark spectrum */
         CSpectrum m_dark;
-        bool m_fHasDark;
+        bool m_fHasDark = true;
 
         /** The sky spectrum */
         CSpectrum m_sky;
-        bool m_fHasSky;
+        bool m_fHasSky = true;
 
         /** The offset spectrum - if any */
         CSpectrum m_offset;
-        bool m_fHasOffset;
+        bool m_fHasOffset = false;
 
         /** The dark-current spectrum - if any */
         CSpectrum m_darkCurrent;
-        bool m_fHasDarkCurrent;
+        bool m_fHasDarkCurrent = false;
 
         /** Remember how many spectra we have read from the scan */
-        unsigned int m_specReadSoFarNum;
+        unsigned int m_specReadSoFarNum = 0U;
 
         /** True if the function 'CheckScanFile' has been called, and the scan-file handler
                 has been initialized */
-        bool m_initialized;
+        bool m_initialized = false;
 
         /** The filename of the spectrum file */
-        std::string m_fileName;
+        std::string m_fileName = "";
 
         /** The total number of spectra in the current .pak-file */
         std::uint32_t m_specNum = 0;
@@ -159,6 +160,6 @@ namespace novac
 
         /** The number of spectra read in to the m_spectrumBuffer
             This might not be the same as 'm_specNum' */
-        unsigned int m_spectrumBufferNum;
+        unsigned int m_spectrumBufferNum = 0;
     };
 }

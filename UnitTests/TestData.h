@@ -16,6 +16,8 @@ namespace novac
 #endif // _MSC_VER 
         }
 
+#pragma region Instrument Calibration
+
         static std::string GetMeasuredSpectrumName_I2J8549()
         {
             return GetTestDataDirectory() + std::string("I2J8549/I2J8549_170216_1230_0.pak");
@@ -145,5 +147,36 @@ namespace novac
         {
             return GetTestDataDirectory() + std::string("Temporary_InstrumentCalibration.std");
         }
+
+#pragma endregion
+
+#pragma region Evaluation log file formats
+
+        static std::string GetEvaluationLogfile1()
+        {
+            return GetTestDataDirectory() + std::string("EvaluationLogs/") + std::string("EvaluationLog_1904156M1_2020.10.07.txt");
+        }
+
+        static std::string GetEvaluationLogfile2()
+        {
+            return GetTestDataDirectory() + std::string("EvaluationLogs/") + std::string("ReEvaluationLog_SO2.txt");
+        }
+
+#pragma endregion
+
+#pragma region BrO to SO2 ratio calculations
+
+        static std::string GetBrORatioScanFile1()
+        {
+            return GetTestDataDirectory() + std::string("BrORatio/") + std::string("D2J2124_160331_1608_0.pak");
+        }
+
+        static std::string GetBrORatioEvaluationFile1()
+        {
+            return GetTestDataDirectory() + std::string("BrORatio/") + std::string("D2J2124_160331_1608_0.txt");
+        }
+
+#pragma endregion
+
     };
 }

@@ -26,12 +26,11 @@ std::string FormatTimestamp(const CDateTime& time)
     return std::string(buffer);
 }
 
-void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
+std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
     CScanFileHandler& originalScanFile,
     const BasicScanEvaluationResult& scanResult,
-    const CPlumeInScanProperty& properties,
-    int mainSpecieIndex,
-    const std::string& outputDirectory)
+    const CPlumeInScanProperty& selectionProperties,
+    int mainSpecieIndex)
 {
     std::vector<size_t> referenceSpectrumIndices;
     std::vector<size_t> inPlumeSpectrumIndices;
@@ -40,93 +39,121 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     m_mainSpecieIndex = mainSpecieIndex;
 
     CSpectrum skySpectrum;
-    if (originalScanFile.GetSky(skySpectrum))
+    if (!originalScanFile.GetSky(skySpectrum))
     {
-        return; // cannot read spectra from the file, ignore it.
+        return nullptr; // cannot read spectra from the file, ignore it.
     }
-    CSpectrum darkSpectrum;
-    if (originalScanFile.GetDark(darkSpectrum))
+    std::unique_ptr<CSpectrum> darkSpectrum;
+    if (!originalScanFile.GetDark(*darkSpectrum))
     {
-        return; // cannot read spectra from the file, ignore it.
+        return nullptr; // cannot read spectra from the file, ignore it.
     }
 
     // Get some parameters regarding the scan and the spectrometer
     auto model = CSpectrometerDatabase::GetInstance().GetModel(skySpectrum.m_info.m_specModelName);
     this->m_maximumSpectrometerIntensity = model.maximumIntensityForSingleReadout;
 
-    if (!IsSuitableScanForRatioEvaluation(skySpectrum, darkSpectrum, scanResult, properties))
+    if (!IsSuitableScanForRatioEvaluation(skySpectrum, *darkSpectrum, scanResult, selectionProperties))
     {
-        return;
+        return nullptr;
     }
 
     SelectSpectra(
         originalScanFile,
-        darkSpectrum,
+        *darkSpectrum,
         scanResult,
-        properties,
+        selectionProperties,
         referenceSpectrumIndices,
         inPlumeSpectrumIndices);
 
-    if (referenceSpectrumIndices.size() > 0 && inPlumeSpectrumIndices.size() > 0)
+    if (referenceSpectrumIndices.size() == 0 || inPlumeSpectrumIndices.size() == 0)
     {
-        // Create and save the spectra
-        CSpectrum referenceSpectrum;
-        originalScanFile.AddSpectra(referenceSpectrumIndices, referenceSpectrum);
-        referenceSpectrum.m_info.m_name = "sky";
-        referenceSpectrum.m_info.m_scanIndex = 0;
-
-        darkSpectrum.m_info.m_scanIndex = 1;
-
-        CSpectrum inPlumeSpectrum;
-        originalScanFile.AddSpectra(inPlumeSpectrumIndices, inPlumeSpectrum);
-        inPlumeSpectrum.m_info.m_name = "plume";
-        referenceSpectrum.m_info.m_scanIndex = 2;
-
-        std::stringstream spectrumOutputFileName;
-        spectrumOutputFileName << outputDirectory << "/PlumeSpectra_" << darkSpectrum.m_info.m_device;
-        spectrumOutputFileName << "_" << FormatDate(skySpectrum.m_info);
-        spectrumOutputFileName << "_" << FormatTimestamp(skySpectrum.m_info.m_startTime);
-        spectrumOutputFileName << "_0.pak";
-
-        CSpectrumIO spectrumWriter;
-        spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), referenceSpectrum, nullptr, 0, true);
-        spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), darkSpectrum);
-        spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), inPlumeSpectrum);
-
-        std::stringstream textOutputFileName;
-        textOutputFileName << outputDirectory << "/PlumeSpectra_" << darkSpectrum.m_info.m_device;
-        textOutputFileName << "_" << FormatDate(skySpectrum.m_info);
-        textOutputFileName << "_" << FormatTimestamp(skySpectrum.m_info.m_startTime);
-        textOutputFileName << "_0.txt";
-
-        std::ofstream textOutput(textOutputFileName.str());
-        textOutput << "InPlume: " << std::endl;
-        for (size_t idx : inPlumeSpectrumIndices)
-        {
-            CSpectrum spectrum;
-            originalScanFile.GetSpectrum(spectrum, (long)idx);
-            textOutput << idx << "\t" << spectrum.m_info.m_scanAngle << "\t" << FormatTimestamp(spectrum.m_info.m_startTime) << std::endl;
-        }
-        textOutput << std::endl;
-
-        textOutput << "Reference: " << std::endl;
-        for (size_t idx : referenceSpectrumIndices)
-        {
-            CSpectrum spectrum;
-            originalScanFile.GetSpectrum(spectrum, (long)idx);
-            textOutput << idx << "\t" << spectrum.m_info.m_scanAngle << "\t" << FormatTimestamp(spectrum.m_info.m_startTime) << std::endl;
-        }
-        textOutput << std::endl;
-
-        textOutput << "Plume Properties: " << std::endl;
-        textOutput << "  Completeness: " << properties.completeness << std::endl;
-        textOutput << "  Center: " << properties.plumeCenter << std::endl;
-        textOutput << "  Offset: " << properties.offset << std::endl;
-        textOutput << "  Low Edge: " << properties.plumeEdgeLow << std::endl;
-        textOutput << "  High Edge: " << properties.plumeEdgeHigh << std::endl;
-        textOutput << "  HWHM Low: " << properties.plumeHalfLow << std::endl;
-        textOutput << "  HWHM High: " << properties.plumeHalfHigh << std::endl;
+        return nullptr;
     }
+
+    std::unique_ptr<PlumeSpectra> result;
+    result->referenceSpectrum = std::make_unique<CSpectrum>();
+    result->inPlumeSpectrum = std::make_unique<CSpectrum>();
+    result->darkSpectrum = std::make_unique<CSpectrum>();
+
+    // Create the spectra
+    originalScanFile.AddSpectra(referenceSpectrumIndices, *result->referenceSpectrum);
+    result->referenceSpectrum->m_info.m_name = "sky";
+    result->referenceSpectrum->m_info.m_scanIndex = 0;
+
+    result->darkSpectrum = std::move(darkSpectrum);
+    result->darkSpectrum->m_info.m_scanIndex = 1;
+
+    originalScanFile.AddSpectra(inPlumeSpectrumIndices, *result->inPlumeSpectrum);
+    result->inPlumeSpectrum->m_info.m_name = "plume";
+    result->inPlumeSpectrum->m_info.m_scanIndex = 2;
+
+    result->referenceSpectrumIndices = std::move(referenceSpectrumIndices);
+    result->inPlumeSpectrumIndices = std::move(inPlumeSpectrumIndices);
+
+    result->skySpectrumInfo = skySpectrum.m_info;
+
+    return result;
+}
+
+void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
+    CScanFileHandler& originalScanFile,
+    const BasicScanEvaluationResult& scanResult,
+    const CPlumeInScanProperty& selectionProperties,
+    int mainSpecieIndex,
+    const std::string& outputDirectory)
+{
+    const auto spectra = this->CreatePlumeSpectra(originalScanFile, scanResult, selectionProperties, mainSpecieIndex);
+    if (spectra == nullptr)
+    {
+        return;
+    }
+
+    std::stringstream spectrumOutputFileName;
+    spectrumOutputFileName << outputDirectory << "/PlumeSpectra_" << spectra->skySpectrumInfo.m_device;
+    spectrumOutputFileName << "_" << FormatDate(spectra->skySpectrumInfo);
+    spectrumOutputFileName << "_" << FormatTimestamp(spectra->skySpectrumInfo.m_startTime);
+    spectrumOutputFileName << "_0.pak";
+
+    // Save the spectra as 1) sky, 2) dark and 3) inplume. This simulates the usual order of the spectra in novac data.
+    CSpectrumIO spectrumWriter;
+    spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), *spectra->referenceSpectrum, nullptr, 0, true);
+    spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), *spectra->darkSpectrum);
+    spectrumWriter.AddSpectrumToFile(spectrumOutputFileName.str(), *spectra->inPlumeSpectrum);
+
+    std::stringstream textOutputFileName;
+    textOutputFileName << outputDirectory << "/PlumeSpectra_" << spectra->skySpectrumInfo.m_device;
+    textOutputFileName << "_" << FormatDate(spectra->skySpectrumInfo);
+    textOutputFileName << "_" << FormatTimestamp(spectra->skySpectrumInfo.m_startTime);
+    textOutputFileName << "_0.txt";
+
+    std::ofstream textOutput(textOutputFileName.str());
+    textOutput << "InPlume: " << std::endl;
+    for (size_t idx : spectra->inPlumeSpectrumIndices)
+    {
+        CSpectrum spectrum;
+        originalScanFile.GetSpectrum(spectrum, (long)idx);
+        textOutput << idx << "\t" << spectrum.m_info.m_scanAngle << "\t" << FormatTimestamp(spectrum.m_info.m_startTime) << std::endl;
+    }
+    textOutput << std::endl;
+
+    textOutput << "Reference: " << std::endl;
+    for (size_t idx : spectra->referenceSpectrumIndices)
+    {
+        CSpectrum spectrum;
+        originalScanFile.GetSpectrum(spectrum, (long)idx);
+        textOutput << idx << "\t" << spectrum.m_info.m_scanAngle << "\t" << FormatTimestamp(spectrum.m_info.m_startTime) << std::endl;
+    }
+    textOutput << std::endl;
+
+    textOutput << "Plume Properties: " << std::endl;
+    textOutput << "  Completeness: " << selectionProperties.completeness << std::endl;
+    textOutput << "  Center: " << selectionProperties.plumeCenter << std::endl;
+    textOutput << "  Offset: " << selectionProperties.offset << std::endl;
+    textOutput << "  Low Edge: " << selectionProperties.plumeEdgeLow << std::endl;
+    textOutput << "  High Edge: " << selectionProperties.plumeEdgeHigh << std::endl;
+    textOutput << "  HWHM Low: " << selectionProperties.plumeHalfLow << std::endl;
+    textOutput << "  HWHM High: " << selectionProperties.plumeHalfHigh << std::endl;
 }
 
 void PlumeSpectrumSelector::SelectSpectra(

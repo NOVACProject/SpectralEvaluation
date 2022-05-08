@@ -47,7 +47,7 @@ namespace novac
 
         /** A basic error estimate for the pixel-to-wavelength mapping.
             This is the R2 of the polynomial fit to the included inliers. */
-        double pixelToWavelengthMappingError;
+        double pixelToWavelengthMappingError = std::numeric_limits<double>::max();
 
         /** The maximum pixel difference between any two inliers into the
             pixel-to-wavelength mapping polynomial. A large value shows that the result

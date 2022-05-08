@@ -14,6 +14,8 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_InstrumentLineshapeCalibrationController.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_InstrumentLineShapeEstimationFromDoas.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_InstrumentLineShapeEstimationFromKeypointDistance.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_PlumeSpectrumSelector.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_ScanEvaluationLogFileHandler.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_ScanFileHandler.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_SpectrumIO.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_StdFile.cpp

@@ -1,91 +1,142 @@
 #pragma once
 #include <vector>
 
+#include <SpectralEvaluation/Spectra/Spectrum.h>
+
 namespace novac
 {
-class CPlumeInScanProperty;
-class CSpectrum;
-class BasicScanEvaluationResult;
-class CScanFileHandler;
+    class CPlumeInScanProperty;
+    class CSpectrum;
+    class BasicScanEvaluationResult;
+    class CScanFileHandler;
 
-// This is a helper class for selecting 'in plume' and 'out of plume' 
-//  (based on some basic selection criteria) spectra with 
-//  the intention of creating reference spectra for performing e.g. 
-//  ratio evaluations or detailed spectral analysis of compounds in the plume.
-class PlumeSpectrumSelector
-{
-public:
-    struct PlumeSpectrumSelectionSettings
+    /** Struct used to store the selected in-plume and out-of-plume spectra
+        from one single scan, with the intention that these can be used later for 
+        evaluating the ratio between gases in the plume. */
+    struct PlumeSpectra
     {
-        int minNumberOfSpectraInPlume = 4;
+        // The out-of-plume reference spectrum. Not dark-corrected.
+        std::unique_ptr<CSpectrum> referenceSpectrum;
 
-        int maxNumberOfSpectraInPlume = 10;
+        // The in-plume spectrum. Not dark-corrected.
+        std::unique_ptr<CSpectrum> inPlumeSpectrum;
 
-        int numberOfSpectraOutsideOfPlume = 10;
+        // The dark spectrum.
+        std::unique_ptr<CSpectrum> darkSpectrum;
 
-        double minimumScanAngle = -75.0;
+        // Listing the indices (in the original scan) which were used to create the reference spectrum.
+        std::vector<size_t> referenceSpectrumIndices;
 
-        double maximumScanAngle = +75.0;
+        // Listing the indices (in the original scan) which were used to create the in plume spectrum.
+        std::vector<size_t> inPlumeSpectrumIndices;
 
-        // The maximum saturation ratio (intensity / maximum intensity of spectrometer)
-        double maxSaturationRatio = 0.88;
-
-        // The maximum saturation ratio (intensity / maximum intensity of spectrometer)
-        double minSaturationRatio = 0.12;
+        // The CSpectrumInfo of the sky-spectrum of the scan. Gives info on e.g. device and start time.
+        CSpectrumInfo skySpectrumInfo;
     };
 
-    void CreatePlumeSpectrumFile(
-        CScanFileHandler& originalScanFile,
-        const BasicScanEvaluationResult& scanResult,
-        const CPlumeInScanProperty& properties,
-        int mainSpecieIndex,
-        const std::string& outputDirectory);
+    // This is a helper class for selecting 'in plume' and 'out of plume' spectra
+    //  (based on some basic selection criteria) with the intention of creating 
+    //  reference spectra for performing e.g. ratio evaluations or detailed 
+    //  spectral analysis of compounds in the plume.
+    class PlumeSpectrumSelector
+    {
+    public:
+        struct PlumeSpectrumSelectionSettings
+        {
+            int minNumberOfSpectraInPlume = 4;
 
-private:
-    double m_maximumSpectrometerIntensity = 4095.0;
+            int maxNumberOfSpectraInPlume = 10;
 
-    int m_mainSpecieIndex = 0;
+            int numberOfSpectraOutsideOfPlume = 10;
 
-    PlumeSpectrumSelectionSettings m_settings;
+            // Lowest allowed angle to include, in degrees from zenith. Used to exclude spectra too close to the horizon.
+            double minimumScanAngle = -75.0;
 
-    bool IsSuitableScanForRatioEvaluation(
-        const CSpectrum& skySpectrum,
-        const CSpectrum& darkSpectrum,
-        const BasicScanEvaluationResult& scanResult,
-        const CPlumeInScanProperty& properties);
+            // Highest allowed angle to include, in degrees from zenith. Used to exclude spectra too close to the horizon.
+            double maximumScanAngle = +75.0;
 
-    // Checks the provided evaluated scan using default settings 
-    //  and returns the indices of the spectra which can 
-    //  be saved as in-plume and out-of-plume spectra.
-    // This will use the provided CPlumeInScanProperty to find out
-    //   if the scan sees the plume at all and where the edges of 
-    //   the plume are located.
-    // If this check fails, then the two vectors are empty.
-    void SelectSpectra(
-        CScanFileHandler& scanFile,
-        const CSpectrum& darkSpectrum,
-        const BasicScanEvaluationResult& scanResult,
-        const CPlumeInScanProperty& properties,
-        std::vector<size_t>& referenceSpectra,
-        std::vector<size_t>& inPlumeSpectra);
+            // The maximum saturation ratio (intensity / maximum intensity of spectrometer)
+            double maxSaturationRatio = 0.88;
 
-    std::vector<size_t> FindSpectraInPlume(
-        const BasicScanEvaluationResult& scanResult,
-        const CPlumeInScanProperty& properties);
+            // The minimum saturation ratio (intensity / maximum intensity of spectrometer)
+            double minSaturationRatio = 0.12;
+        };
 
-    std::vector<size_t> FindSpectraOutOfPlume(
-        CScanFileHandler& scanFile,
-        const CSpectrum& darkSpectrum,
-        const BasicScanEvaluationResult& scanResult,
-        const std::vector<size_t>& inPlumeProposal);
+        /**
+         * @brief Selects in-plume and out-of-plume spectra from the given scan file with given evaluation result and selection criteria.
+         * @param originalScanFile The .pak file where the spectra are found.
+         * @param scanResult The result of evaluating the provided scan file.
+         * @param selectionProperties Criteria for how to select the scans.
+         * @param mainSpecieIndex The index of the main species (typically SO2) in the scanResult.
+         * @return A created PlumeSpectra struct, or nullptr if none could be created.
+        */
+        std::unique_ptr<PlumeSpectra> CreatePlumeSpectra(
+            CScanFileHandler& originalScanFile,
+            const BasicScanEvaluationResult& scanResult,
+            const CPlumeInScanProperty& selectionProperties,
+            int mainSpecieIndex = 0);
 
-    std::vector<size_t> FilterSpectraUsingIntensity(
-        const std::vector<size_t>& proposedIndices,
-        CScanFileHandler& scanFile,
-        const CSpectrum& darkSpectrum);
+        /**
+         * @brief Selects in-plume and out-of-plume spectra from the given scan file with given evaluation result and selection criteria
+         * and saves these to file.
+         * @param originalScanFile The .pak file where the spectra are found.
+         * @param scanResult The result of evaluating the provided scan file.
+         * @param selectionProperties Criteria for how to select the scans.
+         * @param mainSpecieIndex The index of the main species (typically SO2) in the scanResult.
+         * @param outputDirectory The destination directory where the output file should be saved.
+        */
+        void CreatePlumeSpectrumFile(
+            CScanFileHandler& originalScanFile,
+            const BasicScanEvaluationResult& scanResult,
+            const CPlumeInScanProperty& selectionProperties,
+            int mainSpecieIndex,
+            const std::string& outputDirectory);
 
-    bool SpectrumFulfillsIntensityRequirement(
-        const CSpectrum& spectrum,
-        const CSpectrum& darkSpectrum);
-};
+    private:
+        double m_maximumSpectrometerIntensity = 4095.0;
+
+        int m_mainSpecieIndex = 0;
+
+        PlumeSpectrumSelectionSettings m_settings;
+
+        bool IsSuitableScanForRatioEvaluation(
+            const CSpectrum& skySpectrum,
+            const CSpectrum& darkSpectrum,
+            const BasicScanEvaluationResult& scanResult,
+            const CPlumeInScanProperty& properties);
+
+        // Checks the provided evaluated scan using default settings 
+        //  and returns the indices of the spectra which can 
+        //  be saved as in-plume and out-of-plume spectra.
+        // This will use the provided CPlumeInScanProperty to find out
+        //   if the scan sees the plume at all and where the edges of 
+        //   the plume are located.
+        // If this check fails, then the two vectors are empty.
+        void SelectSpectra(
+            CScanFileHandler& scanFile,
+            const CSpectrum& darkSpectrum,
+            const BasicScanEvaluationResult& scanResult,
+            const CPlumeInScanProperty& properties,
+            std::vector<size_t>& referenceSpectra,
+            std::vector<size_t>& inPlumeSpectra);
+
+        std::vector<size_t> FindSpectraInPlume(
+            const BasicScanEvaluationResult& scanResult,
+            const CPlumeInScanProperty& properties);
+
+        std::vector<size_t> FindSpectraOutOfPlume(
+            CScanFileHandler& scanFile,
+            const CSpectrum& darkSpectrum,
+            const BasicScanEvaluationResult& scanResult,
+            const std::vector<size_t>& inPlumeProposal);
+
+        std::vector<size_t> FilterSpectraUsingIntensity(
+            const std::vector<size_t>& proposedIndices,
+            CScanFileHandler& scanFile,
+            const CSpectrum& darkSpectrum);
+
+        bool SpectrumFulfillsIntensityRequirement(
+            const CSpectrum& spectrum,
+            const CSpectrum& darkSpectrum);
+    };
 }

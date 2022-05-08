@@ -11,17 +11,6 @@ namespace novac
 
     CScanFileHandler::CScanFileHandler()
     {
-        m_specReadSoFarNum = 0;
-        m_initialized = false;
-        m_channel = 0;
-        m_specNum = 0;
-
-        m_spectrumBufferNum = 0;
-
-        m_fHasDark = true;
-        m_fHasSky = true;
-        m_fHasOffset = false;
-        m_fHasDarkCurrent = false;
     }
 
     bool CScanFileHandler::CheckScanFile(const std::string& fileName)
