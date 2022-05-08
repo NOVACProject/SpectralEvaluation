@@ -1203,79 +1203,103 @@ bool CScanEvaluationLogFileHandler::WriteEvaluationLog(const std::string fileNam
     return 0;
 }
 
-/*
-bool CScanEvaluationLogFileHandler::FormatEvaluationResult(const CSpectrumInfo* info, const CEvaluationResult* result, double maxIntensity, int nSpecies, std::string& string) {
-    int itSpecie;
-    Common common;
+void CScanEvaluationLogFileHandler::FormatEvaluationResult(
+    const CSpectrumInfo* info,
+    const CEvaluationResult* result,
+    double maxIntensity,
+    int nSpecies,
+    std::string& destination)
+{
+    char tempBuffer[512];
 
-    // 1. The Scan angle
-    string.Format("%.0lf\t", info->m_scanAngle);
+    // Scan angle
+    sprintf(tempBuffer, "%.0lf\t", info->m_scanAngle);
+    destination = std::string(tempBuffer);
 
-    // 3. The start time
-    string.AppendFormat("%02d:%02d:%02d\t", info->m_startTime.hour, info->m_startTime.minute, info->m_startTime.second);
+    // The start time
+    sprintf(tempBuffer, "%02d:%02d:%02d\t", info->m_startTime.hour, info->m_startTime.minute, info->m_startTime.second);
+    destination += std::string(tempBuffer);
 
     // 4. The stop time
-    string.AppendFormat("%02d:%02d:%02d\t", info->m_stopTime.hour, info->m_stopTime.minute, info->m_stopTime.second);
+    sprintf(tempBuffer, "%02d:%02d:%02d\t", info->m_stopTime.hour, info->m_stopTime.minute, info->m_stopTime.second);
+    destination += std::string(tempBuffer);
 
     // 5 The name of the spectrum
-    std::string simplifiedName = SimplifyString(info->m_name);
-    string.AppendFormat("%s\t", simplifiedName.c_str());
+    destination += SimplifyString(info->m_name) + std::string("\t");
 
     // 6. The (maximum) saturation ratio of the whole spectrum,
     //			the (maximum) saturation ratio in the fit-region
     //			and the normalized maximum intensity of the whole spectrum
     if (maxIntensity > 0.0) {
-        string.AppendFormat("%.2lf\t", info->m_peakIntensity / maxIntensity);
-        string.AppendFormat("%.2lf\t", info->m_fitIntensity / maxIntensity);
+        sprintf(tempBuffer, "%.2lf\t", info->m_peakIntensity / maxIntensity);
+        destination += std::string(tempBuffer);
+        sprintf(tempBuffer, "%.2lf\t", info->m_fitIntensity / maxIntensity);
+        destination += std::string(tempBuffer);
     }
     else {
-        string.AppendFormat("%.2lf\t", info->m_peakIntensity);
-        string.AppendFormat("%.2lf\t", info->m_fitIntensity);
+        sprintf(tempBuffer, "%.2lf\t", info->m_peakIntensity);
+        destination += std::string(tempBuffer);
+        sprintf(tempBuffer, "%.2lf\t", info->m_fitIntensity);
+        destination += std::string(tempBuffer);
     }
-    string.AppendFormat("%.2lf\t", (info->m_peakIntensity - info->m_offset) / info->m_exposureTime);
+    sprintf(tempBuffer, "%.2lf\t", (info->m_peakIntensity - info->m_offset) / info->m_exposureTime);
+    destination += std::string(tempBuffer);
 
     // 7. The delta of the fit
     if (result != nullptr)
-        string.AppendFormat("%.2e\t", result->m_delta);
+        sprintf(tempBuffer, "%.2e\t", result->m_delta);
     else
-        string.AppendFormat("%.2e\t", 0.0);
+        sprintf(tempBuffer, "%.2e\t", 0.0);
+    destination += std::string(tempBuffer);
 
     // 8. The chi-square of the fit
     if (result != nullptr)
-        string.AppendFormat("%.2e\t", result->m_chiSquare);
+        sprintf(tempBuffer, "%.2e\t", result->m_chiSquare);
     else
-        string.AppendFormat("%.2e\t", 0.0);
+        sprintf(tempBuffer, "%.2e\t", 0.0);
+    destination += std::string(tempBuffer);
 
     // 9. The exposure time and the number of spectra averaged
-    string.AppendFormat("%ld\t%ld\t", info->m_exposureTime, info->m_numSpec);
+    sprintf(tempBuffer, "%ld\t%ld\t", info->m_exposureTime, info->m_numSpec);
+    destination += std::string(tempBuffer);
 
     // 10. The column/column error for each specie
-    for (itSpecie = 0; itSpecie < nSpecies; ++itSpecie) {
+    for (int itSpecie = 0; itSpecie < nSpecies; ++itSpecie) {
         if (result != nullptr) {
             if ((fabs(result->m_referenceResult[itSpecie].m_column) > 5e-2) && (fabs(result->m_referenceResult[itSpecie].m_columnError) > 5e-2))
-                string.AppendFormat("%.2lf\t%.2lf\t", result->m_referenceResult[itSpecie].m_column, result->m_referenceResult[itSpecie].m_columnError);
+            {
+                sprintf(tempBuffer, "%.2lf\t%.2lf\t", result->m_referenceResult[itSpecie].m_column, result->m_referenceResult[itSpecie].m_columnError);
+            }
             else
-                string.AppendFormat("%.2e\t%.2e\t", result->m_referenceResult[itSpecie].m_column, result->m_referenceResult[itSpecie].m_columnError);
-            string.AppendFormat("%.2lf\t%.2lf\t", result->m_referenceResult[itSpecie].m_shift, result->m_referenceResult[itSpecie].m_shiftError);
-            string.AppendFormat("%.2lf\t%.2lf\t", result->m_referenceResult[itSpecie].m_squeeze, result->m_referenceResult[itSpecie].m_squeezeError);
+            {
+                sprintf(tempBuffer, "%.2e\t%.2e\t", result->m_referenceResult[itSpecie].m_column, result->m_referenceResult[itSpecie].m_columnError);
+            }
+            destination += std::string(tempBuffer);
+
+            sprintf(tempBuffer, "%.2lf\t%.2lf\t", result->m_referenceResult[itSpecie].m_shift, result->m_referenceResult[itSpecie].m_shiftError);
+            destination += std::string(tempBuffer);
+
+            sprintf(tempBuffer, "%.2lf\t%.2lf\t", result->m_referenceResult[itSpecie].m_squeeze, result->m_referenceResult[itSpecie].m_squeezeError);
+            destination += std::string(tempBuffer);
         }
         else {
-            string.AppendFormat("0.0\t0.0\t0.0\t0.0\t0.0\t0.0\t");
+            sprintf(tempBuffer, "0.0\t0.0\t0.0\t0.0\t0.0\t0.0\t");
+            destination += std::string(tempBuffer);
         }
     }
 
     // 11. The quality of the fit
     if (result != nullptr)
-        string.AppendFormat("%d\t", result->IsOK());
+        sprintf(tempBuffer, "%d\t", result->IsOK());
     else
-        string.AppendFormat("%d\t", 1);
+        sprintf(tempBuffer, "%d\t", 1);
+    destination += std::string(tempBuffer);
 
     // 12. The offset
-    string.AppendFormat("%.0lf\t", info->m_offset);
+    sprintf(tempBuffer, "%.0lf\t", info->m_offset);
+    destination += std::string(tempBuffer);
 
     // 13. The 'flag' in the spectra
-    string.AppendFormat("%d\n", info->m_flag);
-
-    return SUCCESS;
+    sprintf(tempBuffer, "%d\n", info->m_flag);
+    destination += std::string(tempBuffer);
 }
-*/

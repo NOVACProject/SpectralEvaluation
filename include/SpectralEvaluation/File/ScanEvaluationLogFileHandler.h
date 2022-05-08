@@ -6,7 +6,9 @@
 namespace novac
 {
     /** CScanEvaluationLogFileHandler is a class to read and write evaluation information of one or multiple scans
-    *   from/to the text file format used by the NovacProgram and the NovacPPP.
+    * from/to the text file format used by the NovacProgram and the NovacPPP.
+    * One evaluation log file may contain results from multiple scans but is assumed to only contain
+    * data from one single instrument.
     * TODO: Make sure that this class is used by both the NovacProgram and the NovacPPP.
     * TODO: The file formats used by the NovacProgram and the NovacPPP does differ somewhat and this is not handled by this reader.
     * TODO: The NovacProgram and NovacPPP uses different subclasses of BasicScanEvaluationResult for handling the results, this needs to be unified. */
@@ -16,13 +18,10 @@ namespace novac
         CScanEvaluationLogFileHandler();
         ~CScanEvaluationLogFileHandler();
 
-        /** The evaluation log */
-        std::string m_evaluationLog;
-
         // ------------------- PUBLIC METHODS -------------------------
 
         /** Parses the contens of the provided evaluation log file and fills in the contents 
-            into the member variable 'm_scan'. Updates m_scan and m_evaluationLog.
+            into this class:s member variables. Updates m_scan and m_evaluationLog.
             @return true if the file could be parsed successfully, otherwise false. */
         bool ReadEvaluationLog(const std::string& evaluationLogFile);
 
@@ -34,24 +33,33 @@ namespace novac
         bool IsWindSpeedMeasurement(int scanNo);
 
         /** Appends the evaluation result of one spectrum to the given string.
-                @param info - the information about the spectrum
-                @param result - the evaluation result, can be NULL
-                @param string - will on return be filled with the output line to be written to the evaluation-log.
-                @return SUCCESS - always */
-        // static bool FormatEvaluationResult(const novac::CSpectrumInfo* info, const novac::BasicScanEvaluationResult* result, double maxIntensity, int nSpecies, std::string& string);
+        *   @param info The information about the measured spectrum
+        *   @param result The result of the evaluation, can be nullptr
+        *   @param destination Will on return be filled with the output line to be written to the evaluation-log. */
+        static void FormatEvaluationResult(const novac::CSpectrumInfo* info, const novac::CEvaluationResult* result, double maxIntensity, int nSpecies, std::string& destination);
 
         // ------------------- PUBLIC DATA -------------------------
 
-        /** Information from the evaluated scans */
+        /** The name of the evaluation log.
+        *   Filled in when calling 'ReadEvaluationLog' */
+        std::string m_evaluationLog;
+
+        /** Listing the evaluation result of each scan present in the evaluation log file m_evaluationLog.
+        *   Filled in when calling 'ReadEvaluationLog' */
         std::vector<BasicScanEvaluationResult> m_scan;
 
         /** Information of the wind field used to calculate the flux of each scan */
+        // TODO: Restore this when there is a unified wind field format between the NovacProgram and NovacPPP
         // std::vector<CWindField> m_windField;
 
-        /** The species that were found in this evaluation log */
+        /** The species that were found in this evaluation log.
+        *   Filled in when calling 'ReadEvaluationLog' */
         std::vector<std::string> m_specie;
 
-        /** The additional spectrum information of one spectrum. */
+        /** Additional spectrum information describing the setup of the device that collected these measurements. 
+        *   The date and time of this field is not relevant, however the serial number, compass direction and other 
+        *   geometric parameters are.
+        *   Filled in when calling 'ReadEvaluationLog' */
         novac::CSpectrumInfo m_specInfo;
 
     private:
