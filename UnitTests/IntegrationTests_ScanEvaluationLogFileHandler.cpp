@@ -89,6 +89,26 @@ namespace novac
             REQUIRE(Approx(2.44e+18) == lastEvaluatedSpectrum.m_referenceResult[1].m_columnError);
             REQUIRE(Approx(7.72e+13) == lastEvaluatedSpectrum.m_referenceResult[2].m_columnError);
         }
+
+        SECTION("Sets correct evaluation judgement on spectra")
+        {
+            const auto& firstScan = sut.m_scan[0];
+
+            REQUIRE(true == firstScan.m_spec[0].IsBad());
+            REQUIRE(true == firstScan.m_spec[1].IsBad());
+            REQUIRE(true == firstScan.m_spec[2].IsBad());
+            REQUIRE(true == firstScan.m_spec[3].IsBad());
+            REQUIRE(true == firstScan.m_spec[4].IsBad());
+            REQUIRE(true == firstScan.m_spec[5].IsBad());
+            REQUIRE(true == firstScan.m_spec[6].IsBad());
+            REQUIRE(true == firstScan.m_spec[7].IsBad());
+            REQUIRE(true == firstScan.m_spec[8].IsBad());
+            REQUIRE(true == firstScan.m_spec[9].IsBad());
+            REQUIRE(true == firstScan.m_spec[10].IsBad());
+            REQUIRE(false == firstScan.m_spec[11].IsBad());
+            REQUIRE(false == firstScan.m_spec[12].IsBad());
+            REQUIRE(false == firstScan.m_spec[13].IsBad());
+        }
     }
 
     TEST_CASE("CScanEvaluationLogFileHandler ReadEvaluationLog with multiple scans in one file", "[CScanEvaluationLogFileHandler][IntegrationTests]")

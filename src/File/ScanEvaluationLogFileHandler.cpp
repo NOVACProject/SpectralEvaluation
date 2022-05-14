@@ -575,7 +575,13 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
             if (m_tableColumnMapping.peakSaturation != -1) { // If the intensity is specified as a saturation ratio...
                 dynamicRange = CSpectrometerDatabase::GetInstance().GetModel(m_specInfo.m_specModelName).maximumIntensityForSingleReadout;
             }
-            // m_scan[sortOrder[m_scanNum]].CheckGoodnessOfFit(m_specInfo);
+
+            // Update the quality of the DOAS fit
+            if (m_scan[sortOrder[m_scanNum]].m_spec.size() > 0)
+            {
+                m_scan[sortOrder[m_scanNum]].m_spec.back().CheckGoodnessOfFit(m_specInfo);
+            }
+
             ++measNr;
         }
 

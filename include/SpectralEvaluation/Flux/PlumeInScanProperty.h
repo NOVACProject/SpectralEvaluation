@@ -6,6 +6,7 @@
 
 namespace novac
 {
+    class BasicScanEvaluationResult;
 
     /** The class CPlumeInScanProperty is used to describe
         how a plume is seen by a scan. This incorporates properties
@@ -70,6 +71,13 @@ namespace novac
         @param message - Will be filled with the reason the plume wasn't found, if it wasn't.. */
     bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, long numPoints, CPlumeInScanProperty& plumeProperties, std::string* message = nullptr);
 
+    /** Finds the plume in the supplied scan. Return value is true if there is a plume, otherwise false
+        @param evaluatedScan - the evaluated scan.
+        @param specieIdx - the evaluated specie to get the columns for (normally zero).
+        @param plumeProperties - Will on successful return be filled with the calculated properties of the plume (not completeness though).
+        @param message - Will be filled with the reason the plume wasn't found, if it wasn't.. */
+    bool FindPlume(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, CPlumeInScanProperty& plumeProperties, std::string* message = nullptr);
+
     /** Tries to calculate the completeness of the given scan.
         The completeness is 1.0 if the entire plume can be seen and 0.0 if the plume
         cannot be seen at all.
@@ -85,8 +93,15 @@ namespace novac
         @param message - Will be filled with the reason the plume wasn't found, if it wasn't.. */
     bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, double offset, long numPoints, CPlumeInScanProperty& plumeProperties, std::string* message = nullptr);
 
+    bool CalculatePlumeCompleteness(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, CPlumeInScanProperty& plumeProperties, std::string* message = nullptr);
+
     /** Calculates the 'offset' of the scan, i.e. the column amount in the sky spectrum, by judging from
         the lowest columns in the scan. */
     double CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation, long numPoints);
+
+    /** Calculates the 'offset' of the scan, i.e. the column amount in the sky spectrum, by judging from
+        the lowest columns in the scan.
+        This value is filled into the provided CPlumeInScanProperty and returned. */
+    double CalculatePlumeOffset(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, CPlumeInScanProperty& plumeProperties);
 
 }

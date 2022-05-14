@@ -66,14 +66,14 @@ namespace novac
          * @brief Selects in-plume and out-of-plume spectra from the given scan file with given evaluation result and selection criteria.
          * @param originalScanFile The .pak file where the spectra are found.
          * @param scanResult The result of evaluating the provided scan file.
-         * @param selectionProperties Criteria for how to select the scans.
+         * @param plumeProperties Describes how much of the plume is visible in the scan, and at what angle.
          * @param mainSpecieIndex The index of the main species (typically SO2) in the scanResult.
          * @return A created PlumeSpectra struct, or nullptr if none could be created.
         */
         std::unique_ptr<PlumeSpectra> CreatePlumeSpectra(
             CScanFileHandler& originalScanFile,
             const BasicScanEvaluationResult& scanResult,
-            const CPlumeInScanProperty& selectionProperties,
+            const CPlumeInScanProperty& plumeProperties,
             int mainSpecieIndex = 0);
 
         /**
@@ -81,14 +81,14 @@ namespace novac
          * and saves these to file.
          * @param originalScanFile The .pak file where the spectra are found.
          * @param scanResult The result of evaluating the provided scan file.
-         * @param selectionProperties Criteria for how to select the scans.
+         * @param plumeProperties Describes how much of the plume is visible in the scan, and at what angle.
          * @param mainSpecieIndex The index of the main species (typically SO2) in the scanResult.
          * @param outputDirectory The destination directory where the output file should be saved.
         */
         void CreatePlumeSpectrumFile(
             CScanFileHandler& originalScanFile,
             const BasicScanEvaluationResult& scanResult,
-            const CPlumeInScanProperty& selectionProperties,
+            const CPlumeInScanProperty& plumeProperties,
             int mainSpecieIndex,
             const std::string& outputDirectory);
 

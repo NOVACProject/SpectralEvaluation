@@ -1,5 +1,6 @@
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include <SpectralEvaluation/VectorUtils.h>
+#include <SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h>
 #include <algorithm>
 #include <cstring>
 #include <sstream>
@@ -38,8 +39,39 @@ namespace novac
 
     /// --------------------------- FINDING THE PLUME IN ONE SCAN ---------------------------
 
+    bool FindPlume(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, CPlumeInScanProperty& plumeProperties, std::string* message)
+    {
+        std::vector<double> scanAngles;
+        std::vector<double> phi;
+        std::vector<double> columns;
+        std::vector<double> columnErrors;
+        std::vector<bool> badEvaluation;
+        const long numPoints = static_cast<long>(evaluatedScan.m_spec.size());
+
+        for (long idx = 0; idx < numPoints; ++idx)
+        {
+            scanAngles.push_back(evaluatedScan.m_specInfo[idx].m_scanAngle);
+            phi.push_back(evaluatedScan.m_specInfo[idx].m_scanAngle2);
+
+            columns.push_back(evaluatedScan.m_spec[idx].m_referenceResult[specieIdx].m_column);
+            columnErrors.push_back(evaluatedScan.m_spec[idx].m_referenceResult[specieIdx].m_columnError);
+            badEvaluation.push_back(evaluatedScan.m_spec[idx].IsBad());
+        }
+
+        return FindPlume(scanAngles, phi, columns, columnErrors, badEvaluation, numPoints, plumeProperties, message);
+    }
+
+
     // VERSION 1: FROM NOVACPROGRAM
-    bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, long numPoints, CPlumeInScanProperty& plumeProperties, std::string* message)
+    bool FindPlume(
+        const std::vector<double>& scanAngles,
+        const std::vector<double>& phi,
+        const std::vector<double>& columns,
+        const std::vector<double>& columnErrors,
+        const std::vector<bool>& badEvaluation,
+        long numPoints,
+        CPlumeInScanProperty& plumeProperties,
+        std::string* message)
     {
 
         // There is a plume iff there is a region, where the column-values are considerably
@@ -189,8 +221,39 @@ namespace novac
 
     /// --------------------------- PLUME COMPLETENESS ---------------------------
 
+    bool CalculatePlumeCompleteness(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, CPlumeInScanProperty& plumeProperties, std::string* message)
+    {
+        std::vector<double> scanAngles;
+        std::vector<double> phi;
+        std::vector<double> columns;
+        std::vector<double> columnErrors;
+        std::vector<bool> badEvaluation;
+        const long numPoints = static_cast<long>(evaluatedScan.m_spec.size());
+
+        for (long idx = 0; idx < numPoints; ++idx)
+        {
+            scanAngles.push_back(evaluatedScan.m_specInfo[idx].m_scanAngle);
+            phi.push_back(evaluatedScan.m_specInfo[idx].m_scanAngle2);
+
+            columns.push_back(evaluatedScan.m_spec[idx].m_referenceResult[specieIdx].m_column);
+            columnErrors.push_back(evaluatedScan.m_spec[idx].m_referenceResult[specieIdx].m_columnError);
+            badEvaluation.push_back(evaluatedScan.m_spec[idx].IsBad());
+        }
+
+        return CalculatePlumeCompleteness(scanAngles, phi, columns, columnErrors, badEvaluation, plumeProperties.offset, numPoints, plumeProperties, message);
+    }
+
     // VERSION 1: FROM NOVACPROGRAM
-    bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, double offset, long numPoints, CPlumeInScanProperty& plumeProperties, std::string* message)
+    bool CalculatePlumeCompleteness(
+        const std::vector<double>& scanAngles,
+        const std::vector<double>& phi,
+        const std::vector<double>& columns,
+        const std::vector<double>& columnErrors,
+        const std::vector<bool>& badEvaluation,
+        double offset,
+        long numPoints,
+        CPlumeInScanProperty& plumeProperties,
+        std::string* message)
     {
 
         int nDataPointsToAverage = 5;
@@ -252,6 +315,23 @@ namespace novac
             plumeProperties.completeness = 1.0;
 
         return true;
+    }
+
+    double CalculatePlumeOffset(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, CPlumeInScanProperty& plumeProperties)
+    {
+        std::vector<double> columns;
+        std::vector<bool> badEvaluation;
+        const long numPoints = static_cast<long>(evaluatedScan.m_spec.size());
+
+        for (long idx = 0; idx < numPoints; ++idx)
+        {
+            columns.push_back(evaluatedScan.m_spec[idx].m_referenceResult[specieIdx].m_column);
+            badEvaluation.push_back(evaluatedScan.m_spec[idx].IsBad());
+        }
+
+        plumeProperties.offset = CalculatePlumeOffset(columns, badEvaluation, numPoints);
+
+        return plumeProperties.offset;
     }
 
     double CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation, long numPoints)

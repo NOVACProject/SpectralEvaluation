@@ -29,7 +29,7 @@ std::string FormatTimestamp(const CDateTime& time)
 std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
     CScanFileHandler& originalScanFile,
     const BasicScanEvaluationResult& scanResult,
-    const CPlumeInScanProperty& selectionProperties,
+    const CPlumeInScanProperty& plumeProperties,
     int mainSpecieIndex)
 {
     std::vector<size_t> referenceSpectrumIndices;
@@ -38,22 +38,22 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
     m_settings = PlumeSpectrumSelectionSettings();
     m_mainSpecieIndex = mainSpecieIndex;
 
-    CSpectrum skySpectrum;
-    if (!originalScanFile.GetSky(skySpectrum))
+    auto skySpectrum = std::make_unique<CSpectrum>();
+    if (originalScanFile.GetSky(*skySpectrum))
     {
         return nullptr; // cannot read spectra from the file, ignore it.
     }
-    std::unique_ptr<CSpectrum> darkSpectrum;
-    if (!originalScanFile.GetDark(*darkSpectrum))
+    auto darkSpectrum = std::make_unique<CSpectrum>();
+    if (originalScanFile.GetDark(*darkSpectrum))
     {
         return nullptr; // cannot read spectra from the file, ignore it.
     }
 
     // Get some parameters regarding the scan and the spectrometer
-    auto model = CSpectrometerDatabase::GetInstance().GetModel(skySpectrum.m_info.m_specModelName);
+    auto model = CSpectrometerDatabase::GetInstance().GetModel(skySpectrum->m_info.m_specModelName);
     this->m_maximumSpectrometerIntensity = model.maximumIntensityForSingleReadout;
 
-    if (!IsSuitableScanForRatioEvaluation(skySpectrum, *darkSpectrum, scanResult, selectionProperties))
+    if (!IsSuitableScanForRatioEvaluation(*skySpectrum, *darkSpectrum, scanResult, plumeProperties))
     {
         return nullptr;
     }
@@ -62,7 +62,7 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
         originalScanFile,
         *darkSpectrum,
         scanResult,
-        selectionProperties,
+        plumeProperties,
         referenceSpectrumIndices,
         inPlumeSpectrumIndices);
 
@@ -91,7 +91,7 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
     result->referenceSpectrumIndices = std::move(referenceSpectrumIndices);
     result->inPlumeSpectrumIndices = std::move(inPlumeSpectrumIndices);
 
-    result->skySpectrumInfo = skySpectrum.m_info;
+    result->skySpectrumInfo = skySpectrum->m_info;
 
     return result;
 }
@@ -99,11 +99,11 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
 void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     CScanFileHandler& originalScanFile,
     const BasicScanEvaluationResult& scanResult,
-    const CPlumeInScanProperty& selectionProperties,
+    const CPlumeInScanProperty& plumeProperties,
     int mainSpecieIndex,
     const std::string& outputDirectory)
 {
-    const auto spectra = this->CreatePlumeSpectra(originalScanFile, scanResult, selectionProperties, mainSpecieIndex);
+    const auto spectra = this->CreatePlumeSpectra(originalScanFile, scanResult, plumeProperties, mainSpecieIndex);
     if (spectra == nullptr)
     {
         return;
@@ -147,13 +147,13 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     textOutput << std::endl;
 
     textOutput << "Plume Properties: " << std::endl;
-    textOutput << "  Completeness: " << selectionProperties.completeness << std::endl;
-    textOutput << "  Center: " << selectionProperties.plumeCenter << std::endl;
-    textOutput << "  Offset: " << selectionProperties.offset << std::endl;
-    textOutput << "  Low Edge: " << selectionProperties.plumeEdgeLow << std::endl;
-    textOutput << "  High Edge: " << selectionProperties.plumeEdgeHigh << std::endl;
-    textOutput << "  HWHM Low: " << selectionProperties.plumeHalfLow << std::endl;
-    textOutput << "  HWHM High: " << selectionProperties.plumeHalfHigh << std::endl;
+    textOutput << "  Completeness: " << plumeProperties.completeness << std::endl;
+    textOutput << "  Center: " << plumeProperties.plumeCenter << std::endl;
+    textOutput << "  Offset: " << plumeProperties.offset << std::endl;
+    textOutput << "  Low Edge: " << plumeProperties.plumeEdgeLow << std::endl;
+    textOutput << "  High Edge: " << plumeProperties.plumeEdgeHigh << std::endl;
+    textOutput << "  HWHM Low: " << plumeProperties.plumeHalfLow << std::endl;
+    textOutput << "  HWHM High: " << plumeProperties.plumeHalfHigh << std::endl;
 }
 
 void PlumeSpectrumSelector::SelectSpectra(
@@ -306,6 +306,7 @@ bool PlumeSpectrumSelector::SpectrumFulfillsIntensityRequirement(
     const CSpectrum& spectrum,
     const CSpectrum& darkSpectrum)
 {
+    // TODO: this does not properly take co-added spectra into account.
     double maxSaturationRatio = GetMaximumSaturationRatioOfSpectrum(spectrum, this->m_maximumSpectrometerIntensity);
 
     if (maxSaturationRatio > m_settings.maxSaturationRatio)
