@@ -176,6 +176,18 @@ namespace novac
             return GetTestDataDirectory() + std::string("BrORatio/") + std::string("D2J2124_160331_1608_0.txt");
         }
 
+        // Notice that this is a file where we don't expect to get a ratio due to too wide plume
+        static std::string GetBrORatioScanFile2()
+        {
+            return GetTestDataDirectory() + std::string("BrORatio/") + std::string("D2J2124_160331_2049_0.pak");
+        }
+
+        // Notice that this is a file where we don't expect to get a ratio due to too wide plume
+        static std::string GetBrORatioEvaluationFile2()
+        {
+            return GetTestDataDirectory() + std::string("BrORatio/") + std::string("D2J2124_160331_2049_0.txt");
+        }
+
 #pragma endregion
 
     };
