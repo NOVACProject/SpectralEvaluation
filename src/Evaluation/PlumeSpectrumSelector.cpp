@@ -30,7 +30,8 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
     CScanFileHandler& originalScanFile,
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& plumeProperties,
-    int mainSpecieIndex)
+    int mainSpecieIndex,
+    std::string* errorMessage)
 {
     std::vector<size_t> referenceSpectrumIndices;
     std::vector<size_t> inPlumeSpectrumIndices;
@@ -41,18 +42,26 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
     auto skySpectrum = std::make_unique<CSpectrum>();
     if (originalScanFile.GetSky(*skySpectrum))
     {
-        return nullptr; // cannot read spectra from the file, ignore it.
+        if (errorMessage != nullptr)
+        {
+            *errorMessage = "Failed to read sky spectrum of scan.";
+        }
+        return nullptr;
     }
     auto darkSpectrum = std::make_unique<CSpectrum>();
     if (originalScanFile.GetDark(*darkSpectrum))
     {
-        return nullptr; // cannot read spectra from the file, ignore it.
+        if (errorMessage != nullptr)
+        {
+            *errorMessage = "Failed to read dark spectrum of scan.";
+        }
+        return nullptr;
     }
 
     // Get some parameters regarding the scan and the spectrometer
     const auto model = CSpectrometerDatabase::GetInstance().GetModel(skySpectrum->m_info.m_specModelName);
 
-    if (!IsSuitableScanForRatioEvaluation(*skySpectrum, *darkSpectrum, scanResult, plumeProperties, model))
+    if (!IsSuitableScanForRatioEvaluation(*skySpectrum, *darkSpectrum, scanResult, plumeProperties, model, errorMessage))
     {
         return nullptr;
     }
@@ -64,7 +73,8 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
         plumeProperties,
         model,
         referenceSpectrumIndices,
-        inPlumeSpectrumIndices);
+        inPlumeSpectrumIndices,
+        errorMessage);
 
     if (referenceSpectrumIndices.size() == 0 || inPlumeSpectrumIndices.size() == 0)
     {
@@ -101,9 +111,10 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& plumeProperties,
     int mainSpecieIndex,
-    const std::string& outputDirectory)
+    const std::string& outputDirectory,
+    std::string* errorMessage)
 {
-    const auto spectra = this->CreatePlumeSpectra(originalScanFile, scanResult, plumeProperties, mainSpecieIndex);
+    const auto spectra = this->CreatePlumeSpectra(originalScanFile, scanResult, plumeProperties, mainSpecieIndex, errorMessage);
     if (spectra == nullptr)
     {
         return;
@@ -163,7 +174,8 @@ void PlumeSpectrumSelector::SelectSpectra(
     const CPlumeInScanProperty& properties,
     const SpectrometerModel& spectrometerModel,
     std::vector<size_t>& referenceSpectra,
-    std::vector<size_t>& inPlumeSpectra)
+    std::vector<size_t>& inPlumeSpectra,
+    std::string* errorMessage)
 {
     referenceSpectra.clear();
     inPlumeSpectra.clear();
@@ -178,6 +190,10 @@ void PlumeSpectrumSelector::SelectSpectra(
     inPlumeProposal = FilterSpectraUsingIntensity(inPlumeProposal, scanFile, darkSpectrum, spectrometerModel);
     if (static_cast<int>(inPlumeProposal.size()) < m_settings.minNumberOfSpectraInPlume)
     {
+        if (errorMessage != nullptr)
+        {
+            *errorMessage = "Too few good spectra in plume.";
+        }
         return;
     }
 
@@ -185,6 +201,10 @@ void PlumeSpectrumSelector::SelectSpectra(
     auto referenceProposal = FindSpectraOutOfPlume(scanFile, darkSpectrum, scanResult, spectrometerModel, inPlumeProposal);
     if (static_cast<int>(referenceProposal.size()) < m_settings.numberOfSpectraOutsideOfPlume)
     {
+        if (errorMessage != nullptr)
+        {
+            *errorMessage = "Too few good spectra out of plume.";
+        }
         return;
     }
 
@@ -202,23 +222,59 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
     const CSpectrum& darkSpectrum,
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& properties,
-    const SpectrometerModel& spectrometerModel)
+    const SpectrometerModel& spectrometerModel,
+    std::string* errorMessage)
 {
     if (static_cast<int>(scanResult.m_spec.size()) < m_settings.minNumberOfSpectraInPlume + m_settings.numberOfSpectraOutsideOfPlume)
     {
-        return false; // not enough spectra
+        if (errorMessage != nullptr)
+        {
+            std::stringstream msg;
+            msg << "Too few spectra in scan (" << scanResult.m_spec.size() << ") at least ";
+            msg << m_settings.minNumberOfSpectraInPlume + m_settings.numberOfSpectraOutsideOfPlume << " required.";
+            *errorMessage = msg.str();
+        }
+        return false;
     }
-    else if (properties.completeness < 0.7)
+    else if (properties.completeness < m_minimumPlumeCompleteness)
     {
-        return false; // need to see the plume
+        if (errorMessage != nullptr)
+        {
+            std::stringstream msg;
+            msg << "Plume completeness (" << properties.completeness << ") below limit of (" << m_minimumPlumeCompleteness << ")";
+            *errorMessage = msg.str();
+        }
+        return false;
     }
-    else if (std::abs(properties.plumeHalfLow - NOT_A_NUMBER) < 1.0 || std::abs(properties.plumeHalfHigh - NOT_A_NUMBER) < 1.0)
+    else if (std::abs(properties.plumeHalfLow - NOT_A_NUMBER) < 1.0)
     {
-        return false; // need to fall down to 50% of the peak-value on both sides
+        if (errorMessage != nullptr)
+        {
+            std::stringstream msg;
+            msg << "Column needs to drop at least 50% on lower flank";
+            *errorMessage = msg.str();
+        }
+        return false;
+    }
+    else if (std::abs(properties.plumeHalfHigh - NOT_A_NUMBER) < 1.0)
+    {
+        if (errorMessage != nullptr)
+        {
+            std::stringstream msg;
+            msg << "Column needs to drop at least 50% on upper flank";
+            *errorMessage = msg.str();
+        }
+        return false;
     }
 
     if (!SpectrumFulfillsIntensityRequirement(skySpectrum, darkSpectrum, spectrometerModel))
     {
+        if (errorMessage != nullptr)
+        {
+            std::stringstream msg;
+            msg << "Sky spectrum does not have saturation ratio in required range " << m_settings.minSaturationRatio << " to " << m_settings.maxSaturationRatio;
+            *errorMessage = msg.str();
+        }
         return false;
     }
 

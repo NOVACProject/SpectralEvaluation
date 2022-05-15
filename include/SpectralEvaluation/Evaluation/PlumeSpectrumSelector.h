@@ -68,13 +68,15 @@ namespace novac
          * @param scanResult The result of evaluating the provided scan file.
          * @param plumeProperties Describes how much of the plume is visible in the scan, and at what angle.
          * @param mainSpecieIndex The index of the main species (typically SO2) in the scanResult.
+         * @param errorMessage If present, will be filled with the reason PlumeSpectra is null if it could not be created.
          * @return A created PlumeSpectra struct, or nullptr if none could be created.
         */
         std::unique_ptr<PlumeSpectra> CreatePlumeSpectra(
             CScanFileHandler& originalScanFile,
             const BasicScanEvaluationResult& scanResult,
             const CPlumeInScanProperty& plumeProperties,
-            int mainSpecieIndex = 0);
+            int mainSpecieIndex = 0,
+            std::string *errorMessage = nullptr);
 
         /**
          * @brief Selects in-plume and out-of-plume spectra from the given scan file with given evaluation result and selection criteria
@@ -90,9 +92,12 @@ namespace novac
             const BasicScanEvaluationResult& scanResult,
             const CPlumeInScanProperty& plumeProperties,
             int mainSpecieIndex,
-            const std::string& outputDirectory);
+            const std::string& outputDirectory,
+            std::string* errorMessage = nullptr);
 
     private:
+
+        const double m_minimumPlumeCompleteness = 0.7;
 
         int m_mainSpecieIndex = 0;
 
@@ -112,7 +117,8 @@ namespace novac
             const CSpectrum& darkSpectrum,
             const BasicScanEvaluationResult& scanResult,
             const CPlumeInScanProperty& properties,
-            const SpectrometerModel& spectrometerModel);
+            const SpectrometerModel& spectrometerModel,
+            std::string* errorMessage = nullptr);
 
         /**
          * @brief Checks the provided evaluated scan using default settings and returns the indices of the spectra which can
@@ -133,7 +139,8 @@ namespace novac
             const CPlumeInScanProperty& properties,
             const SpectrometerModel& spectrometerModel,
             std::vector<size_t>& referenceSpectra,
-            std::vector<size_t>& inPlumeSpectra);
+            std::vector<size_t>& inPlumeSpectra,
+            std::string* errorMessage = nullptr);
 
         std::vector<size_t> FindSpectraInPlume(
             const BasicScanEvaluationResult& scanResult,
