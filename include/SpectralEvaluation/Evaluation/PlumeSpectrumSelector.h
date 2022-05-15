@@ -11,7 +11,7 @@ namespace novac
     class CScanFileHandler;
 
     /** Struct used to store the selected in-plume and out-of-plume spectra
-        from one single scan, with the intention that these can be used later for 
+        from one single scan, with the intention that these can be used later for
         evaluating the ratio between gases in the plume. */
     struct PlumeSpectra
     {
@@ -34,10 +34,10 @@ namespace novac
         CSpectrumInfo skySpectrumInfo;
     };
 
-    // This is a helper class for selecting 'in plume' and 'out of plume' spectra
-    //  (based on some basic selection criteria) with the intention of creating 
-    //  reference spectra for performing e.g. ratio evaluations or detailed 
-    //  spectral analysis of compounds in the plume.
+    /** This is a helper class for selecting 'in plume' and 'out of plume' spectra
+        (based on some basic selection criteria) with the intention of creating
+        reference spectra for performing e.g. ratio evaluations or detailed
+        spectral analysis of compounds in the plume. */
     class PlumeSpectrumSelector
     {
     public:
@@ -93,30 +93,45 @@ namespace novac
             const std::string& outputDirectory);
 
     private:
-        double m_maximumSpectrometerIntensity = 4095.0;
 
         int m_mainSpecieIndex = 0;
 
         PlumeSpectrumSelectionSettings m_settings;
 
+        /**
+         * @brief Returns true if the provided scanResult represents a scan which is suitable for performing ratio evaluation
+         * @param skySpectrum The sky spectrum of the scan.
+         * @param darkSpectrum The dark spectrum of the scan.
+         * @param scanResult The evaluation result.
+         * @param properties The properties of the scan, must have center and completeness filled in.
+         * @param spectrometerModel The model of the spectrometer which collected the measurement.
+         * @return True if the scan is suitable.
+        */
         bool IsSuitableScanForRatioEvaluation(
             const CSpectrum& skySpectrum,
             const CSpectrum& darkSpectrum,
             const BasicScanEvaluationResult& scanResult,
-            const CPlumeInScanProperty& properties);
+            const CPlumeInScanProperty& properties,
+            const SpectrometerModel& spectrometerModel);
 
-        // Checks the provided evaluated scan using default settings 
-        //  and returns the indices of the spectra which can 
-        //  be saved as in-plume and out-of-plume spectra.
-        // This will use the provided CPlumeInScanProperty to find out
-        //   if the scan sees the plume at all and where the edges of 
-        //   the plume are located.
-        // If this check fails, then the two vectors are empty.
+        /**
+         * @brief Checks the provided evaluated scan using default settings and returns the indices of the spectra which can
+         * be saved as in-plume and out-of-plume spectra.This will use the provided CPlumeInScanProperty to find out
+         *   if the scan sees the plume at all and where the edges of the plume are located.
+         * @param scanFile The .pak file to check.
+         * @param darkSpectrum The dark spectrum to be used for EVERY spectrum in the scan.
+         * @param scanResult The evaluation result of the scan
+         * @param properties The properties of the plume, must be filled in with completeness, plumeHalfLow and plumeHalfHigh.
+         * @param spectrometerModel Model of the spectrometer which collected this scan.
+         * @param referenceSpectra Will on return be filled with the indices of the spectra to be used as out-of-plume spectra.
+         * @param inPlumeSpectra Will on return be filled with the indices of the spectra to be used as in-plume spectra.
+        */
         void SelectSpectra(
             CScanFileHandler& scanFile,
             const CSpectrum& darkSpectrum,
             const BasicScanEvaluationResult& scanResult,
             const CPlumeInScanProperty& properties,
+            const SpectrometerModel& spectrometerModel,
             std::vector<size_t>& referenceSpectra,
             std::vector<size_t>& inPlumeSpectra);
 
@@ -128,15 +143,25 @@ namespace novac
             CScanFileHandler& scanFile,
             const CSpectrum& darkSpectrum,
             const BasicScanEvaluationResult& scanResult,
+            const SpectrometerModel& spectrometerModel,
             const std::vector<size_t>& inPlumeProposal);
 
         std::vector<size_t> FilterSpectraUsingIntensity(
             const std::vector<size_t>& proposedIndices,
             CScanFileHandler& scanFile,
-            const CSpectrum& darkSpectrum);
+            const CSpectrum& darkSpectrum,
+            const SpectrometerModel& spectrometerModel);
 
+        /**
+         * @brief Return true if the provided spectrum has a good intensity for being included in a ratio evaluation.
+         * @param spectrum The spectrum to verify, not dark-corrected
+         * @param darkSpectrum The dark-spectrum corresponding to the provded spectrum.
+         * @param spectrometerModel The model of the spectrometer which collected the measurement.
+         * @return True if the provided spectrum has suitable properties.
+        */
         bool SpectrumFulfillsIntensityRequirement(
             const CSpectrum& spectrum,
-            const CSpectrum& darkSpectrum);
+            const CSpectrum& darkSpectrum,
+            const SpectrometerModel& spectrometerModel);
     };
 }

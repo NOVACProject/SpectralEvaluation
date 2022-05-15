@@ -77,23 +77,28 @@ namespace novac
         // There is a plume iff there is a region, where the column-values are considerably
         //	much higher than in the rest of the scan
 
-        // Make a local copy of the values, picking out only the good ones
-        std::vector<double> col(numPoints);
-        std::vector<double> colE(numPoints);
-        std::vector<double> angle(numPoints);
-        std::vector<double> p(numPoints);
+        // Make a local copy of the values, picking out only the data from the good spectra.
+        std::vector<double> columnOfGoodSpectra;
+        std::vector<double> columnErrorOfGoodSpectra;
+        std::vector<double> angleOfGoodSpectra;
+        std::vector<double> angle2OfGoodSpectra;
 
-        int		nCol = 0; // <-- the number of ok column values
+        columnOfGoodSpectra.reserve(numPoints);
+        columnErrorOfGoodSpectra.reserve(numPoints);
+        angleOfGoodSpectra.reserve(numPoints);
+        angle2OfGoodSpectra.reserve(numPoints);
+
+        int numberOfGoodspectra = 0; // <-- the number of ok column values
         for (int k = 0; k < numPoints; ++k) {
             if (!badEvaluation[k]) {
-                col[nCol] = columns[k];
-                colE[nCol] = columnErrors[k];
-                angle[nCol] = scanAngles[k];
-                p[nCol] = phi[k];
-                ++nCol;
+                columnOfGoodSpectra.push_back(columns[k]);
+                columnErrorOfGoodSpectra.push_back(columnErrors[k]);
+                angleOfGoodSpectra.push_back(scanAngles[k]);
+                angle2OfGoodSpectra.push_back(phi[k]);
+                ++numberOfGoodspectra;
             }
         }
-        if (nCol <= 5) { // <-- if too few ok points, then there's no plume
+        if (numberOfGoodspectra <= 5) { // <-- if too few ok points, then there's no plume
             if (nullptr != message)
             {
                 *message = "Plume not found, less than five spectra are labelled as good evaluations.";
@@ -102,29 +107,29 @@ namespace novac
         }
 
         // Try different divisions of the scan to see if there is a region of at least
-        //	'minWidth' values where the column-value is considerably higher than the rest
+        //  'minWidth' values where the column-value is considerably higher than the rest
         double highestDifference = -1e16; // maximum difference between in-plume and out-of-plume regions
         long minWidth = 5;
         int foundRegionLowIdx = 0;
         int foundRegionHighIdx = 0;
-        for (int testedLowIdx = 0; testedLowIdx < nCol; ++testedLowIdx)
+        for (int testedLowIdx = 0; testedLowIdx < numberOfGoodspectra; ++testedLowIdx)
         {
-            for (int testedHighIdx = testedLowIdx + minWidth; testedHighIdx < nCol; ++testedHighIdx)
+            for (int testedHighIdx = testedLowIdx + minWidth; testedHighIdx < numberOfGoodspectra; ++testedHighIdx)
             {
                 const int testedRegionSize = testedHighIdx - testedLowIdx;
 
                 // The width of the region has to be at least 'minWidth' values, otherwise there's no idea to search
                 //  There must also be at least 'minWidth' values outside of the region...
-                if ((testedRegionSize < minWidth) || (nCol - testedRegionSize < minWidth))
+                if ((testedRegionSize < minWidth) || (numberOfGoodspectra - testedRegionSize < minWidth))
                 {
                     continue;
                 }
 
                 // the average column value in the region we're testing
-                const double avgInRegion = Average(col.data() + testedLowIdx, testedRegionSize);
+                const double avgInRegion = Average(columnOfGoodSpectra.data() + testedLowIdx, testedRegionSize);
 
                 // the average column value outside of the region we're testing
-                const double avgOutRegion = (Average(col.data(), testedLowIdx) * testedLowIdx + Average(col.data() + testedHighIdx, nCol - testedHighIdx) * (nCol - testedHighIdx)) / (testedLowIdx + nCol - testedHighIdx);
+                const double avgOutRegion = (Average(columnOfGoodSpectra.data(), testedLowIdx) * testedLowIdx + Average(columnOfGoodSpectra.data() + testedHighIdx, numberOfGoodspectra - testedHighIdx) * (numberOfGoodspectra - testedHighIdx)) / (testedLowIdx + numberOfGoodspectra - testedHighIdx);
 
                 if (avgInRegion - avgOutRegion > highestDifference)
                 {
@@ -136,7 +141,7 @@ namespace novac
         }
 
         // Calculate the average column error, for the good measurement points
-        double avgColError = Average(colE.data(), nCol);
+        const double avgColError = Average(columnErrorOfGoodSpectra.data(), numberOfGoodspectra);
 
         if (highestDifference > 5 * avgColError)
         {
@@ -145,61 +150,61 @@ namespace novac
             double sumAngle_alpha = 0, sumAngle_phi = 0, sumWeight = 0;
             for (int k = foundRegionLowIdx; k < foundRegionHighIdx; ++k)
             {
-                sumAngle_alpha += angle[k] * col[k];
-                sumAngle_phi += p[k] * col[k];
-                sumWeight += col[k];
+                sumAngle_alpha += angleOfGoodSpectra[k] * columnOfGoodSpectra[k];
+                sumAngle_phi += angle2OfGoodSpectra[k] * columnOfGoodSpectra[k];
+                sumWeight += columnOfGoodSpectra[k];
             }
             plumeProperties.plumeCenter = sumAngle_alpha / sumWeight;
-            plumeProperties.plumeCenter2 = sumAngle_phi / sumWeight; // if phi == NULL then this will be non-sense
+            plumeProperties.plumeCenter2 = sumAngle_phi / sumWeight;
 
             // The edges of the plume
             // TODO: this could really be better, with interpolation between the angles...
-            plumeProperties.plumeEdgeLow = angle[0];
-            plumeProperties.plumeEdgeHigh = angle[nCol - 1];
-            double peakLow = angle[0];
-            double peakHigh = angle[nCol - 1];
-            const double minCol = Min(col.data(), nCol);
-            const double maxCol = Max(col.data(), nCol) - minCol;
+            plumeProperties.plumeEdgeLow = angleOfGoodSpectra.front();
+            plumeProperties.plumeEdgeHigh = angleOfGoodSpectra.back();
+            double peakLow = angleOfGoodSpectra.front();
+            double peakHigh = angleOfGoodSpectra.back();
+            const double minCol = Min(columnOfGoodSpectra.data(), numberOfGoodspectra);
+            const double maxCol = Max(columnOfGoodSpectra.data(), numberOfGoodspectra) - minCol;
             const double maxCol_div_e = maxCol * 0.3679;
             const double maxCol_90 = maxCol * 0.90;
             const double maxCol_half = maxCol * 0.5;
 
-            for (int k = 0; k < nCol; ++k)
+            for (int k = 0; k < numberOfGoodspectra; ++k)
             {
-                if (angle[k] > plumeProperties.plumeCenter)
+                if (angleOfGoodSpectra[k] > plumeProperties.plumeCenter)
                 {
                     break;
                 }
-                if ((col[k] - minCol) < maxCol_div_e)
+                if ((columnOfGoodSpectra[k] - minCol) < maxCol_div_e)
                 {
-                    plumeProperties.plumeEdgeLow = angle[k];
+                    plumeProperties.plumeEdgeLow = angleOfGoodSpectra[k];
                 }
-                if ((col[k] - minCol) < maxCol_half)
+                if ((columnOfGoodSpectra[k] - minCol) < maxCol_half)
                 {
-                    plumeProperties.plumeHalfLow = angle[k];
+                    plumeProperties.plumeHalfLow = angleOfGoodSpectra[k];
                 }
-                if (((col[k] - minCol) < maxCol_90) && ((col[k + 1] - minCol) >= maxCol_90))
+                if (((columnOfGoodSpectra[k] - minCol) < maxCol_90) && ((columnOfGoodSpectra[k + 1] - minCol) >= maxCol_90))
                 {
-                    peakLow = angle[k];
+                    peakLow = angleOfGoodSpectra[k];
                 }
             }
-            for (int k = nCol - 1; k > 0; --k)
+            for (int k = numberOfGoodspectra - 1; k > 0; --k)
             {
-                if (angle[k] <= plumeProperties.plumeCenter)
+                if (angleOfGoodSpectra[k] <= plumeProperties.plumeCenter)
                 {
                     break;
                 }
-                if ((col[k] - minCol) < maxCol_div_e)
+                if ((columnOfGoodSpectra[k] - minCol) < maxCol_div_e)
                 {
-                    plumeProperties.plumeEdgeHigh = angle[k];
+                    plumeProperties.plumeEdgeHigh = angleOfGoodSpectra[k];
                 }
-                if ((col[k] - minCol) < maxCol_half)
+                if ((columnOfGoodSpectra[k] - minCol) < maxCol_half)
                 {
-                    plumeProperties.plumeHalfHigh = angle[k];
+                    plumeProperties.plumeHalfHigh = angleOfGoodSpectra[k];
                 }
-                if (((col[k] - minCol) < maxCol_90) && ((col[k - 1] - minCol) >= maxCol_90))
+                if (((columnOfGoodSpectra[k] - minCol) < maxCol_90) && ((columnOfGoodSpectra[k - 1] - minCol) >= maxCol_90))
                 {
-                    peakHigh = angle[k];
+                    peakHigh = angleOfGoodSpectra[k];
                 }
             }
 

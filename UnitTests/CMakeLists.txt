@@ -29,7 +29,6 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_DateTime.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Evaluation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Fft.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FindPlume.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitExtensions.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitWindow.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitInstrumentLineShapeFunction.cpp
@@ -38,6 +37,7 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_InstrumentLineshapeEstimationFromDoas.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Interpolation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_PolynomialFit.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_PlumeInScanProperty.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_RatioEvaluation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_SpectrometerModel.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_SpectrumUtils.cpp

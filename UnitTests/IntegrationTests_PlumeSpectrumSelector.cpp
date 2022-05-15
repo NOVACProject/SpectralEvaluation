@@ -42,6 +42,7 @@ namespace novac
 
         SECTION("BrO Scan file 1")
         {
+            // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
             const bool scanFileIsOk = fileHandler.CheckScanFile(TestData::GetBrORatioScanFile1());
             REQUIRE(scanFileIsOk); // check assumption on the setup
 
@@ -50,10 +51,10 @@ namespace novac
             REQUIRE(evaluationFileHandler.m_scan.size() == 1); // check assumption on the setup
 
             novac::CPlumeInScanProperty plumeInScanProperties;
-            REQUIRE(true == novac::FindPlume(evaluationFileHandler.m_scan[0], 0, plumeInScanProperties));
             novac::CalculatePlumeOffset(evaluationFileHandler.m_scan[0], 0, plumeInScanProperties);
             REQUIRE(true == novac::CalculatePlumeCompleteness(evaluationFileHandler.m_scan[0], 0, plumeInScanProperties));
 
+            // Act
             const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationFileHandler.m_scan[0], plumeInScanProperties);
 
             // Assert
@@ -61,6 +62,34 @@ namespace novac
             REQUIRE(result->inPlumeSpectrum != nullptr);
             REQUIRE(result->referenceSpectrum != nullptr);
             REQUIRE(result->darkSpectrum != nullptr);
+
+            // There should be 10 spectra selected for in-plume (each having 15 readouts)
+            REQUIRE(result->inPlumeSpectrum->m_info.m_numSpec == 150);
+            REQUIRE(result->inPlumeSpectrumIndices.size() == 10);
+            REQUIRE(result->inPlumeSpectrumIndices.end() != std::find(begin(result->inPlumeSpectrumIndices), end(result->inPlumeSpectrumIndices), 14));
+            REQUIRE(result->inPlumeSpectrumIndices.end() != std::find(begin(result->inPlumeSpectrumIndices), end(result->inPlumeSpectrumIndices), 15));
+            REQUIRE(result->inPlumeSpectrumIndices.end() != std::find(begin(result->inPlumeSpectrumIndices), end(result->inPlumeSpectrumIndices), 16));
+            REQUIRE(result->inPlumeSpectrumIndices.end() != std::find(begin(result->inPlumeSpectrumIndices), end(result->inPlumeSpectrumIndices), 17));
+            REQUIRE(result->inPlumeSpectrumIndices.end() != std::find(begin(result->inPlumeSpectrumIndices), end(result->inPlumeSpectrumIndices), 18));
+            REQUIRE(result->inPlumeSpectrumIndices.end() != std::find(begin(result->inPlumeSpectrumIndices), end(result->inPlumeSpectrumIndices), 19));
+            REQUIRE(result->inPlumeSpectrumIndices.end() != std::find(begin(result->inPlumeSpectrumIndices), end(result->inPlumeSpectrumIndices), 20));
+            REQUIRE(result->inPlumeSpectrumIndices.end() != std::find(begin(result->inPlumeSpectrumIndices), end(result->inPlumeSpectrumIndices), 21));
+            REQUIRE(result->inPlumeSpectrumIndices.end() != std::find(begin(result->inPlumeSpectrumIndices), end(result->inPlumeSpectrumIndices), 22));
+            REQUIRE(result->inPlumeSpectrumIndices.end() != std::find(begin(result->inPlumeSpectrumIndices), end(result->inPlumeSpectrumIndices), 23));
+
+            // There should be 10 spectra selected for out-of-plume (each having 15 readouts)
+            REQUIRE(result->referenceSpectrum->m_info.m_numSpec == 150);
+            REQUIRE(result->referenceSpectrumIndices.size() == 10);
+            REQUIRE(result->referenceSpectrumIndices.end() != std::find(begin(result->referenceSpectrumIndices), end(result->referenceSpectrumIndices), 29));
+            REQUIRE(result->referenceSpectrumIndices.end() != std::find(begin(result->referenceSpectrumIndices), end(result->referenceSpectrumIndices), 30));
+            REQUIRE(result->referenceSpectrumIndices.end() != std::find(begin(result->referenceSpectrumIndices), end(result->referenceSpectrumIndices), 31));
+            REQUIRE(result->referenceSpectrumIndices.end() != std::find(begin(result->referenceSpectrumIndices), end(result->referenceSpectrumIndices), 32));
+            REQUIRE(result->referenceSpectrumIndices.end() != std::find(begin(result->referenceSpectrumIndices), end(result->referenceSpectrumIndices), 33));
+            REQUIRE(result->referenceSpectrumIndices.end() != std::find(begin(result->referenceSpectrumIndices), end(result->referenceSpectrumIndices), 34));
+            REQUIRE(result->referenceSpectrumIndices.end() != std::find(begin(result->referenceSpectrumIndices), end(result->referenceSpectrumIndices), 35));
+            REQUIRE(result->referenceSpectrumIndices.end() != std::find(begin(result->referenceSpectrumIndices), end(result->referenceSpectrumIndices), 36));
+            REQUIRE(result->referenceSpectrumIndices.end() != std::find(begin(result->referenceSpectrumIndices), end(result->referenceSpectrumIndices), 37));
+            REQUIRE(result->referenceSpectrumIndices.end() != std::find(begin(result->referenceSpectrumIndices), end(result->referenceSpectrumIndices), 50));
         }
     }
 
