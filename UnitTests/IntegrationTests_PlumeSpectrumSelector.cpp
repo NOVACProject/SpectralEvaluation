@@ -1,8 +1,8 @@
 #include <SpectralEvaluation/Evaluation/PlumeSpectrumSelector.h>
-#include <SpectralEvaluation/File/ScanFileHandler.h>
 #include <SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h>
-#include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
+#include <SpectralEvaluation/File/ScanFileHandler.h>
 #include <SpectralEvaluation/File/ScanEvaluationLogFileHandler.h>
+#include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include "catch.hpp"
 #include "TestData.h"
 
@@ -111,10 +111,11 @@ namespace novac
         REQUIRE(true == novac::CalculatePlumeCompleteness(evaluationFileHandler.m_scan[0], 1, plumeInScanProperties));
 
         // Act
-        const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationFileHandler.m_scan[0], plumeInScanProperties);
+        std::string errorMessage;
+        const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationFileHandler.m_scan[0], plumeInScanProperties, 0, &errorMessage);
 
         // Assert
         REQUIRE(result == nullptr);
+        REQUIRE(errorMessage.length() > 10); // there should be an error message
     }
-
 }

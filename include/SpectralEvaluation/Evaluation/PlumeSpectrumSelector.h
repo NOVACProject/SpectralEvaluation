@@ -76,7 +76,7 @@ namespace novac
             const BasicScanEvaluationResult& scanResult,
             const CPlumeInScanProperty& plumeProperties,
             int mainSpecieIndex = 0,
-            std::string *errorMessage = nullptr);
+            std::string* errorMessage = nullptr);
 
         /**
          * @brief Selects in-plume and out-of-plume spectra from the given scan file with given evaluation result and selection criteria

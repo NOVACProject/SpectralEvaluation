@@ -148,6 +148,11 @@ namespace novac
             return GetTestDataDirectory() + std::string("Temporary_InstrumentCalibration.std");
         }
 
+        static std::string GetTemporaryFitWindowFileName()
+        {
+            return GetTestDataDirectory() + std::string("Temporary_FitWindowFile.nfw");
+        }
+
 #pragma endregion
 
 #pragma region Evaluation log file formats
@@ -174,6 +179,16 @@ namespace novac
         static std::string GetBrORatioEvaluationFile1()
         {
             return GetTestDataDirectory() + std::string("BrORatio/") + std::string("D2J2124_160331_1608_0.txt");
+        }
+
+        static std::string GetBrORatioFitWindowFileSO2()
+        {
+            return GetTestDataDirectory() + std::string("BrORatio/") + std::string("SO2-314-326nm.nfw");
+        }
+
+        static std::string GetBrORatioFitWindowFileBrO()
+        {
+            return GetTestDataDirectory() + std::string("BrORatio/") + std::string("BrO-330-352nm.nfw");
         }
 
         // Notice that this is a file where we don't expect to get a ratio due to too wide plume

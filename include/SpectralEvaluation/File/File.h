@@ -16,6 +16,10 @@ namespace novac
         by attempting to open the file for reading. */
     bool IsExistingFile(const std::string& fullFileName);
 
+    /** Reads the entire contents of the provided file into a string.
+        No validation is done to make sure that the file isn't too large. */
+    std::string ReadEntireFile(const std::string& filename);
+
     /** Reads cross section data from the provded file.
             This is able to read ASCII data files with data in one or two columns.
             If the file contains two columns then the first column will be saved in result.m_waveLength

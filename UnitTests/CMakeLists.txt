@@ -10,11 +10,13 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/TestData.h
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_Correspondence.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_File.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_FitWindowFileHandler.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_InstrumentCalibrationInStdFile.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_InstrumentLineshapeCalibrationController.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_InstrumentLineShapeEstimationFromDoas.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_InstrumentLineShapeEstimationFromKeypointDistance.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_PlumeSpectrumSelector.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_RatioEvaluation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_ScanEvaluationLogFileHandler.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_ScanFileHandler.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_SpectrumIO.cpp
@@ -38,7 +40,6 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Interpolation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_PolynomialFit.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_PlumeInScanProperty.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_RatioEvaluation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_SpectrometerModel.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_SpectrumUtils.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Utils.cpp

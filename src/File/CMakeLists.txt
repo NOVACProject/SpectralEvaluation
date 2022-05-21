@@ -5,6 +5,7 @@ cmake_minimum_required (VERSION 3.6)
 set(SPECTRUM_FILE_HEADERS
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/File/File.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/File/MKPack.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/File/FitWindowFileHandler.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/File/ScanFileHandler.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/File/ScanEvaluationLogFileHandler.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/File/SpectrumIO.h
@@ -16,6 +17,7 @@ set(SPECTRUM_FILE_HEADERS
 
 set(SPECTRUM_FILE_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/File.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/FitWindowFileHandler.cpp
     ${CMAKE_CURRENT_LIST_DIR}/MKPack.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ScanFileHandler.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ScanEvaluationLogFileHandler.cpp

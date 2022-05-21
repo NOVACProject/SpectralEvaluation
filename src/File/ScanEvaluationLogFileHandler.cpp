@@ -294,8 +294,8 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
         ResetScanInformation();
 
         // Read the file, one line at a time
-        while (fgets(szLine, 8192, f)) {
-
+        while (fgets(szLine, 8192, f))
+        {
             // ignore empty lines
             if (strlen(szLine) < 2) {
                 if (fReadingScan) {

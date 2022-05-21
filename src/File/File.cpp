@@ -39,6 +39,22 @@ namespace novac
         return true;
     }
 
+    std::string ReadEntireFile(const std::string& filename)
+    {
+        std::ifstream configFile{ filename };
+
+        // Get the length of the file
+        configFile.seekg(0, configFile.end);
+        size_t fileLength = configFile.tellg();
+        configFile.seekg(0, configFile.beg);
+
+        std::string buffer(fileLength, '\0');
+
+        configFile.read(&buffer[0], fileLength);
+
+        return buffer;
+    }
+
     // @return the number of columns read.
     int ReadFromFile(FILE* f, const char* formatStr, double& col1, double& col2)
     {
