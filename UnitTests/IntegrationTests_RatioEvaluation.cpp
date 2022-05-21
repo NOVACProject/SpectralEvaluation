@@ -1,6 +1,7 @@
 #include <SpectralEvaluation/Configuration/DarkSettings.h>
 #include <SpectralEvaluation/Evaluation/RatioEvaluation.h>
 #include <SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h>
+#include <SpectralEvaluation/File/FitWindowFileHandler.h>
 #include <SpectralEvaluation/File/ScanFileHandler.h>
 #include <SpectralEvaluation/File/ScanEvaluationLogFileHandler.h>
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
@@ -28,9 +29,19 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
     novac::CalculatePlumeOffset(evaluationFileHandler.m_scan[0], 0, plumeInScanProperties);
     REQUIRE(true == novac::CalculatePlumeCompleteness(evaluationFileHandler.m_scan[0], 0, plumeInScanProperties));
 
-    // TODO: Setup the fit windows (read them from file and add the references)!!
-    CFitWindow so2FitWindow;
-    CFitWindow broFitWindow;
+    // Read in the fit windows to use
+    CFitWindowFileHandler fitWindowFileHandler;
+    auto allWindows = fitWindowFileHandler.ReadFitWindowFile(TestData::GetBrORatioFitWindowFileSO2());
+    REQUIRE(allWindows.size() == 1);
+    auto so2FitWindow = allWindows.front();
+
+    allWindows = fitWindowFileHandler.ReadFitWindowFile(TestData::GetBrORatioFitWindowFileBrO());
+    REQUIRE(allWindows.size() == 1);
+    auto broFitWindow = allWindows.front();
+
+    // Read in the references
+    REQUIRE(true == ReadReferences(so2FitWindow));
+    REQUIRE(true == ReadReferences(broFitWindow));
 
     // Setup the sut
     RatioEvaluation sut{ settings, darkSettings };
@@ -45,5 +56,7 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
     // Assert
     REQUIRE(result.size() == 1);
     REQUIRE(errorMessage.empty());
+
+    // TODO: Verify that the result is indeed correct!
 
 }

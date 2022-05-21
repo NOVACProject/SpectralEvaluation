@@ -444,6 +444,9 @@ void CEvaluationBase::CreateReferenceForRingSpectrumLambda4(const CSpectrum& rin
         Error0("Error initializing spline object!");
         return;
     }
+
+    m_ringSpectrumLambda4->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
+    m_ringSpectrumLambda4->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
 }
 
 void CEvaluationBase::SaveResidual(CStandardFit& cFirstFit)

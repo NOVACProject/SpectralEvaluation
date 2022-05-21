@@ -81,7 +81,7 @@ namespace novac
         }
         outOfPlumeSpectrum.Sub(outOfPlumeDark);
 
-
+        // TODO: Convert the setup here into using the new DoasFit - class such that we have more control over the setup.
 
         // Calculate the SO2 column in the spectrum
         double masterColumn = 0.0;
@@ -112,7 +112,7 @@ namespace novac
             eval.SetSkySpectrum(outOfPlumeSpectrum);
             if (eval.Evaluate(inPlumeSpectrum))
             {
-                // Handle errors here
+                // TODO: Handle errors here
             }
             else
             {
@@ -198,7 +198,7 @@ namespace novac
         }
 
         scan.GetSpectrum(result, indices[0]);
-        int nofAveragedSpectra = 1;
+        int nofAveragedSpectra = result.NumSpectra();
 
         for (size_t ii = 1; ii < indices.size(); ++ii)
         {
@@ -206,7 +206,7 @@ namespace novac
             if (scan.GetSpectrum(tmpSpec, indices[ii]))
             {
                 result.Add(tmpSpec);
-                ++nofAveragedSpectra;
+                nofAveragedSpectra += tmpSpec.NumSpectra();
             }
         }
 

@@ -29,19 +29,17 @@ namespace novac
 
         REQUIRE(result.front().findOptimalShift == 0);
         REQUIRE(result.front().UV == 1);
-        REQUIRE(result.front().shiftSky == 1);
+        REQUIRE(result.front().shiftSky == 0);
         REQUIRE(result.front().interlaceStep == 1);
 
-        REQUIRE(result.front().fraunhoferRef.m_path == "D:\\NOVAC\\References\\D2J2124\\References\\D2J2124_SolarSpec_Master.txt");
+        REQUIRE(result.front().fraunhoferRef.m_path == "../TestData/BrORatio/D2J2124_SolarSpec_Master.txt");
 
         // finally the references
-        REQUIRE(result.front().nRef == 3);
+        REQUIRE(result.front().nRef == 2);
         REQUIRE(result.front().ref[0].m_specieName == "SO2");
-        REQUIRE(result.front().ref[0].m_path == "D:\\NOVAC\\References\\D2J2124\\References\\D2J2124_SO2_294K_Master.txt");
-        REQUIRE(result.front().ref[1].m_specieName == "RING");
-        REQUIRE(result.front().ref[1].m_path == "D:\\NOVAC\\References\\D2J2124\\References\\D2J2124_Ring_Master.txt");
-        REQUIRE(result.front().ref[2].m_specieName == "O3");
-        REQUIRE(result.front().ref[2].m_path == "D:\\NOVAC\\References\\D2J2124\\References\\D2J2124_O3_223K_Master.txt");
+        REQUIRE(result.front().ref[0].m_path == "../TestData/BrORatio/D2J2124_SO2_Bogumil_293K_Master.txt");
+        REQUIRE(result.front().ref[1].m_specieName == "O3");
+        REQUIRE(result.front().ref[1].m_path == "../TestData/BrORatio/D2J2124_O3_Voigt_223K_Master.txt");
     }
 
     TEST_CASE("FitWindowFileHandler can read .nfw file for BrO from the NovacProgram", "[FitWindowFileHandler][IntegrationTest]")
@@ -68,23 +66,23 @@ namespace novac
 
         REQUIRE(result.front().findOptimalShift == 0);
         REQUIRE(result.front().UV == 1);
-        REQUIRE(result.front().shiftSky == 1);
+        REQUIRE(result.front().shiftSky == 0);
         REQUIRE(result.front().interlaceStep == 1);
 
-        REQUIRE(result.front().fraunhoferRef.m_path == "D:\\NOVAC\\References\\D2J2124\\References\\D2J2124_SolarSpec_Master.txt");
+        REQUIRE(result.front().fraunhoferRef.m_path == "../TestData/BrORatio/D2J2124_SolarSpec_Master.txt");
 
         // finally the references
         REQUIRE(result.front().nRef == 5);
-        REQUIRE(result.front().ref[0].m_specieName == "BRO");
-        REQUIRE(result.front().ref[0].m_path == "D:\\NOVAC\\References\\D2J2124\\MattiasReferences\\BrO_Fleischmann_298K.txt");
+        REQUIRE(result.front().ref[0].m_specieName == "BrO");
+        REQUIRE(result.front().ref[0].m_path == "../TestData/BrORatio/D2J2124_BrO_Fleischmann_298K.txt");
         REQUIRE(result.front().ref[1].m_specieName == "SO2");
-        REQUIRE(result.front().ref[1].m_path == "D:\\NOVAC\\References\\D2J2124\\MattiasReferences\\SO2_Bogoumil_298K.txt");
+        REQUIRE(result.front().ref[1].m_path == "../TestData/BrORatio/D2J2124_SO2_Bogumil_293K_Master.txt");
         REQUIRE(result.front().ref[2].m_specieName == "CHO2");
-        REQUIRE(result.front().ref[2].m_path == "D:\\NOVAC\\References\\D2J2124\\MattiasReferences\\CHO2_MellerMoortgat_298K.txt");
+        REQUIRE(result.front().ref[2].m_path == "../TestData/BrORatio/D2J2124_CH2O_MellerMoortgat_298K.txt");
         REQUIRE(result.front().ref[3].m_specieName == "O3");
-        REQUIRE(result.front().ref[3].m_path == "D:\\NOVAC\\References\\D2J2124\\References\\D2J2124_O3_223K_Master.txt");
+        REQUIRE(result.front().ref[3].m_path == "../TestData/BrORatio/D2J2124_O3_Voigt_223K_Master.txt");
         REQUIRE(result.front().ref[4].m_specieName == "O4");
-        REQUIRE(result.front().ref[4].m_path == "D:\\NOVAC\\References\\D2J2124\\MattiasReferences\\O4_Hermans_298K.txt");
+        REQUIRE(result.front().ref[4].m_path == "../TestData/BrORatio/D2J2124_O4_Hermans_298K.txt");
     }
 
     TEST_CASE("FitWindowFileHandler can read back one saved fit window", "[FitWindowFileHandler][IntegrationTest]")

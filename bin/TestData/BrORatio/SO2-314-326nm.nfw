@@ -9,20 +9,12 @@
 	<specLength>2048</specLength>
 	<fOptShift>0</fOptShift>
 	<UV>1</UV>
-	<shiftSky>1</shiftSky>
+	<shiftSky>0</shiftSky>
 	<interlaceStep>1</interlaceStep>
-	<solarSpectrum>D:\NOVAC\References\D2J2124\References\D2J2124_SolarSpec_Master.txt</solarSpectrum>
+	<solarSpectrum>../TestData/BrORatio/D2J2124_SolarSpec_Master.txt</solarSpectrum>
 	<nRef>3</nRef>
 	<ref name="SO2">
-		<path>D:\NOVAC\References\D2J2124\References\D2J2124_SO2_294K_Master.txt</path>
-		<shiftOption>1</shiftOption>
-		<shiftValue>0.000000</shiftValue>
-		<squeezeOption>1</squeezeOption>
-		<squeezeValue>1.000000</squeezeValue>
-		<columnOption>0</columnOption>
-	</ref>
-	<ref name="RING">
-		<path>D:\NOVAC\References\D2J2124\References\D2J2124_Ring_Master.txt</path>
+		<path>../TestData/BrORatio/D2J2124_SO2_Bogumil_293K_Master.txt</path>
 		<shiftOption>1</shiftOption>
 		<shiftValue>0.000000</shiftValue>
 		<squeezeOption>1</squeezeOption>
@@ -30,7 +22,7 @@
 		<columnOption>0</columnOption>
 	</ref>
 	<ref name="O3">
-		<path>D:\NOVAC\References\D2J2124\References\D2J2124_O3_223K_Master.txt</path>
+		<path>../TestData/BrORatio/D2J2124_O3_Voigt_223K_Master.txt</path>
 		<shiftOption>1</shiftOption>
 		<shiftValue>0.000000</shiftValue>
 		<squeezeOption>1</squeezeOption>
