@@ -4,18 +4,31 @@
 
 namespace novac
 {
-    // This struct is used to represent a ratio between two species
+    // This struct is used to represent a ratio between two species (e.g. BrO to SO2)
     struct Ratio
     {
-        double ratio; //<- The estimated quotient.
-        double error; //<- An estimation of the error in the quotient.
+        // The estimated quotient between the two columns.
+        double ratio;
 
-        double minorResult; //<- The result of the minor evaluation (Bro).
-        double minorError; //<- The estimated column error of minorResult.
-        std::string minorSpecieName; //<- The name of the minor specie (Bro?)
+        // An estimation of the error in the quotient. Calculated from the retrieved columns and their Doas fit errors
+        double error;
 
+        // The evaluated column of the minor specie (BrO).
+        double minorResult;
+
+        // The error in the evaluated column of the minor specie (BrO)
+        double minorError;
+
+        // The name of the minor specie (e.g. "BrO")
+        std::string minorSpecieName;
+
+        // The evaluated column of the major specie (SO2)
         double majorResult; //<- The result of the major evaluation (SO2).
-        double majorError; //<- The estimated column error of majorResult.
-        std::string majorSpecieName; //<- The name of the minor specie (Bro?)
+
+        // The error in the evaluated column of the major specie (SO2)
+        double majorError;
+
+        // The name of the major specie (e.g. "SO2")
+        std::string majorSpecieName;
     };
 }

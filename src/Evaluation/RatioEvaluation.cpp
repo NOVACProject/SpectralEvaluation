@@ -3,10 +3,13 @@
 #include <SpectralEvaluation/Evaluation/DarkSpectrum.h>
 #include <SpectralEvaluation/Configuration/DarkSettings.h>
 #include <SpectralEvaluation/Evaluation/EvaluationResult.h>
-#include <SpectralEvaluation/Evaluation/EvaluationBase.h>
+#include <SpectralEvaluation/Evaluation/BasicMath.h>
+#include <SpectralEvaluation/Evaluation/DoasFit.h>
+#include <SpectralEvaluation/Evaluation/DoasFitPreparation.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include <SpectralEvaluation/File/ScanFileHandler.h>
+#include <SpectralEvaluation/StringUtils.h>
 
 #include <numeric>
 
@@ -26,12 +29,84 @@ namespace novac
         return true; // TODO: Add more checks...
     }
 
+    int AddAsSky(const std::vector<double>& referenceData, CFitWindow& window, SHIFT_TYPE shiftOption = SHIFT_TYPE::SHIFT_FIX)
+    {
+        int indexOfSkySpectrum = window.nRef;
+
+        window.ref[window.nRef].m_data = std::make_unique<novac::CCrossSectionData>(referenceData);
+        window.ref[window.nRef].m_specieName = "sky";
+        window.ref[window.nRef].m_columnOption = novac::SHIFT_TYPE::SHIFT_FIX;
+        window.ref[window.nRef].m_columnValue = -1.0;
+        window.ref[window.nRef].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
+        window.ref[window.nRef].m_squeezeValue = 1.0;
+        window.ref[window.nRef].m_shiftOption = shiftOption;
+        window.ref[window.nRef].m_shiftValue = 0.0;
+        window.nRef += 1;
+
+        return indexOfSkySpectrum;
+    }
+
+    void AddAsReference(const std::vector<double>& referenceData, CFitWindow& window, const std::string& name, int linkShiftToIdx = -1)
+    {
+        window.ref[window.nRef].m_data = std::make_unique<novac::CCrossSectionData>(referenceData);
+        window.ref[window.nRef].m_specieName = name;
+        window.ref[window.nRef].m_columnOption = novac::SHIFT_TYPE::SHIFT_FREE;
+        window.ref[window.nRef].m_columnValue = 1.0;
+        window.ref[window.nRef].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
+        window.ref[window.nRef].m_squeezeValue = 1.0;
+
+        if (linkShiftToIdx >= 0)
+        {
+            window.ref[window.nRef].m_shiftOption = SHIFT_TYPE::SHIFT_LINK;
+            window.ref[window.nRef].m_shiftValue = linkShiftToIdx;
+        }
+        else
+        {
+            window.ref[window.nRef].m_shiftOption = SHIFT_TYPE::SHIFT_FIX;
+            window.ref[window.nRef].m_shiftValue = 0.0;
+        }
+
+        window.nRef += 1;
+    }
+
+    int FindReferenceIndex(const CFitWindow& window, const std::string& nameToFind)
+    {
+        for (int ii = 0; ii < window.nRef; ++ii)
+        {
+            if (EqualsIgnoringCase(window.ref[ii].m_specieName, nameToFind))
+            {
+                return ii;
+            }
+        }
+
+        return -1;
+    }
+
+    std::vector<double> PrepareRingLambda4Spectrum(const std::vector<double>& ringSpectrum, const std::vector<double>& wavelength)
+    {
+        if (ringSpectrum.size() != wavelength.size())
+        {
+            throw std::invalid_argument("Cannot calculate a ringxlambda4 spectrum if the length of the ring spectrum differs from the wavelength calibration length.");
+        }
+
+        std::vector<double> result;
+        result.resize(ringSpectrum.size());
+
+        for (size_t ii = 0; ii < ringSpectrum.size(); ++ii)
+        {
+            const double lambda = wavelength[ii];
+            result[ii] = ringSpectrum[ii] * std::pow(lambda, 4.0);
+        }
+
+        return result;
+    }
+
     RatioEvaluation::RatioEvaluation(const RatioEvaluationSettings& settings, const Configuration::CDarkSettings& darkSettings)
         : m_darkSettings(darkSettings), m_settings(settings)
     {
     }
 
-    std::vector<Ratio> RatioEvaluation::Run(CScanFileHandler& scan, std::string* /*errorMessage*/)
+    std::vector<Ratio> RatioEvaluation::Run(CScanFileHandler& scan, std::string* errorMessage)
     {
         std::vector<Ratio> result;
 
@@ -46,18 +121,26 @@ namespace novac
         if (referenceSpectra.size() < (size_t)m_settings.minNumberOfReferenceSpectra ||
             plumeSpectra.size() < (size_t)m_settings.minNumberOfSpectraInPlume)
         {
+            if (errorMessage != nullptr)
+            {
+                *errorMessage = "Too few suitable spectra for in-plume or out-of-plume";
+            }
+
             return result;
         }
 
-
-
+        // Create the in-plume spectrum
         CSpectrum inPlumeSpectrum;
         AverageSpectra(scan, plumeSpectra, inPlumeSpectrum);
 
         CSpectrum inPlumeDark;
         if (!::novac::GetDark(scan, inPlumeSpectrum, m_darkSettings, inPlumeDark, m_lastErrorMessage))
         {
-            // TODO: Handle errors
+            if (errorMessage != nullptr)
+            {
+                *errorMessage = m_lastErrorMessage;
+            }
+            return result;
         }
         if (inPlumeDark.NumSpectra() > 0 && !m_averagedSpectra)
         {
@@ -66,14 +149,18 @@ namespace novac
         inPlumeSpectrum.Sub(inPlumeDark);
 
 
-
+        // Create the out-of-plume spectrum
         CSpectrum outOfPlumeSpectrum;
         AverageSpectra(scan, referenceSpectra, outOfPlumeSpectrum);
 
         CSpectrum outOfPlumeDark;
         if (!::novac::GetDark(scan, outOfPlumeSpectrum, m_darkSettings, outOfPlumeDark, m_lastErrorMessage))
         {
-            // TODO: Handle errors
+            if (errorMessage != nullptr)
+            {
+                *errorMessage = m_lastErrorMessage;
+            }
+            return result;
         }
         if (outOfPlumeDark.NumSpectra() > 0 && !m_averagedSpectra)
         {
@@ -81,55 +168,105 @@ namespace novac
         }
         outOfPlumeSpectrum.Sub(outOfPlumeDark);
 
-        // TODO: Convert the setup here into using the new DoasFit - class such that we have more control over the setup.
+        // Get the pixel-to-wavelength calibration of the out-of-plume-spectrum.
+        // TODO: Decide on a better input for this.
+        if (m_masterFitWindow.fraunhoferRef.m_data != nullptr && m_masterFitWindow.fraunhoferRef.m_data->m_waveLength.size() == outOfPlumeSpectrum.m_length)
+        {
+            outOfPlumeSpectrum.m_wavelength = m_masterFitWindow.fraunhoferRef.m_data->m_waveLength;
+        }
+
+        /* Notice that there are several improvements which can be done to the fit here, some TODO:s
+        * TODO: If the references are calibrated towards the sky spectrum (could be an input option here) then we can link the shift of all the references to sky.
+        * TODO: The shift of the sky can be linked to the calculated Ring and RingxLambda4
+        */
+
+        // Create the DOAS setup for the master (SO2) evaluation
+        CFitWindow localSO2FitWindow = m_masterFitWindow;
+
+        const auto filteredOutOfPlumeSpectrum = DoasFitPreparation::PrepareSkySpectrum(outOfPlumeSpectrum, FIT_TYPE::FIT_POLY);
+        const int skySpectrumIdx = AddAsSky(filteredOutOfPlumeSpectrum, localSO2FitWindow, SHIFT_TYPE::SHIFT_FREE);
+
+        const auto ringSpectrum = DoasFitPreparation::PrepareRingSpectrum(outOfPlumeSpectrum, FIT_TYPE::FIT_POLY);
+        AddAsReference(ringSpectrum, localSO2FitWindow, "ring", skySpectrumIdx);
+
+        const auto ringLambda4Spectrum = PrepareRingLambda4Spectrum(ringSpectrum, outOfPlumeSpectrum.m_wavelength);
+        AddAsReference(ringLambda4Spectrum, localSO2FitWindow, "ringLambda4", skySpectrumIdx);
+
+        const auto offsetPoly = DoasFitPreparation::PrepareIntensitySpacePolynomial(outOfPlumeSpectrum);
+        AddAsReference(offsetPoly, localSO2FitWindow, "offset", skySpectrumIdx);
+
+        DoasFit doas;
+        doas.Setup(localSO2FitWindow);
+
+        const auto filteredMeasuredSpectrum = DoasFitPreparation::PrepareMeasuredSpectrum(inPlumeSpectrum, outOfPlumeSpectrum, FIT_TYPE::FIT_POLY);
 
         // Calculate the SO2 column in the spectrum
-        double masterColumn = 0.0;
-        double masterColumnError = 0.0;
-        std::string masterSpecieName;
+        DoasResult so2DoasResult;
+        try
         {
-            CEvaluationBase eval{ m_masterFitWindow };
-            eval.SetSkySpectrum(outOfPlumeSpectrum);
-            if (eval.Evaluate(inPlumeSpectrum))
-            {
-                // TODO: Handle errors here...
-            }
-            else
-            {
-                masterColumn = eval.m_result.m_referenceResult[0].m_column;
-                masterColumnError = eval.m_result.m_referenceResult[0].m_columnError;
-                masterSpecieName = m_masterFitWindow.ref[0].m_specieName;
-            }
+            doas.Run(filteredMeasuredSpectrum.data(), filteredMeasuredSpectrum.size(), so2DoasResult);
+        }
+        catch (DoasFitException&)
+        {
+            // TODO: Handle this error properly.
+            return result;
         }
 
 
         // Now finally calculate the ratios
         for (const CFitWindow& window : m_referenceFit)
         {
-            CFitWindow windowCopy = window;
-            ReadReferences(windowCopy);
-            CEvaluationBase eval{ windowCopy };
-            eval.SetSkySpectrum(outOfPlumeSpectrum);
-            if (eval.Evaluate(inPlumeSpectrum))
+            // Create the DOAS setup for the master evaluation
+            CFitWindow broFitWindow = window;
+
+            // Fix SO2 to the column retrieved in the first result
+            const int so2RefIdx = FindReferenceIndex(broFitWindow, so2DoasResult.referenceResult[0].name);
+            if (so2RefIdx < 0)
             {
-                // TODO: Handle errors here
+                if (errorMessage != nullptr)
+                {
+                    *errorMessage = "Failed to find the SO2 reference in BrO fit window";
+                }
+                break;
             }
-            else
+            broFitWindow.ref[so2RefIdx].m_columnOption = SHIFT_TYPE::SHIFT_FIX;
+            broFitWindow.ref[so2RefIdx].m_columnValue = so2DoasResult.referenceResult[0].column;
+
+            // Add the out-of-plume spectrum as a reference
+            const int indexOfSkySpectrumInBrO = AddAsSky(filteredOutOfPlumeSpectrum, broFitWindow, SHIFT_TYPE::SHIFT_FREE);
+
+            AddAsReference(ringSpectrum, broFitWindow, "ring", indexOfSkySpectrumInBrO);
+            AddAsReference(ringLambda4Spectrum, localSO2FitWindow, "ringLambda4", skySpectrumIdx);
+            AddAsReference(offsetPoly, broFitWindow, "offset", skySpectrumIdx);
+
+            DoasFit broDoasSetup;
+            broDoasSetup.Setup(broFitWindow);
+
+            DoasResult broDoasResult;
+            try
             {
-                Ratio r;
-                r.minorResult = eval.m_result.m_referenceResult[0].m_column;
-                r.minorError = eval.m_result.m_referenceResult[0].m_columnError;
-                r.minorSpecieName = window.ref[0].m_specieName;
-
-                r.majorResult = masterColumn;
-                r.majorError = masterColumnError;
-                r.majorSpecieName = masterSpecieName;
-
-                r.ratio = eval.m_result.m_referenceResult[0].m_column / masterColumn;
-                r.error = std::abs(r.ratio) * std::sqrt(std::pow(r.minorError / r.minorResult, 2.0) + std::pow(r.majorError / r.majorResult, 2.0));
-
-                result.push_back(r);
+                broDoasSetup.Run(filteredMeasuredSpectrum.data(), filteredMeasuredSpectrum.size(), broDoasResult);
             }
+            catch (DoasFitException&)
+            {
+                // TODO: Handle this error properly.
+                continue;
+            }
+
+            // we can now calculate a ratio
+            Ratio r;
+            r.minorResult = broDoasResult.referenceResult[0].column;
+            r.minorError = broDoasResult.referenceResult[0].columnError;
+            r.minorSpecieName = broDoasResult.referenceResult[0].name;
+
+            r.majorResult = so2DoasResult.referenceResult[0].column;
+            r.majorError = so2DoasResult.referenceResult[0].columnError;
+            r.majorSpecieName = so2DoasResult.referenceResult[0].name;
+
+            r.ratio = r.minorResult / r.majorResult;
+            r.error = std::abs(r.ratio) * std::sqrt(std::pow(r.minorError / r.minorResult, 2.0) + std::pow(r.majorError / r.majorResult, 2.0));
+
+            result.push_back(r);
         }
         return result;
     }

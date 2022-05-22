@@ -25,6 +25,14 @@ namespace novac
         static std::vector<double> PrepareMeasuredSpectrum(const CSpectrum& measuredSpectrum, const CSpectrum& skySpectrum, FIT_TYPE doasFitType);
         static std::vector<double> PrepareMeasuredSpectrum(const CSpectrum& measuredSpectrum, const CSpectrum& skySpectrum, FIT_TYPE doasFitType, const IndexRange& offsetRemovalRange);
 
+        /** Calculates a ring spectrum from the provided sky spectrum (which must have a wavelength calibration) 
+            and prepares it for a DOAS fit of the given type */
+        static std::vector<double> PrepareRingSpectrum(const CSpectrum& skySpectrum, FIT_TYPE doasFitType);
+
+        /** Creates a reference which can be used as an intensity space polynomial (aka offset polynomial) 
+            in a DOAS fit. This currently only supports the type FIT_TYPE::FIT_POLY and order == 0 of the polynomial. */
+        static std::vector<double> PrepareIntensitySpacePolynomial(const CSpectrum& skySpectrum);
+
         /** Removes the electronic offset from the provided measured spectrum by calculating the average intensity
             in the pixel interval [startIndex, endIndex[ and then subtracting that value from all data points in the spectrum. */
         static void RemoveOffset(std::vector<double>& spectrum, int startIndex = 50, int endIndex = 200);

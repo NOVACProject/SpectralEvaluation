@@ -57,6 +57,11 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
     REQUIRE(result.size() == 1);
     REQUIRE(errorMessage.empty());
 
-    // TODO: Verify that the result is indeed correct!
+    // Verify that the result is indeed correct!
+    REQUIRE(result.front().minorSpecieName == "BrO");
+    REQUIRE(result.front().majorSpecieName == "SO2");
+    REQUIRE(std::abs(result.front().ratio) < 1.2e-4); // During development there may be variations in the result. Just verify the range is ok for now.
+    REQUIRE(std::abs(result.front().ratio) > 6e-5); // During development there may be variations in the result. Just verify the range is ok for now.
+    REQUIRE(std::abs(result.front().error) < std::abs(result.front().ratio / 2.0));
 
 }
