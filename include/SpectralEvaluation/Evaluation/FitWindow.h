@@ -9,7 +9,6 @@
 
 namespace novac
 {
-
     enum class RING_CALCULATION_OPTION
     {
         DO_NOT_CALCULATE_RING,  // the user supplies a ring spectrum, don't calculate any
@@ -41,7 +40,10 @@ namespace novac
         /** The upper edge of the fit window (in pixels) */
         int fitHigh = 460;
 
-        /** The channel which is used in this fit window
+        /** The channel of the spectrometer for which this fit window is valid.
+            Almost all spectrometers have only one channel however the Ocean Optics SD2000 may have 
+            up to eight channels inside one casing. Each such channel is a separate spectrometer, with different
+            optical properties, however they all share the same serial number and are therefore handled as one device.
             For a normal spectrometer this is equal to 0
             For the SD2000-spectrometers this can be 0 or 1 */
         int channel = 0;
@@ -108,7 +110,7 @@ namespace novac
         int interlaceStep = 1;
 
         /** 'UV' is true if the start wavelength of the spectrum is 290 nm or shorter */
-        // TODO: replace this with the pixel-range which should be used for the offset-correction (which this variable is used for)
+        // TODO: replace this with the pixel-range which should be used for the offset-correction (which what this variable is used for)
         int UV = 1;
 
         /** True if the scan should be twice, once for finding the highest column value.
