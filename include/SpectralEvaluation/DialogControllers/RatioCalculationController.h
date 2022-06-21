@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include <SpectralEvaluation/Evaluation/FitWindow.h>
+#include <SpectralEvaluation/Spectra/WavelengthRange.h>
 
 // Building a set of standard DOAS species
 enum class StandardDoasSpecie
@@ -67,14 +68,19 @@ public:
     // The list of references which are to be included in the two evaluations.
     std::vector<ReferenceForRatioCalculation> m_references;
 
-private:
+    // The wavelength range for the major species window
+    novac::WavelengthRange m_so2FitRange;
 
+    // The wavelength range for the minor species window
+    novac::WavelengthRange m_broFitRange;
 
     // The evaluation settings for the major species (typically SO2).
     // The first reference here is used for the ratio calculation.
+    // Notice that the list of references here is empty until running (TODO: function name) when they are filled in from m_references.
     novac::CFitWindow m_so2Window;
 
     // The evaluation settings for the minor species (typically BrO)
     // The first reference here is used for the ratio calculation.
+    // Notice that the list of references here is empty until running (TODO: function name) when they are filled in from m_references.
     novac::CFitWindow m_broWindow;
 };

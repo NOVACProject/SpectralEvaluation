@@ -1,6 +1,7 @@
 ﻿#include <SpectralEvaluation/DialogControllers/RatioCalculationController.h>
 
 RatioCalculationController::RatioCalculationController()
+    : m_so2FitRange(314.8, 326.8), m_broFitRange(330.6, 352.8)
 {
     InitializeToDefault();
 }
