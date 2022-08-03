@@ -8,7 +8,7 @@ namespace novac
     class CPlumeInScanProperty;
     class CSpectrum;
     class BasicScanEvaluationResult;
-    class CScanFileHandler;
+    class IScanSpectrumSource;
 
     /** Struct used to store the selected in-plume and out-of-plume spectra
         from one single scan, with the intention that these can be used later for
@@ -25,10 +25,10 @@ namespace novac
         std::unique_ptr<CSpectrum> darkSpectrum;
 
         // Listing the indices (in the original scan) which were used to create the reference spectrum.
-        std::vector<size_t> referenceSpectrumIndices;
+        std::vector<int> referenceSpectrumIndices;
 
         // Listing the indices (in the original scan) which were used to create the in plume spectrum.
-        std::vector<size_t> inPlumeSpectrumIndices;
+        std::vector<int> inPlumeSpectrumIndices;
 
         // The CSpectrumInfo of the sky-spectrum of the scan. Gives info on e.g. device and start time.
         CSpectrumInfo skySpectrumInfo;
@@ -72,7 +72,7 @@ namespace novac
          * @return A created PlumeSpectra struct, or nullptr if none could be created.
         */
         std::unique_ptr<PlumeSpectra> CreatePlumeSpectra(
-            CScanFileHandler& originalScanFile,
+            IScanSpectrumSource& originalScanFile,
             const BasicScanEvaluationResult& scanResult,
             const CPlumeInScanProperty& plumeProperties,
             int mainSpecieIndex = 0,
@@ -88,7 +88,7 @@ namespace novac
          * @param outputDirectory The destination directory where the output file should be saved.
         */
         void CreatePlumeSpectrumFile(
-            CScanFileHandler& originalScanFile,
+            IScanSpectrumSource& originalScanFile,
             const BasicScanEvaluationResult& scanResult,
             const CPlumeInScanProperty& plumeProperties,
             int mainSpecieIndex,
@@ -133,29 +133,29 @@ namespace novac
          * @param inPlumeSpectra Will on return be filled with the indices of the spectra to be used as in-plume spectra.
         */
         void SelectSpectra(
-            CScanFileHandler& scanFile,
+            IScanSpectrumSource& scanFile,
             const CSpectrum& darkSpectrum,
             const BasicScanEvaluationResult& scanResult,
             const CPlumeInScanProperty& properties,
             const SpectrometerModel& spectrometerModel,
-            std::vector<size_t>& referenceSpectra,
-            std::vector<size_t>& inPlumeSpectra,
+            std::vector<int>& referenceSpectra,
+            std::vector<int>& inPlumeSpectra,
             std::string* errorMessage = nullptr);
 
-        std::vector<size_t> FindSpectraInPlume(
+        std::vector<int> FindSpectraInPlume(
             const BasicScanEvaluationResult& scanResult,
             const CPlumeInScanProperty& properties);
 
-        std::vector<size_t> FindSpectraOutOfPlume(
-            CScanFileHandler& scanFile,
+        std::vector<int> FindSpectraOutOfPlume(
+            IScanSpectrumSource& scanFile,
             const CSpectrum& darkSpectrum,
             const BasicScanEvaluationResult& scanResult,
             const SpectrometerModel& spectrometerModel,
-            const std::vector<size_t>& inPlumeProposal);
+            const std::vector<int>& inPlumeProposal);
 
-        std::vector<size_t> FilterSpectraUsingIntensity(
-            const std::vector<size_t>& proposedIndices,
-            CScanFileHandler& scanFile,
+        std::vector<int> FilterSpectraUsingIntensity(
+            const std::vector<int>& proposedIndices,
+            IScanSpectrumSource& scanFile,
             const CSpectrum& darkSpectrum,
             const SpectrometerModel& spectrometerModel);
 

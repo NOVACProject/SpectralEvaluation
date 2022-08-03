@@ -10,6 +10,7 @@
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include <SpectralEvaluation/File/ScanFileHandler.h>
 #include <SpectralEvaluation/StringUtils.h>
+#include <SpectralEvaluation/Math/SpectrumMath.h>
 
 #include <numeric>
 
@@ -18,7 +19,7 @@ namespace novac
 
     bool IsSuitableScanForRatioEvaluation(const RatioEvaluationSettings& settings, const BasicScanEvaluationResult& scanResult, const CPlumeInScanProperty& properties)
     {
-        if (scanResult.m_spec.size() < settings.minNumberOfSpectraInPlume + settings.minNumberOfReferenceSpectra)
+        if (static_cast<int>(scanResult.m_spec.size()) < settings.minNumberOfSpectraInPlume + settings.minNumberOfReferenceSpectra)
         {
             return false; // not enough spectra
         }
@@ -106,7 +107,7 @@ namespace novac
     {
     }
 
-    std::vector<Ratio> RatioEvaluation::Run(CScanFileHandler& scan, std::string* errorMessage)
+    std::vector<Ratio> RatioEvaluation::Run(IScanSpectrumSource& scan, std::string* errorMessage)
     {
         std::vector<Ratio> result;
 
@@ -325,30 +326,5 @@ namespace novac
         std::iota(begin(referenceSpectra), end(referenceSpectra), (int)startIdxOfReferenceRegion);
 
         return;
-    }
-
-    int AverageSpectra(CScanFileHandler& scan, const std::vector<int>& indices, CSpectrum& result)
-    {
-        if (indices.size() == 0)
-        {
-            return 0;
-        }
-
-        scan.GetSpectrum(result, indices[0]);
-        int nofAveragedSpectra = result.NumSpectra();
-
-        for (size_t ii = 1; ii < indices.size(); ++ii)
-        {
-            CSpectrum tmpSpec;
-            if (scan.GetSpectrum(tmpSpec, indices[ii]))
-            {
-                result.Add(tmpSpec);
-                nofAveragedSpectra += tmpSpec.NumSpectra();
-            }
-        }
-
-        result.Div((double)nofAveragedSpectra);
-
-        return nofAveragedSpectra;
     }
 }

@@ -3,6 +3,7 @@
 #include <vector>
 #include <SpectralEvaluation/DateTime.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/Spectra/IScanSpectrumSource.h>
 
 namespace novac
 {
@@ -13,7 +14,7 @@ namespace novac
         Each instance of 'CScanFileHandler' is capable of reading data from one .pak-file.
         Each instance of this class should be initialized by first calling 'CheckScanFile' which will read in 
         the data on the file and then create*/
-    class CScanFileHandler
+    class CScanFileHandler : public IScanSpectrumSource
     {
     public:
         CScanFileHandler();
@@ -65,21 +66,25 @@ namespace novac
             @return the number of spectra read (1 if successful, otherwise 0) */
         int GetSpectrum(CSpectrum& spec, long specNo);
 
+        virtual int GetSpectrum(int spectrumNumber, CSpectrum& spec) override {
+            return 1 - GetSpectrum(spec, (long)spectrumNumber);
+        }
+
         /** Gets the dark spectrum of the scan
             @return 0 if there is a dark spectrum, else non-zero */
-        int GetDark(CSpectrum& spec) const;
+        virtual int GetDark(CSpectrum& spec) override;
 
         /** Gets the sky spectrum of the scan
             @return 0 if there is a sky spectrum, else non-zero */
-        int GetSky(CSpectrum& spec) const;
+        virtual int GetSky(CSpectrum& spec) override;
 
         /** Gets the offset spectrum of the scan - if any
             @return 0 if there is an offset spectrum, else non-zero */
-        int GetOffset(CSpectrum& spec) const;
+        virtual int GetOffset(CSpectrum& spec) override;
 
         /** Gets the dark-current spectrum of the scan - if any
             @return 0 if there is a dark-current spectrum, else non-zero */
-        int GetDarkCurrent(CSpectrum& spec) const;
+        virtual int GetDarkCurrent(CSpectrum& spec) override;
 
         /** Returns the interlace steps for the spectra in this scan-file.
                  @return the interlace steps for the spectra in this scan.
@@ -105,18 +110,13 @@ namespace novac
         double GetCompass() const;
 
         /** Retrieves the name of the file that this object is working on */
-        const std::string& GetFileName() const { return m_fileName; }
+        virtual std::string GetFileName() const override { return m_fileName; }
 
         /** Resets the m_specReadSoFarNum to start reading from the first spectrum again */
         void  ResetCounter();
 
         /** Retrieves the total number of spectra in the .pak-file (including sky and dark) */
         int GetSpectrumNumInFile() const;
-
-        /** Returns a spectrum which is the average of the provided indices.
-            @return the number of spectra co-added (may be less than indices.size()
-            if some spectrum/spectra could not be read). */
-        int AddSpectra(const std::vector<size_t>& indices, CSpectrum& result);
 
     private:
         // ----------------------------------------------------------------------

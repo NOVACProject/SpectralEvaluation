@@ -10,6 +10,7 @@
 namespace novac
 {
     class BasicScanEvaluationResult;
+    class IScanSpectrumSource;
 
     // TODO: Move to Configuration
     struct RatioEvaluationSettings
@@ -64,7 +65,7 @@ namespace novac
             @return A vector with all the calculated quotients. The length of this vector equals
             the number of reference-fit windows passed to 'SetupFitWindows', which must have been called before this,
             or an empty vector if the evaluations fail.  */
-        std::vector<Ratio> Run(CScanFileHandler& scan, std::string* errorMessage = nullptr);
+        std::vector<Ratio> Run(IScanSpectrumSource& scan, std::string* errorMessage = nullptr);
 
     private:
         /** The fit window against which the ratio will be calculated (typically SO2).
@@ -92,8 +93,4 @@ namespace novac
         @param inPlumeSpectra Will be filled with the index of the spectra which should be averaged to an in-plume spectrum. */
     void SelectSpectraForRatioEvaluation(const RatioEvaluationSettings& settings, const BasicScanEvaluationResult& scanResult, const CPlumeInScanProperty& properties, std::vector<int>& referenceSpectra, std::vector<int>& inPlumeSpectra);
 
-    /** Calculates the average of the spectra with the given indices in the given scan.
-        @return the number of spectra averaged. */
-        // TODO: Move to some other file?
-    int AverageSpectra(CScanFileHandler& scan, const std::vector<int>& indices, CSpectrum& result);
 }

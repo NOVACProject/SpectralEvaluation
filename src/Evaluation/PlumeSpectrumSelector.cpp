@@ -9,6 +9,7 @@
 #include <SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h>
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
+#include <SpectralEvaluation/Math/SpectrumMath.h>
 
 using namespace novac;
 
@@ -27,14 +28,14 @@ std::string FormatTimestamp(const CDateTime& time)
 }
 
 std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
-    CScanFileHandler& originalScanFile,
+    IScanSpectrumSource& originalScanFile,
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& plumeProperties,
     int mainSpecieIndex,
     std::string* errorMessage)
 {
-    std::vector<size_t> referenceSpectrumIndices;
-    std::vector<size_t> inPlumeSpectrumIndices;
+    std::vector<int> referenceSpectrumIndices;
+    std::vector<int> inPlumeSpectrumIndices;
 
     m_settings = PlumeSpectrumSelectionSettings();
     m_mainSpecieIndex = mainSpecieIndex;
@@ -87,14 +88,14 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
     result->darkSpectrum = std::make_unique<CSpectrum>();
 
     // Create the spectra
-    originalScanFile.AddSpectra(referenceSpectrumIndices, *result->referenceSpectrum);
+    AverageSpectra(originalScanFile, referenceSpectrumIndices, *result->referenceSpectrum, false);
     result->referenceSpectrum->m_info.m_name = "sky";
     result->referenceSpectrum->m_info.m_scanIndex = 0;
 
     result->darkSpectrum = std::move(darkSpectrum);
     result->darkSpectrum->m_info.m_scanIndex = 1;
 
-    originalScanFile.AddSpectra(inPlumeSpectrumIndices, *result->inPlumeSpectrum);
+    AverageSpectra(originalScanFile, inPlumeSpectrumIndices, *result->inPlumeSpectrum, false);
     result->inPlumeSpectrum->m_info.m_name = "plume";
     result->inPlumeSpectrum->m_info.m_scanIndex = 2;
 
@@ -107,7 +108,7 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
 }
 
 void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
-    CScanFileHandler& originalScanFile,
+    IScanSpectrumSource& originalScanFile,
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& plumeProperties,
     int mainSpecieIndex,
@@ -140,19 +141,19 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
 
     std::ofstream textOutput(textOutputFileName.str());
     textOutput << "InPlume: " << std::endl;
-    for (size_t idx : spectra->inPlumeSpectrumIndices)
+    for (int idx : spectra->inPlumeSpectrumIndices)
     {
         CSpectrum spectrum;
-        originalScanFile.GetSpectrum(spectrum, (long)idx);
+        originalScanFile.GetSpectrum((int)idx, spectrum);
         textOutput << idx << "\t" << spectrum.m_info.m_scanAngle << "\t" << FormatTimestamp(spectrum.m_info.m_startTime) << std::endl;
     }
     textOutput << std::endl;
 
     textOutput << "Reference: " << std::endl;
-    for (size_t idx : spectra->referenceSpectrumIndices)
+    for (int idx : spectra->referenceSpectrumIndices)
     {
         CSpectrum spectrum;
-        originalScanFile.GetSpectrum(spectrum, (long)idx);
+        originalScanFile.GetSpectrum((int)idx, spectrum);
         textOutput << idx << "\t" << spectrum.m_info.m_scanAngle << "\t" << FormatTimestamp(spectrum.m_info.m_startTime) << std::endl;
     }
     textOutput << std::endl;
@@ -168,13 +169,13 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
 }
 
 void PlumeSpectrumSelector::SelectSpectra(
-    CScanFileHandler& scanFile,
+    IScanSpectrumSource& scanFile,
     const CSpectrum& darkSpectrum,
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& properties,
     const SpectrometerModel& spectrometerModel,
-    std::vector<size_t>& referenceSpectra,
-    std::vector<size_t>& inPlumeSpectra,
+    std::vector<int>& referenceSpectra,
+    std::vector<int>& inPlumeSpectra,
     std::string* errorMessage)
 {
     referenceSpectra.clear();
@@ -281,16 +282,16 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
     return true;
 }
 
-std::vector<size_t> PlumeSpectrumSelector::FindSpectraInPlume(
+std::vector<int> PlumeSpectrumSelector::FindSpectraInPlume(
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& properties)
 {
-    std::vector<size_t> indices;
+    std::vector<int> indices;
 
     // add all spectra in the scan-angle range [plumeHalfLow, plumeHalfHigh]
     const double minimumScanAngle = std::max(m_settings.minimumScanAngle, properties.plumeHalfLow);
     const double maximumScanAngle = std::min(m_settings.maximumScanAngle, properties.plumeHalfHigh);
-    for (size_t idx = 0; idx < scanResult.m_spec.size(); ++idx)
+    for (int idx = 0; idx < (int)scanResult.m_spec.size(); ++idx)
     {
         if (scanResult.m_specInfo[idx].m_scanAngle > minimumScanAngle + 0.1 &&
             scanResult.m_specInfo[idx].m_scanAngle < maximumScanAngle - 0.1)
@@ -319,18 +320,18 @@ std::vector<size_t> PlumeSpectrumSelector::FindSpectraInPlume(
     return indices;
 }
 
-std::vector<size_t> PlumeSpectrumSelector::FindSpectraOutOfPlume(
-    CScanFileHandler& scanFile,
+std::vector<int> PlumeSpectrumSelector::FindSpectraOutOfPlume(
+    IScanSpectrumSource& scanFile,
     const CSpectrum& darkSpectrum,
     const BasicScanEvaluationResult& scanResult,
     const SpectrometerModel& spectrometerModel,
-    const std::vector<size_t>& inPlumeProposal)
+    const std::vector<int>& inPlumeProposal)
 {
-    std::vector<size_t> indices;
+    std::vector<int> indices;
 
     // First list all good spectra, which are not already selected to be in the plume, and then list these in order of increasing column.
-    std::vector<std::pair<size_t, double>> spectrumColumnVsIndex;
-    for (size_t idx = 2U; idx < scanResult.m_spec.size(); ++idx)
+    std::vector<std::pair<int, double>> spectrumColumnVsIndex;
+    for (int idx = 2U; idx < scanResult.m_spec.size(); ++idx)
     {
         if (scanResult.m_spec[idx].IsBad())
         {
@@ -340,24 +341,24 @@ std::vector<size_t> PlumeSpectrumSelector::FindSpectraOutOfPlume(
         {
             continue;
         }
-        spectrumColumnVsIndex.push_back(std::pair<size_t, double>(idx, scanResult.m_spec[idx].m_referenceResult[m_mainSpecieIndex].m_column));
+        spectrumColumnVsIndex.push_back(std::pair<int, double>(idx, scanResult.m_spec[idx].m_referenceResult[m_mainSpecieIndex].m_column));
     }
-    std::sort(begin(spectrumColumnVsIndex), end(spectrumColumnVsIndex), [&](const std::pair<size_t, double>& p1, const std::pair<size_t, double>& p2)
+    std::sort(begin(spectrumColumnVsIndex), end(spectrumColumnVsIndex), [&](const std::pair<int, double>& p1, const std::pair<int, double>& p2)
     {
         return p1.second < p2.second;
     });
 
-    std::vector<size_t> referenceSpectraProposal;
+    std::vector<int> referenceSpectraProposal;
     CSpectrum spectrum;
     for (auto item : spectrumColumnVsIndex)
     {
-        size_t idx = item.first;
+        int idx = item.first;
 
-        if (scanFile.GetSpectrum(spectrum, (long)idx) && SpectrumFulfillsIntensityRequirement(spectrum, darkSpectrum, spectrometerModel))
+        if (0 == scanFile.GetSpectrum((int)idx, spectrum) && SpectrumFulfillsIntensityRequirement(spectrum, darkSpectrum, spectrometerModel))
         {
             referenceSpectraProposal.push_back(idx);
 
-            if (referenceSpectraProposal.size() == static_cast<size_t>(m_settings.numberOfSpectraOutsideOfPlume))
+            if (referenceSpectraProposal.size() == static_cast<int>(m_settings.numberOfSpectraOutsideOfPlume))
             {
                 return referenceSpectraProposal;
             }
@@ -391,19 +392,19 @@ bool PlumeSpectrumSelector::SpectrumFulfillsIntensityRequirement(
     return true;
 }
 
-std::vector<size_t> PlumeSpectrumSelector::FilterSpectraUsingIntensity(
-    const std::vector<size_t>& proposedIndices,
-    CScanFileHandler& scanFile,
+std::vector<int> PlumeSpectrumSelector::FilterSpectraUsingIntensity(
+    const std::vector<int>& proposedIndices,
+    IScanSpectrumSource& scanFile,
     const CSpectrum& darkSpectrum,
     const SpectrometerModel& spectrometerModel)
 {
-    std::vector<size_t> result;
+    std::vector<int> result;
     result.reserve(proposedIndices.size());
 
     CSpectrum spectrum;
-    for (size_t idx : proposedIndices)
+    for (int idx : proposedIndices)
     {
-        if (scanFile.GetSpectrum(spectrum, (long)idx) && SpectrumFulfillsIntensityRequirement(spectrum, darkSpectrum, spectrometerModel))
+        if (0 == scanFile.GetSpectrum((int)idx, spectrum) && SpectrumFulfillsIntensityRequirement(spectrum, darkSpectrum, spectrometerModel))
         {
             result.push_back(idx);
         }
