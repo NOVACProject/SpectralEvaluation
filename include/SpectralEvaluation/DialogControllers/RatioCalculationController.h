@@ -71,8 +71,23 @@ public:
     // The wavelength range for the major species window
     novac::WavelengthRange m_so2FitRange;
 
+    // The polynomial order to use in the SO2 fit
+    int m_so2PolynomialOrder = 3;
+
     // The wavelength range for the minor species window
     novac::WavelengthRange m_broFitRange;
+
+    // The polynomial order to use in the BrO fit
+    int m_broPolynomialOrder = 3;
+
+    // Sets up m_so2Window and m_broWindow using m_references, m_so2FitRange and m_broFitRange
+    void SetupFitWindows();
+
+    // Performs the evaluation of the next scan (in the list m_pakFiles)
+    // This require that SetupFitWindows() has been called since it will use the contents of the fit windows.
+    void EvaluateNextScan();
+
+private:
 
     // The evaluation settings for the major species (typically SO2).
     // The first reference here is used for the ratio calculation.
@@ -83,4 +98,5 @@ public:
     // The first reference here is used for the ratio calculation.
     // Notice that the list of references here is empty until running (TODO: function name) when they are filled in from m_references.
     novac::CFitWindow m_broWindow;
+
 };

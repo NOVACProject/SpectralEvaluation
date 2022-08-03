@@ -37,3 +37,12 @@ void RatioCalculationController::InitializeToDefault()
     m_broWindow.includeIntensitySpacePolyominal = true;
 }
 
+void RatioCalculationController::SetupFitWindows()
+{
+
+}
+
+void RatioCalculationController::EvaluateNextScan()
+{
+
+}
