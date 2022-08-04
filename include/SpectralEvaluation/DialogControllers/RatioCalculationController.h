@@ -1,9 +1,9 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
-#include <unordered_map>
-#include <SpectralEvaluation/Evaluation/FitWindow.h>
+#include <SpectralEvaluation/Evaluation/RatioEvaluation.h>
 #include <SpectralEvaluation/Spectra/WavelengthRange.h>
 
 // Building a set of standard DOAS species
@@ -54,6 +54,19 @@ struct ReferenceForRatioCalculation
     bool CanBeAutomaticallyCalculated() const { return specie == StandardDoasSpecie::RING || specie == StandardDoasSpecie::RING_LAMBDA4; }
 };
 
+struct RatioCalculationFitSetup
+{
+    // The evaluation settings for the major species (typically SO2).
+    // The first reference here is used for the ratio calculation.
+    // Notice that the list of references here is empty until running (TODO: function name) when they are filled in from m_references.
+    novac::CFitWindow m_so2Window;
+
+    // The evaluation settings for the minor species (typically BrO)
+    // The first reference here is used for the ratio calculation.
+    // Notice that the list of references here is empty until running (TODO: function name) when they are filled in from m_references.
+    novac::CFitWindow m_broWindow;
+};
+
 class RatioCalculationController
 {
 public:
@@ -80,23 +93,22 @@ public:
     // The polynomial order to use in the BrO fit
     int m_broPolynomialOrder = 3;
 
+    // Settings for how to select the in-plume and out-of-plume spectra.
+    novac::RatioEvaluationSettings m_ratioEvaluationSettings;
+
     // Sets up m_so2Window and m_broWindow using m_references, m_so2FitRange and m_broFitRange
-    void SetupFitWindows();
+    std::shared_ptr<RatioCalculationFitSetup> SetupFitWindows();
 
     // Performs the evaluation of the next scan (in the list m_pakFiles)
     // This require that SetupFitWindows() has been called since it will use the contents of the fit windows.
     void EvaluateNextScan();
 
+    // Performs the evaluation of the given scan.
+    // This require that SetupFitWindows() has been called since it will use the contents of the fit windows.
+    // @return true if the evaluation succeeded.
+    bool EvaluateScan(novac::IScanSpectrumSource& scan, const novac::BasicScanEvaluationResult& initialResult, std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows);
+
 private:
 
-    // The evaluation settings for the major species (typically SO2).
-    // The first reference here is used for the ratio calculation.
-    // Notice that the list of references here is empty until running (TODO: function name) when they are filled in from m_references.
-    novac::CFitWindow m_so2Window;
-
-    // The evaluation settings for the minor species (typically BrO)
-    // The first reference here is used for the ratio calculation.
-    // Notice that the list of references here is empty until running (TODO: function name) when they are filled in from m_references.
-    novac::CFitWindow m_broWindow;
 
 };
