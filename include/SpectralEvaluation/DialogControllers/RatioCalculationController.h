@@ -110,5 +110,10 @@ public:
 
 private:
 
-
+    // Verifies that the references have been setup as expected. Throws invalid_argument if not.
+    void VerifyReferenceSetup();
 };
+
+// Helper method, picks out the reference with the given specie and returns a pointer to it.
+// Returns nullptr if there is no reference with the given specie.
+ReferenceForRatioCalculation* GetReferenceFor(RatioCalculationController& controller, StandardDoasSpecie specie);

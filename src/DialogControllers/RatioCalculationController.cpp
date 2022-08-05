@@ -30,6 +30,7 @@ void SetupFitWindowReferences(novac::CFitWindow& window, const std::vector<Refer
     window.polyOrder = 3;
     window.ringCalculation = novac::RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING;
     window.includeIntensitySpacePolyominal = true;
+
     for (const ReferenceForRatioCalculation& ref : references)
     {
         const bool referenceShouldBeIncludedInThisWindow = (ref.m_includeInMajor && isMajor) || (ref.m_includeInMinor && !isMajor);
@@ -43,6 +44,11 @@ void SetupFitWindowReferences(novac::CFitWindow& window, const std::vector<Refer
         {
             window.ref[window.nRef].m_path = ref.m_path;
             window.ref[window.nRef].m_specieName = ref.m_name;
+            window.ref[window.nRef].m_shiftOption = novac::SHIFT_TYPE::SHIFT_FIX;
+            window.ref[window.nRef].m_shiftValue = 0.0;
+            window.ref[window.nRef].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
+            window.ref[window.nRef].m_squeezeValue = 0.0;
+
             window.nRef++;
         }
         else if (ref.m_automaticallyCalculate && ref.specie == StandardDoasSpecie::RING)
@@ -56,12 +62,45 @@ void SetupFitWindowReferences(novac::CFitWindow& window, const std::vector<Refer
     }
 }
 
+void RatioCalculationController::VerifyReferenceSetup()
+{
+    const ReferenceForRatioCalculation* so2Reference = GetReferenceFor(*this, StandardDoasSpecie::SO2);
+    if (so2Reference == nullptr || so2Reference->m_path.empty() || !so2Reference->m_includeInMajor)
+    {
+        throw std::invalid_argument("the SO2 reference must be setup and included in the major (SO2) window.");
+    }
+
+    const ReferenceForRatioCalculation* broReference = GetReferenceFor(*this, StandardDoasSpecie::BRO);
+    if (broReference == nullptr || broReference->m_path.empty() || !broReference->m_includeInMinor)
+    {
+        throw std::invalid_argument("the BrO reference must be setup and included in the minor (BrO) window.");
+    }
+}
+
 std::shared_ptr<RatioCalculationFitSetup> RatioCalculationController::SetupFitWindows()
 {
+    // Start by verifying the setup
+    VerifyReferenceSetup();
+
     auto result = std::make_shared<RatioCalculationFitSetup>();
 
-    SetupFitWindowReferences(result->m_so2Window, m_references, "SO2", true);
-    SetupFitWindowReferences(result->m_broWindow, m_references, "BrO", false);
+    // Setup the references in the fit windows. Notice that the order of the references is different since SO2 and BrO should always be first in their respective window.
+    SetupFitWindowReferences(
+        result->m_so2Window,
+        m_references,
+        "SO2",
+        true);
+    SetupFitWindowReferences(
+        result->m_broWindow,
+        std::vector<ReferenceForRatioCalculation>{
+            m_references[1],
+            m_references[0],
+            m_references[2],
+            m_references[3],
+            m_references[4],
+        },
+        "BrO",
+        false);
 
     // TODO: Setup the fit ranges to something reasonable...
 
@@ -98,9 +137,21 @@ bool RatioCalculationController::EvaluateScan(novac::IScanSpectrumSource& scan, 
 
     // Setup the ratio evaluation and run it.
     novac::RatioEvaluation ratioEvaluation{ m_ratioEvaluationSettings, darkSettings };
-    ratioEvaluation.SetupFitWindows(ratioFitWindows->m_so2Window, std::vector<novac::CFitWindow>{ ratioFitWindows->m_broWindow});
+    ratioEvaluation.SetupFitWindows(ratioFitWindows->m_so2Window, std::vector<novac::CFitWindow>{ ratioFitWindows->m_broWindow });
     ratioEvaluation.SetupFirstResult(initialResult, plumeInScanProperties);
     const auto ratios = ratioEvaluation.Run(scan, &errorMessage);
 
     return true;
+}
+
+ReferenceForRatioCalculation* GetReferenceFor(RatioCalculationController& controller, StandardDoasSpecie specie) {
+    for (auto& ref : controller.m_references)
+    {
+        if (ref.specie == specie)
+        {
+            return &ref;
+        }
+    }
+
+    return nullptr; // not found
 }

@@ -8,38 +8,146 @@ using namespace novac;
 
 #pragma region helper methods
 
-ReferenceForRatioCalculation* GetReferenceFor(RatioCalculationController& controller, StandardDoasSpecie specie) {
-    for (auto& ref : controller.m_references)
-    {
-        if (ref.specie == specie)
-        {
-            return &ref;
-        }
-    }
-
-    return nullptr; // not found
-}
-#pragma endregion
-
-TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 included in both windows", "[RatioCalculationController]")
+RatioCalculationFitSetup GetSetupOfFitWindowsForTest()
 {
+    RatioCalculationFitSetup result;
+
     // Read in one fit window. This helps us with ready-to-use references..
     CFitWindowFileHandler fitWindowFileHandler;
     auto allWindows = fitWindowFileHandler.ReadFitWindowFile(TestData::GetBrORatioFitWindowFileSO2());
     REQUIRE(allWindows.size() == 1);
-    auto so2FitWindow = allWindows.front();
+    result.m_so2Window = allWindows.front();
+
+    allWindows = fitWindowFileHandler.ReadFitWindowFile(TestData::GetBrORatioFitWindowFileBrO());
+    REQUIRE(allWindows.size() == 1);
+    result.m_broWindow = allWindows.front();
+
+    return result;
+}
+
+#pragma endregion
+
+TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 not included SO2 window - throws invalid_argument", "[RatioCalculationController]")
+{
+    const auto testWindows = GetSetupOfFitWindowsForTest();
 
     RatioCalculationController sut;
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references
-    ReferenceForRatioCalculation *so2Reference = GetReferenceFor(sut, StandardDoasSpecie::SO2);
-    so2Reference->m_path = so2FitWindow.ref[0].m_path;
-    so2Reference->m_includeInMajor = true;
-    so2Reference->m_includeInMinor = true;
+    ReferenceForRatioCalculation* so2Reference = GetReferenceFor(sut, StandardDoasSpecie::SO2);
+    so2Reference->m_includeInMajor = false;
+    so2Reference->m_includeInMinor = false;
+    ReferenceForRatioCalculation* broReference = GetReferenceFor(sut, StandardDoasSpecie::BRO);
+    broReference->m_path = testWindows.m_broWindow.ref[0].m_path;
+    broReference->m_includeInMajor = true;
+    broReference->m_includeInMinor = true;
     GetReferenceFor(sut, StandardDoasSpecie::RING)->m_automaticallyCalculate = false;
     GetReferenceFor(sut, StandardDoasSpecie::RING_LAMBDA4)->m_automaticallyCalculate = false;
 
+
+    // Act
+    REQUIRE_THROWS(sut.SetupFitWindows());
+}
+
+TEST_CASE("RatioCalculationController - SetupFitWindows - BrO not included BrO window - throws invalid_argument", "[RatioCalculationController]")
+{
+    const auto testWindows = GetSetupOfFitWindowsForTest();
+
+    RatioCalculationController sut;
+    REQUIRE(sut.m_references.size() == 5); // check assumption here.
+
+    // Setup the references
+    ReferenceForRatioCalculation* so2Reference = GetReferenceFor(sut, StandardDoasSpecie::SO2);
+    so2Reference->m_path = testWindows.m_so2Window.ref[0].m_path;
+    so2Reference->m_includeInMajor = true;
+    so2Reference->m_includeInMinor = false;
+    ReferenceForRatioCalculation* broReference = GetReferenceFor(sut, StandardDoasSpecie::BRO);
+    broReference->m_includeInMajor = true;
+    broReference->m_includeInMinor = true;
+    GetReferenceFor(sut, StandardDoasSpecie::RING)->m_automaticallyCalculate = false;
+    GetReferenceFor(sut, StandardDoasSpecie::RING_LAMBDA4)->m_automaticallyCalculate = false;
+
+
+    // Act
+    REQUIRE_THROWS(sut.SetupFitWindows());
+}
+
+
+TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 and BrO included in both windows", "[RatioCalculationController]")
+{
+    const auto testWindows = GetSetupOfFitWindowsForTest();
+
+    RatioCalculationController sut;
+    REQUIRE(sut.m_references.size() == 5); // check assumption here.
+
+    // Setup the references
+    ReferenceForRatioCalculation* so2Reference = GetReferenceFor(sut, StandardDoasSpecie::SO2);
+    so2Reference->m_path = testWindows.m_so2Window.ref[0].m_path;
+    so2Reference->m_includeInMajor = true;
+    so2Reference->m_includeInMinor = true;
+    ReferenceForRatioCalculation* broReference = GetReferenceFor(sut, StandardDoasSpecie::BRO);
+    broReference->m_path = testWindows.m_broWindow.ref[0].m_path;
+    broReference->m_includeInMajor = true;
+    broReference->m_includeInMinor = true;
+    GetReferenceFor(sut, StandardDoasSpecie::RING)->m_automaticallyCalculate = false;
+    GetReferenceFor(sut, StandardDoasSpecie::RING_LAMBDA4)->m_automaticallyCalculate = false;
+
+
+    // Act
+    const auto result = sut.SetupFitWindows();
+
+    // Assert
+    // SO2 window, notice the order of the references.
+    REQUIRE(result->m_so2Window.name == "SO2");
+    REQUIRE(result->m_so2Window.polyOrder == 3);
+    REQUIRE(result->m_so2Window.fitType == novac::FIT_TYPE::FIT_POLY);
+    REQUIRE(result->m_so2Window.nRef == 2);
+    REQUIRE(result->m_so2Window.ref[0].m_path == so2Reference->m_path);
+    REQUIRE(result->m_so2Window.ref[0].m_specieName == "SO2");
+    REQUIRE(result->m_so2Window.ref[0].m_shiftOption == novac::SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(result->m_so2Window.ref[0].m_squeezeOption == novac::SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(result->m_so2Window.ref[1].m_path == broReference->m_path);
+    REQUIRE(result->m_so2Window.ref[1].m_specieName == "BrO");
+    REQUIRE(result->m_so2Window.ref[1].m_shiftOption == novac::SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(result->m_so2Window.ref[1].m_squeezeOption == novac::SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(result->m_so2Window.ringCalculation == novac::RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING);
+
+
+    // BrO window, notice the different order of the references.
+    REQUIRE(result->m_broWindow.name == "BrO");
+    REQUIRE(result->m_broWindow.polyOrder == 3);
+    REQUIRE(result->m_broWindow.fitType == novac::FIT_TYPE::FIT_POLY);
+    REQUIRE(result->m_broWindow.nRef == 2);
+    REQUIRE(result->m_broWindow.ref[0].m_path == broReference->m_path);
+    REQUIRE(result->m_broWindow.ref[0].m_specieName == "BrO");
+    REQUIRE(result->m_broWindow.ref[0].m_shiftOption == novac::SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(result->m_broWindow.ref[0].m_squeezeOption == novac::SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(result->m_broWindow.ref[1].m_path == so2Reference->m_path);
+    REQUIRE(result->m_broWindow.ref[1].m_specieName == "SO2");
+    REQUIRE(result->m_broWindow.ref[1].m_shiftOption == novac::SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(result->m_broWindow.ref[1].m_squeezeOption == novac::SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(result->m_broWindow.ringCalculation == novac::RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING);
+}
+
+TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 included in only major window", "[RatioCalculationController]")
+{
+    const auto testWindows = GetSetupOfFitWindowsForTest();
+
+    RatioCalculationController sut;
+    REQUIRE(sut.m_references.size() == 5); // check assumption here.
+
+    // Setup the references
+    ReferenceForRatioCalculation* so2Reference = GetReferenceFor(sut, StandardDoasSpecie::SO2);
+    so2Reference->m_path = testWindows.m_so2Window.ref[0].m_path;
+    so2Reference->m_includeInMajor = true;
+    so2Reference->m_includeInMinor = false;
+    ReferenceForRatioCalculation* broReference = GetReferenceFor(sut, StandardDoasSpecie::BRO);
+    broReference->m_path = testWindows.m_broWindow.ref[0].m_path;
+    broReference->m_includeInMajor = false;
+    broReference->m_includeInMinor = true;
+    GetReferenceFor(sut, StandardDoasSpecie::RING)->m_automaticallyCalculate = false;
+    GetReferenceFor(sut, StandardDoasSpecie::RING_LAMBDA4)->m_automaticallyCalculate = false;
 
     // Act
     const auto result = sut.SetupFitWindows();
@@ -50,7 +158,6 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 included in both w
     REQUIRE(result->m_so2Window.polyOrder == 3);
     REQUIRE(result->m_so2Window.fitType == novac::FIT_TYPE::FIT_POLY);
     REQUIRE(result->m_so2Window.nRef == 1);
-    REQUIRE(result->m_so2Window.ref[0].m_path == so2Reference->m_path);
     REQUIRE(result->m_so2Window.ref[0].m_specieName == "SO2");
     REQUIRE(result->m_so2Window.ref[0].m_shiftOption == novac::SHIFT_TYPE::SHIFT_FIX);
     REQUIRE(result->m_so2Window.ref[0].m_squeezeOption == novac::SHIFT_TYPE::SHIFT_FIX);
@@ -62,29 +169,33 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 included in both w
     REQUIRE(result->m_broWindow.polyOrder == 3);
     REQUIRE(result->m_broWindow.fitType == novac::FIT_TYPE::FIT_POLY);
     REQUIRE(result->m_broWindow.nRef == 1);
-    REQUIRE(result->m_broWindow.ref[0].m_path == so2Reference->m_path);
-    REQUIRE(result->m_broWindow.ref[0].m_specieName == "SO2");
+    REQUIRE(result->m_broWindow.ref[0].m_path == broReference->m_path);
+    REQUIRE(result->m_broWindow.ref[0].m_specieName == "BrO");
     REQUIRE(result->m_broWindow.ref[0].m_shiftOption == novac::SHIFT_TYPE::SHIFT_FIX);
     REQUIRE(result->m_broWindow.ref[0].m_squeezeOption == novac::SHIFT_TYPE::SHIFT_FIX);
     REQUIRE(result->m_broWindow.ringCalculation == novac::RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING);
 }
 
-TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 included in only major window", "[RatioCalculationController]")
+TEST_CASE("RatioCalculationController - SetupFitWindows - Two references in each window", "[RatioCalculationController]")
 {
-    // Read in one fit window. This helps us with ready-to-use references..
-    CFitWindowFileHandler fitWindowFileHandler;
-    auto allWindows = fitWindowFileHandler.ReadFitWindowFile(TestData::GetBrORatioFitWindowFileSO2());
-    REQUIRE(allWindows.size() == 1);
-    auto so2FitWindow = allWindows.front();
+    const auto testWindows = GetSetupOfFitWindowsForTest();
 
     RatioCalculationController sut;
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references
     ReferenceForRatioCalculation* so2Reference = GetReferenceFor(sut, StandardDoasSpecie::SO2);
-    so2Reference->m_path = so2FitWindow.ref[0].m_path;
+    so2Reference->m_path = testWindows.m_so2Window.ref[0].m_path;
     so2Reference->m_includeInMajor = true;
     so2Reference->m_includeInMinor = false;
+    ReferenceForRatioCalculation* o3Reference = GetReferenceFor(sut, StandardDoasSpecie::O3);
+    o3Reference->m_path = testWindows.m_so2Window.ref[1].m_path;
+    o3Reference->m_includeInMajor = true;
+    o3Reference->m_includeInMinor = true;
+    ReferenceForRatioCalculation* broReference = GetReferenceFor(sut, StandardDoasSpecie::BRO);
+    broReference->m_path = testWindows.m_broWindow.ref[1].m_path;
+    broReference->m_includeInMajor = false;
+    broReference->m_includeInMinor = true;
     GetReferenceFor(sut, StandardDoasSpecie::RING)->m_automaticallyCalculate = false;
     GetReferenceFor(sut, StandardDoasSpecie::RING_LAMBDA4)->m_automaticallyCalculate = false;
 
@@ -96,10 +207,15 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 included in only m
     REQUIRE(result->m_so2Window.name == "SO2");
     REQUIRE(result->m_so2Window.polyOrder == 3);
     REQUIRE(result->m_so2Window.fitType == novac::FIT_TYPE::FIT_POLY);
-    REQUIRE(result->m_so2Window.nRef == 1);
+    REQUIRE(result->m_so2Window.nRef == 2);
     REQUIRE(result->m_so2Window.ref[0].m_specieName == "SO2");
     REQUIRE(result->m_so2Window.ref[0].m_shiftOption == novac::SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(result->m_so2Window.ref[0].m_shiftValue == 0.0);
     REQUIRE(result->m_so2Window.ref[0].m_squeezeOption == novac::SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(result->m_so2Window.ref[0].m_squeezeValue == 0.0);
+    REQUIRE(result->m_so2Window.ref[1].m_specieName == "O3");
+    REQUIRE(result->m_so2Window.ref[1].m_shiftOption == novac::SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(result->m_so2Window.ref[1].m_squeezeOption == novac::SHIFT_TYPE::SHIFT_FIX);
     REQUIRE(result->m_so2Window.ringCalculation == novac::RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING);
 
 
@@ -107,18 +223,34 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 included in only m
     REQUIRE(result->m_broWindow.name == "BrO");
     REQUIRE(result->m_broWindow.polyOrder == 3);
     REQUIRE(result->m_broWindow.fitType == novac::FIT_TYPE::FIT_POLY);
-    REQUIRE(result->m_broWindow.nRef == 0);
+    REQUIRE(result->m_broWindow.nRef == 2);
+    REQUIRE(result->m_broWindow.ref[0].m_specieName == "BrO");
     REQUIRE(result->m_broWindow.ref[0].m_shiftOption == novac::SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(result->m_broWindow.ref[0].m_shiftValue == 0.0);
     REQUIRE(result->m_broWindow.ref[0].m_squeezeOption == novac::SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(result->m_broWindow.ref[0].m_squeezeValue == 0.0);
+    REQUIRE(result->m_broWindow.ref[1].m_specieName == "O3");
+    REQUIRE(result->m_broWindow.ref[1].m_shiftOption == novac::SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(result->m_broWindow.ref[1].m_squeezeOption == novac::SHIFT_TYPE::SHIFT_FIX);
     REQUIRE(result->m_broWindow.ringCalculation == novac::RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING);
 }
 
 TEST_CASE("RatioCalculationController - SetupFitWindows - Calculated Ring included in both windows", "[RatioCalculationController]")
 {
+    const auto testWindows = GetSetupOfFitWindowsForTest();
+
     RatioCalculationController sut;
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references
+    ReferenceForRatioCalculation* so2Reference = GetReferenceFor(sut, StandardDoasSpecie::SO2);
+    so2Reference->m_path = testWindows.m_so2Window.ref[0].m_path;
+    so2Reference->m_includeInMajor = true;
+    so2Reference->m_includeInMinor = false;
+    ReferenceForRatioCalculation* broReference = GetReferenceFor(sut, StandardDoasSpecie::BRO);
+    broReference->m_path = testWindows.m_broWindow.ref[0].m_path;
+    broReference->m_includeInMajor = false;
+    broReference->m_includeInMinor = true;
     ReferenceForRatioCalculation* ringReference = GetReferenceFor(sut, StandardDoasSpecie::RING);
     ringReference->m_path = "";
     ringReference->m_automaticallyCalculate = true;
@@ -135,7 +267,7 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - Calculated Ring includ
     REQUIRE(result->m_so2Window.name == "SO2");
     REQUIRE(result->m_so2Window.polyOrder == 3);
     REQUIRE(result->m_so2Window.fitType == novac::FIT_TYPE::FIT_POLY);
-    REQUIRE(result->m_so2Window.nRef == 0);
+    REQUIRE(result->m_so2Window.nRef == 1);
     REQUIRE(result->m_so2Window.ringCalculation == novac::RING_CALCULATION_OPTION::CALCULATE_RING);
 
 
@@ -143,16 +275,26 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - Calculated Ring includ
     REQUIRE(result->m_broWindow.name == "BrO");
     REQUIRE(result->m_broWindow.polyOrder == 3);
     REQUIRE(result->m_broWindow.fitType == novac::FIT_TYPE::FIT_POLY);
-    REQUIRE(result->m_broWindow.nRef == 0);
+    REQUIRE(result->m_broWindow.nRef == 1);
     REQUIRE(result->m_broWindow.ringCalculation == novac::RING_CALCULATION_OPTION::CALCULATE_RING);
 }
 
 TEST_CASE("RatioCalculationController - SetupFitWindows - Calculated Ring and Ring*Lambda4 included in both windows", "[RatioCalculationController]")
 {
+    const auto testWindows = GetSetupOfFitWindowsForTest();
+
     RatioCalculationController sut;
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references
+    ReferenceForRatioCalculation* so2Reference = GetReferenceFor(sut, StandardDoasSpecie::SO2);
+    so2Reference->m_path = testWindows.m_so2Window.ref[0].m_path;
+    so2Reference->m_includeInMajor = true;
+    so2Reference->m_includeInMinor = false;
+    ReferenceForRatioCalculation* broReference = GetReferenceFor(sut, StandardDoasSpecie::BRO);
+    broReference->m_path = testWindows.m_broWindow.ref[0].m_path;
+    broReference->m_includeInMajor = false;
+    broReference->m_includeInMinor = true;
     ReferenceForRatioCalculation* ringReference = GetReferenceFor(sut, StandardDoasSpecie::RING);
     ringReference->m_path = "";
     ringReference->m_automaticallyCalculate = true;
@@ -172,7 +314,7 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - Calculated Ring and Ri
     REQUIRE(result->m_so2Window.name == "SO2");
     REQUIRE(result->m_so2Window.polyOrder == 3);
     REQUIRE(result->m_so2Window.fitType == novac::FIT_TYPE::FIT_POLY);
-    REQUIRE(result->m_so2Window.nRef == 0);
+    REQUIRE(result->m_so2Window.nRef == 1);
     REQUIRE(result->m_so2Window.ringCalculation == novac::RING_CALCULATION_OPTION::CALCULATE_RING_X2);
 
 
@@ -180,7 +322,7 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - Calculated Ring and Ri
     REQUIRE(result->m_broWindow.name == "BrO");
     REQUIRE(result->m_broWindow.polyOrder == 3);
     REQUIRE(result->m_broWindow.fitType == novac::FIT_TYPE::FIT_POLY);
-    REQUIRE(result->m_broWindow.nRef == 0);
+    REQUIRE(result->m_broWindow.nRef == 1);
     REQUIRE(result->m_broWindow.ringCalculation == novac::RING_CALCULATION_OPTION::CALCULATE_RING_X2);
 }
 
