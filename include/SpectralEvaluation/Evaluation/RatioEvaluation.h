@@ -3,7 +3,9 @@
 #include <SpectralEvaluation/Evaluation/Ratio.h>
 #include <SpectralEvaluation/Evaluation/ScanEvaluationBase.h>
 #include <SpectralEvaluation/Evaluation/FitWindow.h>
+#include <SpectralEvaluation/Evaluation/DoasFit.h>
 #include <SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h>
+#include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include <vector>
 
@@ -25,6 +27,29 @@ namespace novac
         int minNumberOfReferenceSpectra = 7;
     };
 
+    // A basic structure used to be able to extract information from the RatioEvaluation below.
+    // This can be used to e.g. present intermediates to the user for a better understanding of the process.
+    struct RatioEvaluationDebugInformation
+    {
+        // A possible error message, empty if no error has occurred.
+        std::string errorMessage;
+
+        // The zero-based indices of the scan used to create the in-plume spectrum
+        std::vector<int> plumeSpectra;
+
+        // The zero-based indices of the scan used to create the out-of-plume spectrum
+        std::vector<int> outOfPlumeSpectra;
+
+        // The final (dark corrected) in-plume spectrum.
+        CSpectrum inPlumeSpectrum;
+
+        // The final (dark corrected) out-of-plume spectrum.
+        CSpectrum outOfPlumeSpectrum;
+
+        // The results of each of the evaluations performed.
+        std::vector<DoasResult> doasResults;
+    };
+
     /** The class RatioEvaluation helps with evaluating the ratios of specific elements (e.g. BrO/SO2-ratio)
         from single scans by evaluating the species in separate fit-windows and calculating a ratio.
         This needs a number of things:
@@ -40,6 +65,10 @@ namespace novac
     {
     public:
         RatioEvaluation(const RatioEvaluationSettings& settings, const Configuration::CDarkSettings& darkSettings);
+
+        // Calculates the ratio of an evaluation in a major window and a minor window.
+        // The ratio is calculated using the first reference result in each DoasResult.
+        static Ratio CalculateRatio(const DoasResult& majorWindow, const DoasResult& minorWindow);
 
         /** Sets up this ratio-evaluation with the fit windows to use for evaluation.
             @param fitWindow Is the fit window for the main specie to evaluate (typically SO2)
@@ -65,7 +94,7 @@ namespace novac
             @return A vector with all the calculated quotients. The length of this vector equals
             the number of reference-fit windows passed to 'SetupFitWindows', which must have been called before this,
             or an empty vector if the evaluations fail.  */
-        std::vector<Ratio> Run(IScanSpectrumSource& scan, std::string* errorMessage = nullptr);
+        std::vector<Ratio> Run(IScanSpectrumSource& scan, RatioEvaluationDebugInformation* debugInfo = nullptr);
 
     private:
         /** The fit window against which the ratio will be calculated (typically SO2).
@@ -86,6 +115,15 @@ namespace novac
 
         /** The settings for how the ratio-calculation should be performed. */
         RatioEvaluationSettings m_settings;
+
+        std::vector<Ratio> Run(IScanSpectrumSource& scan, RatioEvaluationDebugInformation& debugInfo);
+
+        // Performs a dark-correction of the provided spectrum, which is assumed to be an average of several spectra in the scan.
+        // @throws std::invalid_argument if the dark correction failed.
+        void DarkCorrectSpectrum(IScanSpectrumSource& scan, CSpectrum& spectrum) const;
+
+        // Return true if any of the fit windows here requires the calculation of a Ring spectrum
+        bool AnyFitWindowRequiresRingSpectrum() const;
     };
 
     /** Estimates which spectra should be used for a ratio-evaluation, assuming that one should be performed.

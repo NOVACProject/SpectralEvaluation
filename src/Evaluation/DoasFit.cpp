@@ -109,6 +109,7 @@ namespace novac
         m_fitLow = setup.fitLow;
         m_fitHigh = setup.fitHigh;
         m_polynomialOrder = setup.polyOrder;
+        m_name = setup.name;
 
         DeallocateReferenceSetup();
         DoasReferenceSetup* newReferenceSetup = new DoasReferenceSetup();
@@ -289,7 +290,7 @@ namespace novac
             // actually do the fitting
             if (!cFirstFit.Minimize())
             {
-                throw DoasFitException("Failed to evaluate: fit failed.");
+                throw DoasFitException("Failed to evaluate: fit " + m_name + " failed.");
             }
 
             // finalize the fitting process. This will calculate the error measurements and other statistical stuff
@@ -355,7 +356,7 @@ namespace novac
             // message.Format("A Fit Exception has occurred. Are the reference files OK?");
             // ShowMessage(message);
             std::stringstream message;
-            message << "Failed to evaluate: a fit exception occurred.";
+            message << "Failed to evaluate" + m_name + ": a fit exception occurred.";
             if (nullptr != e.mMessage && strlen(e.mMessage) > 0)
             {
                 message << " Message: '" + std::string{ e.mMessage } + "'";

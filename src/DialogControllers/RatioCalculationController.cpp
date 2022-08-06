@@ -3,6 +3,7 @@
 #include <SpectralEvaluation/Evaluation/RatioEvaluation.h>
 #include <SpectralEvaluation/Configuration/DarkSettings.h>
 
+#include <sstream>
 
 RatioCalculationController::RatioCalculationController()
     : m_so2FitRange(314.8, 326.8), m_broFitRange(330.6, 352.8)
@@ -23,11 +24,9 @@ void RatioCalculationController::InitializeToDefault()
     m_references.push_back(ReferenceForRatioCalculation(StandardDoasSpecie::RING_LAMBDA4, "Ringxlambda^4", "", true, true, true));
 }
 
-void SetupFitWindowReferences(novac::CFitWindow& window, const std::vector<ReferenceForRatioCalculation>& references, std::string name, bool isMajor)
+void SetupFitWindowReferences(novac::CFitWindow& window, const std::vector<ReferenceForRatioCalculation>& references, const novac::WavelengthRange& wavelengthRange, bool isMajor)
 {
     window.fitType = novac::FIT_TYPE::FIT_POLY;
-    window.name = name;
-    window.polyOrder = 3;
     window.ringCalculation = novac::RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING;
     window.includeIntensitySpacePolyominal = true;
 
@@ -47,7 +46,7 @@ void SetupFitWindowReferences(novac::CFitWindow& window, const std::vector<Refer
             window.ref[window.nRef].m_shiftOption = novac::SHIFT_TYPE::SHIFT_FIX;
             window.ref[window.nRef].m_shiftValue = 0.0;
             window.ref[window.nRef].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
-            window.ref[window.nRef].m_squeezeValue = 0.0;
+            window.ref[window.nRef].m_squeezeValue = 1.0;
 
             window.nRef++;
         }
@@ -60,6 +59,35 @@ void SetupFitWindowReferences(novac::CFitWindow& window, const std::vector<Refer
             window.ringCalculation = novac::RING_CALCULATION_OPTION::CALCULATE_RING_X2;
         }
     }
+
+    // Make sure that all the references can be read.
+    if (!novac::ReadReferences(window))
+    {
+        throw std::invalid_argument("failed to read all references");
+    }
+
+    // Use the properties of the first (major) reference for the window
+    window.name = window.ref[0].m_specieName;
+
+    if (window.ref[0].m_data->m_waveLength.size() == 0)
+    {
+        std::stringstream message;
+        message << "failed to set the fit range,the reference " << window.ref[0].m_specieName << " does not have a wavelength calibration";
+        throw std::invalid_argument(message.str());
+    }
+
+    // Setup the channel range where the fit should be done.
+    const double fractionalFitLow = window.ref[0].m_data->FindWavelength(wavelengthRange.low);
+    const double fractionalFitHigh = window.ref[0].m_data->FindWavelength(wavelengthRange.high);
+    if (fractionalFitLow < -0.5 || fractionalFitHigh < -0.5)
+    {
+        std::stringstream message;
+        message << "failed to set the fit range,the reference " << window.ref[0].m_specieName;
+        message << " does not cover the fit range: " << wavelengthRange.low << " to " << wavelengthRange.high << " nm";
+        throw std::invalid_argument(message.str());
+    }
+    window.fitLow = static_cast<int>(std::round(fractionalFitLow));
+    window.fitHigh = static_cast<int>(std::round(fractionalFitHigh));
 }
 
 void RatioCalculationController::VerifyReferenceSetup()
@@ -84,14 +112,18 @@ std::shared_ptr<RatioCalculationFitSetup> RatioCalculationController::SetupFitWi
 
     auto result = std::make_shared<RatioCalculationFitSetup>();
 
+    result->so2Window.polyOrder = m_so2PolynomialOrder;
+    result->broWindow.polyOrder = m_broPolynomialOrder;
+
     // Setup the references in the fit windows. Notice that the order of the references is different since SO2 and BrO should always be first in their respective window.
     SetupFitWindowReferences(
-        result->m_so2Window,
+        result->so2Window,
         m_references,
-        "SO2",
+        m_so2FitRange,
         true);
+
     SetupFitWindowReferences(
-        result->m_broWindow,
+        result->broWindow,
         std::vector<ReferenceForRatioCalculation>{
             m_references[1],
             m_references[0],
@@ -99,10 +131,8 @@ std::shared_ptr<RatioCalculationFitSetup> RatioCalculationController::SetupFitWi
             m_references[3],
             m_references[4],
         },
-        "BrO",
+        m_broFitRange,
         false);
-
-    // TODO: Setup the fit ranges to something reasonable...
 
     return result;
 }
@@ -119,9 +149,13 @@ void RatioCalculationController::EvaluateNextScan()
     // EvaluateScan(scan);
 }
 
-bool RatioCalculationController::EvaluateScan(novac::IScanSpectrumSource& scan, const novac::BasicScanEvaluationResult& initialResult, std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows)
+RatioCalculationResult RatioCalculationController::EvaluateScan(
+    novac::IScanSpectrumSource& scan,
+    const novac::BasicScanEvaluationResult& initialResult,
+    std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows)
 {
-    std::string errorMessage;
+    RatioCalculationResult result;
+    result.filename = scan.GetFileName();
 
     Configuration::CDarkSettings darkSettings; // default dark-settings
 
@@ -131,17 +165,22 @@ bool RatioCalculationController::EvaluateScan(novac::IScanSpectrumSource& scan, 
     const bool plumeIsVisible = novac::CalculatePlumeCompleteness(initialResult, 0, plumeInScanProperties);
     if (!plumeIsVisible)
     {
-        return false;
+        return result;
     }
-
 
     // Setup the ratio evaluation and run it.
     novac::RatioEvaluation ratioEvaluation{ m_ratioEvaluationSettings, darkSettings };
-    ratioEvaluation.SetupFitWindows(ratioFitWindows->m_so2Window, std::vector<novac::CFitWindow>{ ratioFitWindows->m_broWindow });
+    ratioEvaluation.SetupFitWindows(ratioFitWindows->so2Window, std::vector<novac::CFitWindow>{ ratioFitWindows->broWindow });
     ratioEvaluation.SetupFirstResult(initialResult, plumeInScanProperties);
-    const auto ratios = ratioEvaluation.Run(scan, &errorMessage);
+    const auto ratios = ratioEvaluation.Run(scan, &result.debugInfo);
 
-    return true;
+    // Extract the result
+    if (ratios.size() > 0)
+    {
+        result.ratio = ratios.front();
+    }
+
+    return result;
 }
 
 ReferenceForRatioCalculation* GetReferenceFor(RatioCalculationController& controller, StandardDoasSpecie specie) {

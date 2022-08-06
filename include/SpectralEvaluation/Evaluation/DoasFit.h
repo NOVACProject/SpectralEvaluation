@@ -24,6 +24,9 @@ namespace novac
         {}
 
         const char* what() const noexcept override final { return m_msg; }
+
+        // The name of the fit window which failed (optional).
+        std::string m_fitWindowName;
     };
 
     /// <summary>
@@ -181,6 +184,11 @@ namespace novac
         /// This is setup when providing a FitWindow to use.
         /// </summary>
         void* m_referenceSetup = nullptr;
+
+        /// <summary>
+        /// A user given name of this evaluation.
+        /// </summary>
+        std::string m_name;
 
         /// <summary>
         /// Clears the memory used by m_referenceSetup.

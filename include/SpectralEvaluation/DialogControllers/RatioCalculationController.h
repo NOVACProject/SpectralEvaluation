@@ -54,17 +54,28 @@ struct ReferenceForRatioCalculation
     bool CanBeAutomaticallyCalculated() const { return specie == StandardDoasSpecie::RING || specie == StandardDoasSpecie::RING_LAMBDA4; }
 };
 
+// The required input for the ratio calculation.
 struct RatioCalculationFitSetup
 {
     // The evaluation settings for the major species (typically SO2).
     // The first reference here is used for the ratio calculation.
-    // Notice that the list of references here is empty until running (TODO: function name) when they are filled in from m_references.
-    novac::CFitWindow m_so2Window;
+    novac::CFitWindow so2Window;
 
     // The evaluation settings for the minor species (typically BrO)
     // The first reference here is used for the ratio calculation.
-    // Notice that the list of references here is empty until running (TODO: function name) when they are filled in from m_references.
-    novac::CFitWindow m_broWindow;
+    novac::CFitWindow broWindow;
+};
+
+// The result of the ratio calculation, including debug information
+struct RatioCalculationResult
+{
+    // The final output
+    novac::Ratio ratio;
+
+    std::string filename;
+
+    // Detailed information the evaluation
+    novac::RatioEvaluationDebugInformation debugInfo;
 };
 
 class RatioCalculationController
@@ -96,7 +107,8 @@ public:
     // Settings for how to select the in-plume and out-of-plume spectra.
     novac::RatioEvaluationSettings m_ratioEvaluationSettings;
 
-    // Sets up m_so2Window and m_broWindow using m_references, m_so2FitRange and m_broFitRange
+    // Sets up the SO2 and BrO fit windows using m_references, m_so2FitRange and m_broFitRange
+    // @throws std::invalid_argument if the setup is incorrect
     std::shared_ptr<RatioCalculationFitSetup> SetupFitWindows();
 
     // Performs the evaluation of the next scan (in the list m_pakFiles)
@@ -105,8 +117,8 @@ public:
 
     // Performs the evaluation of the given scan.
     // This require that SetupFitWindows() has been called since it will use the contents of the fit windows.
-    // @return true if the evaluation succeeded.
-    bool EvaluateScan(novac::IScanSpectrumSource& scan, const novac::BasicScanEvaluationResult& initialResult, std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows);
+    // @return a vector containing the calculated ratio if the evaluation succeeded.
+    RatioCalculationResult EvaluateScan(novac::IScanSpectrumSource& scan, const novac::BasicScanEvaluationResult& initialResult, std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows);
 
 private:
 

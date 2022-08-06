@@ -48,14 +48,11 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
     sut.SetupFirstResult(evaluationFileHandler.m_scan[0], plumeInScanProperties);
     sut.SetupFitWindows(so2FitWindow, std::vector<CFitWindow>{ broFitWindow});
 
-    std::string errorMessage;
-
     // Act
-    const auto result = sut.Run(fileHandler, &errorMessage);
+    const auto result = sut.Run(fileHandler);
 
     // Assert
     REQUIRE(result.size() == 1);
-    REQUIRE(errorMessage.empty());
 
     // Verify that the result is indeed correct!
     REQUIRE(result.front().minorSpecieName == "BrO");
