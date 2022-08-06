@@ -199,15 +199,24 @@ novac::BasicScanEvaluationResult RatioCalculationController::DoInitialEvaluation
     return result;
 }
 
-RatioCalculationResult RatioCalculationController::EvaluateNextScan(std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows)
+bool RatioCalculationController::HasMoreScansToEvaluate() const
 {
     if (m_pakfiles.size() == 0 || (size_t)m_currentPakFileIdx >= m_pakfiles.size())
+    {
+        return false;
+    }
+    return true;
+}
+
+RatioCalculationResult RatioCalculationController::EvaluateNextScan(std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows)
+{
+    if (!HasMoreScansToEvaluate())
     {
         RatioCalculationResult result;
         return result;
     }
 
-    const auto pakFileName = m_pakfiles[m_currentPakFileIdx];
+    const auto pakFileName = m_pakfiles[m_currentPakFileIdx++];
     novac::CScanFileHandler scan;
     scan.CheckScanFile(pakFileName);
 
@@ -225,6 +234,7 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
 {
     RatioCalculationResult result;
     result.filename = scan.GetFileName();
+    result.initialEvaluation = initialResult;
 
     Configuration::CDarkSettings darkSettings; // default dark-settings
 
@@ -232,6 +242,7 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
     novac::CPlumeInScanProperty plumeInScanProperties;
     novac::CalculatePlumeOffset(initialResult, 0, plumeInScanProperties);
     const bool plumeIsVisible = novac::CalculatePlumeCompleteness(initialResult, 0, plumeInScanProperties);
+    result.plumeInScanProperties = plumeInScanProperties;
     if (!plumeIsVisible)
     {
         return result;
@@ -248,6 +259,9 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
     {
         result.ratio = ratios.front();
     }
+
+    // Update the last result as well.
+    m_lastResult = result;
 
     return result;
 }

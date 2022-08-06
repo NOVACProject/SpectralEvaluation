@@ -74,6 +74,12 @@ struct RatioCalculationResult
 
     std::string filename;
 
+    // The initial evaluation, faster evaluations on each spectrum in the scan.
+    novac::BasicScanEvaluationResult initialEvaluation;
+
+    // The calculated properties of the plume (from initialEvaluation). Includes completeness and offset.
+    novac::CPlumeInScanProperty plumeInScanProperties;
+
     // Detailed information the evaluation
     novac::RatioEvaluationDebugInformation debugInfo;
 };
@@ -113,11 +119,18 @@ public:
     // Settings for how to select the in-plume and out-of-plume spectra.
     novac::RatioEvaluationSettings m_ratioEvaluationSettings;
 
+    // The last result, as calculated by EvaluateNextScan or EvaluateScan.
+    RatioCalculationResult m_lastResult;
+
     // Sets up the SO2 and BrO fit windows using m_references, m_so2FitRange and m_broFitRange
     // @throws std::invalid_argument if the setup is incorrect
     std::shared_ptr<RatioCalculationFitSetup> SetupFitWindows();
 
+    // @return true if there are more scans available to evaluate in the list of .pak-files.
+    bool HasMoreScansToEvaluate() const;
+
     // Performs the evaluation of the next scan (in the list m_pakFiles)
+    // If a prior call to HasMoreScansToEvaluate() would return false, then this will return an empty result.
     // This require that SetupFitWindows() has been called since it will use the contents of the fit windows.
     RatioCalculationResult EvaluateNextScan(std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows);
 
