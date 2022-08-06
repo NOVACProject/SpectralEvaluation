@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Definitions.h"
 #include <vector>
 #include <string>
+#include <SpectralEvaluation/Definitions.h>
 
 namespace novac
 {

@@ -59,6 +59,11 @@ namespace novac
             @return the number of spectra read (1 if successful, otherwise 0).*/
         int GetNextSpectrum(CSpectrum& spec);
 
+        virtual int GetNextMeasuredSpectrum(CSpectrum& spec) override
+        {
+            return 1 - GetNextSpectrum(spec);
+        }
+
         /** Returns the desired spectrum in the scan.
             If any file-error occurs the parameter 'm_lastError' will be set.
             @param spec - will on successful return be filled with the newly read spectrum.

@@ -1,5 +1,6 @@
 ﻿#include <SpectralEvaluation/DialogControllers/RatioCalculationController.h>
 #include <SpectralEvaluation/File/ScanFileHandler.h>
+#include <SpectralEvaluation/Evaluation/DoasFitPreparation.h>
 #include <SpectralEvaluation/Evaluation/RatioEvaluation.h>
 #include <SpectralEvaluation/Configuration/DarkSettings.h>
 
@@ -154,6 +155,49 @@ std::shared_ptr<RatioCalculationFitSetup> RatioCalculationController::SetupFitWi
     return result;
 }
 
+novac::BasicScanEvaluationResult RatioCalculationController::DoInitialEvaluation(novac::IScanSpectrumSource& scan, std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows)
+{
+    novac::BasicScanEvaluationResult result;
+
+    // For each spectrum in the scan, do a DOAS evaluation
+    novac::CSpectrum measuredSkySpectrum;
+    if (0 != scan.GetSky(measuredSkySpectrum))
+    {
+        throw std::invalid_argument("cannot perform an evaluation on: '" + scan.GetFileName() + "' no sky spectrum found.");
+    }
+
+    novac::CSpectrum measuredDarkSpectrum;
+    if (0 != scan.GetDark(measuredDarkSpectrum))
+    {
+        throw std::invalid_argument("cannot perform an evaluation on: '" + scan.GetFileName() + "' no dark spectrum found.");
+    }
+    measuredSkySpectrum.Sub(measuredDarkSpectrum);
+
+    const auto filteredSkySpectrum = novac::DoasFitPreparation::PrepareSkySpectrum(measuredSkySpectrum, novac::FIT_TYPE::FIT_POLY);
+
+    novac::CFitWindow localCopyOfWindow = ratioFitWindows->so2Window;
+    (void)AddAsSky(localCopyOfWindow, filteredSkySpectrum, novac::SHIFT_TYPE::SHIFT_FREE);
+
+    novac::DoasFit doas;
+    doas.Setup(localCopyOfWindow);
+
+    // TODO: This could be the basis for a (future) scan evaluation class based on the new DoasFit class...
+    scan.ResetCounter();
+    novac::CSpectrum measuredSpectrum;
+    while (0 == scan.GetNextMeasuredSpectrum(measuredSpectrum))
+    {
+        measuredSpectrum.Sub(measuredDarkSpectrum);
+        const auto filteredMeasuredSpectrum = novac::DoasFitPreparation::PrepareMeasuredSpectrum(measuredSpectrum, measuredSkySpectrum, novac::FIT_TYPE::FIT_POLY);
+
+        novac::DoasResult doasResult;
+        doas.Run(filteredMeasuredSpectrum.data(), filteredMeasuredSpectrum.size(), doasResult);
+
+        novac::CEvaluationResult evaluationResult = doasResult;
+        result.AppendResult(evaluationResult, measuredSpectrum.m_info);
+    }
+
+    return result;
+}
 
 RatioCalculationResult RatioCalculationController::EvaluateNextScan(std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows)
 {
@@ -167,10 +211,8 @@ RatioCalculationResult RatioCalculationController::EvaluateNextScan(std::shared_
     novac::CScanFileHandler scan;
     scan.CheckScanFile(pakFileName);
 
-    // TODO: Do a first evaluation, such that we have an initial result.
-    novac::BasicScanEvaluationResult initialResult;
+    const auto initialResult = DoInitialEvaluation(scan, ratioFitWindows);
 
-    // Now run the ratio evaluation
     auto result = EvaluateScan(scan, initialResult, ratioFitWindows);
 
     return result;

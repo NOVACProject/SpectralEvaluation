@@ -121,6 +121,11 @@ public:
     // This require that SetupFitWindows() has been called since it will use the contents of the fit windows.
     RatioCalculationResult EvaluateNextScan(std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows);
 
+    // Performs the initial evaluation (typically of SO2) for the provided scan.
+    // Produces an initial result, when can then be used to see if the scan is suitable for ratio calculations, and if so to select in-plume and out-of-plume spectra.
+    // @throws std::invalid_argument if the setup is such that the scan cannot be evaluated.
+    novac::BasicScanEvaluationResult DoInitialEvaluation(novac::IScanSpectrumSource& scan, std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows);
+
     // Performs the evaluation of the given scan.
     // This require that SetupFitWindows() has been called since it will use the contents of the fit windows.
     // @return a vector containing the calculated ratio if the evaluation succeeded.

@@ -94,6 +94,26 @@ namespace novac
         }
     }
 
+    TEST_CASE("ScanFileHandler GetSpectrum", "[ScanFileHandler][IntegrationTests]")
+    {
+        CScanFileHandler sut;
+        std::string file = TestData::GetMeasuredSpectrumName_I2J8549();
+        sut.CheckScanFile(file);
+
+        SECTION("Reads all spectra in the file (INCLUDING sky and dark) one at a time")
+        {
+            CSpectrum spec;
+            int counter = 0;
+            while (0 != sut.GetSpectrum(spec, counter))
+            {
+                ++counter;
+                REQUIRE(spec.ScanIndex() >= 0);
+            }
+
+            REQUIRE(counter == 53);
+        }
+    }
+
     TEST_CASE("ScanFileHandler GetNextSpectrum", "[ScanFileHandler][IntegrationTests]")
     {
         CScanFileHandler sut;
@@ -111,6 +131,28 @@ namespace novac
             }
 
             REQUIRE(counter == 51);
+        }
+
+        SECTION("ResetCounter makes it possible to read all spectra again")
+        {
+            CSpectrum spec;
+            int firstCounter = 0;
+            while (0 != sut.GetNextSpectrum(spec))
+            {
+                ++firstCounter;
+            }
+
+            // Act
+            sut.ResetCounter();
+
+            // Assert by verifying that we can read the same number of spectra as above.
+            int secondCounter = 0;
+            while (0 != sut.GetNextSpectrum(spec))
+            {
+                ++secondCounter;
+            }
+
+            REQUIRE(firstCounter == secondCounter);
         }
     }
 }

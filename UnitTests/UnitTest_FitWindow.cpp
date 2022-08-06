@@ -1,5 +1,6 @@
 #include "catch.hpp"
 #include <SpectralEvaluation/Evaluation/FitWindow.h>
+#include <SpectralEvaluation/VectorUtils.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 
 using namespace novac;
@@ -41,7 +42,7 @@ TEST_CASE("FitWindow - Copy constructor", "[CFitWindow]")
         ref1.m_specieName = "SO2";
         ref1.m_path = "C:/Novac/So2.txt";
         ref1.m_data.reset(CreateCrossSection(1));
-        
+
         CReferenceFile ref2;
         ref2.m_specieName = "O3";
         ref2.m_path = "C:/Novac/O3.txt";
@@ -51,11 +52,79 @@ TEST_CASE("FitWindow - Copy constructor", "[CFitWindow]")
         original.ref[1] = ref2;
         original.nRef = 2;
 
-        CFitWindow copy{original};
+        CFitWindow copy{ original };
 
         REQUIRE(copy.nRef == 2);
         REQUIRE(copy.ref[0].m_data != nullptr);
         REQUIRE(copy.ref[1].m_data != nullptr);
     }
 
+}
+
+TEST_CASE("FitWindow - AddAsReference", "[CFitWindow]")
+{
+    CFitWindow window;
+    REQUIRE(window.nRef == 0);
+    REQUIRE(window.ref[0].m_specieName.empty());
+    std::vector<double> referenceData = GenerateVector(0.0, 1.0, window.specLength);
+    const std::string referenceName = "ReferenceName";
+
+    // Act
+    AddAsReference(window, referenceData, referenceName);
+
+    // Assert
+    REQUIRE(window.nRef == 1);
+    REQUIRE(window.ref[0].m_specieName == referenceName);
+    REQUIRE((size_t)window.ref[0].m_data->GetSize() == referenceData.size());
+    REQUIRE(window.ref[0].m_data->m_crossSection[10] == referenceData[10]);
+
+    REQUIRE(window.ref[0].m_columnOption == SHIFT_TYPE::SHIFT_FREE);
+    REQUIRE(window.ref[0].m_shiftOption == SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(window.ref[0].m_shiftValue == 0.0);
+    REQUIRE(window.ref[0].m_squeezeOption == SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(window.ref[0].m_squeezeValue == 1.0);
+}
+
+TEST_CASE("FitWindow - AddAsSky", "[CFitWindow]")
+{
+    CFitWindow window;
+    REQUIRE(window.nRef == 0);
+    REQUIRE(window.ref[0].m_specieName.empty());
+    std::vector<double> referenceData = GenerateVector(0.0, 1.0, window.specLength);
+
+    // Act
+    AddAsSky(window, referenceData);
+
+    // Assert
+    REQUIRE(window.nRef == 1);
+    REQUIRE(window.ref[0].m_specieName == "sky");
+    REQUIRE((size_t)window.ref[0].m_data->GetSize() == referenceData.size());
+    REQUIRE(window.ref[0].m_data->m_crossSection[10] == referenceData[10]);
+
+    REQUIRE(window.ref[0].m_columnOption == SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(window.ref[0].m_columnValue == -1.0);
+    REQUIRE(window.ref[0].m_shiftOption == SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(window.ref[0].m_squeezeOption == SHIFT_TYPE::SHIFT_FIX);
+}
+
+TEST_CASE("FitWindow - AddAsSky - shift free", "[CFitWindow]")
+{
+    CFitWindow window;
+    REQUIRE(window.nRef == 0);
+    REQUIRE(window.ref[0].m_specieName.empty());
+    std::vector<double> referenceData = GenerateVector(0.0, 1.0, window.specLength);
+
+    // Act
+    AddAsSky(window, referenceData, SHIFT_TYPE::SHIFT_FREE);
+
+    // Assert
+    REQUIRE(window.nRef == 1);
+    REQUIRE(window.ref[0].m_specieName == "sky");
+    REQUIRE((size_t)window.ref[0].m_data->GetSize() == referenceData.size());
+    REQUIRE(window.ref[0].m_data->m_crossSection[10] == referenceData[10]);
+
+    REQUIRE(window.ref[0].m_columnOption == SHIFT_TYPE::SHIFT_FIX);
+    REQUIRE(window.ref[0].m_columnValue == -1.0);
+    REQUIRE(window.ref[0].m_shiftOption == SHIFT_TYPE::SHIFT_FREE);
+    REQUIRE(window.ref[0].m_squeezeOption == SHIFT_TYPE::SHIFT_FIX);
 }

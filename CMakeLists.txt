@@ -116,7 +116,7 @@ add_subdirectory(UnitTests)
 
 IF(MSVC)
     target_compile_definitions(NovacSpectralEvaluation PRIVATE -D_CRT_SECURE_NO_WARNINGS)
-    target_compile_options(NovacSpectralEvaluation PRIVATE /W4 /WX /sdl)
+    target_compile_options(NovacSpectralEvaluation PRIVATE /W4 /WX /sdl /MP)
 ELSE()
     target_compile_options(NovacSpectralEvaluation PRIVATE -Wall -std=c++14 -fopenmp)
 ENDIF()

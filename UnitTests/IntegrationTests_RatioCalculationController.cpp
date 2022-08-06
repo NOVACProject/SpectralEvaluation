@@ -133,7 +133,6 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 and BrO included i
     REQUIRE(result->broWindow.ringCalculation == novac::RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING);
 }
 
-
 TEST_CASE("RatioCalculationController - SetupFitWindows - Sets up fitLow and fitHigh from SO2 and BrO references", "[RatioCalculationController]")
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
@@ -594,4 +593,60 @@ TEST_CASE("RatioCalculationController - Evaluate without offset polynomial", "[R
     REQUIRE(result.debugInfo.doasResults[1].referenceResult[3].name == "ring");
     REQUIRE(result.debugInfo.doasResults[1].fitLow == fitWindowsetup->broWindow.fitLow);
     REQUIRE(result.debugInfo.doasResults[1].fitHigh == fitWindowsetup->broWindow.fitHigh);
+}
+
+TEST_CASE("RatioCalculationController - DoInitialEvaluation", "[RatioCalculationController]")
+{
+    const auto testWindows = GetSetupOfFitWindowsForTest();
+
+    RatioCalculationController sut;
+    REQUIRE(sut.m_references.size() == 5); // check assumption here.
+
+    // Setup the references for a good fit
+    ReferenceForRatioCalculation* so2Reference = GetReferenceFor(sut, StandardDoasSpecie::SO2);
+    so2Reference->m_path = testWindows.so2Window.ref[0].m_path;
+    so2Reference->m_includeInMajor = true;
+    so2Reference->m_includeInMinor = false;
+    ReferenceForRatioCalculation* o3Reference = GetReferenceFor(sut, StandardDoasSpecie::O3);
+    o3Reference->m_path = testWindows.so2Window.ref[1].m_path;
+    o3Reference->m_includeInMajor = true;
+    o3Reference->m_includeInMinor = true;
+    ReferenceForRatioCalculation* broReference = GetReferenceFor(sut, StandardDoasSpecie::BRO);
+    broReference->m_path = testWindows.broWindow.ref[0].m_path;
+    broReference->m_includeInMajor = false;
+    broReference->m_includeInMinor = true;
+    ReferenceForRatioCalculation* ringReference = GetReferenceFor(sut, StandardDoasSpecie::RING);
+    ringReference->m_automaticallyCalculate = true;
+    ringReference->m_includeInMajor = true;
+    ringReference->m_includeInMinor = true;
+    ReferenceForRatioCalculation* ringReference2 = GetReferenceFor(sut, StandardDoasSpecie::RING_LAMBDA4);
+    ringReference2->m_automaticallyCalculate = true;
+    ringReference2->m_includeInMajor = true;
+    ringReference2->m_includeInMinor = true;
+
+    // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
+    novac::CScanFileHandler fileHandler;
+    const bool scanFileIsOk = fileHandler.CheckScanFile(TestData::GetBrORatioScanFile1());
+    REQUIRE(scanFileIsOk); // check assumption on the setup
+
+    novac::CScanEvaluationLogFileHandler evaluationFileHandler;
+    const bool evaluationFileIsOk = evaluationFileHandler.ReadEvaluationLog(TestData::GetBrORatioEvaluationFile1());
+    REQUIRE(evaluationFileIsOk); // check assumption on the setup
+    REQUIRE(evaluationFileHandler.m_scan.size() == 1); // check assumption on the setup
+
+    // setup the fit windows
+    auto fitWindowsetup = sut.SetupFitWindows();
+
+    // Act
+    const auto result = sut.DoInitialEvaluation(fileHandler, fitWindowsetup);
+
+    // Assert
+    REQUIRE(result.m_spec.size() == evaluationFileHandler.m_scan[0].m_spec.size());
+    for (size_t idx = 0; idx < evaluationFileHandler.m_scan[0].m_spec.size(); ++idx)
+    {
+        // With the above setup, the DOAS fit should be better than the original and hence should the chi2 be smaller.
+        REQUIRE(result.m_spec[idx].m_chiSquare < evaluationFileHandler.m_scan[0].m_spec[idx].m_chiSquare);
+
+        REQUIRE(result.m_spec[idx].m_referenceResult.size() == 3);
+    }
 }

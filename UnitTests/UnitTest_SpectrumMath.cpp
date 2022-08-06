@@ -8,6 +8,7 @@ class MockSpectrumSource : public novac::IScanSpectrumSource
 {
 public:
     std::vector<novac::CSpectrum> m_spectra;
+    int m_internalSpectrumCounter = 0;
 
     virtual int GetSpectrum(int specNumber, novac::CSpectrum& spec) override
     {
@@ -17,6 +18,26 @@ public:
             return 0;
         }
 
+        return 1;
+    }
+
+    virtual int GetSpectrumNumInFile() const override
+    {
+        return static_cast<int>(m_spectra.size());
+    }
+
+    virtual void ResetCounter() override
+    {
+        m_internalSpectrumCounter = 0;
+    }
+
+    virtual int GetNextMeasuredSpectrum(novac::CSpectrum& spec) override
+    {
+        if ((size_t)m_internalSpectrumCounter < m_spectra.size())
+        {
+            spec = m_spectra[m_internalSpectrumCounter++];
+            return 0;
+        }
         return 1;
     }
 

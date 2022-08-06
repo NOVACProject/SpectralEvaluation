@@ -11,7 +11,6 @@
 
 namespace novac
 {
-    class BasicScanEvaluationResult;
     class IScanSpectrumSource;
 
     // TODO: Move to Configuration

@@ -45,23 +45,6 @@ namespace novac
         return true; // TODO: Add more checks...
     }
 
-    int AddAsSky(const std::vector<double>& referenceData, CFitWindow& window, SHIFT_TYPE shiftOption = SHIFT_TYPE::SHIFT_FIX)
-    {
-        int indexOfSkySpectrum = window.nRef;
-
-        window.ref[window.nRef].m_data = std::make_unique<novac::CCrossSectionData>(referenceData);
-        window.ref[window.nRef].m_specieName = "sky";
-        window.ref[window.nRef].m_columnOption = novac::SHIFT_TYPE::SHIFT_FIX;
-        window.ref[window.nRef].m_columnValue = -1.0;
-        window.ref[window.nRef].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
-        window.ref[window.nRef].m_squeezeValue = 1.0;
-        window.ref[window.nRef].m_shiftOption = shiftOption;
-        window.ref[window.nRef].m_shiftValue = 0.0;
-        window.nRef += 1;
-
-        return indexOfSkySpectrum;
-    }
-
     void RatioEvaluation::DarkCorrectSpectrum(IScanSpectrumSource& scan, CSpectrum& spectrum) const
     {
         std::string errorMessage;
@@ -77,38 +60,15 @@ namespace novac
         spectrum.Sub(*correspondingDarkSpectrum);
     }
 
-    void AddAsReference(const std::vector<double>& referenceData, CFitWindow& window, const std::string& name, int linkShiftToIdx = -1)
-    {
-        window.ref[window.nRef].m_data = std::make_unique<novac::CCrossSectionData>(referenceData);
-        window.ref[window.nRef].m_specieName = name;
-        window.ref[window.nRef].m_columnOption = novac::SHIFT_TYPE::SHIFT_FREE;
-        window.ref[window.nRef].m_columnValue = 1.0;
-        window.ref[window.nRef].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
-        window.ref[window.nRef].m_squeezeValue = 1.0;
-
-        if (linkShiftToIdx >= 0)
-        {
-            window.ref[window.nRef].m_shiftOption = SHIFT_TYPE::SHIFT_LINK;
-            window.ref[window.nRef].m_shiftValue = linkShiftToIdx;
-        }
-        else
-        {
-            window.ref[window.nRef].m_shiftOption = SHIFT_TYPE::SHIFT_FIX;
-            window.ref[window.nRef].m_shiftValue = 0.0;
-        }
-
-        window.nRef += 1;
-    }
-
     void AddRingSpectraAsReferences(CFitWindow& localSO2FitWindow, const std::vector<double>& ringSpectrum, const std::vector<double>& ringLambda4Spectrum, int skySpectrumIdx)
     {
         if (localSO2FitWindow.ringCalculation != RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING)
         {
-            AddAsReference(ringSpectrum, localSO2FitWindow, "ring", skySpectrumIdx);
+            AddAsReference(localSO2FitWindow, ringSpectrum, "ring", skySpectrumIdx);
 
             if (localSO2FitWindow.ringCalculation == RING_CALCULATION_OPTION::CALCULATE_RING_X2)
             {
-                AddAsReference(ringLambda4Spectrum, localSO2FitWindow, "ringLambda4", skySpectrumIdx);
+                AddAsReference(localSO2FitWindow, ringLambda4Spectrum, "ringLambda4", skySpectrumIdx);
             }
         }
     }
@@ -166,13 +126,13 @@ namespace novac
     {
         CFitWindow localCopyOfWindow = window;
 
-        const int skySpectrumIdx = AddAsSky(spectra.filteredOutOfPlumespectrum, localCopyOfWindow, SHIFT_TYPE::SHIFT_FREE);
+        const int skySpectrumIdx = AddAsSky(localCopyOfWindow, spectra.filteredOutOfPlumespectrum, SHIFT_TYPE::SHIFT_FREE);
 
         AddRingSpectraAsReferences(localCopyOfWindow, spectra.ringSpectrum, spectra.ringLambda4Spectrum, skySpectrumIdx);
 
         if (localCopyOfWindow.includeIntensitySpacePolyominal)
         {
-            AddAsReference(spectra.intensityOffsetSpectrum, localCopyOfWindow, "offset", skySpectrumIdx);
+            AddAsReference(localCopyOfWindow, spectra.intensityOffsetSpectrum, "offset", skySpectrumIdx);
         }
 
         DoasFit doas;

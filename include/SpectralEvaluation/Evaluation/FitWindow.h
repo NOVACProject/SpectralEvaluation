@@ -41,7 +41,7 @@ namespace novac
         int fitHigh = 460;
 
         /** The channel of the spectrometer for which this fit window is valid.
-            Almost all spectrometers have only one channel however the Ocean Optics SD2000 may have 
+            Almost all spectrometers have only one channel however the Ocean Optics SD2000 may have
             up to eight channels inside one casing. Each such channel is a separate spectrometer, with different
             optical properties, however they all share the same serial number and are therefore handled as one device.
             For a normal spectrometer this is equal to 0
@@ -143,5 +143,16 @@ namespace novac
         It is here assumed that any reference which is NOT filtered is in the unit of Molecules/cm2
         and any reference which IS filtered is in the unit of PPMM. The reference will be scaled accordingly. */
     void ScaleReferencesToMolecCm2(CFitWindow& window);
+
+    /** Adds the provided vector of data as a reference to the current window. No processing of the reference data will be done.
+        The reference will be added as free column, fixed squeeze and shift either fixed (if linkShiftToIdx is -1) or as linked to the reference with the provided idx.
+        This will increase the number of references included in the window by one. */
+    void AddAsReference(CFitWindow& window, const std::vector<double>& referenceData, const std::string& name, int linkShiftToIdx = -1);
+
+    /* Adds the provided vector of data as a 'sky' spectrum to the current window. No processing of the reference data will be done.
+        The reference will be added as column fixed to -1, squeeze fixed to one and the shift according to the provided shift option.
+        This will increase the number of references inlcuded in the window by one.
+        @return the index of the newly inserted reference. */
+    int AddAsSky(CFitWindow& window, const std::vector<double>& referenceData, SHIFT_TYPE shiftOption = SHIFT_TYPE::SHIFT_FIX);
 
 }

@@ -32,6 +32,7 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_CVector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_DateTime.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Evaluation.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_EvaluationResult.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Fft.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitExtensions.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitWindow.cpp
@@ -56,7 +57,7 @@ target_link_libraries(SpectralEvaluationTests PRIVATE NovacSpectralEvaluation)
 
 IF(MSVC)
     target_compile_definitions(SpectralEvaluationTests PRIVATE -D_CRT_SECURE_NO_WARNINGS)
-    target_compile_options(SpectralEvaluationTests PRIVATE /W4 /WX /sdl)
+    target_compile_options(SpectralEvaluationTests PRIVATE /W4 /WX /sdl /MP)
 ELSE()
     target_compile_options(SpectralEvaluationTests PRIVATE -Wall -std=c++14)
 ENDIF()

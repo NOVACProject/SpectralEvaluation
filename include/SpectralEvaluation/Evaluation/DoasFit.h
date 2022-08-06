@@ -72,7 +72,7 @@ namespace novac
         std::vector<double> measuredSpectrum;
 
         /// <summary>
-        /// The valeus of the fitted polynomial.
+        /// The values of the fitted polynomial.
         /// Length equals the length of the fit region used.
         /// </summary>
         std::vector<double> polynomialValues;

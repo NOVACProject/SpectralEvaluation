@@ -10,11 +10,21 @@ namespace novac
     class IScanSpectrumSource
     {
     public:
-        /** Returns the desired spectrum in the scan.
-            @param specNumber - The zero-based index into the scan-file.
-            @param spec - will on successful return be filled with the requested spectrum in the scan.
+        /** Returns the desired spectrum in the scan. Notice the first spectra may be 'sky' or 'dark'.
+            @param specNumber The zero-based index into the scan-file (including sky and dark).
+            @param spec will on successful return be filled with the requested spectrum in the scan.
             @return zero if successful. */
         virtual int GetSpectrum(int specNumber, CSpectrum& spec) = 0;
+
+        /** Retrieves the total number of spectra in the file (including sky and dark) */
+        virtual int GetSpectrumNumInFile() const = 0;
+
+        /** Resets the counter associated with 'GetNextSpectrum' */
+        virtual void ResetCounter() = 0;
+
+        /** Retrieves the next measured spectrum in the scan, ignoring special spectra such as sky and dark.
+            @return zero on success. */
+        virtual int GetNextMeasuredSpectrum(CSpectrum& spec) = 0;
 
         /** Retrieves the measured sky spectrum in the scan and copies it to 'result'.
             @return zero if there is a sky spectum. */
