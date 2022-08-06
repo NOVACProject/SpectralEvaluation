@@ -72,19 +72,19 @@ namespace novac
 
         /** Gets the dark spectrum of the scan
             @return 0 if there is a dark spectrum, else non-zero */
-        virtual int GetDark(CSpectrum& spec) override;
+        virtual int GetDark(CSpectrum& spec) const override;
 
         /** Gets the sky spectrum of the scan
             @return 0 if there is a sky spectrum, else non-zero */
-        virtual int GetSky(CSpectrum& spec) override;
+        virtual int GetSky(CSpectrum& spec) const override;
 
         /** Gets the offset spectrum of the scan - if any
             @return 0 if there is an offset spectrum, else non-zero */
-        virtual int GetOffset(CSpectrum& spec) override;
+        virtual int GetOffset(CSpectrum& spec) const override;
 
         /** Gets the dark-current spectrum of the scan - if any
             @return 0 if there is a dark-current spectrum, else non-zero */
-        virtual int GetDarkCurrent(CSpectrum& spec) override;
+        virtual int GetDarkCurrent(CSpectrum& spec) const override;
 
         /** Returns the interlace steps for the spectra in this scan-file.
                  @return the interlace steps for the spectra in this scan.

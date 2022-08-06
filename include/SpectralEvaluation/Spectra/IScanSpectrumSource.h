@@ -18,19 +18,19 @@ namespace novac
 
         /** Retrieves the measured sky spectrum in the scan and copies it to 'result'.
             @return zero if there is a sky spectum. */
-        virtual int GetSky(CSpectrum& spec) = 0;
+        virtual int GetSky(CSpectrum& spec) const = 0;
 
         /** Retrieves the measured dark spectrum in the scan and copies it to 'result'.
             @return zero if there is a dark spectum. */
-        virtual int GetDark(CSpectrum& result) = 0;
+        virtual int GetDark(CSpectrum& result) const = 0;
 
         /** Gets the measured offset spectrum of the scan and copies it to 'result'.
             @return zero if there is an offset spectrum. */
-        virtual int GetOffset(CSpectrum& spec) = 0;
+        virtual int GetOffset(CSpectrum& spec) const = 0;
 
         /** Gets the measured dark-current spectrum of the scan and copies it to 'result'.
             @return zero if there is a dark-current spectrum. */
-        virtual int GetDarkCurrent(CSpectrum& spec) = 0;
+        virtual int GetDarkCurrent(CSpectrum& spec) const = 0;
 
         /** @return the name of the file which contains this scan, if any. */
         virtual std::string GetFileName() const = 0;

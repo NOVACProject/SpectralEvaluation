@@ -20,19 +20,19 @@ public:
         return 1;
     }
 
-    virtual int GetSky(novac::CSpectrum& /*spec*/) override {
+    virtual int GetSky(novac::CSpectrum& /*spec*/) const override {
         return 1; // TODO: Implement
     };
 
-    virtual int GetDark(novac::CSpectrum& /*result*/) override {
+    virtual int GetDark(novac::CSpectrum& /*result*/) const override {
         return 1; // TODO: Implement
     };
 
-    virtual int GetOffset(novac::CSpectrum& /*spec*/) override {
+    virtual int GetOffset(novac::CSpectrum& /*spec*/) const override {
         return 1; // TODO: Implement
     };
 
-    virtual int GetDarkCurrent(novac::CSpectrum& /*spec*/) override {
+    virtual int GetDarkCurrent(novac::CSpectrum& /*spec*/) const override {
         return 1; // TODO: Implement
     };
 

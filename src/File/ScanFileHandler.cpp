@@ -231,7 +231,7 @@ namespace novac
         return 1;
     }
 
-    int CScanFileHandler::GetDark(CSpectrum& spec) {
+    int CScanFileHandler::GetDark(CSpectrum& spec) const {
         spec = m_dark;
 
         if (m_fHasDark)
@@ -240,7 +240,7 @@ namespace novac
             return 1;
     }
 
-    int CScanFileHandler::GetSky(CSpectrum& spec) {
+    int CScanFileHandler::GetSky(CSpectrum& spec) const {
         spec = m_sky;
 
         if (m_fHasSky)
@@ -249,7 +249,7 @@ namespace novac
             return 1;
     }
 
-    int CScanFileHandler::GetOffset(CSpectrum& spec) {
+    int CScanFileHandler::GetOffset(CSpectrum& spec) const {
         spec = m_offset;
 
         if (m_fHasOffset)
@@ -258,8 +258,7 @@ namespace novac
             return 1;
     }
 
-    /** Gets the dark-current spectrum of the scan - if any */
-    int CScanFileHandler::GetDarkCurrent(CSpectrum& spec) {
+    int CScanFileHandler::GetDarkCurrent(CSpectrum& spec) const {
         spec = m_darkCurrent;
 
         if (m_fHasDarkCurrent)
