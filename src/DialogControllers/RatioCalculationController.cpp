@@ -24,6 +24,23 @@ void RatioCalculationController::InitializeToDefault()
     m_references.push_back(ReferenceForRatioCalculation(StandardDoasSpecie::RING_LAMBDA4, "Ringxlambda^4", "", true, true, true));
 }
 
+void RatioCalculationController::SetupPakFileList(const std::vector<std::string>& pakFiles)
+{
+    m_pakfiles = pakFiles;
+    m_currentPakFileIdx = 0;
+}
+
+std::vector<std::string> RatioCalculationController::ListPakFiles() const
+{
+    return m_pakfiles;
+}
+
+size_t RatioCalculationController::NumberOfPakFilesInSetup() const
+{
+    return m_pakfiles.size();
+}
+
+
 void SetupFitWindowReferences(novac::CFitWindow& window, const std::vector<ReferenceForRatioCalculation>& references, const novac::WavelengthRange& wavelengthRange, bool isMajor)
 {
     window.fitType = novac::FIT_TYPE::FIT_POLY;
@@ -137,16 +154,26 @@ std::shared_ptr<RatioCalculationFitSetup> RatioCalculationController::SetupFitWi
     return result;
 }
 
-void RatioCalculationController::EvaluateNextScan()
+
+RatioCalculationResult RatioCalculationController::EvaluateNextScan(std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows)
 {
-    const auto pakFileName = m_pakfiles[0];
+    if (m_pakfiles.size() == 0 || (size_t)m_currentPakFileIdx >= m_pakfiles.size())
+    {
+        RatioCalculationResult result;
+        return result;
+    }
+
+    const auto pakFileName = m_pakfiles[m_currentPakFileIdx];
     novac::CScanFileHandler scan;
     scan.CheckScanFile(pakFileName);
 
-    // Do a first evaluation such that we know if there are spectra to evaluate...
+    // TODO: Do a first evaluation, such that we have an initial result.
+    novac::BasicScanEvaluationResult initialResult;
 
     // Now run the ratio evaluation
-    // EvaluateScan(scan);
+    auto result = EvaluateScan(scan, initialResult, ratioFitWindows);
+
+    return result;
 }
 
 RatioCalculationResult RatioCalculationController::EvaluateScan(

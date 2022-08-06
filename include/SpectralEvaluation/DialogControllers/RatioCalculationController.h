@@ -86,8 +86,14 @@ public:
     // Sets up all the values, and the fit windows, to their default values
     void InitializeToDefault();
 
-    // The list of .pak files to calculate a ratio for
-    std::vector<std::string> m_pakfiles;
+    // Sets up this controller with the provided list of .pak files, each containing one scan.
+    void SetupPakFileList(const std::vector<std::string>& pakFiles);
+
+    // Retrieves the current list of .pak files.
+    std::vector<std::string> ListPakFiles() const;
+
+    // Returns the number of .pak files in the current setup (same as ListPakFiles().size())
+    size_t NumberOfPakFilesInSetup() const;
 
     // The list of references which are to be included in the two evaluations.
     std::vector<ReferenceForRatioCalculation> m_references;
@@ -113,7 +119,7 @@ public:
 
     // Performs the evaluation of the next scan (in the list m_pakFiles)
     // This require that SetupFitWindows() has been called since it will use the contents of the fit windows.
-    void EvaluateNextScan();
+    RatioCalculationResult EvaluateNextScan(std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows);
 
     // Performs the evaluation of the given scan.
     // This require that SetupFitWindows() has been called since it will use the contents of the fit windows.
@@ -121,6 +127,12 @@ public:
     RatioCalculationResult EvaluateScan(novac::IScanSpectrumSource& scan, const novac::BasicScanEvaluationResult& initialResult, std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows);
 
 private:
+
+    // The list of .pak files to calculate a ratio for
+    std::vector<std::string> m_pakfiles;
+
+    // The index (into m_pakFiles) which we're currently at.
+    int m_currentPakFileIdx = 0;
 
     // Verifies that the references have been setup as expected. Throws invalid_argument if not.
     void VerifyReferenceSetup();
