@@ -92,6 +92,12 @@ public:
     // Sets up all the values, and the fit windows, to their default values
     void InitializeToDefault();
 
+    // Reads in a formerly saved setup from the given file
+    void LoadSetup(const std::string& path);
+
+    // Saves the current setup to file.
+    void SaveSetup(const std::string& path);
+
     // Sets up this controller with the provided list of .pak files, each containing one scan.
     void SetupPakFileList(const std::vector<std::string>& pakFiles);
 
@@ -159,3 +165,7 @@ private:
 // Helper method, picks out the reference with the given specie and returns a pointer to it.
 // Returns nullptr if there is no reference with the given specie.
 ReferenceForRatioCalculation* GetReferenceFor(RatioCalculationController& controller, StandardDoasSpecie specie);
+
+// Helper method, picks out the (first) reference with the given name and returns a pointer to it.
+// Returns nullptr if there is no reference with the given name.
+ReferenceForRatioCalculation* GetReferenceWithName(RatioCalculationController& controller, const std::string& name);

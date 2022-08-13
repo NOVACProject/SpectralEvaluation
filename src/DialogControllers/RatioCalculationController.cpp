@@ -3,7 +3,9 @@
 #include <SpectralEvaluation/Evaluation/DoasFitPreparation.h>
 #include <SpectralEvaluation/Evaluation/RatioEvaluation.h>
 #include <SpectralEvaluation/Configuration/DarkSettings.h>
+#include <SpectralEvaluation/File/XmlUtil.h>
 
+#include <fstream>
 #include <sstream>
 
 RatioCalculationController::RatioCalculationController()
@@ -23,6 +25,121 @@ void RatioCalculationController::InitializeToDefault()
     m_references.push_back(ReferenceForRatioCalculation(StandardDoasSpecie::O3, "O3", "", true, true, false));
     m_references.push_back(ReferenceForRatioCalculation(StandardDoasSpecie::RING, "Ring", "", true, true, true));
     m_references.push_back(ReferenceForRatioCalculation(StandardDoasSpecie::RING_LAMBDA4, "Ringxlambda^4", "", true, true, true));
+}
+
+void RatioCalculationController::LoadSetup(const std::string& path)
+{
+    try
+    {
+        // Super basic xml parsing
+        std::ifstream file(path, std::ios::in);
+        std::string line;
+        while (std::getline(file, line))
+        {
+            if (line.find("<Reference>") != std::string::npos)
+            {
+                auto name = novac::ParseXmlString("Name", line);
+                auto path = novac::ParseXmlString("Path", line);
+                auto inMajor = novac::ParseXmlString("IncludeInMajor", line);
+                auto inMinor = novac::ParseXmlString("IncludeInMinor", line);
+                auto doCalculate = novac::ParseXmlString("Calculate", line);
+
+                ReferenceForRatioCalculation* ref = GetReferenceWithName(*this, name);
+                if (ref != nullptr)
+                {
+                    ref->m_path = path;
+                    ref->m_includeInMajor = (inMajor == "1");
+                    ref->m_includeInMinor = (inMinor == "1");
+                    ref->m_automaticallyCalculate = (doCalculate == "1");
+                }
+            }
+            else if (line.find("<SO2Setup>") != std::string::npos)
+            {
+                auto fromStr = novac::ParseXmlString("From", line);
+                auto toStr = novac::ParseXmlString("To", line);
+                auto polyOrder = novac::ParseXmlInteger("Poly", line, -1);
+
+                if (!fromStr.empty() && !toStr.empty())
+                {
+                    double from = std::atof(fromStr.c_str());
+                    double to = std::atof(toStr.c_str());
+                    if (from < to && from > 0 && to > 0)
+                    {
+                        m_so2FitRange = novac::WavelengthRange(from, to);
+                    }
+                }
+
+                if (polyOrder >= 0)
+                {
+                    m_so2PolynomialOrder = polyOrder;
+                }
+
+            }
+            else if (line.find("<BrOSetup>") != std::string::npos)
+            {
+                auto fromStr = novac::ParseXmlString("From", line);
+                auto toStr = novac::ParseXmlString("To", line);
+                auto polyOrder = novac::ParseXmlInteger("Poly", line, -1);
+
+                if (!fromStr.empty() && !toStr.empty())
+                {
+                    double from = std::atof(fromStr.c_str());
+                    double to = std::atof(toStr.c_str());
+                    if (from < to && from > 0 && to > 0)
+                    {
+                        m_broFitRange = novac::WavelengthRange(from, to);
+                    }
+                }
+
+                if (polyOrder >= 0)
+                {
+                    m_broPolynomialOrder = polyOrder;
+                }
+
+            }
+        }
+    }
+    catch (std::exception&)
+    {
+    }
+}
+
+void RatioCalculationController::SaveSetup(const std::string& path)
+{
+    try
+    {
+        std::ofstream dst(path, std::ios::out);
+        dst << "<RatioCalculationDlg>" << std::endl;
+        for (int rowIdx = 0; rowIdx < static_cast<int>(m_references.size()); ++rowIdx)
+        {
+            const auto& reference = m_references[rowIdx];
+
+            dst << "\t<Reference>";
+            dst << "<Name>" << reference.m_name << "</Name>";
+            dst << "<Path>" << reference.m_path << "</Path>";
+            dst << "<IncludeInMajor>" << reference.m_includeInMajor << "</IncludeInMajor>";
+            dst << "<IncludeInMinor>" << reference.m_includeInMinor << "</IncludeInMinor>";
+            dst << "<Calculate>" << reference.m_automaticallyCalculate << "</Calculate>";
+            dst << "</Reference>" << std::endl;
+        }
+
+        dst << "\t<SO2Setup>";
+        dst << "<From>" << m_so2FitRange.low << "</From>";
+        dst << "<To>" << m_so2FitRange.high << "</To>";
+        dst << "<Poly>" << m_so2PolynomialOrder << "</Poly>";
+        dst << "</SO2Setup>" << std::endl;
+
+        dst << "\t<BrOSetup>";
+        dst << "<From>" << m_broFitRange.low << "</From>";
+        dst << "<To>" << m_broFitRange.high << "</To>";
+        dst << "<Poly>" << m_broPolynomialOrder << "</Poly>";
+        dst << "</BrOSetup>" << std::endl;
+
+        dst << "</RatioCalculationDlg>" << std::endl;
+    }
+    catch (std::exception&)
+    {
+    }
 }
 
 void RatioCalculationController::SetupPakFileList(const std::vector<std::string>& pakFiles)
@@ -266,10 +383,24 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
     return result;
 }
 
-ReferenceForRatioCalculation* GetReferenceFor(RatioCalculationController& controller, StandardDoasSpecie specie) {
+ReferenceForRatioCalculation* GetReferenceFor(RatioCalculationController& controller, StandardDoasSpecie specie)
+{
     for (auto& ref : controller.m_references)
     {
         if (ref.specie == specie)
+        {
+            return &ref;
+        }
+    }
+
+    return nullptr; // not found
+}
+
+ReferenceForRatioCalculation* GetReferenceWithName(RatioCalculationController& controller, const std::string& name)
+{
+    for (auto& ref : controller.m_references)
+    {
+        if (ref.m_name == name)
         {
             return &ref;
         }
