@@ -19,6 +19,15 @@ namespace novac
         /** Retrieves the total number of spectra in the file (including sky and dark) */
         virtual int GetSpectrumNumInFile() const = 0;
 
+        /** Retrieves the time when the first spectrum was collected */
+        virtual CDateTime GetScanStartTime() const = 0;
+
+        /** Retrieves the time when the last spectrum was collected */
+        virtual CDateTime GetScanStopTime() const = 0;
+
+        /** Retrieves the serial number of the device which collected this scan. */
+        virtual std::string GetDeviceSerial() const = 0;
+
         /** Resets the counter associated with 'GetNextSpectrum' */
         virtual void ResetCounter() = 0;
 

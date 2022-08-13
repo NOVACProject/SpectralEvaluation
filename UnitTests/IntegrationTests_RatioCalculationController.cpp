@@ -650,3 +650,57 @@ TEST_CASE("RatioCalculationController - DoInitialEvaluation", "[RatioCalculation
         REQUIRE(result.m_spec[idx].m_referenceResult.size() == 3);
     }
 }
+
+TEST_CASE("RatioCalculationController - Save and LoadSetup restores original data", "[RatioCalculationController]")
+{
+    RatioCalculationController original;
+    // Setup the references
+    ReferenceForRatioCalculation* so2Reference = GetReferenceFor(original, StandardDoasSpecie::SO2);
+    so2Reference->m_path = "This is a test ";
+    so2Reference->m_includeInMajor = true;
+    so2Reference->m_includeInMinor = false;
+    ReferenceForRatioCalculation* o3Reference = GetReferenceFor(original, StandardDoasSpecie::O3);
+    o3Reference->m_path = "to verify that ";
+    o3Reference->m_includeInMajor = true;
+    o3Reference->m_includeInMinor = true;
+    ReferenceForRatioCalculation* broReference = GetReferenceFor(original, StandardDoasSpecie::BRO);
+    broReference->m_path = "save and load does work";
+    broReference->m_includeInMajor = false;
+    broReference->m_includeInMinor = true;
+    ReferenceForRatioCalculation* ringReference = GetReferenceFor(original, StandardDoasSpecie::RING);
+    ringReference->m_automaticallyCalculate = true;
+    ringReference->m_includeInMajor = true;
+    ringReference->m_includeInMinor = true;
+    ReferenceForRatioCalculation* ringReference2 = GetReferenceFor(original, StandardDoasSpecie::RING_LAMBDA4);
+    ringReference2->m_automaticallyCalculate = true;
+    ringReference2->m_includeInMajor = true;
+    ringReference2->m_includeInMinor = true;
+    original.m_so2FitRange = novac::WavelengthRange(305.1, 311.2);
+    original.m_so2PolynomialOrder = 7;
+    original.m_broFitRange = novac::WavelengthRange(333.3, 366.6);
+    original.m_broPolynomialOrder = 9;
+    RatioCalculationController restored;
+    const std::string temporaryFile = TestData::GetTemporaryConfigurationFileName();
+
+    // Act
+    original.SaveSetup(temporaryFile);
+    restored.LoadSetup(temporaryFile);
+
+    // Assert the setup of the two objects is identical
+    REQUIRE(std::abs(original.m_so2FitRange.low - restored.m_so2FitRange.low) < 0.01);
+    REQUIRE(std::abs(original.m_so2FitRange.high - restored.m_so2FitRange.high) < 0.01);
+    REQUIRE(std::abs(original.m_broFitRange.low - restored.m_broFitRange.low) < 0.01);
+    REQUIRE(std::abs(original.m_broFitRange.high - restored.m_broFitRange.high) < 0.01);
+    REQUIRE(original.m_so2PolynomialOrder == restored.m_so2PolynomialOrder);
+    REQUIRE(original.m_broPolynomialOrder == restored.m_broPolynomialOrder);
+
+    for (size_t ii = 0; ii < original.m_references.size(); ++ii)
+    {
+        REQUIRE(original.m_references[ii].specie == restored.m_references[ii].specie);
+        REQUIRE(original.m_references[ii].m_name == restored.m_references[ii].m_name);
+        REQUIRE(original.m_references[ii].m_path == restored.m_references[ii].m_path);
+        REQUIRE(original.m_references[ii].m_includeInMajor == restored.m_references[ii].m_includeInMajor);
+        REQUIRE(original.m_references[ii].m_includeInMinor == restored.m_references[ii].m_includeInMinor);
+        REQUIRE(original.m_references[ii].m_automaticallyCalculate == restored.m_references[ii].m_automaticallyCalculate);
+    }
+}

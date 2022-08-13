@@ -27,12 +27,12 @@ void RatioCalculationController::InitializeToDefault()
     m_references.push_back(ReferenceForRatioCalculation(StandardDoasSpecie::RING_LAMBDA4, "Ringxlambda^4", "", true, true, true));
 }
 
-void RatioCalculationController::LoadSetup(const std::string& path)
+void RatioCalculationController::LoadSetup(const std::string& setupFilePath)
 {
     try
     {
         // Super basic xml parsing
-        std::ifstream file(path, std::ios::in);
+        std::ifstream file(setupFilePath, std::ios::in);
         std::string line;
         while (std::getline(file, line))
         {
@@ -104,11 +104,11 @@ void RatioCalculationController::LoadSetup(const std::string& path)
     }
 }
 
-void RatioCalculationController::SaveSetup(const std::string& path)
+void RatioCalculationController::SaveSetup(const std::string& setupFilePath)
 {
     try
     {
-        std::ofstream dst(path, std::ios::out);
+        std::ofstream dst(setupFilePath, std::ios::out);
         dst << "<RatioCalculationDlg>" << std::endl;
         for (int rowIdx = 0; rowIdx < static_cast<int>(m_references.size()); ++rowIdx)
         {
@@ -352,6 +352,10 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
     RatioCalculationResult result;
     result.filename = scan.GetFileName();
     result.initialEvaluation = initialResult;
+    result.startTime = scan.GetScanStartTime();
+    result.endTime = scan.GetScanStopTime();
+    result.deviceSerial = scan.GetDeviceSerial();
+
 
     Configuration::CDarkSettings darkSettings; // default dark-settings
 
@@ -378,7 +382,7 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
     }
 
     // Update the last result as well.
-    m_lastResult = result;
+    m_results.push_back(result);
 
     return result;
 }

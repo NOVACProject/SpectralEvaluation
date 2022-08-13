@@ -12,7 +12,7 @@ namespace novac
     /** ScanFileHandler is a class to read in information from the scan-files
         (all the spectra from one scan are supposed to be packed together in one file in Manne's 'pak'-format.
         Each instance of 'CScanFileHandler' is capable of reading data from one .pak-file.
-        Each instance of this class should be initialized by first calling 'CheckScanFile' which will read in 
+        Each instance of this class should be initialized by first calling 'CheckScanFile' which will read in
         the data on the file and then create*/
     class CScanFileHandler : public IScanSpectrumSource
     {
@@ -118,10 +118,19 @@ namespace novac
         virtual std::string GetFileName() const override { return m_fileName; }
 
         /** Resets the m_specReadSoFarNum to start reading from the first spectrum again */
-        void  ResetCounter();
+        void ResetCounter();
 
         /** Retrieves the total number of spectra in the .pak-file (including sky and dark) */
-        int GetSpectrumNumInFile() const;
+        virtual int GetSpectrumNumInFile() const override;
+
+        /** Retrieves the time when the first spectrum was collected */
+        virtual CDateTime GetScanStartTime() const override { return m_startTime; }
+
+        /** Retrieves the time when the last spectrum was collected */
+        virtual CDateTime GetScanStopTime() const override { return m_stopTime; }
+
+        /** Retrieves the serial number of the device which collected this scan. */
+        virtual std::string GetDeviceSerial() const override { return m_device; }
 
     private:
         // ----------------------------------------------------------------------

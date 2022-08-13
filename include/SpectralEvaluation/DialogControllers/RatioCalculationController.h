@@ -5,6 +5,7 @@
 #include <vector>
 #include <SpectralEvaluation/Evaluation/RatioEvaluation.h>
 #include <SpectralEvaluation/Spectra/WavelengthRange.h>
+#include <SpectralEvaluation/DateTime.h>
 
 // Building a set of standard DOAS species
 enum class StandardDoasSpecie
@@ -72,7 +73,17 @@ struct RatioCalculationResult
     // The final output
     novac::Ratio ratio;
 
+    // The full file name of the evaluated file
     std::string filename;
+
+    // The spectrometer serial number
+    std::string deviceSerial;
+
+    // The time when the scan started
+    novac::CDateTime startTime;
+
+    // The time when the scan finished
+    novac::CDateTime endTime;
 
     // The initial evaluation, faster evaluations on each spectrum in the scan.
     novac::BasicScanEvaluationResult initialEvaluation;
@@ -93,10 +104,10 @@ public:
     void InitializeToDefault();
 
     // Reads in a formerly saved setup from the given file
-    void LoadSetup(const std::string& path);
+    void LoadSetup(const std::string& setupFilePath);
 
     // Saves the current setup to file.
-    void SaveSetup(const std::string& path);
+    void SaveSetup(const std::string& setupFilePath);
 
     // Sets up this controller with the provided list of .pak files, each containing one scan.
     void SetupPakFileList(const std::vector<std::string>& pakFiles);
@@ -125,8 +136,9 @@ public:
     // Settings for how to select the in-plume and out-of-plume spectra.
     novac::RatioEvaluationSettings m_ratioEvaluationSettings;
 
-    // The last result, as calculated by EvaluateNextScan or EvaluateScan.
-    RatioCalculationResult m_lastResult;
+    // A memory of all the results this instance of RatioCalculationController has produced.
+    // It is up to the user of this class to clear this list when desired.
+    std::vector<RatioCalculationResult> m_results;
 
     // Sets up the SO2 and BrO fit windows using m_references, m_so2FitRange and m_broFitRange
     // @throws std::invalid_argument if the setup is incorrect

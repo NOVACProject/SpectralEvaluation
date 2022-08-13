@@ -153,6 +153,11 @@ namespace novac
             return GetTestDataDirectory() + std::string("Temporary_FitWindowFile.nfw");
         }
 
+        static std::string GetTemporaryConfigurationFileName()
+        {
+            return GetTestDataDirectory() + std::string("Temporary_Congfiguration.config");
+        }
+
 #pragma endregion
 
 #pragma region Evaluation log file formats

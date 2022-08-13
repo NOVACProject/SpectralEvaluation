@@ -60,6 +60,21 @@ public:
     virtual std::string GetFileName() const override {
         return "";
     };
+
+    /** Retrieves the time when the first spectrum was collected */
+    virtual novac::CDateTime GetScanStartTime() const override {
+        return m_spectra.front().m_info.m_startTime;
+    }
+
+    /** Retrieves the time when the last spectrum was collected */
+    virtual novac::CDateTime GetScanStopTime() const override {
+        return m_spectra.back().m_info.m_startTime;
+    }
+
+    /** Retrieves the serial number of the device which collected this scan. */
+    virtual std::string GetDeviceSerial() const override {
+        return m_spectra.front().m_info.m_device;
+    }
 };
 
 // TODO: Move
