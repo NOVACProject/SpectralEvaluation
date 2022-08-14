@@ -355,7 +355,7 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
     result.startTime = scan.GetScanStartTime();
     result.endTime = scan.GetScanStopTime();
     result.deviceSerial = scan.GetDeviceSerial();
-
+    result.evaluatedAt.SetToNow();
 
     Configuration::CDarkSettings darkSettings; // default dark-settings
 
@@ -411,4 +411,82 @@ ReferenceForRatioCalculation* GetReferenceWithName(RatioCalculationController& c
     }
 
     return nullptr; // not found
+}
+
+
+void SaveResultsToCsvFile(RatioCalculationController& controller, const std::string& filename)
+{
+    if (controller.m_results.size() == 0)
+    {
+        return; // too few results to write to file
+    }
+
+    std::ofstream file(filename);
+    const std::string tab = "\t";
+
+    // write the header
+    {
+        file << "Device" << tab;
+        file << "ScanStartedAt" << tab;
+        file << "ScanEndedAt" << tab;
+        file << "EvaluatedAt" << tab;
+        file << "Ratio" << tab << "RatioError" << tab;
+        file << "PlumeCompleteness" << tab;
+        file << "PlumeCenter" << tab;
+        file << "InPlumeSpectrum_ExposureNum" << tab;
+        file << "OutOfPlumeSpectrum_ExposureNum" << tab;
+
+        // Write the specie-names from the first result, assuming that this hasn't changed for the other results.
+        for (size_t windowIdx = 0; windowIdx < controller.m_results.front().debugInfo.doasResults.size(); ++windowIdx)
+        {
+            const auto& doasResult = controller.m_results.front().debugInfo.doasResults[windowIdx];
+            file << "Window" << windowIdx << "_FitLow" << tab;
+            file << "Window" << windowIdx << "_FitHigh" << tab;
+            file << "Window" << windowIdx << "_Chi2" << tab;
+            file << "Window" << windowIdx << "_Delta" << tab;
+
+            for (const auto& referenceResult : doasResult.referenceResult)
+            {
+                file << "Window" << windowIdx << "_" << referenceResult.name << "_Column" << tab;
+                file << "Window" << windowIdx << "_" << referenceResult.name << "_ColumnError" << tab;
+                file << "Window" << windowIdx << "_" << referenceResult.name << "_Shift" << tab;
+                file << "Window" << windowIdx << "_" << referenceResult.name << "_ShiftError" << tab;
+                file << "Window" << windowIdx << "_" << referenceResult.name << "_Squeeze" << tab;
+                file << "Window" << windowIdx << "_" << referenceResult.name << "_SqueezeError" << tab;
+            }
+        }
+
+        file << "Filename" << std::endl;
+    }
+
+    // write the data
+    for (const auto& result : controller.m_results)
+    {
+        file << result.deviceSerial << tab;
+        file << result.startTime << tab;
+        file << result.endTime << tab;
+        file << result.evaluatedAt << tab;
+        file << result.ratio.ratio << tab << result.ratio.error << tab;
+        file << result.plumeInScanProperties.completeness << tab;
+        file << result.plumeInScanProperties.plumeCenter << tab;
+        file << result.debugInfo.inPlumeSpectrum.m_info.m_numSpec << tab;
+        file << result.debugInfo.outOfPlumeSpectrum.m_info.m_numSpec << tab;
+
+        for (const auto& doasResult : result.debugInfo.doasResults)
+        {
+            file << doasResult.fitLow << tab;
+            file << doasResult.fitHigh << tab;
+            file << doasResult.chiSquare << tab;
+            file << doasResult.delta << tab;
+
+            for (const auto& referenceResult : doasResult.referenceResult)
+            {
+                file << referenceResult.column << tab << referenceResult.columnError << tab;
+                file << referenceResult.shift << tab << referenceResult.shiftError << tab;
+                file << referenceResult.squeeze << tab << referenceResult.squeezeError << tab;
+            }
+        }
+
+        file << result.filename << std::endl;
+    }
 }

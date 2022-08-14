@@ -45,7 +45,7 @@ namespace novac
         // The final (dark corrected) out-of-plume spectrum.
         CSpectrum outOfPlumeSpectrum;
 
-        // The results of each of the evaluations performed.
+        // The results of each of the evaluations performed (one result for the major evaluation and one for the minor).
         std::vector<DoasResult> doasResults;
     };
 

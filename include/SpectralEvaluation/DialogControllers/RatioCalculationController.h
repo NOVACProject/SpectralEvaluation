@@ -79,6 +79,9 @@ struct RatioCalculationResult
     // The spectrometer serial number
     std::string deviceSerial;
 
+    // The time when the ratio calculation was done.
+    novac::CDateTime evaluatedAt;
+
     // The time when the scan started
     novac::CDateTime startTime;
 
@@ -181,3 +184,6 @@ ReferenceForRatioCalculation* GetReferenceFor(RatioCalculationController& contro
 // Helper method, picks out the (first) reference with the given name and returns a pointer to it.
 // Returns nullptr if there is no reference with the given name.
 ReferenceForRatioCalculation* GetReferenceWithName(RatioCalculationController& controller, const std::string& name);
+
+// Helper method, saves the results in the given RatioCalculationController to file.
+void SaveResultsToCsvFile(RatioCalculationController& controller, const std::string& filename);
