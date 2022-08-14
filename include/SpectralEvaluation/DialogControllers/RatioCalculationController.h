@@ -165,6 +165,9 @@ public:
     // @return a vector containing the calculated ratio if the evaluation succeeded.
     RatioCalculationResult EvaluateScan(novac::IScanSpectrumSource& scan, const novac::BasicScanEvaluationResult& initialResult, std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows);
 
+    // Helper method, saves the results in this RatioCalculationController to file.
+    void SaveResultsToCsvFile(const std::string& filename, std::string columnSeparator = "\t") const;
+
 private:
 
     // The list of .pak files to calculate a ratio for
@@ -184,6 +187,3 @@ ReferenceForRatioCalculation* GetReferenceFor(RatioCalculationController& contro
 // Helper method, picks out the (first) reference with the given name and returns a pointer to it.
 // Returns nullptr if there is no reference with the given name.
 ReferenceForRatioCalculation* GetReferenceWithName(RatioCalculationController& controller, const std::string& name);
-
-// Helper method, saves the results in the given RatioCalculationController to file.
-void SaveResultsToCsvFile(RatioCalculationController& controller, const std::string& filename);

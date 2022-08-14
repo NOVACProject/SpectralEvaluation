@@ -715,6 +715,7 @@ namespace novac
             ParseTime(MKZYHeader.starttime, info->m_startTime);
             ParseTime(MKZYHeader.stoptime, info->m_stopTime);
             ParseDate(MKZYHeader.date, info->m_startTime);
+            ParseDate(MKZYHeader.date, info->m_stopTime);
 
             info->m_device = std::string(MKZYHeader.instrumentname);
             Trim(info->m_device, " "); // remove spaces in the beginning or the end

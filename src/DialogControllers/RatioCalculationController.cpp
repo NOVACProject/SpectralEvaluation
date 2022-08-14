@@ -333,15 +333,13 @@ RatioCalculationResult RatioCalculationController::EvaluateNextScan(std::shared_
         return result;
     }
 
-    const auto pakFileName = m_pakfiles[m_currentPakFileIdx++];
+    const auto& pakFileName = m_pakfiles[m_currentPakFileIdx++];
     novac::CScanFileHandler scan;
     scan.CheckScanFile(pakFileName);
 
     const auto initialResult = DoInitialEvaluation(scan, ratioFitWindows);
 
-    auto result = EvaluateScan(scan, initialResult, ratioFitWindows);
-
-    return result;
+    return EvaluateScan(scan, initialResult, ratioFitWindows);
 }
 
 RatioCalculationResult RatioCalculationController::EvaluateScan(
@@ -414,79 +412,82 @@ ReferenceForRatioCalculation* GetReferenceWithName(RatioCalculationController& c
 }
 
 
-void SaveResultsToCsvFile(RatioCalculationController& controller, const std::string& filename)
+void RatioCalculationController::SaveResultsToCsvFile(const std::string& filename, std::string columnSeparator) const
 {
-    if (controller.m_results.size() == 0)
+    if (m_results.size() == 0)
     {
         return; // too few results to write to file
     }
 
     std::ofstream file(filename);
-    const std::string tab = "\t";
 
     // write the header
     {
-        file << "Device" << tab;
-        file << "ScanStartedAt" << tab;
-        file << "ScanEndedAt" << tab;
-        file << "EvaluatedAt" << tab;
-        file << "Ratio" << tab << "RatioError" << tab;
-        file << "PlumeCompleteness" << tab;
-        file << "PlumeCenter" << tab;
-        file << "InPlumeSpectrum_ExposureNum" << tab;
-        file << "OutOfPlumeSpectrum_ExposureNum" << tab;
+        file << "Device" << columnSeparator;
+        file << "ScanStartedAt" << columnSeparator;
+        file << "ScanEndedAt" << columnSeparator;
+        file << "EvaluatedAt" << columnSeparator;
+        file << "Filename" << columnSeparator;
+        file << "Ratio" << columnSeparator << "RatioError" << columnSeparator;
+        file << "PlumeCompleteness" << columnSeparator;
+        file << "PlumeCenter" << columnSeparator;
+        file << "InPlumeSpectrum_ExposureNum" << columnSeparator;
+        file << "OutOfPlumeSpectrum_ExposureNum" << columnSeparator;
 
         // Write the specie-names from the first result, assuming that this hasn't changed for the other results.
-        for (size_t windowIdx = 0; windowIdx < controller.m_results.front().debugInfo.doasResults.size(); ++windowIdx)
+        for (size_t windowIdx = 0; windowIdx < m_results.front().debugInfo.doasResults.size(); ++windowIdx)
         {
-            const auto& doasResult = controller.m_results.front().debugInfo.doasResults[windowIdx];
-            file << "Window" << windowIdx << "_FitLow" << tab;
-            file << "Window" << windowIdx << "_FitHigh" << tab;
-            file << "Window" << windowIdx << "_Chi2" << tab;
-            file << "Window" << windowIdx << "_Delta" << tab;
+            const size_t humanFriendlyWindowIdx = windowIdx + 1; // humans start counting at 1
+            const auto& doasResult = m_results.front().debugInfo.doasResults[windowIdx];
+
+            file << "Window" << humanFriendlyWindowIdx << "_FitLow" << columnSeparator;
+            file << "Window" << humanFriendlyWindowIdx << "_FitHigh" << columnSeparator;
+            file << "Window" << humanFriendlyWindowIdx << "_Chi2" << columnSeparator;
+            file << "Window" << humanFriendlyWindowIdx << "_Delta" << columnSeparator;
 
             for (const auto& referenceResult : doasResult.referenceResult)
             {
-                file << "Window" << windowIdx << "_" << referenceResult.name << "_Column" << tab;
-                file << "Window" << windowIdx << "_" << referenceResult.name << "_ColumnError" << tab;
-                file << "Window" << windowIdx << "_" << referenceResult.name << "_Shift" << tab;
-                file << "Window" << windowIdx << "_" << referenceResult.name << "_ShiftError" << tab;
-                file << "Window" << windowIdx << "_" << referenceResult.name << "_Squeeze" << tab;
-                file << "Window" << windowIdx << "_" << referenceResult.name << "_SqueezeError" << tab;
+                file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_Column" << columnSeparator;
+                file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_ColumnError" << columnSeparator;
+                file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_Shift" << columnSeparator;
+                file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_ShiftError" << columnSeparator;
+                file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_Squeeze" << columnSeparator;
+                file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_SqueezeError" << columnSeparator;
             }
         }
 
-        file << "Filename" << std::endl;
+        file << std::endl;
     }
 
     // write the data
-    for (const auto& result : controller.m_results)
+    for (const auto& result : m_results)
     {
-        file << result.deviceSerial << tab;
-        file << result.startTime << tab;
-        file << result.endTime << tab;
-        file << result.evaluatedAt << tab;
-        file << result.ratio.ratio << tab << result.ratio.error << tab;
-        file << result.plumeInScanProperties.completeness << tab;
-        file << result.plumeInScanProperties.plumeCenter << tab;
-        file << result.debugInfo.inPlumeSpectrum.m_info.m_numSpec << tab;
-        file << result.debugInfo.outOfPlumeSpectrum.m_info.m_numSpec << tab;
+        file << result.deviceSerial << columnSeparator;
+        file << result.startTime << columnSeparator;
+        file << result.endTime << columnSeparator;
+        file << result.evaluatedAt << columnSeparator;
+        file << result.filename << columnSeparator;
+        file << result.ratio.ratio << columnSeparator << result.ratio.error << columnSeparator;
+        file << result.plumeInScanProperties.completeness << columnSeparator;
+        file << result.plumeInScanProperties.plumeCenter << columnSeparator;
+        file << result.debugInfo.inPlumeSpectrum.m_info.m_numSpec << columnSeparator;
+        file << result.debugInfo.outOfPlumeSpectrum.m_info.m_numSpec << columnSeparator;
 
         for (const auto& doasResult : result.debugInfo.doasResults)
         {
-            file << doasResult.fitLow << tab;
-            file << doasResult.fitHigh << tab;
-            file << doasResult.chiSquare << tab;
-            file << doasResult.delta << tab;
+            file << doasResult.fitLow << columnSeparator;
+            file << doasResult.fitHigh << columnSeparator;
+            file << doasResult.chiSquare << columnSeparator;
+            file << doasResult.delta << columnSeparator;
 
             for (const auto& referenceResult : doasResult.referenceResult)
             {
-                file << referenceResult.column << tab << referenceResult.columnError << tab;
-                file << referenceResult.shift << tab << referenceResult.shiftError << tab;
-                file << referenceResult.squeeze << tab << referenceResult.squeezeError << tab;
+                file << referenceResult.column << columnSeparator << referenceResult.columnError << columnSeparator;
+                file << referenceResult.shift << columnSeparator << referenceResult.shiftError << columnSeparator;
+                file << referenceResult.squeeze << columnSeparator << referenceResult.squeezeError << columnSeparator;
             }
         }
 
-        file << result.filename << std::endl;
+        file << std::endl;
     }
 }

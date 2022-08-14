@@ -1,6 +1,7 @@
 #pragma once
-#include <vector>
 
+#include <vector>
+#include <memory>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 
 namespace novac

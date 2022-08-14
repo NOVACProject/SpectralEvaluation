@@ -34,8 +34,19 @@ namespace novac
 
             REQUIRE(sut.m_startTime.hour == 12);
             REQUIRE(sut.m_startTime.minute == 30);
+            REQUIRE(sut.m_startTime.second == 44);
         }
 
+        SECTION("Reads stop time")
+        {
+            REQUIRE(sut.m_stopTime.year == 2017);
+            REQUIRE(sut.m_stopTime.month == 2);
+            REQUIRE(sut.m_stopTime.day == 16);
+
+            REQUIRE(sut.m_stopTime.hour == 12);
+            REQUIRE(sut.m_stopTime.minute == 30);
+            REQUIRE(sut.m_stopTime.second == 56);
+        }
     }
 
     TEST_CASE("ScanFileHandler GetSpectrumLength", "[ScanFileHandler][IntegrationTests]")

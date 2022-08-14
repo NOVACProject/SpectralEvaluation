@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <SpectralEvaluation/Evaluation/PlumeSpectrumSelector.h>
 #include <SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h>
 #include <SpectralEvaluation/File/ScanFileHandler.h>
