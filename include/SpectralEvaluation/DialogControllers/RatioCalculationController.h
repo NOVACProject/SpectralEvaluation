@@ -121,6 +121,9 @@ public:
     // Returns the number of .pak files in the current setup (same as ListPakFiles().size())
     size_t NumberOfPakFilesInSetup() const;
 
+    // Returns the current (zero based) index in the list of .pak-files.
+    size_t CurrentPakFileIndex() const { return static_cast<size_t>(m_currentPakFileIdx); }
+
     // The list of references which are to be included in the two evaluations.
     std::vector<ReferenceForRatioCalculation> m_references;
 
