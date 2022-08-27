@@ -79,6 +79,9 @@ struct RatioCalculationResult
     // The spectrometer serial number
     std::string deviceSerial;
 
+    // A possible error message, only set if no ratio could be calculated
+    std::string errorMessage;
+
     // The time when the ratio calculation was done.
     novac::CDateTime evaluatedAt;
 

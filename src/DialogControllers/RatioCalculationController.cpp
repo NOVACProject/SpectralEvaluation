@@ -330,6 +330,7 @@ RatioCalculationResult RatioCalculationController::EvaluateNextScan(std::shared_
     if (!HasMoreScansToEvaluate())
     {
         RatioCalculationResult result;
+        result.errorMessage = "No more scans to evaluate";
         return result;
     }
 
@@ -364,6 +365,8 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
     result.plumeInScanProperties = plumeInScanProperties;
     if (!plumeIsVisible)
     {
+        result.errorMessage = "No visible plume";
+        m_results.push_back(result);
         return result;
     }
 
