@@ -168,6 +168,40 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - Sets up fitLow and fit
     REQUIRE(result->broWindow.fitHigh == 939);
 }
 
+TEST_CASE("RatioCalculationController - SetupFitWindows - Sets fitType to HP_DIV of both windows if settings says so", "[RatioCalculationController]")
+{
+    const auto testWindows = GetSetupOfFitWindowsForTest();
+
+    RatioCalculationController sut;
+    sut.m_doasFitType = novac::FIT_TYPE::FIT_HP_DIV;
+    REQUIRE(sut.m_references.size() == 5); // check assumption here.
+
+    // Setup the references
+    ReferenceForRatioCalculation* so2Reference = GetReferenceFor(sut, StandardDoasSpecie::SO2);
+    so2Reference->m_path = testWindows.so2Window.ref[0].m_path;
+    so2Reference->m_includeInMajor = true;
+    so2Reference->m_includeInMinor = true;
+    ReferenceForRatioCalculation* broReference = GetReferenceFor(sut, StandardDoasSpecie::BRO);
+    broReference->m_path = testWindows.broWindow.ref[0].m_path;
+    broReference->m_includeInMajor = true;
+    broReference->m_includeInMinor = true;
+    GetReferenceFor(sut, StandardDoasSpecie::RING)->m_automaticallyCalculate = false;
+    GetReferenceFor(sut, StandardDoasSpecie::RING_LAMBDA4)->m_automaticallyCalculate = false;
+
+
+    // Act
+    const auto result = sut.SetupFitWindows();
+
+    // Assert
+    // SO2 window
+    REQUIRE(result->so2Window.name == "SO2");
+    REQUIRE(result->so2Window.fitType == novac::FIT_TYPE::FIT_HP_DIV);
+
+    // BrO window
+    REQUIRE(result->broWindow.name == "BrO");
+    REQUIRE(result->broWindow.fitType == novac::FIT_TYPE::FIT_HP_DIV);
+}
+
 TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 included in only major window", "[RatioCalculationController]")
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
@@ -679,6 +713,7 @@ TEST_CASE("RatioCalculationController - Save and LoadSetup restores original dat
     original.m_so2PolynomialOrder = 7;
     original.m_broFitRange = novac::WavelengthRange(333.3, 366.6);
     original.m_broPolynomialOrder = 9;
+    original.m_doasFitType = novac::FIT_TYPE::FIT_HP_SUB;
     RatioCalculationController restored;
     const std::string temporaryFile = TestData::GetTemporaryConfigurationFileName();
 
@@ -693,6 +728,7 @@ TEST_CASE("RatioCalculationController - Save and LoadSetup restores original dat
     REQUIRE(std::abs(original.m_broFitRange.high - restored.m_broFitRange.high) < 0.01);
     REQUIRE(original.m_so2PolynomialOrder == restored.m_so2PolynomialOrder);
     REQUIRE(original.m_broPolynomialOrder == restored.m_broPolynomialOrder);
+    REQUIRE(original.m_doasFitType == restored.m_doasFitType);
 
     for (size_t ii = 0; ii < original.m_references.size(); ++ii)
     {

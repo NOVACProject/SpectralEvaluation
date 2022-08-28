@@ -95,7 +95,16 @@ void RatioCalculationController::LoadSetup(const std::string& setupFilePath)
                 {
                     m_broPolynomialOrder = polyOrder;
                 }
-
+            }
+            else if (line.find("<DoasFitType>") != std::string::npos)
+            {
+                auto fitType = novac::ParseXmlInteger("DoasFitType", line, -1);
+                switch (fitType)
+                {
+                case 0:  m_doasFitType = novac::FIT_TYPE::FIT_HP_DIV; break;
+                case 1:  m_doasFitType = novac::FIT_TYPE::FIT_HP_SUB; break;
+                default:  m_doasFitType = novac::FIT_TYPE::FIT_POLY; break;
+                }
             }
         }
     }
@@ -122,6 +131,8 @@ void RatioCalculationController::SaveSetup(const std::string& setupFilePath)
             dst << "<Calculate>" << reference.m_automaticallyCalculate << "</Calculate>";
             dst << "</Reference>" << std::endl;
         }
+
+        dst << "\t<DoasFitType>" << (int)m_doasFitType << "</DoasFitType>" << std::endl;
 
         dst << "\t<SO2Setup>";
         dst << "<From>" << m_so2FitRange.low << "</From>";
@@ -161,7 +172,6 @@ size_t RatioCalculationController::NumberOfPakFilesInSetup() const
 
 void SetupFitWindowReferences(novac::CFitWindow& window, const std::vector<ReferenceForRatioCalculation>& references, const novac::WavelengthRange& wavelengthRange, bool isMajor)
 {
-    window.fitType = novac::FIT_TYPE::FIT_POLY;
     window.ringCalculation = novac::RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING;
     window.includeIntensitySpacePolyominal = true;
 
@@ -248,7 +258,9 @@ std::shared_ptr<RatioCalculationFitSetup> RatioCalculationController::SetupFitWi
     auto result = std::make_shared<RatioCalculationFitSetup>();
 
     result->so2Window.polyOrder = m_so2PolynomialOrder;
+    result->so2Window.fitType = m_doasFitType;
     result->broWindow.polyOrder = m_broPolynomialOrder;
+    result->broWindow.fitType = m_doasFitType;
 
     // Setup the references in the fit windows. Notice that the order of the references is different since SO2 and BrO should always be first in their respective window.
     SetupFitWindowReferences(

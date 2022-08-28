@@ -142,6 +142,9 @@ public:
     // The polynomial order to use in the BrO fit
     int m_broPolynomialOrder = 3;
 
+    // The type of DOAS fit to perform (default is FIT_POLY as this has shown to give the best result).
+    novac::FIT_TYPE m_doasFitType = novac::FIT_TYPE::FIT_POLY;
+
     // Settings for how to select the in-plume and out-of-plume spectra.
     novac::RatioEvaluationSettings m_ratioEvaluationSettings;
 

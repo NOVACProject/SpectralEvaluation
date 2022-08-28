@@ -53,7 +53,8 @@ namespace novac
         {
             return throw std::invalid_argument(errorMessage);
         }
-        if (correspondingDarkSpectrum->NumSpectra() > 0 && !m_averagedSpectra)
+        const bool averagedSpectra = false; // This should be true if the spectra are averages instead of sums (as they normally are).
+        if (correspondingDarkSpectrum->NumSpectra() > 0 && !averagedSpectra)
         {
             correspondingDarkSpectrum->Div(correspondingDarkSpectrum->NumSpectra());
         }
@@ -129,12 +130,12 @@ namespace novac
         int skySpectrumIdx = 0;
         if (window.fitType != FIT_TYPE::FIT_HP_DIV)
         {
-            skySpectrumIdx = AddAsSky(localCopyOfWindow, spectra.filteredOutOfPlumespectrum, SHIFT_TYPE::SHIFT_FIX);
+            skySpectrumIdx = AddAsSky(localCopyOfWindow, spectra.filteredOutOfPlumespectrum, SHIFT_TYPE::SHIFT_FREE);
         }
 
         AddRingSpectraAsReferences(localCopyOfWindow, spectra.ringSpectrum, spectra.ringLambda4Spectrum, skySpectrumIdx);
 
-        if (localCopyOfWindow.includeIntensitySpacePolyominal)
+        if (window.fitType == FIT_TYPE::FIT_POLY && localCopyOfWindow.includeIntensitySpacePolyominal)
         {
             AddAsReference(localCopyOfWindow, spectra.intensityOffsetSpectrum, "offset", skySpectrumIdx);
         }

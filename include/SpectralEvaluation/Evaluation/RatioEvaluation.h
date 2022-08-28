@@ -1,13 +1,17 @@
 #pragma once
 
 #include <SpectralEvaluation/Evaluation/Ratio.h>
-#include <SpectralEvaluation/Evaluation/ScanEvaluationBase.h>
 #include <SpectralEvaluation/Evaluation/FitWindow.h>
 #include <SpectralEvaluation/Evaluation/DoasFit.h>
 #include <SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include <vector>
+
+namespace Configuration
+{
+    struct CDarkSettings;
+}
 
 namespace novac
 {
@@ -60,7 +64,7 @@ namespace novac
                 to use as sky and which to use as spectrum to evaluate.
             3) A way to configure all this from the user!
         */
-    class RatioEvaluation : public ScanEvaluationBase
+    class RatioEvaluation 
     {
     public:
         RatioEvaluation(const RatioEvaluationSettings& settings, const Configuration::CDarkSettings& darkSettings);

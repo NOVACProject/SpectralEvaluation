@@ -64,7 +64,7 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
         REQUIRE(result.majorSpecieName == "SO2");
         REQUIRE(std::abs(result.majorResult - 2.2e18) < 1e17);
 
-        REQUIRE(std::abs(result.ratio - 9.6e-5) < 1e-5);
+        REQUIRE(std::abs(result.ratio - 1.0e-5) < 1e-4);
         REQUIRE(std::abs(result.error - 2e-5) < 1e-5);
     }
 
