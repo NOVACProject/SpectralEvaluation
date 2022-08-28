@@ -302,10 +302,13 @@ novac::BasicScanEvaluationResult RatioCalculationController::DoInitialEvaluation
     }
     measuredSkySpectrum.Sub(measuredDarkSpectrum);
 
-    const auto filteredSkySpectrum = novac::DoasFitPreparation::PrepareSkySpectrum(measuredSkySpectrum, novac::FIT_TYPE::FIT_POLY);
-
     novac::CFitWindow localCopyOfWindow = ratioFitWindows->so2Window;
-    (void)AddAsSky(localCopyOfWindow, filteredSkySpectrum, novac::SHIFT_TYPE::SHIFT_FREE);
+
+    if (localCopyOfWindow.fitType != novac::FIT_TYPE::FIT_HP_DIV)
+    {
+        const auto filteredSkySpectrum = novac::DoasFitPreparation::PrepareSkySpectrum(measuredSkySpectrum, localCopyOfWindow.fitType);
+        (void)AddAsSky(localCopyOfWindow, filteredSkySpectrum, novac::SHIFT_TYPE::SHIFT_FREE);
+    }
 
     novac::DoasFit doas;
     doas.Setup(localCopyOfWindow);
@@ -316,7 +319,7 @@ novac::BasicScanEvaluationResult RatioCalculationController::DoInitialEvaluation
     while (0 == scan.GetNextMeasuredSpectrum(measuredSpectrum))
     {
         measuredSpectrum.Sub(measuredDarkSpectrum);
-        const auto filteredMeasuredSpectrum = novac::DoasFitPreparation::PrepareMeasuredSpectrum(measuredSpectrum, measuredSkySpectrum, novac::FIT_TYPE::FIT_POLY);
+        const auto filteredMeasuredSpectrum = novac::DoasFitPreparation::PrepareMeasuredSpectrum(measuredSpectrum, measuredSkySpectrum, localCopyOfWindow.fitType);
 
         novac::DoasResult doasResult;
         doas.Run(filteredMeasuredSpectrum.data(), filteredMeasuredSpectrum.size(), doasResult);
