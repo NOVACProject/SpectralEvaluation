@@ -123,6 +123,9 @@ namespace novac
 
         // Return true if any of the fit windows here requires the calculation of a Ring spectrum
         bool AnyFitWindowRequiresRingSpectrum() const;
+
+        // Validates the settings. @throws std::invalid_argument if the setup is not coherent.s
+        void ValidateSetup() const;
     };
 
     /** Estimates which spectra should be used for a ratio-evaluation, assuming that one should be performed.

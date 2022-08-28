@@ -126,7 +126,11 @@ namespace novac
     {
         CFitWindow localCopyOfWindow = window;
 
-        const int skySpectrumIdx = AddAsSky(localCopyOfWindow, spectra.filteredOutOfPlumespectrum, SHIFT_TYPE::SHIFT_FREE);
+        int skySpectrumIdx = 0;
+        if (window.fitType != FIT_TYPE::FIT_HP_DIV)
+        {
+            skySpectrumIdx = AddAsSky(localCopyOfWindow, spectra.filteredOutOfPlumespectrum, SHIFT_TYPE::SHIFT_FIX);
+        }
 
         AddRingSpectraAsReferences(localCopyOfWindow, spectra.ringSpectrum, spectra.ringLambda4Spectrum, skySpectrumIdx);
 
@@ -169,6 +173,8 @@ namespace novac
 
         try
         {
+            ValidateSetup();
+
             if (!IsSuitableScanForRatioEvaluation(m_settings, m_masterResult, m_masterResultProperties, debugInfo.errorMessage))
             {
                 return result;
@@ -218,13 +224,20 @@ namespace novac
             */
             PreparedInputSpectraForDoasEvaluation filteredSpectra;
 
-            filteredSpectra.filteredOutOfPlumespectrum = DoasFitPreparation::PrepareSkySpectrum(debugInfo.outOfPlumeSpectrum, FIT_TYPE::FIT_POLY);
-            filteredSpectra.filteredInPlumeSpectrum = DoasFitPreparation::PrepareMeasuredSpectrum(debugInfo.inPlumeSpectrum, debugInfo.outOfPlumeSpectrum, FIT_TYPE::FIT_POLY);
+            if (m_masterFitWindow.fitType != FIT_TYPE::FIT_HP_DIV)
+            {
+                filteredSpectra.filteredOutOfPlumespectrum = DoasFitPreparation::PrepareSkySpectrum(debugInfo.outOfPlumeSpectrum, m_masterFitWindow.fitType);
+            }
+            else
+            {
+                DoasFitPreparation::RemoveOffset(debugInfo.outOfPlumeSpectrum);
+            }
+            filteredSpectra.filteredInPlumeSpectrum = DoasFitPreparation::PrepareMeasuredSpectrum(debugInfo.inPlumeSpectrum, debugInfo.outOfPlumeSpectrum, m_masterFitWindow.fitType);
             filteredSpectra.intensityOffsetSpectrum = DoasFitPreparation::PrepareIntensitySpacePolynomial(debugInfo.outOfPlumeSpectrum);
 
             if (AnyFitWindowRequiresRingSpectrum())
             {
-                filteredSpectra.ringSpectrum = DoasFitPreparation::PrepareRingSpectrum(debugInfo.outOfPlumeSpectrum, FIT_TYPE::FIT_POLY);
+                filteredSpectra.ringSpectrum = DoasFitPreparation::PrepareRingSpectrum(debugInfo.outOfPlumeSpectrum, m_masterFitWindow.fitType);
                 filteredSpectra.ringLambda4Spectrum = PrepareRingLambda4Spectrum(filteredSpectra.ringSpectrum, debugInfo.outOfPlumeSpectrum.m_wavelength);
             }
 
@@ -289,6 +302,16 @@ namespace novac
         return false;
     }
 
+    void RatioEvaluation::ValidateSetup() const
+    {
+        for (const auto& window : m_referenceFit)
+        {
+            if (window.fitType != m_masterFitWindow.fitType)
+            {
+                throw std::invalid_argument("Mixed types of fit windows. All Doas fits must have the same fit type.");
+            }
+        }
+    }
 
     // Calculates the average column value of the given specie in the index [startIdx, endIdx]
     double AverageColumnValue(const BasicScanEvaluationResult& scanResult, int specieIndex, size_t startIdx, size_t endIdx)

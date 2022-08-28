@@ -71,11 +71,11 @@ namespace novac
         // TODO: Review the structure here.
         std::vector<MathFit::CReferenceSpectrumFunction*> m_ref;
 
-        /// <summary>
         /// The name of each reference.
-        /// </summary>
         std::vector<std::string> name;
 
+        // The scale factor for the retrieved values, can be either +1.0 or -1.0 depending on the fit-type.
+        double columnScaleFactor = -1.0;
     };
 
     DoasFit::DoasFit()
@@ -113,15 +113,16 @@ namespace novac
 
         DeallocateReferenceSetup();
         DoasReferenceSetup* newReferenceSetup = new DoasReferenceSetup();
+        newReferenceSetup->columnScaleFactor = (setup.fitType == FIT_TYPE::FIT_POLY) ? -1.0 : +1.0;
 
         // 1) Create the references
-        for (int i = 0; i < setup.nRef; i++)
+        for (int refIdx = 0; refIdx < setup.nRef; ++refIdx)
         {
-            if (setup.ref[i].m_data == nullptr)
+            if (setup.ref[refIdx].m_data == nullptr)
             {
                 throw std::invalid_argument("Error in setting up DOAS fit, reference is null.");
             }
-            if (setup.ref[i].m_data->GetSize() == 0)
+            if (setup.ref[refIdx].m_data->GetSize() == 0)
             {
                 throw std::invalid_argument("Error in setting up DOAS fit, reference does not contain any data.");
             }
@@ -132,9 +133,9 @@ namespace novac
             // transformation of the spectral data into a B-Spline that will be used to interpolate the 
             // reference spectrum during shift and squeeze operations
             MathFit::CVector yValues;
-            yValues.Copy(setup.ref[i].m_data->m_crossSection.data(), setup.ref[i].m_data->GetSize());
+            yValues.Copy(setup.ref[refIdx].m_data->m_crossSection.data(), setup.ref[refIdx].m_data->GetSize());
 
-            auto tempXVec = Generate(0, setup.ref[i].m_data->GetSize()); // the x-axis vector here is pixels.
+            auto tempXVec = Generate(0, setup.ref[refIdx].m_data->GetSize()); // the x-axis vector here is pixels.
             if (!newRef->SetData(tempXVec, yValues))
             {
                 throw std::invalid_argument("Error in DOAS reference, failed to initialize spline object. Make sure that the reference is ok and try again.");
@@ -142,38 +143,38 @@ namespace novac
 
             // Finally add this reference to the vector
             newReferenceSetup->m_ref.push_back(newRef);
-            newReferenceSetup->name.push_back(setup.ref[i].m_specieName);
+            newReferenceSetup->name.push_back(setup.ref[refIdx].m_specieName);
         }
 
         // 2) Couple the references
-        for (int i = 0; i < setup.nRef; i++)
+        for (int refIdx = 0; refIdx < setup.nRef; ++refIdx)
         {
             // Check the options for the column value.
             //  Notice the multiplication with minus one here, this is done to keep the signs of everything compatible with DOASIS.
-            switch (setup.ref[i].m_columnOption)
+            switch (setup.ref[refIdx].m_columnOption)
             {
-            case novac::SHIFT_TYPE::SHIFT_FIX:     newReferenceSetup->m_ref[i]->FixParameter(MathFit::CReferenceSpectrumFunction::CONCENTRATION, -1.0 * setup.ref[i].m_columnValue * newReferenceSetup->m_ref[i]->GetAmplitudeScale()); break;
-            case novac::SHIFT_TYPE::SHIFT_LINK:    newReferenceSetup->m_ref[(int)setup.ref[i].m_columnValue]->LinkParameter(MathFit::CReferenceSpectrumFunction::CONCENTRATION, *newReferenceSetup->m_ref[i], MathFit::CReferenceSpectrumFunction::CONCENTRATION); break;
+            case novac::SHIFT_TYPE::SHIFT_FIX:     newReferenceSetup->m_ref[refIdx]->FixParameter(MathFit::CReferenceSpectrumFunction::CONCENTRATION, -1.0 * setup.ref[refIdx].m_columnValue * newReferenceSetup->m_ref[refIdx]->GetAmplitudeScale()); break;
+            case novac::SHIFT_TYPE::SHIFT_LINK:    newReferenceSetup->m_ref[(int)setup.ref[refIdx].m_columnValue]->LinkParameter(MathFit::CReferenceSpectrumFunction::CONCENTRATION, *newReferenceSetup->m_ref[refIdx], MathFit::CReferenceSpectrumFunction::CONCENTRATION); break;
             }
 
             // Check the options for the shift
-            switch (setup.ref[i].m_shiftOption)
+            switch (setup.ref[refIdx].m_shiftOption)
             {
-            case novac::SHIFT_TYPE::SHIFT_FIX:     newReferenceSetup->m_ref[i]->FixParameter(MathFit::CReferenceSpectrumFunction::SHIFT, setup.ref[i].m_shiftValue); break;
-            case novac::SHIFT_TYPE::SHIFT_LINK:    newReferenceSetup->m_ref[(int)setup.ref[i].m_shiftValue]->LinkParameter(MathFit::CReferenceSpectrumFunction::SHIFT, *newReferenceSetup->m_ref[i], MathFit::CReferenceSpectrumFunction::SHIFT); break;
-            case novac::SHIFT_TYPE::SHIFT_LIMIT:   newReferenceSetup->m_ref[i]->SetParameterLimits(MathFit::CReferenceSpectrumFunction::SHIFT, (MathFit::TFitData)setup.ref[i].m_shiftValue, (MathFit::TFitData)setup.ref[i].m_shiftMaxValue, 1); break;
-            default:            newReferenceSetup->m_ref[i]->SetDefaultParameter(MathFit::CReferenceSpectrumFunction::SHIFT, (MathFit::TFitData)0.0);
-                newReferenceSetup->m_ref[i]->SetParameterLimits(MathFit::CReferenceSpectrumFunction::SHIFT, (MathFit::TFitData)-10.0, (MathFit::TFitData)10.0, (MathFit::TFitData)1e0); break; // TODO: Get these limits as parameters!
+            case novac::SHIFT_TYPE::SHIFT_FIX:     newReferenceSetup->m_ref[refIdx]->FixParameter(MathFit::CReferenceSpectrumFunction::SHIFT, setup.ref[refIdx].m_shiftValue); break;
+            case novac::SHIFT_TYPE::SHIFT_LINK:    newReferenceSetup->m_ref[(int)setup.ref[refIdx].m_shiftValue]->LinkParameter(MathFit::CReferenceSpectrumFunction::SHIFT, *newReferenceSetup->m_ref[refIdx], MathFit::CReferenceSpectrumFunction::SHIFT); break;
+            case novac::SHIFT_TYPE::SHIFT_LIMIT:   newReferenceSetup->m_ref[refIdx]->SetParameterLimits(MathFit::CReferenceSpectrumFunction::SHIFT, (MathFit::TFitData)setup.ref[refIdx].m_shiftValue, (MathFit::TFitData)setup.ref[refIdx].m_shiftMaxValue, 1); break;
+            default:            newReferenceSetup->m_ref[refIdx]->SetDefaultParameter(MathFit::CReferenceSpectrumFunction::SHIFT, (MathFit::TFitData)0.0);
+                newReferenceSetup->m_ref[refIdx]->SetParameterLimits(MathFit::CReferenceSpectrumFunction::SHIFT, (MathFit::TFitData)-10.0, (MathFit::TFitData)10.0, (MathFit::TFitData)1e0); break; // TODO: Get these limits as parameters!
             }
 
             // Check the options for the squeeze
-            switch (setup.ref[i].m_squeezeOption)
+            switch (setup.ref[refIdx].m_squeezeOption)
             {
-            case novac::SHIFT_TYPE::SHIFT_FIX:     newReferenceSetup->m_ref[i]->FixParameter(MathFit::CReferenceSpectrumFunction::SQUEEZE, setup.ref[i].m_squeezeValue); break;
-            case novac::SHIFT_TYPE::SHIFT_LINK:    newReferenceSetup->m_ref[(int)setup.ref[i].m_squeezeValue]->LinkParameter(MathFit::CReferenceSpectrumFunction::SQUEEZE, *newReferenceSetup->m_ref[i], MathFit::CReferenceSpectrumFunction::SQUEEZE); break;
-            case novac::SHIFT_TYPE::SHIFT_LIMIT:   newReferenceSetup->m_ref[i]->SetParameterLimits(MathFit::CReferenceSpectrumFunction::SQUEEZE, (MathFit::TFitData)setup.ref[i].m_squeezeValue, (MathFit::TFitData)setup.ref[i].m_squeezeMaxValue, 1e7); break;
-            default:            newReferenceSetup->m_ref[i]->SetDefaultParameter(MathFit::CReferenceSpectrumFunction::SQUEEZE, (MathFit::TFitData)1.0);
-                newReferenceSetup->m_ref[i]->SetParameterLimits(MathFit::CReferenceSpectrumFunction::SQUEEZE, (MathFit::TFitData)0.98, (MathFit::TFitData)1.02, (MathFit::TFitData)1e0); break; // TODO: Get these limits as parameters!
+            case novac::SHIFT_TYPE::SHIFT_FIX:     newReferenceSetup->m_ref[refIdx]->FixParameter(MathFit::CReferenceSpectrumFunction::SQUEEZE, setup.ref[refIdx].m_squeezeValue); break;
+            case novac::SHIFT_TYPE::SHIFT_LINK:    newReferenceSetup->m_ref[(int)setup.ref[refIdx].m_squeezeValue]->LinkParameter(MathFit::CReferenceSpectrumFunction::SQUEEZE, *newReferenceSetup->m_ref[refIdx], MathFit::CReferenceSpectrumFunction::SQUEEZE); break;
+            case novac::SHIFT_TYPE::SHIFT_LIMIT:   newReferenceSetup->m_ref[refIdx]->SetParameterLimits(MathFit::CReferenceSpectrumFunction::SQUEEZE, (MathFit::TFitData)setup.ref[refIdx].m_squeezeValue, (MathFit::TFitData)setup.ref[refIdx].m_squeezeMaxValue, 1e7); break;
+            default:            newReferenceSetup->m_ref[refIdx]->SetDefaultParameter(MathFit::CReferenceSpectrumFunction::SQUEEZE, (MathFit::TFitData)1.0);
+                newReferenceSetup->m_ref[refIdx]->SetParameterLimits(MathFit::CReferenceSpectrumFunction::SQUEEZE, (MathFit::TFitData)0.98, (MathFit::TFitData)1.02, (MathFit::TFitData)1e0); break; // TODO: Get these limits as parameters!
             }
         }
 
@@ -321,7 +322,7 @@ namespace novac
             for (size_t ii = 0; ii < referenceSetup->m_ref.size(); ii++)
             {
                 result.referenceResult[ii].name = referenceSetup->name[ii];
-                result.referenceResult[ii].column = -1.0 * (double)referenceSetup->m_ref[ii]->GetModelParameter(MathFit::CReferenceSpectrumFunction::CONCENTRATION);
+                result.referenceResult[ii].column = referenceSetup->columnScaleFactor * (double)referenceSetup->m_ref[ii]->GetModelParameter(MathFit::CReferenceSpectrumFunction::CONCENTRATION);
                 result.referenceResult[ii].columnError = (double)referenceSetup->m_ref[ii]->GetModelParameterError(MathFit::CReferenceSpectrumFunction::CONCENTRATION);
                 result.referenceResult[ii].shift = (double)referenceSetup->m_ref[ii]->GetModelParameter(MathFit::CReferenceSpectrumFunction::SHIFT);
                 result.referenceResult[ii].shiftError = (double)referenceSetup->m_ref[ii]->GetModelParameterError(MathFit::CReferenceSpectrumFunction::SHIFT);

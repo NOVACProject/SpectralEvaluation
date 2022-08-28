@@ -43,22 +43,66 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
     REQUIRE(true == ReadReferences(so2FitWindow));
     REQUIRE(true == ReadReferences(broFitWindow));
 
-    // Setup the sut
-    RatioEvaluation sut{ settings, darkSettings };
-    sut.SetupFirstResult(evaluationFileHandler.m_scan[0], plumeInScanProperties);
-    sut.SetupFitWindows(so2FitWindow, std::vector<CFitWindow>{ broFitWindow});
+    SECTION("Polynomial fit")
+    {
+        // Setup the sut
+        RatioEvaluation sut{ settings, darkSettings };
+        sut.SetupFirstResult(evaluationFileHandler.m_scan[0], plumeInScanProperties);
+        sut.SetupFitWindows(so2FitWindow, std::vector<CFitWindow>{ broFitWindow});
 
-    // Act
-    const auto result = sut.Run(fileHandler);
+        // Act
+        const auto ratios = sut.Run(fileHandler);
 
-    // Assert
-    REQUIRE(result.size() == 1);
+        // Assert
+        REQUIRE(ratios.size() == 1);
 
-    // Verify that the result is indeed correct!
-    REQUIRE(result.front().minorSpecieName == "BrO");
-    REQUIRE(result.front().majorSpecieName == "SO2");
-    REQUIRE(std::abs(result.front().ratio) < 1.2e-4); // During development there may be variations in the result. Just verify the range is ok for now.
-    REQUIRE(std::abs(result.front().ratio) > 6e-5); // During development there may be variations in the result. Just verify the range is ok for now.
-    REQUIRE(std::abs(result.front().error) < std::abs(result.front().ratio / 2.0));
+        // Verify that the result is indeed correct!
+        const auto& result = ratios.front();
+        REQUIRE(result.minorSpecieName == "BrO");
+        REQUIRE(std::abs(result.minorResult - 2.1e14) < 2e13);
 
+        REQUIRE(result.majorSpecieName == "SO2");
+        REQUIRE(std::abs(result.majorResult - 2.2e18) < 1e17);
+
+        REQUIRE(std::abs(result.ratio - 9.6e-5) < 1e-5);
+        REQUIRE(std::abs(result.error - 2e-5) < 1e-5);
+    }
+
+    SECTION("HP500 fit")
+    {
+        // Change the settings to use HP500 filtering and make sure to filter the references 
+        // (but keep the unit in molec/cm2 as this makes it possible to have the same values in the assertions here as in the test above).
+        so2FitWindow.fitType = FIT_TYPE::FIT_HP_DIV;
+        broFitWindow.fitType = FIT_TYPE::FIT_HP_DIV;
+        for (int refIdx = 0; refIdx < so2FitWindow.nRef; ++refIdx)
+        {
+            HighPassFilter(*so2FitWindow.ref[refIdx].m_data, false);
+        }
+        for (int refIdx = 0; refIdx < broFitWindow.nRef; ++refIdx)
+        {
+            HighPassFilter(*broFitWindow.ref[refIdx].m_data, false);
+        }
+
+        // Setup the sut
+        RatioEvaluation sut{ settings, darkSettings };
+        sut.SetupFirstResult(evaluationFileHandler.m_scan[0], plumeInScanProperties);
+        sut.SetupFitWindows(so2FitWindow, std::vector<CFitWindow>{ broFitWindow});
+
+        // Act
+        const auto ratios = sut.Run(fileHandler);
+
+        // Assert
+        REQUIRE(ratios.size() == 1);
+
+        // Verify that the result is indeed correct!
+        const auto& result = ratios.front();
+        REQUIRE(result.minorSpecieName == "BrO");
+        REQUIRE(std::abs(result.minorResult - 2.8e14) < 2e13); // TODO: This is not exactly the same result as above. Why??
+
+        REQUIRE(result.majorSpecieName == "SO2");
+        REQUIRE(std::abs(result.majorResult - 2.2e18) < 1e17);
+
+        REQUIRE(std::abs(result.ratio - 1.3e-4) < 1e-5); // TODO: This is not exactly the same result as above. Why??
+        REQUIRE(std::abs(result.error - 3e-5) < 1e-5); // TODO: This is not exactly the same result as above. Why??
+    }
 }

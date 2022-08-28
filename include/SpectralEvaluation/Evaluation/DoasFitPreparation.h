@@ -35,6 +35,7 @@ namespace novac
 
         /** Removes the electronic offset from the provided measured spectrum by calculating the average intensity
             in the pixel interval [startIndex, endIndex[ and then subtracting that value from all data points in the spectrum. */
+        static void RemoveOffset(CSpectrum& spectrum, int startIndex = 50, int endIndex = 200);
         static void RemoveOffset(std::vector<double>& spectrum, int startIndex = 50, int endIndex = 200);
 
     };

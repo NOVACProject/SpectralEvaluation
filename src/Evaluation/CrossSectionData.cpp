@@ -281,16 +281,17 @@ namespace novac
     {
         CBasicMath mathObject;
 
+        const double ppmmScaleFactor = 2.5e15; // magic scaling factor from molec/cm2 to ppmm.
         const int length = (int)crossSection.m_crossSection.size();
 
-        mathObject.Mul(crossSection.m_crossSection.data(), length, -2.5e15);
+        mathObject.Mul(crossSection.m_crossSection.data(), length, -ppmmScaleFactor);
         mathObject.Delog(crossSection.m_crossSection.data(), length);
         mathObject.HighPassBinomial(crossSection.m_crossSection.data(), length, 500);
         mathObject.Log(crossSection.m_crossSection.data(), length);
 
         if (!scaleToPpmm)
         {
-            mathObject.Div(crossSection.m_crossSection.data(), length, 2.5e15);
+            mathObject.Div(crossSection.m_crossSection.data(), length, ppmmScaleFactor);
         }
 
         return 0;

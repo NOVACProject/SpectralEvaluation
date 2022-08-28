@@ -45,12 +45,4 @@
 		<squeezeValue>1.000000</squeezeValue>
 		<columnOption>0</columnOption>
 	</ref>
-	<ref name="O4">
-		<path>../TestData/BrORatio/D2J2124_O4_Hermans_298K.txt</path>
-		<shiftOption>1</shiftOption>
-		<shiftValue>0.000000</shiftValue>
-		<squeezeOption>1</squeezeOption>
-		<squeezeValue>1.000000</squeezeValue>
-		<columnOption>0</columnOption>
-	</ref>
 </fitWindow>

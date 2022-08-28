@@ -101,10 +101,24 @@ void DoasFitPreparation::RemoveOffset(std::vector<double>& spectrum, int startIn
         return;
     }
 
-    const double skySpectrumOffset = Average(begin(spectrum) + startIndex, begin(spectrum) + endIndex);
+    const double spectrumOffset = Average(begin(spectrum) + startIndex, begin(spectrum) + endIndex);
 
     CBasicMath math;
-    math.Sub(spectrum.data(), static_cast<int>(spectrum.size()), skySpectrumOffset);
+    math.Sub(spectrum.data(), static_cast<int>(spectrum.size()), spectrumOffset);
+}
+
+void DoasFitPreparation::RemoveOffset(CSpectrum& spectrum, int startIndex, int endIndex)
+{
+    if (startIndex == endIndex)
+    {
+        return;
+    }
+    std::vector<double> values(spectrum.m_data + startIndex, spectrum.m_data + endIndex);
+
+    const double spectrumOffset = Average(values);
+
+    CBasicMath math;
+    math.Sub(spectrum.m_data, static_cast<int>(spectrum.m_length), spectrumOffset);
 }
 
 std::vector<double> DoasFitPreparation::PrepareRingSpectrum(const CSpectrum& skySpectrum, FIT_TYPE doasFitType)

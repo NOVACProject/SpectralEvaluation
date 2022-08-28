@@ -10,6 +10,7 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/TestData.h
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_Correspondence.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_DarkSpectrum.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_DoasFit.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_File.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_FitWindowFileHandler.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_InstrumentCalibrationInStdFile.cpp
