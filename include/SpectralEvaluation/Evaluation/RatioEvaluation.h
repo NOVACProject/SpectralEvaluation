@@ -23,7 +23,7 @@ namespace novac
         // The minimum number of spectra which needs to be selected in the plume for the ratio calculation to be successful.
         int minNumberOfSpectraInPlume = 7;
 
-        // The minimum (SO2) column for the selected spectra in the plume.
+        // The minimum (SO2) column for the selected spectra in the plume. Defaults to 40ppmm = 1e17 molec/cm2.
         double minInPlumeColumn = 1e17;
 
         // The minimum number of spectra which needs to be averaged outside of the plume for the calculation to be successful.
@@ -64,7 +64,7 @@ namespace novac
                 to use as sky and which to use as spectrum to evaluate.
             3) A way to configure all this from the user!
         */
-    class RatioEvaluation 
+    class RatioEvaluation
     {
     public:
         RatioEvaluation(const RatioEvaluationSettings& settings, const Configuration::CDarkSettings& darkSettings);

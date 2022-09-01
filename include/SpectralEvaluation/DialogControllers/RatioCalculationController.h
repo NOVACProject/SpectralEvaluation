@@ -70,7 +70,7 @@ struct RatioCalculationFitSetup
 // The result of the ratio calculation, including debug information
 struct RatioCalculationResult
 {
-    // The final output
+    // The final output. All fields here are default (zero) if no ratio could be calculated.
     novac::Ratio ratio;
 
     // The full file name of the evaluated file
@@ -78,9 +78,6 @@ struct RatioCalculationResult
 
     // The spectrometer serial number
     std::string deviceSerial;
-
-    // A possible error message, only set if no ratio could be calculated
-    std::string errorMessage;
 
     // The time when the ratio calculation was done.
     novac::CDateTime evaluatedAt;
@@ -97,7 +94,7 @@ struct RatioCalculationResult
     // The calculated properties of the plume (from initialEvaluation). Includes completeness and offset.
     novac::CPlumeInScanProperty plumeInScanProperties;
 
-    // Detailed information the evaluation
+    // Detailed information the evaluation. Also contains any possible error message.
     novac::RatioEvaluationDebugInformation debugInfo;
 };
 

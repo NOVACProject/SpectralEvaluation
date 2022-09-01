@@ -8,27 +8,27 @@ namespace novac
     struct Ratio
     {
         // The estimated quotient between the two columns.
-        double ratio;
+        double ratio = 0.0;
 
         // An estimation of the error in the quotient. Calculated from the retrieved columns and their Doas fit errors
-        double error;
+        double error = 0.0;
 
         // The evaluated column of the minor specie (BrO).
-        double minorResult;
+        double minorResult = 0.0;
 
         // The error in the evaluated column of the minor specie (BrO)
-        double minorError;
+        double minorError = 0.0;
 
         // The name of the minor specie (e.g. "BrO")
-        std::string minorSpecieName;
+        std::string minorSpecieName = "";
 
         // The evaluated column of the major specie (SO2)
-        double majorResult; //<- The result of the major evaluation (SO2).
+        double majorResult = 0.0;
 
         // The error in the evaluated column of the major specie (SO2)
-        double majorError;
+        double majorError = 0.0;
 
         // The name of the major specie (e.g. "SO2")
-        std::string majorSpecieName;
+        std::string majorSpecieName = "";
     };
 }
