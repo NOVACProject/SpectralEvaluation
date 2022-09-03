@@ -18,6 +18,9 @@ void RatioCalculationController::InitializeToDefault()
 {
     m_pakfiles.clear();
 
+    // Default settings
+    m_ratioEvaluationSettings.minInPlumeColumn = 40.0; // 40 ppmm.
+
     // Insert the default species
     m_references.clear();
     m_references.push_back(ReferenceForRatioCalculation(StandardDoasSpecie::SO2, "SO2", "", true, true, false));
@@ -345,7 +348,7 @@ RatioCalculationResult RatioCalculationController::EvaluateNextScan(std::shared_
     if (!HasMoreScansToEvaluate())
     {
         RatioCalculationResult result;
-        result.errorMessage = "No more scans to evaluate";
+        result.debugInfo.errorMessage = "No more scans to evaluate";
         return result;
     }
 
@@ -380,7 +383,7 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
     result.plumeInScanProperties = plumeInScanProperties;
     if (!plumeIsVisible)
     {
-        result.errorMessage = "No visible plume";
+        result.debugInfo.errorMessage = "No visible plume";
         m_results.push_back(result);
         return result;
     }

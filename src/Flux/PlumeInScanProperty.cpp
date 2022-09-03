@@ -169,6 +169,7 @@ namespace novac
             const double maxCol_90 = maxCol * 0.90;
             const double maxCol_half = maxCol * 0.5;
 
+            // TODO: There is an error here... What if all the spectra are good?!?! (see columnOfGoodSpectra[k + 1] below)
             for (int k = 0; k < numberOfGoodspectra; ++k)
             {
                 if (angleOfGoodSpectra[k] > plumeProperties.plumeCenter)

@@ -337,7 +337,7 @@ namespace novac
             return; // Cannot retrieve a region, too few spectra...
         }
 
-        const int so2SpecieIndex = 0; // TODO: figure this out
+        const int so2SpecieIndex = 0; // It is here always assumed that SO2 is the first specie in the initial evaluation
 
         // Step 1, find the in-plume region.
         for (size_t idx = 0; idx < scanResult.m_spec.size(); ++idx)

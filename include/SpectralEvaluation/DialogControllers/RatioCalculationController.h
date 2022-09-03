@@ -6,6 +6,7 @@
 #include <SpectralEvaluation/Evaluation/RatioEvaluation.h>
 #include <SpectralEvaluation/Spectra/WavelengthRange.h>
 #include <SpectralEvaluation/DateTime.h>
+#include <SpectralEvaluation/Units.h>
 
 // Building a set of standard DOAS species
 enum class StandardDoasSpecie
