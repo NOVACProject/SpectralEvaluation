@@ -29,14 +29,6 @@
 		<squeezeValue>1.000000</squeezeValue>
 		<columnOption>0</columnOption>
 	</ref>
-	<ref name="CHO2">
-		<path>../TestData/BrORatio/D2J2124_CH2O_MellerMoortgat_298K.txt</path>
-		<shiftOption>1</shiftOption>
-		<shiftValue>0.000000</shiftValue>
-		<squeezeOption>1</squeezeOption>
-		<squeezeValue>1.000000</squeezeValue>
-		<columnOption>0</columnOption>
-	</ref>
 	<ref name="O3">
 		<path>../TestData/BrORatio/D2J2124_O3_Voigt_223K_Master.txt</path>
 		<shiftOption>1</shiftOption>

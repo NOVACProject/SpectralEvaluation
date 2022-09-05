@@ -6,6 +6,7 @@
 #include <SpectralEvaluation/Evaluation/BasicMath.h>
 #include <SpectralEvaluation/Evaluation/DoasFit.h>
 #include <SpectralEvaluation/Evaluation/DoasFitPreparation.h>
+#include <SpectralEvaluation/Evaluation/PlumeSpectrumSelector.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include <SpectralEvaluation/File/ScanFileHandler.h>
@@ -53,10 +54,9 @@ namespace novac
         {
             return throw std::invalid_argument(errorMessage);
         }
-        const bool averagedSpectra = false; // This should be true if the spectra are averages instead of sums (as they normally are).
-        if (correspondingDarkSpectrum->NumSpectra() > 0 && !averagedSpectra)
+        if (correspondingDarkSpectrum->NumSpectra() > 0)
         {
-            correspondingDarkSpectrum->Div(correspondingDarkSpectrum->NumSpectra());
+            correspondingDarkSpectrum->Mult(spectrum.NumSpectra() / (double)correspondingDarkSpectrum->NumSpectra());
         }
         spectrum.Sub(*correspondingDarkSpectrum);
     }
@@ -181,27 +181,34 @@ namespace novac
                 return result;
             }
 
-            SelectSpectraForRatioEvaluation(m_settings, m_masterResult, m_masterResultProperties, debugInfo.outOfPlumeSpectra, debugInfo.plumeSpectra);
+            {
+                PlumeSpectrumSelector selector;
+                std::unique_ptr<PlumeSpectra> selectedSpectra = selector.CreatePlumeSpectra(scan, m_masterResult, m_masterResultProperties, 0, &debugInfo.errorMessage);
+                debugInfo.outOfPlumeSpectrumIndices = selectedSpectra->referenceSpectrumIndices;
+                debugInfo.plumeSpectrumIndices = selectedSpectra->inPlumeSpectrumIndices;
+                if (selectedSpectra->inPlumeSpectrum != nullptr)
+                {
+                    debugInfo.inPlumeSpectrum = *(selectedSpectra->inPlumeSpectrum);
+                    DarkCorrectSpectrum(scan, debugInfo.inPlumeSpectrum);
+                }
+                if (selectedSpectra->referenceSpectrum != nullptr)
+                {
+                    debugInfo.outOfPlumeSpectrum = *(selectedSpectra->referenceSpectrum);
+                    DarkCorrectSpectrum(scan, debugInfo.outOfPlumeSpectrum);
+                }
+            }
 
-            if (debugInfo.outOfPlumeSpectra.size() < (size_t)m_settings.minNumberOfReferenceSpectra ||
-                debugInfo.plumeSpectra.size() < (size_t)m_settings.minNumberOfSpectraInPlume)
+            if (debugInfo.outOfPlumeSpectrumIndices.size() < (size_t)m_settings.minNumberOfReferenceSpectra ||
+                debugInfo.plumeSpectrumIndices.size() < (size_t)m_settings.minNumberOfSpectraInPlume)
             {
                 std::stringstream message;
                 message << "Too few suitable spectra for in-plume or out-of-plume. ";
-                message << "In plume: " << debugInfo.plumeSpectra.size() << " selected and " << m_settings.minNumberOfSpectraInPlume << " required. ";
-                message << "Out of plume: " << debugInfo.outOfPlumeSpectra.size() << " selected and " << m_settings.minNumberOfReferenceSpectra << " required. ";
+                message << "In plume: " << debugInfo.plumeSpectrumIndices.size() << " selected and " << m_settings.minNumberOfSpectraInPlume << " required. ";
+                message << "Out of plume: " << debugInfo.outOfPlumeSpectrumIndices.size() << " selected and " << m_settings.minNumberOfReferenceSpectra << " required. ";
                 debugInfo.errorMessage = message.str();
 
                 return result;
             }
-
-            // Create the in-plume spectrum
-            AverageSpectra(scan, debugInfo.plumeSpectra, debugInfo.inPlumeSpectrum);
-            DarkCorrectSpectrum(scan, debugInfo.inPlumeSpectrum);
-
-            // Create the out-of-plume spectrum
-            AverageSpectra(scan, debugInfo.outOfPlumeSpectra, debugInfo.outOfPlumeSpectrum);
-            DarkCorrectSpectrum(scan, debugInfo.outOfPlumeSpectrum);
 
             // Get the pixel-to-wavelength calibration of the out-of-plume-spectrum.
             // TODO: Decide on a better input for this.
@@ -323,49 +330,5 @@ namespace novac
             sum += scanResult.m_spec[ii].m_referenceResult[specieIndex].m_column;
         }
         return sum / (double)(endIdx - startIdx);
-    }
-
-    void SelectSpectraForRatioEvaluation(const RatioEvaluationSettings& settings, const BasicScanEvaluationResult& scanResult, const CPlumeInScanProperty& properties, std::vector<int>& referenceSpectra, std::vector<int>& inPlumeSpectra)
-    {
-        referenceSpectra.clear();
-        inPlumeSpectra.clear();
-
-        const size_t referenceRegionWidth = 10U;
-
-        if (scanResult.m_spec.size() <= referenceRegionWidth)
-        {
-            return; // Cannot retrieve a region, too few spectra...
-        }
-
-        const int so2SpecieIndex = 0; // It is here always assumed that SO2 is the first specie in the initial evaluation
-
-        // Step 1, find the in-plume region.
-        for (size_t idx = 0; idx < scanResult.m_spec.size(); ++idx)
-        {
-            if (scanResult.m_specInfo[idx].m_scanAngle >= properties.plumeEdgeLow &&
-                scanResult.m_specInfo[idx].m_scanAngle <= properties.plumeEdgeHigh &&
-                scanResult.m_spec[idx].m_referenceResult[so2SpecieIndex].m_column >= settings.minInPlumeColumn)
-            {
-                inPlumeSpectra.push_back((int)idx);
-            }
-        }
-
-        // Step 2, find the reference region (10 adjacent spectra with lowest avg column value)
-        size_t startIdxOfReferenceRegion = 0U;
-        double lowestMeanColumnValue = std::numeric_limits<double>::max();
-        for (size_t startIdxCandidate = 0U; startIdxCandidate < scanResult.m_spec.size() - referenceRegionWidth; ++startIdxCandidate)
-        {
-            const double meanColumnValue = AverageColumnValue(scanResult, so2SpecieIndex, startIdxCandidate, startIdxCandidate + referenceRegionWidth);
-            if (meanColumnValue < lowestMeanColumnValue)
-            {
-                lowestMeanColumnValue = meanColumnValue;
-                startIdxOfReferenceRegion = startIdxCandidate;
-            }
-        }
-
-        referenceSpectra = std::vector<int>(referenceRegionWidth);
-        std::iota(begin(referenceSpectra), end(referenceSpectra), (int)startIdxOfReferenceRegion);
-
-        return;
     }
 }

@@ -350,7 +350,7 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraOutOfPlume(
 
     std::vector<int> referenceSpectraProposal;
     CSpectrum spectrum;
-    for (auto item : spectrumColumnVsIndex)
+    for (const auto& item : spectrumColumnVsIndex)
     {
         int idx = item.first;
 

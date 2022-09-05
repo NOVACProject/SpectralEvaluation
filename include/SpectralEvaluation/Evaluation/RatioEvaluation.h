@@ -38,10 +38,10 @@ namespace novac
         std::string errorMessage;
 
         // The zero-based indices of the scan used to create the in-plume spectrum
-        std::vector<int> plumeSpectra;
+        std::vector<int> plumeSpectrumIndices;
 
         // The zero-based indices of the scan used to create the out-of-plume spectrum
-        std::vector<int> outOfPlumeSpectra;
+        std::vector<int> outOfPlumeSpectrumIndices;
 
         // The final (dark corrected) in-plume spectrum.
         CSpectrum inPlumeSpectrum;

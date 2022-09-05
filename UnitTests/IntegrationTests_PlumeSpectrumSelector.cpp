@@ -10,7 +10,7 @@
 
 namespace novac
 {
-    TEST_CASE("PlumeSpectrumSelector returns nullptr if input not readable", "[PlumeSpectrumSelector][IntegrationTest]")
+    TEST_CASE("PlumeSpectrumSelector returns nullptr if input not readable", "[PlumeSpectrumSelector][IntegrationTest][Ratios]")
     {
         novac::CScanFileHandler fileHandler;
         novac::BasicScanEvaluationResult evaluationResult;
@@ -35,7 +35,7 @@ namespace novac
     }
 
     // happy case where there is a good plume and we should be able to extract in plume and out of plume spectra
-    TEST_CASE("PlumeSpectrumSelector returns expected in and out of plume for good scan - scan file 1", "[PlumeSpectrumSelector][IntegrationTest]")
+    TEST_CASE("PlumeSpectrumSelector returns expected in and out of plume for good scan - scan file 1", "[PlumeSpectrumSelector][IntegrationTest][Ratios]")
     {
         novac::CScanFileHandler fileHandler;
         novac::CScanEvaluationLogFileHandler evaluationFileHandler;
@@ -93,7 +93,7 @@ namespace novac
     }
 
     // handling the case where there isn't a good or visible plume in the scan
-    TEST_CASE("PlumeSpectrumSelector returns no in and out of plume for scan with too wide plume - scan file 2", "[PlumeSpectrumSelector][IntegrationTest]")
+    TEST_CASE("PlumeSpectrumSelector returns no in and out of plume for scan with too wide plume - scan file 2", "[PlumeSpectrumSelector][IntegrationTest][Ratios]")
     {
         novac::CScanFileHandler fileHandler;
         novac::CScanEvaluationLogFileHandler evaluationFileHandler;

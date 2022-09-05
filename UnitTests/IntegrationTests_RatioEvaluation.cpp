@@ -10,7 +10,7 @@
 
 using namespace novac;
 
-TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[RatioEvaluation][IntegrationTest]")
+TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[RatioEvaluation][Ratios][IntegrationTest]")
 {
     RatioEvaluationSettings settings;
     Configuration::CDarkSettings darkSettings;
@@ -34,10 +34,14 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
     auto allWindows = fitWindowFileHandler.ReadFitWindowFile(TestData::GetBrORatioFitWindowFileSO2());
     REQUIRE(allWindows.size() == 1);
     auto so2FitWindow = allWindows.front();
+    so2FitWindow.fitLow = 439;
+    so2FitWindow.fitHigh = 592;
 
     allWindows = fitWindowFileHandler.ReadFitWindowFile(TestData::GetBrORatioFitWindowFileBrO());
     REQUIRE(allWindows.size() == 1);
     auto broFitWindow = allWindows.front();
+    broFitWindow.fitLow = 641;
+    broFitWindow.fitHigh = 939;
 
     // Read in the references
     REQUIRE(true == ReadReferences(so2FitWindow));
@@ -59,13 +63,13 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
         // Verify that the result is indeed correct!
         const auto& result = ratios.front();
         REQUIRE(result.minorSpecieName == "BrO");
-        REQUIRE(std::abs(result.minorResult - 2.1e14) < 2e13);
+        REQUIRE(result.minorResult == Approx(1.47e14).margin(2e13));
 
         REQUIRE(result.majorSpecieName == "SO2");
-        REQUIRE(std::abs(result.majorResult - 2.2e18) < 1e17);
+        REQUIRE(result.majorResult == Approx(2.0e18).margin(1e17));
 
-        REQUIRE(std::abs(result.ratio - 1.0e-5) < 1e-4);
-        REQUIRE(std::abs(result.error - 2e-5) < 1e-5);
+        REQUIRE(result.ratio == Approx(7.2e-5).margin(1e-6));
+        REQUIRE(result.error == Approx(1.4e-5).margin(1e-6));
     }
 
     SECTION("HP500 fit")
@@ -97,12 +101,12 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
         // Verify that the result is indeed correct!
         const auto& result = ratios.front();
         REQUIRE(result.minorSpecieName == "BrO");
-        REQUIRE(std::abs(result.minorResult - 2.8e14) < 2e13); // TODO: This is not exactly the same result as above. Why??
+        REQUIRE(result.minorResult == Approx(1.66e14).margin(2e13));
 
         REQUIRE(result.majorSpecieName == "SO2");
-        REQUIRE(std::abs(result.majorResult - 2.2e18) < 1e17);
+        REQUIRE(result.majorResult == Approx(2.0e18).margin(1e17));
 
-        REQUIRE(std::abs(result.ratio - 1.3e-4) < 1e-5); // TODO: This is not exactly the same result as above. Why??
-        REQUIRE(std::abs(result.error - 3e-5) < 1e-5); // TODO: This is not exactly the same result as above. Why??
+        REQUIRE(result.ratio == Approx(8.0e-5).margin(1e-6));
+        REQUIRE(result.error == Approx(1.8e-5).margin(1e-6));
     }
 }

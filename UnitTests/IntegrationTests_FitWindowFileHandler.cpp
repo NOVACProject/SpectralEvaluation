@@ -72,15 +72,13 @@ namespace novac
         REQUIRE(result.front().fraunhoferRef.m_path == "../TestData/BrORatio/D2J2124_SolarSpec_Master.txt");
 
         // finally the references
-        REQUIRE(result.front().nRef == 4);
+        REQUIRE(result.front().nRef == 3);
         REQUIRE(result.front().ref[0].m_specieName == "BrO");
         REQUIRE(result.front().ref[0].m_path == "../TestData/BrORatio/D2J2124_BrO_Fleischmann_298K.txt");
         REQUIRE(result.front().ref[1].m_specieName == "SO2");
         REQUIRE(result.front().ref[1].m_path == "../TestData/BrORatio/D2J2124_SO2_Bogumil_293K_Master.txt");
-        REQUIRE(result.front().ref[2].m_specieName == "CHO2");
-        REQUIRE(result.front().ref[2].m_path == "../TestData/BrORatio/D2J2124_CH2O_MellerMoortgat_298K.txt");
-        REQUIRE(result.front().ref[3].m_specieName == "O3");
-        REQUIRE(result.front().ref[3].m_path == "../TestData/BrORatio/D2J2124_O3_Voigt_223K_Master.txt");
+        REQUIRE(result.front().ref[2].m_specieName == "O3");
+        REQUIRE(result.front().ref[2].m_path == "../TestData/BrORatio/D2J2124_O3_Voigt_223K_Master.txt");
     }
 
     TEST_CASE("FitWindowFileHandler can read back one saved fit window", "[FitWindowFileHandler][IntegrationTest]")

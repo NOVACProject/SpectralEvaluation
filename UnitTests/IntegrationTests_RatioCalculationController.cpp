@@ -29,7 +29,7 @@ RatioCalculationFitSetup GetSetupOfFitWindowsForTest()
 
 #pragma endregion
 
-TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 not included SO2 window - throws invalid_argument", "[RatioCalculationController]")
+TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 not included SO2 window - throws invalid_argument", "[RatioCalculationController][Ratios]")
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
@@ -52,7 +52,7 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 not included SO2 w
     REQUIRE_THROWS(sut.SetupFitWindows());
 }
 
-TEST_CASE("RatioCalculationController - SetupFitWindows - BrO not included BrO window - throws invalid_argument", "[RatioCalculationController]")
+TEST_CASE("RatioCalculationController - SetupFitWindows - BrO not included BrO window - throws invalid_argument", "[RatioCalculationController][Ratios]")
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
@@ -75,7 +75,7 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - BrO not included BrO w
     REQUIRE_THROWS(sut.SetupFitWindows());
 }
 
-TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 and BrO included in both windows", "[RatioCalculationController]")
+TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 and BrO included in both windows", "[RatioCalculationController][Ratios]")
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
@@ -133,7 +133,7 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 and BrO included i
     REQUIRE(result->broWindow.ringCalculation == novac::RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING);
 }
 
-TEST_CASE("RatioCalculationController - SetupFitWindows - Sets up fitLow and fitHigh from SO2 and BrO references", "[RatioCalculationController]")
+TEST_CASE("RatioCalculationController - SetupFitWindows - Sets up fitLow and fitHigh from SO2 and BrO references", "[RatioCalculationController][Ratios]")
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
@@ -168,7 +168,7 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - Sets up fitLow and fit
     REQUIRE(result->broWindow.fitHigh == 939);
 }
 
-TEST_CASE("RatioCalculationController - SetupFitWindows - Sets fitType to HP_DIV of both windows if settings says so", "[RatioCalculationController]")
+TEST_CASE("RatioCalculationController - SetupFitWindows - Sets fitType to HP_DIV of both windows if settings says so", "[RatioCalculationController][Ratios]")
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
@@ -202,7 +202,7 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - Sets fitType to HP_DIV
     REQUIRE(result->broWindow.fitType == novac::FIT_TYPE::FIT_HP_DIV);
 }
 
-TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 included in only major window", "[RatioCalculationController]")
+TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 included in only major window", "[RatioCalculationController][Ratios]")
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
@@ -248,7 +248,7 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 included in only m
     REQUIRE(result->broWindow.ringCalculation == novac::RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING);
 }
 
-TEST_CASE("RatioCalculationController - SetupFitWindows - Two references in each window", "[RatioCalculationController]")
+TEST_CASE("RatioCalculationController - SetupFitWindows - Two references in each window", "[RatioCalculationController][Ratios]")
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
@@ -307,7 +307,7 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - Two references in each
     REQUIRE(result->broWindow.ringCalculation == novac::RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING);
 }
 
-TEST_CASE("RatioCalculationController - SetupFitWindows - Calculated Ring included in both windows", "[RatioCalculationController]")
+TEST_CASE("RatioCalculationController - SetupFitWindows - Calculated Ring included in both windows", "[RatioCalculationController][Ratios]")
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
@@ -351,7 +351,7 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - Calculated Ring includ
     REQUIRE(result->broWindow.ringCalculation == novac::RING_CALCULATION_OPTION::CALCULATE_RING);
 }
 
-TEST_CASE("RatioCalculationController - SetupFitWindows - Calculated Ring and Ring*Lambda4 included in both windows", "[RatioCalculationController]")
+TEST_CASE("RatioCalculationController - SetupFitWindows - Calculated Ring and Ring*Lambda4 included in both windows", "[RatioCalculationController][Ratios]")
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
@@ -398,7 +398,7 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - Calculated Ring and Ri
     REQUIRE(result->broWindow.ringCalculation == novac::RING_CALCULATION_OPTION::CALCULATE_RING_X2);
 }
 
-TEST_CASE("RatioCalculationController - Evaluate", "[RatioCalculationController]")
+TEST_CASE("RatioCalculationController - Evaluate", "[RatioCalculationController][Ratios]")
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
@@ -447,17 +447,24 @@ TEST_CASE("RatioCalculationController - Evaluate", "[RatioCalculationController]
     // Verify that the result is indeed correct!
     REQUIRE(result.ratio.minorSpecieName == "BrO");
     REQUIRE(result.ratio.majorSpecieName == "SO2");
-    REQUIRE(std::abs(result.ratio.ratio) < 1.2e-4); // During development there may be variations in the result. Just verify the range is ok for now.
-    REQUIRE(std::abs(result.ratio.ratio) > 6e-5); // During development there may be variations in the result. Just verify the range is ok for now.
-    REQUIRE(std::abs(result.ratio.error) < std::abs(result.ratio.ratio / 2.0));
+
+    REQUIRE(result.debugInfo.doasResults[0].referenceResult[0].column == Approx(2.0e18).margin(1e17));
+    REQUIRE(result.debugInfo.doasResults[1].referenceResult[0].column == Approx(1.5e14).margin(2e13));
+
+    REQUIRE(result.ratio.ratio == Approx(7.4e-5).margin(1e-6));
+    REQUIRE(result.ratio.error == Approx(1.4e-5).margin(1e-6));
 
     // Also, verify that the result contains the additional informatino which we need in order to show the results to the user
     REQUIRE(result.filename == fileHandler.GetFileName());
     REQUIRE(result.debugInfo.errorMessage == "");
-    REQUIRE(result.debugInfo.plumeSpectra.size() >= sut.m_ratioEvaluationSettings.minNumberOfSpectraInPlume);
-    REQUIRE(result.debugInfo.outOfPlumeSpectra.size() >= sut.m_ratioEvaluationSettings.minNumberOfReferenceSpectra);
-    REQUIRE(result.debugInfo.inPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.plumeSpectra.size());
-    REQUIRE(result.debugInfo.outOfPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.outOfPlumeSpectra.size());
+    REQUIRE(result.debugInfo.plumeSpectrumIndices.size() == 10);
+    REQUIRE(result.debugInfo.plumeSpectrumIndices.front() == 14);
+    REQUIRE(result.debugInfo.plumeSpectrumIndices.back() == 23);
+    REQUIRE(result.debugInfo.outOfPlumeSpectrumIndices.size() == 10);
+    REQUIRE(result.debugInfo.outOfPlumeSpectrumIndices.front() == 29);
+    REQUIRE(result.debugInfo.outOfPlumeSpectrumIndices.back() == 50);
+    REQUIRE(result.debugInfo.inPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.plumeSpectrumIndices.size());
+    REQUIRE(result.debugInfo.outOfPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.outOfPlumeSpectrumIndices.size());
 
     // The DOAS results
     REQUIRE(result.debugInfo.doasResults.size() == 2);
@@ -469,7 +476,58 @@ TEST_CASE("RatioCalculationController - Evaluate", "[RatioCalculationController]
     REQUIRE(result.debugInfo.doasResults[1].fitHigh == fitWindowsetup->broWindow.fitHigh);
 }
 
-TEST_CASE("RatioCalculationController - Evaluate without Ring", "[RatioCalculationController]")
+TEST_CASE("RatioCalculationController - Evaluate - plume too wide", "[RatioCalculationController][Ratios]")
+{
+    const auto testWindows = GetSetupOfFitWindowsForTest();
+
+    RatioCalculationController sut;
+    REQUIRE(sut.m_references.size() == 5); // check assumption here.
+
+    // Setup the references for a good fit
+    ReferenceForRatioCalculation* so2Reference = GetReferenceFor(sut, StandardDoasSpecie::SO2);
+    so2Reference->m_path = testWindows.so2Window.ref[0].m_path;
+    so2Reference->m_includeInMajor = true;
+    so2Reference->m_includeInMinor = false;
+    ReferenceForRatioCalculation* o3Reference = GetReferenceFor(sut, StandardDoasSpecie::O3);
+    o3Reference->m_path = testWindows.so2Window.ref[1].m_path;
+    o3Reference->m_includeInMajor = true;
+    o3Reference->m_includeInMinor = true;
+    ReferenceForRatioCalculation* broReference = GetReferenceFor(sut, StandardDoasSpecie::BRO);
+    broReference->m_path = testWindows.broWindow.ref[0].m_path;
+    broReference->m_includeInMajor = false;
+    broReference->m_includeInMinor = true;
+    ReferenceForRatioCalculation* ringReference = GetReferenceFor(sut, StandardDoasSpecie::RING);
+    ringReference->m_automaticallyCalculate = true;
+    ringReference->m_includeInMajor = true;
+    ringReference->m_includeInMinor = true;
+    ReferenceForRatioCalculation* ringReference2 = GetReferenceFor(sut, StandardDoasSpecie::RING_LAMBDA4);
+    ringReference2->m_automaticallyCalculate = true;
+    ringReference2->m_includeInMajor = true;
+    ringReference2->m_includeInMinor = true;
+
+    // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
+    novac::CScanFileHandler fileHandler;
+    const bool scanFileIsOk = fileHandler.CheckScanFile(TestData::GetBrORatioScanFile2());
+    REQUIRE(scanFileIsOk); // check assumption on the setup
+
+    novac::CScanEvaluationLogFileHandler evaluationFileHandler;
+    const bool evaluationFileIsOk = evaluationFileHandler.ReadEvaluationLog(TestData::GetBrORatioEvaluationFile2());
+    REQUIRE(evaluationFileIsOk); // check assumption on the setup
+    REQUIRE(evaluationFileHandler.m_scan.size() == 1); // check assumption on the setup
+
+    // setup the fit windows
+    auto fitWindowsetup = sut.SetupFitWindows();
+
+    // Act
+    const auto result = sut.EvaluateScan(fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
+
+    // Assert
+    REQUIRE(!result.debugInfo.errorMessage.empty());
+
+    REQUIRE(std::abs(result.ratio.ratio) < std::numeric_limits<double>::epsilon());
+}
+
+TEST_CASE("RatioCalculationController - Evaluate without Ring", "[RatioCalculationController][Ratios]")
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
@@ -521,10 +579,10 @@ TEST_CASE("RatioCalculationController - Evaluate without Ring", "[RatioCalculati
     // Also, verify that the result contains the additional informatino which we need in order to show the results to the user
     REQUIRE(result.filename == fileHandler.GetFileName());
     REQUIRE(result.debugInfo.errorMessage == "");
-    REQUIRE(result.debugInfo.plumeSpectra.size() >= sut.m_ratioEvaluationSettings.minNumberOfSpectraInPlume);
-    REQUIRE(result.debugInfo.outOfPlumeSpectra.size() >= sut.m_ratioEvaluationSettings.minNumberOfReferenceSpectra);
-    REQUIRE(result.debugInfo.inPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.plumeSpectra.size());
-    REQUIRE(result.debugInfo.outOfPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.outOfPlumeSpectra.size());
+    REQUIRE(result.debugInfo.plumeSpectrumIndices.size() >= sut.m_ratioEvaluationSettings.minNumberOfSpectraInPlume);
+    REQUIRE(result.debugInfo.outOfPlumeSpectrumIndices.size() >= sut.m_ratioEvaluationSettings.minNumberOfReferenceSpectra);
+    REQUIRE(result.debugInfo.inPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.plumeSpectrumIndices.size());
+    REQUIRE(result.debugInfo.outOfPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.outOfPlumeSpectrumIndices.size());
 
     // The DOAS results
     REQUIRE(result.debugInfo.doasResults.size() == 2);
@@ -544,7 +602,7 @@ TEST_CASE("RatioCalculationController - Evaluate without Ring", "[RatioCalculati
     REQUIRE(result.debugInfo.doasResults[1].fitHigh == fitWindowsetup->broWindow.fitHigh);
 }
 
-TEST_CASE("RatioCalculationController - Evaluate without offset polynomial", "[RatioCalculationController]")
+TEST_CASE("RatioCalculationController - Evaluate without offset polynomial", "[RatioCalculationController][Ratios]")
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
@@ -605,10 +663,10 @@ TEST_CASE("RatioCalculationController - Evaluate without offset polynomial", "[R
     // Also, verify that the result contains the additional informatino which we need in order to show the results to the user
     REQUIRE(result.filename == fileHandler.GetFileName());
     REQUIRE(result.debugInfo.errorMessage == "");
-    REQUIRE(result.debugInfo.plumeSpectra.size() >= sut.m_ratioEvaluationSettings.minNumberOfSpectraInPlume);
-    REQUIRE(result.debugInfo.outOfPlumeSpectra.size() >= sut.m_ratioEvaluationSettings.minNumberOfReferenceSpectra);
-    REQUIRE(result.debugInfo.inPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.plumeSpectra.size());
-    REQUIRE(result.debugInfo.outOfPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.outOfPlumeSpectra.size());
+    REQUIRE(result.debugInfo.plumeSpectrumIndices.size() >= sut.m_ratioEvaluationSettings.minNumberOfSpectraInPlume);
+    REQUIRE(result.debugInfo.outOfPlumeSpectrumIndices.size() >= sut.m_ratioEvaluationSettings.minNumberOfReferenceSpectra);
+    REQUIRE(result.debugInfo.inPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.plumeSpectrumIndices.size());
+    REQUIRE(result.debugInfo.outOfPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.outOfPlumeSpectrumIndices.size());
 
     // The DOAS results
     REQUIRE(result.debugInfo.doasResults.size() == 2);
@@ -629,7 +687,7 @@ TEST_CASE("RatioCalculationController - Evaluate without offset polynomial", "[R
     REQUIRE(result.debugInfo.doasResults[1].fitHigh == fitWindowsetup->broWindow.fitHigh);
 }
 
-TEST_CASE("RatioCalculationController - DoInitialEvaluation", "[RatioCalculationController]")
+TEST_CASE("RatioCalculationController - DoInitialEvaluation", "[RatioCalculationController][Ratios]")
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
@@ -685,7 +743,7 @@ TEST_CASE("RatioCalculationController - DoInitialEvaluation", "[RatioCalculation
     }
 }
 
-TEST_CASE("RatioCalculationController - Save and LoadSetup restores original data", "[RatioCalculationController]")
+TEST_CASE("RatioCalculationController - Save and LoadSetup restores original data", "[RatioCalculationController][Ratios]")
 {
     RatioCalculationController original;
     // Setup the references
