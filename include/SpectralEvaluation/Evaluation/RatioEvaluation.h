@@ -5,6 +5,7 @@
 #include <SpectralEvaluation/Evaluation/DoasFit.h>
 #include <SpectralEvaluation/Evaluation/BasicScanEvaluationResult.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/Configuration/RatioEvaluationSettings.h>
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include <vector>
 
@@ -16,19 +17,6 @@ namespace Configuration
 namespace novac
 {
     class IScanSpectrumSource;
-
-    // TODO: Move to Configuration
-    struct RatioEvaluationSettings
-    {
-        // The minimum number of spectra which needs to be selected in the plume for the ratio calculation to be successful.
-        int minNumberOfSpectraInPlume = 7;
-
-        // The minimum (SO2) column for the selected spectra in the plume. Defaults to 40ppmm = 1e17 molec/cm2.
-        double minInPlumeColumn = 1e17;
-
-        // The minimum number of spectra which needs to be averaged outside of the plume for the calculation to be successful.
-        int minNumberOfReferenceSpectra = 7;
-    };
 
     // A basic structure used to be able to extract information from the RatioEvaluation below.
     // This can be used to e.g. present intermediates to the user for a better understanding of the process.
@@ -67,7 +55,7 @@ namespace novac
     class RatioEvaluation
     {
     public:
-        RatioEvaluation(const RatioEvaluationSettings& settings, const Configuration::CDarkSettings& darkSettings);
+        RatioEvaluation(const Configuration::RatioEvaluationSettings& settings, const Configuration::CDarkSettings& darkSettings);
 
         // Calculates the ratio of an evaluation in a major window and a minor window.
         // The ratio is calculated using the first reference result in each DoasResult.
@@ -117,7 +105,7 @@ namespace novac
         std::vector<CFitWindow> m_referenceFit;
 
         /** The settings for how the ratio-calculation should be performed. */
-        RatioEvaluationSettings m_settings;
+        Configuration::RatioEvaluationSettings m_settings;
 
         std::vector<Ratio> Run(IScanSpectrumSource& scan, RatioEvaluationDebugInformation& debugInfo);
 
@@ -135,6 +123,6 @@ namespace novac
     /** Estimates which spectra should be used for a ratio-evaluation, assuming that one should be performed.
         @param referenceSpectra Will be filled with the index of the spectra which should be averaged to a reference spectrum.
         @param inPlumeSpectra Will be filled with the index of the spectra which should be averaged to an in-plume spectrum. */
-    void SelectSpectraForRatioEvaluation(const RatioEvaluationSettings& settings, const BasicScanEvaluationResult& scanResult, const CPlumeInScanProperty& properties, std::vector<int>& referenceSpectra, std::vector<int>& inPlumeSpectra);
+    void SelectSpectraForRatioEvaluation(const Configuration::RatioEvaluationSettings& settings, const BasicScanEvaluationResult& scanResult, const CPlumeInScanProperty& properties, std::vector<int>& referenceSpectra, std::vector<int>& inPlumeSpectra);
 
 }

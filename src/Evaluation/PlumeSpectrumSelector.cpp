@@ -10,6 +10,7 @@
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 #include <SpectralEvaluation/Math/SpectrumMath.h>
+#include <SpectralEvaluation/Configuration/RatioEvaluationSettings.h>
 
 using namespace novac;
 
@@ -31,13 +32,13 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
     IScanSpectrumSource& originalScanFile,
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& plumeProperties,
+    const Configuration::RatioEvaluationSettings settings,
     int mainSpecieIndex,
     std::string* errorMessage)
 {
     std::vector<int> referenceSpectrumIndices;
     std::vector<int> inPlumeSpectrumIndices;
 
-    m_settings = PlumeSpectrumSelectionSettings();
     m_mainSpecieIndex = mainSpecieIndex;
 
     auto skySpectrum = std::make_unique<CSpectrum>();
@@ -62,7 +63,7 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
     // Get some parameters regarding the scan and the spectrometer
     const auto model = CSpectrometerDatabase::GetInstance().GetModel(skySpectrum->m_info.m_specModelName);
 
-    if (!IsSuitableScanForRatioEvaluation(*skySpectrum, *darkSpectrum, scanResult, plumeProperties, model, errorMessage))
+    if (!IsSuitableScanForRatioEvaluation(*skySpectrum, *darkSpectrum, scanResult, plumeProperties, model, settings, errorMessage))
     {
         return nullptr;
     }
@@ -73,6 +74,7 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
         scanResult,
         plumeProperties,
         model,
+        settings,
         referenceSpectrumIndices,
         inPlumeSpectrumIndices,
         errorMessage);
@@ -111,11 +113,12 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     IScanSpectrumSource& originalScanFile,
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& plumeProperties,
+    const Configuration::RatioEvaluationSettings settings,
     int mainSpecieIndex,
     const std::string& outputDirectory,
     std::string* errorMessage)
 {
-    const auto spectra = this->CreatePlumeSpectra(originalScanFile, scanResult, plumeProperties, mainSpecieIndex, errorMessage);
+    const auto spectra = this->CreatePlumeSpectra(originalScanFile, scanResult, plumeProperties, settings, mainSpecieIndex, errorMessage);
     if (spectra == nullptr)
     {
         return;
@@ -174,6 +177,7 @@ void PlumeSpectrumSelector::SelectSpectra(
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& properties,
     const SpectrometerModel& spectrometerModel,
+    const Configuration::RatioEvaluationSettings settings,
     std::vector<int>& referenceSpectra,
     std::vector<int>& inPlumeSpectra,
     std::string* errorMessage)
@@ -181,15 +185,15 @@ void PlumeSpectrumSelector::SelectSpectra(
     referenceSpectra.clear();
     inPlumeSpectra.clear();
 
-    if (static_cast<int>(scanResult.m_spec.size()) <= m_settings.numberOfSpectraOutsideOfPlume + m_settings.minNumberOfSpectraInPlume)
+    if (static_cast<int>(scanResult.m_spec.size()) <= settings.numberOfSpectraOutsideOfPlume + settings.minNumberOfSpectraInPlume)
     {
         return; // Cannot retrieve a region, too few spectra...
     }
 
     // Find a proprosal for the in-plume region.
-    auto inPlumeProposal = FindSpectraInPlume(scanResult, properties);
-    inPlumeProposal = FilterSpectraUsingIntensity(inPlumeProposal, scanFile, darkSpectrum, spectrometerModel);
-    if (static_cast<int>(inPlumeProposal.size()) < m_settings.minNumberOfSpectraInPlume)
+    auto inPlumeProposal = FindSpectraInPlume(scanResult, properties, settings);
+    inPlumeProposal = FilterSpectraUsingIntensity(inPlumeProposal, scanFile, darkSpectrum, spectrometerModel, settings);
+    if (static_cast<int>(inPlumeProposal.size()) < settings.minNumberOfSpectraInPlume)
     {
         if (errorMessage != nullptr)
         {
@@ -199,8 +203,8 @@ void PlumeSpectrumSelector::SelectSpectra(
     }
 
     // Find the reference spectra as the spectra with lowest column value (ignore the sky and the dark spectra here..) 
-    auto referenceProposal = FindSpectraOutOfPlume(scanFile, darkSpectrum, scanResult, spectrometerModel, inPlumeProposal);
-    if (static_cast<int>(referenceProposal.size()) < m_settings.numberOfSpectraOutsideOfPlume)
+    auto referenceProposal = FindSpectraOutOfPlume(scanFile, darkSpectrum, scanResult, spectrometerModel, settings, inPlumeProposal);
+    if (static_cast<int>(referenceProposal.size()) < settings.numberOfSpectraOutsideOfPlume)
     {
         if (errorMessage != nullptr)
         {
@@ -224,25 +228,26 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
     const BasicScanEvaluationResult& scanResult,
     const CPlumeInScanProperty& properties,
     const SpectrometerModel& spectrometerModel,
+    const Configuration::RatioEvaluationSettings settings,
     std::string* errorMessage)
 {
-    if (static_cast<int>(scanResult.m_spec.size()) < m_settings.minNumberOfSpectraInPlume + m_settings.numberOfSpectraOutsideOfPlume)
+    if (static_cast<int>(scanResult.m_spec.size()) < settings.minNumberOfSpectraInPlume + settings.numberOfSpectraOutsideOfPlume)
     {
         if (errorMessage != nullptr)
         {
             std::stringstream msg;
             msg << "Too few spectra in scan (" << scanResult.m_spec.size() << ") at least ";
-            msg << m_settings.minNumberOfSpectraInPlume + m_settings.numberOfSpectraOutsideOfPlume << " required.";
+            msg << settings.minNumberOfSpectraInPlume + settings.numberOfSpectraOutsideOfPlume << " required.";
             *errorMessage = msg.str();
         }
         return false;
     }
-    else if (properties.completeness < m_minimumPlumeCompleteness)
+    else if (properties.completeness < settings.minimumPlumeCompleteness)
     {
         if (errorMessage != nullptr)
         {
             std::stringstream msg;
-            msg << "Plume completeness (" << properties.completeness << ") below limit of (" << m_minimumPlumeCompleteness << ")";
+            msg << "Plume completeness (" << properties.completeness << ") below limit of (" << settings.minimumPlumeCompleteness << ")";
             *errorMessage = msg.str();
         }
         return false;
@@ -268,12 +273,12 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
         return false;
     }
 
-    if (!SpectrumFulfillsIntensityRequirement(skySpectrum, darkSpectrum, spectrometerModel))
+    if (!SpectrumFulfillsIntensityRequirement(skySpectrum, darkSpectrum, spectrometerModel, settings))
     {
         if (errorMessage != nullptr)
         {
             std::stringstream msg;
-            msg << "Sky spectrum does not have saturation ratio in required range " << m_settings.minSaturationRatio << " to " << m_settings.maxSaturationRatio;
+            msg << "Sky spectrum does not have saturation ratio in required range " << settings.minSaturationRatio << " to " << settings.maxSaturationRatio;
             *errorMessage = msg.str();
         }
         return false;
@@ -284,13 +289,14 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
 
 std::vector<int> PlumeSpectrumSelector::FindSpectraInPlume(
     const BasicScanEvaluationResult& scanResult,
-    const CPlumeInScanProperty& properties)
+    const CPlumeInScanProperty& properties,
+    const Configuration::RatioEvaluationSettings settings)
 {
     std::vector<int> indices;
 
     // add all spectra in the scan-angle range [plumeHalfLow, plumeHalfHigh]
-    const double minimumScanAngle = std::max(m_settings.minimumScanAngle, properties.plumeHalfLow);
-    const double maximumScanAngle = std::min(m_settings.maximumScanAngle, properties.plumeHalfHigh);
+    const double minimumScanAngle = std::max(settings.minimumScanAngle, properties.plumeHalfLow);
+    const double maximumScanAngle = std::min(settings.maximumScanAngle, properties.plumeHalfHigh);
     for (int idx = 0; idx < (int)scanResult.m_spec.size(); ++idx)
     {
         if (scanResult.m_specInfo[idx].m_scanAngle > minimumScanAngle + 0.1 &&
@@ -301,7 +307,7 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraInPlume(
     }
 
     // limit the number of spectra
-    while (indices.size() > static_cast<size_t>(m_settings.maxNumberOfSpectraInPlume))
+    while (indices.size() > static_cast<size_t>(settings.maxNumberOfSpectraInPlume))
     {
         auto first = begin(indices);
         auto last = begin(indices) + indices.size() - 1;
@@ -325,6 +331,7 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraOutOfPlume(
     const CSpectrum& darkSpectrum,
     const BasicScanEvaluationResult& scanResult,
     const SpectrometerModel& spectrometerModel,
+    const Configuration::RatioEvaluationSettings settings,
     const std::vector<int>& inPlumeProposal)
 {
     std::vector<int> indices;
@@ -354,11 +361,11 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraOutOfPlume(
     {
         int idx = item.first;
 
-        if (0 == scanFile.GetSpectrum((int)idx, spectrum) && SpectrumFulfillsIntensityRequirement(spectrum, darkSpectrum, spectrometerModel))
+        if (0 == scanFile.GetSpectrum((int)idx, spectrum) && SpectrumFulfillsIntensityRequirement(spectrum, darkSpectrum, spectrometerModel, settings))
         {
             referenceSpectraProposal.push_back(idx);
 
-            if (referenceSpectraProposal.size() == static_cast<int>(m_settings.numberOfSpectraOutsideOfPlume))
+            if (referenceSpectraProposal.size() == static_cast<int>(settings.numberOfSpectraOutsideOfPlume))
             {
                 return referenceSpectraProposal;
             }
@@ -371,10 +378,11 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraOutOfPlume(
 bool PlumeSpectrumSelector::SpectrumFulfillsIntensityRequirement(
     const CSpectrum& spectrum,
     const CSpectrum& darkSpectrum,
-    const SpectrometerModel& spectrometerModel)
+    const SpectrometerModel& spectrometerModel,
+    const Configuration::RatioEvaluationSettings settings)
 {
     double maxSaturationRatio = GetMaximumSaturationRatioOfSpectrum(spectrum, spectrometerModel);
-    if (maxSaturationRatio > m_settings.maxSaturationRatio)
+    if (maxSaturationRatio > settings.maxSaturationRatio)
     {
         return false;
     }
@@ -384,7 +392,7 @@ bool PlumeSpectrumSelector::SpectrumFulfillsIntensityRequirement(
     spectrumClone.Sub(darkSpectrum);
 
     maxSaturationRatio = GetMaximumSaturationRatioOfSpectrum(spectrum, spectrometerModel);
-    if (maxSaturationRatio < m_settings.minSaturationRatio)
+    if (maxSaturationRatio < settings.minSaturationRatio)
     {
         return false;
     }
@@ -396,7 +404,8 @@ std::vector<int> PlumeSpectrumSelector::FilterSpectraUsingIntensity(
     const std::vector<int>& proposedIndices,
     IScanSpectrumSource& scanFile,
     const CSpectrum& darkSpectrum,
-    const SpectrometerModel& spectrometerModel)
+    const SpectrometerModel& spectrometerModel,
+    const Configuration::RatioEvaluationSettings settings)
 {
     std::vector<int> result;
     result.reserve(proposedIndices.size());
@@ -404,7 +413,7 @@ std::vector<int> PlumeSpectrumSelector::FilterSpectraUsingIntensity(
     CSpectrum spectrum;
     for (int idx : proposedIndices)
     {
-        if (0 == scanFile.GetSpectrum((int)idx, spectrum) && SpectrumFulfillsIntensityRequirement(spectrum, darkSpectrum, spectrometerModel))
+        if (0 == scanFile.GetSpectrum((int)idx, spectrum) && SpectrumFulfillsIntensityRequirement(spectrum, darkSpectrum, spectrometerModel, settings))
         {
             result.push_back(idx);
         }

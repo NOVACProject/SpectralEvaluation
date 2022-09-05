@@ -144,7 +144,7 @@ public:
     novac::FIT_TYPE m_doasFitType = novac::FIT_TYPE::FIT_POLY;
 
     // Settings for how to select the in-plume and out-of-plume spectra.
-    novac::RatioEvaluationSettings m_ratioEvaluationSettings;
+    Configuration::RatioEvaluationSettings m_ratioEvaluationSettings;
 
     // A memory of all the results this instance of RatioCalculationController has produced.
     // It is up to the user of this class to clear this list when desired.

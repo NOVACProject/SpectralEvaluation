@@ -12,7 +12,7 @@ using namespace novac;
 
 TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[RatioEvaluation][Ratios][IntegrationTest]")
 {
-    RatioEvaluationSettings settings;
+    Configuration::RatioEvaluationSettings settings;
     Configuration::CDarkSettings darkSettings;
 
     // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.

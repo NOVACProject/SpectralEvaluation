@@ -31,9 +31,9 @@ namespace novac
         std::vector<double> intensityOffsetSpectrum;
     };
 
-    bool IsSuitableScanForRatioEvaluation(const RatioEvaluationSettings& settings, const BasicScanEvaluationResult& scanResult, const CPlumeInScanProperty& properties, std::string& errorMessage)
+    bool IsSuitableScanForRatioEvaluation(const Configuration::RatioEvaluationSettings& settings, const BasicScanEvaluationResult& scanResult, const CPlumeInScanProperty& properties, std::string& errorMessage)
     {
-        if (static_cast<int>(scanResult.m_spec.size()) < settings.minNumberOfSpectraInPlume + settings.minNumberOfReferenceSpectra)
+        if (static_cast<int>(scanResult.m_spec.size()) < settings.minNumberOfSpectraInPlume + settings.numberOfSpectraOutsideOfPlume)
         {
             errorMessage = "Too few spectra in scan for creating adding an in-plume-spectrum and an out-of-plume-spectrum.";
             return false; // not enough spectra
@@ -149,7 +149,7 @@ namespace novac
         return doasResult;
     }
 
-    RatioEvaluation::RatioEvaluation(const RatioEvaluationSettings& settings, const Configuration::CDarkSettings& darkSettings)
+    RatioEvaluation::RatioEvaluation(const Configuration::RatioEvaluationSettings& settings, const Configuration::CDarkSettings& darkSettings)
         : m_darkSettings(darkSettings), m_settings(settings)
     {
     }
@@ -183,7 +183,7 @@ namespace novac
 
             {
                 PlumeSpectrumSelector selector;
-                std::unique_ptr<PlumeSpectra> selectedSpectra = selector.CreatePlumeSpectra(scan, m_masterResult, m_masterResultProperties, 0, &debugInfo.errorMessage);
+                std::unique_ptr<PlumeSpectra> selectedSpectra = selector.CreatePlumeSpectra(scan, m_masterResult, m_masterResultProperties, m_settings, 0, &debugInfo.errorMessage);
                 debugInfo.outOfPlumeSpectrumIndices = selectedSpectra->referenceSpectrumIndices;
                 debugInfo.plumeSpectrumIndices = selectedSpectra->inPlumeSpectrumIndices;
                 if (selectedSpectra->inPlumeSpectrum != nullptr)
@@ -198,13 +198,13 @@ namespace novac
                 }
             }
 
-            if (debugInfo.outOfPlumeSpectrumIndices.size() < (size_t)m_settings.minNumberOfReferenceSpectra ||
+            if (debugInfo.outOfPlumeSpectrumIndices.size() < (size_t)m_settings.numberOfSpectraOutsideOfPlume ||
                 debugInfo.plumeSpectrumIndices.size() < (size_t)m_settings.minNumberOfSpectraInPlume)
             {
                 std::stringstream message;
                 message << "Too few suitable spectra for in-plume or out-of-plume. ";
                 message << "In plume: " << debugInfo.plumeSpectrumIndices.size() << " selected and " << m_settings.minNumberOfSpectraInPlume << " required. ";
-                message << "Out of plume: " << debugInfo.outOfPlumeSpectrumIndices.size() << " selected and " << m_settings.minNumberOfReferenceSpectra << " required. ";
+                message << "Out of plume: " << debugInfo.outOfPlumeSpectrumIndices.size() << " selected and " << m_settings.numberOfSpectraOutsideOfPlume << " required. ";
                 debugInfo.errorMessage = message.str();
 
                 return result;

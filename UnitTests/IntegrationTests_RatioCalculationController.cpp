@@ -580,7 +580,7 @@ TEST_CASE("RatioCalculationController - Evaluate without Ring", "[RatioCalculati
     REQUIRE(result.filename == fileHandler.GetFileName());
     REQUIRE(result.debugInfo.errorMessage == "");
     REQUIRE(result.debugInfo.plumeSpectrumIndices.size() >= sut.m_ratioEvaluationSettings.minNumberOfSpectraInPlume);
-    REQUIRE(result.debugInfo.outOfPlumeSpectrumIndices.size() >= sut.m_ratioEvaluationSettings.minNumberOfReferenceSpectra);
+    REQUIRE(result.debugInfo.outOfPlumeSpectrumIndices.size() >= sut.m_ratioEvaluationSettings.numberOfSpectraOutsideOfPlume);
     REQUIRE(result.debugInfo.inPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.plumeSpectrumIndices.size());
     REQUIRE(result.debugInfo.outOfPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.outOfPlumeSpectrumIndices.size());
 
@@ -664,7 +664,7 @@ TEST_CASE("RatioCalculationController - Evaluate without offset polynomial", "[R
     REQUIRE(result.filename == fileHandler.GetFileName());
     REQUIRE(result.debugInfo.errorMessage == "");
     REQUIRE(result.debugInfo.plumeSpectrumIndices.size() >= sut.m_ratioEvaluationSettings.minNumberOfSpectraInPlume);
-    REQUIRE(result.debugInfo.outOfPlumeSpectrumIndices.size() >= sut.m_ratioEvaluationSettings.minNumberOfReferenceSpectra);
+    REQUIRE(result.debugInfo.outOfPlumeSpectrumIndices.size() >= sut.m_ratioEvaluationSettings.numberOfSpectraOutsideOfPlume);
     REQUIRE(result.debugInfo.inPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.plumeSpectrumIndices.size());
     REQUIRE(result.debugInfo.outOfPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.outOfPlumeSpectrumIndices.size());
 

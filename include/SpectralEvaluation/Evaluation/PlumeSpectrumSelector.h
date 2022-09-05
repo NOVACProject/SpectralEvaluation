@@ -4,6 +4,11 @@
 #include <memory>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 
+namespace Configuration
+{
+    struct RatioEvaluationSettings;
+}
+
 namespace novac
 {
     class CPlumeInScanProperty;
@@ -42,26 +47,6 @@ namespace novac
     class PlumeSpectrumSelector
     {
     public:
-        struct PlumeSpectrumSelectionSettings
-        {
-            int minNumberOfSpectraInPlume = 4;
-
-            int maxNumberOfSpectraInPlume = 10;
-
-            int numberOfSpectraOutsideOfPlume = 10;
-
-            // Lowest allowed angle to include, in degrees from zenith. Used to exclude spectra too close to the horizon.
-            double minimumScanAngle = -75.0;
-
-            // Highest allowed angle to include, in degrees from zenith. Used to exclude spectra too close to the horizon.
-            double maximumScanAngle = +75.0;
-
-            // The maximum saturation ratio (intensity / maximum intensity of spectrometer)
-            double maxSaturationRatio = 0.88;
-
-            // The minimum saturation ratio (intensity / maximum intensity of spectrometer)
-            double minSaturationRatio = 0.12;
-        };
 
         /**
          * @brief Selects in-plume and out-of-plume spectra from the given scan file with given evaluation result and selection criteria.
@@ -76,6 +61,7 @@ namespace novac
             IScanSpectrumSource& originalScanFile,
             const BasicScanEvaluationResult& scanResult,
             const CPlumeInScanProperty& plumeProperties,
+            const Configuration::RatioEvaluationSettings settings,
             int mainSpecieIndex = 0,
             std::string* errorMessage = nullptr);
 
@@ -92,17 +78,14 @@ namespace novac
             IScanSpectrumSource& originalScanFile,
             const BasicScanEvaluationResult& scanResult,
             const CPlumeInScanProperty& plumeProperties,
+            const Configuration::RatioEvaluationSettings settings,
             int mainSpecieIndex,
             const std::string& outputDirectory,
             std::string* errorMessage = nullptr);
 
     private:
 
-        const double m_minimumPlumeCompleteness = 0.7;
-
         int m_mainSpecieIndex = 0;
-
-        PlumeSpectrumSelectionSettings m_settings;
 
         /**
          * @brief Returns true if the provided scanResult represents a scan which is suitable for performing ratio evaluation
@@ -119,6 +102,7 @@ namespace novac
             const BasicScanEvaluationResult& scanResult,
             const CPlumeInScanProperty& properties,
             const SpectrometerModel& spectrometerModel,
+            const Configuration::RatioEvaluationSettings settings,
             std::string* errorMessage = nullptr);
 
         /**
@@ -139,26 +123,30 @@ namespace novac
             const BasicScanEvaluationResult& scanResult,
             const CPlumeInScanProperty& properties,
             const SpectrometerModel& spectrometerModel,
+            const Configuration::RatioEvaluationSettings settings,
             std::vector<int>& referenceSpectra,
             std::vector<int>& inPlumeSpectra,
             std::string* errorMessage = nullptr);
 
         std::vector<int> FindSpectraInPlume(
             const BasicScanEvaluationResult& scanResult,
-            const CPlumeInScanProperty& properties);
+            const CPlumeInScanProperty& properties,
+            const Configuration::RatioEvaluationSettings settings);
 
         std::vector<int> FindSpectraOutOfPlume(
             IScanSpectrumSource& scanFile,
             const CSpectrum& darkSpectrum,
             const BasicScanEvaluationResult& scanResult,
             const SpectrometerModel& spectrometerModel,
+            const Configuration::RatioEvaluationSettings settings,
             const std::vector<int>& inPlumeProposal);
 
         std::vector<int> FilterSpectraUsingIntensity(
             const std::vector<int>& proposedIndices,
             IScanSpectrumSource& scanFile,
             const CSpectrum& darkSpectrum,
-            const SpectrometerModel& spectrometerModel);
+            const SpectrometerModel& spectrometerModel,
+            const Configuration::RatioEvaluationSettings settings);
 
         /**
          * @brief Return true if the provided spectrum has a good intensity for being included in a ratio evaluation.
@@ -170,6 +158,7 @@ namespace novac
         bool SpectrumFulfillsIntensityRequirement(
             const CSpectrum& spectrum,
             const CSpectrum& darkSpectrum,
-            const SpectrometerModel& spectrometerModel);
+            const SpectrometerModel& spectrometerModel,
+            const Configuration::RatioEvaluationSettings settings);
     };
 }
