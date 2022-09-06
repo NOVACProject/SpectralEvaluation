@@ -51,15 +51,15 @@ namespace novac
         /**
          * @brief Selects in-plume and out-of-plume spectra from the given scan file with given evaluation result and selection criteria.
          * @param originalScanFile The .pak file where the spectra are found.
-         * @param scanResult The result of evaluating the provided scan file.
+         * @param originalScanResult The result of evaluating the provided scan file.
          * @param plumeProperties Describes how much of the plume is visible in the scan, and at what angle.
-         * @param mainSpecieIndex The index of the main species (typically SO2) in the scanResult.
+         * @param mainSpecieIndex The index of the main species (typically SO2) in the originalScanResult.
          * @param errorMessage If present, will be filled with the reason PlumeSpectra is null if it could not be created.
          * @return A created PlumeSpectra struct, or nullptr if none could be created.
         */
         std::unique_ptr<PlumeSpectra> CreatePlumeSpectra(
             IScanSpectrumSource& originalScanFile,
-            const BasicScanEvaluationResult& scanResult,
+            const BasicScanEvaluationResult& originalScanResult,
             const CPlumeInScanProperty& plumeProperties,
             const Configuration::RatioEvaluationSettings settings,
             int mainSpecieIndex = 0,
@@ -69,14 +69,14 @@ namespace novac
          * @brief Selects in-plume and out-of-plume spectra from the given scan file with given evaluation result and selection criteria
          * and saves these to file.
          * @param originalScanFile The .pak file where the spectra are found.
-         * @param scanResult The result of evaluating the provided scan file.
+         * @param originalScanResult The result of evaluating the provided scan file.
          * @param plumeProperties Describes how much of the plume is visible in the scan, and at what angle.
-         * @param mainSpecieIndex The index of the main species (typically SO2) in the scanResult.
+         * @param mainSpecieIndex The index of the main species (typically SO2) in the originalScanResult.
          * @param outputDirectory The destination directory where the output file should be saved.
         */
         void CreatePlumeSpectrumFile(
             IScanSpectrumSource& originalScanFile,
-            const BasicScanEvaluationResult& scanResult,
+            const BasicScanEvaluationResult& originalScanResult,
             const CPlumeInScanProperty& plumeProperties,
             const Configuration::RatioEvaluationSettings settings,
             int mainSpecieIndex,
@@ -88,10 +88,10 @@ namespace novac
         int m_mainSpecieIndex = 0;
 
         /**
-         * @brief Returns true if the provided scanResult represents a scan which is suitable for performing ratio evaluation
+         * @brief Returns true if the provided originalScanResult represents a scan which is suitable for performing ratio evaluation
          * @param skySpectrum The sky spectrum of the scan.
          * @param darkSpectrum The dark spectrum of the scan.
-         * @param scanResult The evaluation result.
+         * @param originalScanResult The evaluation result.
          * @param properties The properties of the scan, must have center and completeness filled in.
          * @param spectrometerModel The model of the spectrometer which collected the measurement.
          * @return True if the scan is suitable.
@@ -99,7 +99,7 @@ namespace novac
         bool IsSuitableScanForRatioEvaluation(
             const CSpectrum& skySpectrum,
             const CSpectrum& darkSpectrum,
-            const BasicScanEvaluationResult& scanResult,
+            const BasicScanEvaluationResult& originalScanResult,
             const CPlumeInScanProperty& properties,
             const SpectrometerModel& spectrometerModel,
             const Configuration::RatioEvaluationSettings settings,
@@ -111,7 +111,7 @@ namespace novac
          *   if the scan sees the plume at all and where the edges of the plume are located.
          * @param scanFile The .pak file to check.
          * @param darkSpectrum The dark spectrum to be used for EVERY spectrum in the scan.
-         * @param scanResult The evaluation result of the scan
+         * @param originalScanResult The evaluation result of the scan
          * @param properties The properties of the plume, must be filled in with completeness, plumeHalfLow and plumeHalfHigh.
          * @param spectrometerModel Model of the spectrometer which collected this scan.
          * @param referenceSpectra Will on return be filled with the indices of the spectra to be used as out-of-plume spectra.
@@ -120,7 +120,7 @@ namespace novac
         void SelectSpectra(
             IScanSpectrumSource& scanFile,
             const CSpectrum& darkSpectrum,
-            const BasicScanEvaluationResult& scanResult,
+            const BasicScanEvaluationResult& originalScanResult,
             const CPlumeInScanProperty& properties,
             const SpectrometerModel& spectrometerModel,
             const Configuration::RatioEvaluationSettings settings,
@@ -129,14 +129,14 @@ namespace novac
             std::string* errorMessage = nullptr);
 
         std::vector<int> FindSpectraInPlume(
-            const BasicScanEvaluationResult& scanResult,
+            const BasicScanEvaluationResult& originalScanResult,
             const CPlumeInScanProperty& properties,
             const Configuration::RatioEvaluationSettings settings);
 
         std::vector<int> FindSpectraOutOfPlume(
             IScanSpectrumSource& scanFile,
             const CSpectrum& darkSpectrum,
-            const BasicScanEvaluationResult& scanResult,
+            const BasicScanEvaluationResult& originalScanResult,
             const SpectrometerModel& spectrometerModel,
             const Configuration::RatioEvaluationSettings settings,
             const std::vector<int>& inPlumeProposal);
