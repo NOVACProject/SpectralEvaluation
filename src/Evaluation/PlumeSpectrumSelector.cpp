@@ -390,7 +390,7 @@ bool PlumeSpectrumSelector::SpectrumFulfillsIntensityRequirement(
     CSpectrum spectrumClone(spectrum);
     spectrumClone.Sub(darkSpectrum);
 
-    maxSaturationRatio = GetMaximumSaturationRatioOfSpectrum(spectrum, spectrometerModel);
+    maxSaturationRatio = GetMaximumSaturationRatioOfSpectrum(spectrumClone, spectrometerModel);
     if (maxSaturationRatio < settings.minSaturationRatio)
     {
         return false;

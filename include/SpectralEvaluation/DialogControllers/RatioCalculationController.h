@@ -143,6 +143,9 @@ public:
     // The type of DOAS fit to perform (default is FIT_POLY as this has shown to give the best result).
     novac::FIT_TYPE m_doasFitType = novac::FIT_TYPE::FIT_POLY;
 
+    // The unit of the references (only used for data display)
+    novac::CrossSectionUnit m_crossSectionUnit = novac::CrossSectionUnit::cm2_molecule;
+
     // Settings for how to select the in-plume and out-of-plume spectra.
     Configuration::RatioEvaluationSettings m_ratioEvaluationSettings;
 
