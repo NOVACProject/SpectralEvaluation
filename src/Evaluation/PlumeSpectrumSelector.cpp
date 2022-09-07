@@ -67,12 +67,23 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
         return nullptr;
     }
 
+    // Concatenate the important information on the scan, keeping only the good spectra. TODO: refactor to separate function
+    const std::vector< InitialEvaluationData> evaluationData = ExtractEvaluationData(originalScanFile, *darkSpectrum, originalScanResult, settings, model);
+    if (static_cast<int>(evaluationData.size()) < settings.minNumberOfSpectraInPlume + settings.numberOfSpectraOutsideOfPlume)
+    {
+        if (errorMessage != nullptr)
+        {
+            std::stringstream msg;
+            msg << "Too few spectra with good intensity in scan (" << evaluationData.size() << ") at least ";
+            msg << settings.minNumberOfSpectraInPlume + settings.numberOfSpectraOutsideOfPlume << " required.";
+            *errorMessage = msg.str();
+        }
+        return false;
+    }
+
     SelectSpectra(
-        originalScanFile,
-        *darkSpectrum,
-        originalScanResult,
+        evaluationData,
         plumeProperties,
-        model,
         settings,
         referenceSpectrumIndices,
         inPlumeSpectrumIndices,
@@ -170,12 +181,47 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     textOutput << "  HWHM High: " << plumeProperties.plumeHalfHigh << std::endl;
 }
 
-void PlumeSpectrumSelector::SelectSpectra(
-    IScanSpectrumSource& scanFile,
+std::vector< PlumeSpectrumSelector::InitialEvaluationData> PlumeSpectrumSelector::ExtractEvaluationData(
+    IScanSpectrumSource& originalScanFile,
     const CSpectrum& darkSpectrum,
     const BasicScanEvaluationResult& originalScanResult,
+    const Configuration::RatioEvaluationSettings settings,
+    const SpectrometerModel& spectrometermodel) const
+{
+    std::vector< InitialEvaluationData> evaluationData;
+    {
+        for (size_t ii = 0; ii < originalScanResult.m_spec.size(); ++ii)
+        {
+            if (originalScanResult.m_spec[ii].IsBad())
+            {
+                continue;
+            }
+
+            InitialEvaluationData data;
+            data.indexInScan = static_cast<int>(ii);
+            data.scanAngle = originalScanResult.m_specInfo[ii].m_scanAngle;
+            data.column = originalScanResult.m_spec[ii].m_referenceResult[m_mainSpecieIndex].m_column;
+
+            CSpectrum spectrum;
+            if (0 == originalScanFile.GetSpectrum((int)ii, spectrum))
+            {
+                GetIntensityOfSpectrum(spectrum, darkSpectrum, spectrometermodel, data.peakSaturation, data.peakSaturationAfterDarkCorrection);
+            }
+
+            // Already now, remove spectra which do not fulfill the intensity criteria
+            if (data.peakSaturation < settings.maxSaturationRatio && data.peakSaturationAfterDarkCorrection > settings.minSaturationRatio)
+            {
+                evaluationData.push_back(data);
+            }
+        }
+    }
+
+    return evaluationData;
+}
+
+void PlumeSpectrumSelector::SelectSpectra(
+    const std::vector< InitialEvaluationData> evaluationData,
     const CPlumeInScanProperty& properties,
-    const SpectrometerModel& spectrometerModel,
     const Configuration::RatioEvaluationSettings settings,
     std::vector<int>& referenceSpectra,
     std::vector<int>& inPlumeSpectra,
@@ -184,14 +230,13 @@ void PlumeSpectrumSelector::SelectSpectra(
     referenceSpectra.clear();
     inPlumeSpectra.clear();
 
-    if (static_cast<int>(originalScanResult.m_spec.size()) <= settings.numberOfSpectraOutsideOfPlume + settings.minNumberOfSpectraInPlume)
+    if (static_cast<int>(evaluationData.size()) <= settings.numberOfSpectraOutsideOfPlume + settings.minNumberOfSpectraInPlume)
     {
         return; // Cannot retrieve a region, too few spectra...
     }
 
     // Find a proprosal for the in-plume region.
-    auto inPlumeProposal = FindSpectraInPlume(originalScanResult, properties, settings);
-    inPlumeProposal = FilterSpectraUsingIntensity(inPlumeProposal, scanFile, darkSpectrum, spectrometerModel, settings);
+    auto inPlumeProposal = FindSpectraInPlume(evaluationData, properties, settings);
     if (static_cast<int>(inPlumeProposal.size()) < settings.minNumberOfSpectraInPlume)
     {
         if (errorMessage != nullptr)
@@ -202,7 +247,7 @@ void PlumeSpectrumSelector::SelectSpectra(
     }
 
     // Find the reference spectra as the spectra with lowest column value (ignore the sky and the dark spectra here..) 
-    auto referenceProposal = FindSpectraOutOfPlume(scanFile, darkSpectrum, originalScanResult, spectrometerModel, settings, inPlumeProposal);
+    auto referenceProposal = FindSpectraOutOfPlume(evaluationData, settings, inPlumeProposal);
     if (static_cast<int>(referenceProposal.size()) < settings.numberOfSpectraOutsideOfPlume)
     {
         if (errorMessage != nullptr)
@@ -286,50 +331,58 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
     return true;
 }
 
+double PlumeSpectrumSelector::ColumnAtScanIndex(const std::vector< InitialEvaluationData> evaluationData, int scanIndex) const
+{
+    for (const auto& data : evaluationData)
+    {
+        if (data.indexInScan == scanIndex)
+        {
+            return data.column;
+        }
+    }
+    return 0.0;
+}
+
 std::vector<int> PlumeSpectrumSelector::FindSpectraInPlume(
-    const BasicScanEvaluationResult& originalScanResult,
+    const std::vector< InitialEvaluationData> evaluationData,
     const CPlumeInScanProperty& properties,
     const Configuration::RatioEvaluationSettings settings)
 {
-    std::vector<int> indices;
+    std::vector<int> scanIndices;
 
     // add all spectra in the scan-angle range [plumeHalfLow, plumeHalfHigh]
     const double minimumScanAngle = std::max(settings.minimumScanAngle, properties.plumeHalfLow);
     const double maximumScanAngle = std::min(settings.maximumScanAngle, properties.plumeHalfHigh);
-    for (int idx = 0; idx < (int)originalScanResult.m_spec.size(); ++idx)
+    for (int idx = 0; idx < (int)evaluationData.size(); ++idx)
     {
-        if (originalScanResult.m_specInfo[idx].m_scanAngle > minimumScanAngle + 0.1 &&
-            originalScanResult.m_specInfo[idx].m_scanAngle < maximumScanAngle - 0.1)
+        if (evaluationData[idx].scanAngle > minimumScanAngle + 0.1 &&
+            evaluationData[idx].scanAngle < maximumScanAngle - 0.1)
         {
-            indices.push_back(idx);
+            scanIndices.push_back(evaluationData[idx].indexInScan);
         }
     }
 
-    // limit the number of spectra
-    while (indices.size() > static_cast<size_t>(settings.maxNumberOfSpectraInPlume))
+    // limit the number of spectra by removing the lowest columns
+    while (scanIndices.size() > static_cast<size_t>(settings.maxNumberOfSpectraInPlume))
     {
-        auto first = begin(indices);
-        auto last = begin(indices) + indices.size() - 1;
+        const double firstColumn = ColumnAtScanIndex(evaluationData, scanIndices.front());
+        const double lastColumn = ColumnAtScanIndex(evaluationData, scanIndices.back());
 
-        if (originalScanResult.m_spec[*first].m_referenceResult[m_mainSpecieIndex].m_column >
-            originalScanResult.m_spec[*last].m_referenceResult[m_mainSpecieIndex].m_column)
+        if (firstColumn > lastColumn)
         {
-            indices.erase(last);
+            scanIndices.erase(scanIndices.end() - 1);
         }
         else
         {
-            indices.erase(first);
+            scanIndices.erase(scanIndices.begin());
         }
     }
 
-    return indices;
+    return scanIndices;
 }
 
 std::vector<int> PlumeSpectrumSelector::FindSpectraOutOfPlume(
-    IScanSpectrumSource& scanFile,
-    const CSpectrum& darkSpectrum,
-    const BasicScanEvaluationResult& originalScanResult,
-    const SpectrometerModel& spectrometerModel,
+    const std::vector< InitialEvaluationData> evaluationData,
     const Configuration::RatioEvaluationSettings settings,
     const std::vector<int>& inPlumeProposal)
 {
@@ -337,17 +390,13 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraOutOfPlume(
 
     // First list all good spectra, which are not already selected to be in the plume, and then list these in order of increasing column.
     std::vector<std::pair<int, double>> spectrumColumnVsIndex;
-    for (int idx = 2U; idx < originalScanResult.m_spec.size(); ++idx)
+    for (const auto& data : evaluationData)
     {
-        if (originalScanResult.m_spec[idx].IsBad())
+        if (std::find(begin(inPlumeProposal), end(inPlumeProposal), data.indexInScan) != end(inPlumeProposal))
         {
             continue;
         }
-        if (std::find(begin(inPlumeProposal), end(inPlumeProposal), idx) != end(inPlumeProposal))
-        {
-            continue;
-        }
-        spectrumColumnVsIndex.push_back(std::pair<int, double>(idx, originalScanResult.m_spec[idx].m_referenceResult[m_mainSpecieIndex].m_column));
+        spectrumColumnVsIndex.push_back(std::pair<int, double>(data.indexInScan, data.column));
     }
     std::sort(begin(spectrumColumnVsIndex), end(spectrumColumnVsIndex), [&](const std::pair<int, double>& p1, const std::pair<int, double>& p2)
     {
@@ -355,19 +404,13 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraOutOfPlume(
     });
 
     std::vector<int> referenceSpectraProposal;
-    CSpectrum spectrum;
     for (const auto& item : spectrumColumnVsIndex)
     {
-        int idx = item.first;
+        referenceSpectraProposal.push_back(item.first);
 
-        if (0 == scanFile.GetSpectrum((int)idx, spectrum) && SpectrumFulfillsIntensityRequirement(spectrum, darkSpectrum, spectrometerModel, settings))
+        if (referenceSpectraProposal.size() == static_cast<int>(settings.numberOfSpectraOutsideOfPlume))
         {
-            referenceSpectraProposal.push_back(idx);
-
-            if (referenceSpectraProposal.size() == static_cast<int>(settings.numberOfSpectraOutsideOfPlume))
-            {
-                return referenceSpectraProposal;
-            }
+            return referenceSpectraProposal;
         }
     }
 
@@ -399,24 +442,19 @@ bool PlumeSpectrumSelector::SpectrumFulfillsIntensityRequirement(
     return true;
 }
 
-std::vector<int> PlumeSpectrumSelector::FilterSpectraUsingIntensity(
-    const std::vector<int>& proposedIndices,
-    IScanSpectrumSource& scanFile,
+
+void PlumeSpectrumSelector::GetIntensityOfSpectrum(
+    const CSpectrum& spectrum,
     const CSpectrum& darkSpectrum,
     const SpectrometerModel& spectrometerModel,
-    const Configuration::RatioEvaluationSettings settings)
+    double& peakSaturation,
+    double& peakSaturationAfterDarkCorrection) const
 {
-    std::vector<int> result;
-    result.reserve(proposedIndices.size());
+    peakSaturation = GetMaximumSaturationRatioOfSpectrum(spectrum, spectrometerModel);
 
-    CSpectrum spectrum;
-    for (int idx : proposedIndices)
-    {
-        if (0 == scanFile.GetSpectrum((int)idx, spectrum) && SpectrumFulfillsIntensityRequirement(spectrum, darkSpectrum, spectrometerModel, settings))
-        {
-            result.push_back(idx);
-        }
-    }
+    // dark correct and check for low intensity
+    CSpectrum spectrumClone(spectrum);
+    spectrumClone.Sub(darkSpectrum);
 
-    return result;
+    peakSaturationAfterDarkCorrection = GetMaximumSaturationRatioOfSpectrum(spectrumClone, spectrometerModel);
 }

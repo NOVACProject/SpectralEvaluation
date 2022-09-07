@@ -208,6 +208,16 @@ namespace novac
             return GetTestDataDirectory() + std::string("BrORatio/") + std::string("D2J2124_160331_2049_0.txt");
         }
 
+        static std::string GetBrORatioScanFile3()
+        {
+            return GetTestDataDirectory() + std::string("BrORatio/") + std::string("D2J2124_160331_1510_0.pak");
+        }
+
+        static std::string GetBrORatioEvaluationFile3()
+        {
+            return GetTestDataDirectory() + std::string("BrORatio/") + std::string("D2J2124_160331_1510_0.txt");
+        }
+
 #pragma endregion
 
     };

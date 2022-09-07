@@ -87,6 +87,16 @@ namespace novac
 
         int m_mainSpecieIndex = 0;
 
+        // Helper structure, collecting together data which we need for selecting spectra in the scan.
+        struct InitialEvaluationData
+        {
+            int indexInScan = 0;
+            double scanAngle = 0.0;
+            double column = 0.0;
+            double peakSaturation = 0.0;
+            double peakSaturationAfterDarkCorrection = 0.0;
+        };
+
         /**
          * @brief Returns true if the provided originalScanResult represents a scan which is suitable for performing ratio evaluation
          * @param skySpectrum The sky spectrum of the scan.
@@ -118,35 +128,22 @@ namespace novac
          * @param inPlumeSpectra Will on return be filled with the indices of the spectra to be used as in-plume spectra.
         */
         void SelectSpectra(
-            IScanSpectrumSource& scanFile,
-            const CSpectrum& darkSpectrum,
-            const BasicScanEvaluationResult& originalScanResult,
+            const std::vector< InitialEvaluationData> evaluationData,
             const CPlumeInScanProperty& properties,
-            const SpectrometerModel& spectrometerModel,
             const Configuration::RatioEvaluationSettings settings,
             std::vector<int>& referenceSpectra,
             std::vector<int>& inPlumeSpectra,
             std::string* errorMessage = nullptr);
 
         std::vector<int> FindSpectraInPlume(
-            const BasicScanEvaluationResult& originalScanResult,
+            const std::vector< InitialEvaluationData> evaluationData,
             const CPlumeInScanProperty& properties,
             const Configuration::RatioEvaluationSettings settings);
 
         std::vector<int> FindSpectraOutOfPlume(
-            IScanSpectrumSource& scanFile,
-            const CSpectrum& darkSpectrum,
-            const BasicScanEvaluationResult& originalScanResult,
-            const SpectrometerModel& spectrometerModel,
+            const std::vector< InitialEvaluationData> evaluationData,
             const Configuration::RatioEvaluationSettings settings,
             const std::vector<int>& inPlumeProposal);
-
-        std::vector<int> FilterSpectraUsingIntensity(
-            const std::vector<int>& proposedIndices,
-            IScanSpectrumSource& scanFile,
-            const CSpectrum& darkSpectrum,
-            const SpectrometerModel& spectrometerModel,
-            const Configuration::RatioEvaluationSettings settings);
 
         /**
          * @brief Return true if the provided spectrum has a good intensity for being included in a ratio evaluation.
@@ -160,5 +157,22 @@ namespace novac
             const CSpectrum& darkSpectrum,
             const SpectrometerModel& spectrometerModel,
             const Configuration::RatioEvaluationSettings settings);
+
+        void GetIntensityOfSpectrum(
+            const CSpectrum& spectrum,
+            const CSpectrum& darkSpectrum,
+            const SpectrometerModel& spectrometerModel,
+            double& peakSaturation,
+            double& peakSaturationAfterDarkCorrection) const;
+
+        std::vector< InitialEvaluationData> ExtractEvaluationData(
+            IScanSpectrumSource& originalScanFile,
+            const CSpectrum& darkSpectrum,
+            const BasicScanEvaluationResult& originalScanResult,
+            const Configuration::RatioEvaluationSettings settings,
+            const SpectrometerModel& spectrometermodel) const;
+
+        // Helper method for finding data points.
+        double ColumnAtScanIndex(const std::vector< InitialEvaluationData> evaluationData, int scanIndex) const;
     };
 }
