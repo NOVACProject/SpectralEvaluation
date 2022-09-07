@@ -193,7 +193,7 @@ void PlumeSpectrumSelector::ExtractEvaluationData(
     {
         if (originalScanResult.m_spec[ii].IsBad())
         {
-            rejectedIndices.push_back(std::make_pair(ii, "bad evaluation"));
+            rejectedIndices.push_back(std::make_pair((int)ii, "bad evaluation"));
             continue;
         }
 
@@ -211,11 +211,11 @@ void PlumeSpectrumSelector::ExtractEvaluationData(
         // Already now, remove spectra which do not fulfill the intensity criteria
         if (data.peakSaturation > settings.maxSaturationRatio)
         {
-            rejectedIndices.push_back(std::make_pair(ii, "saturated spectrum"));
+            rejectedIndices.push_back(std::make_pair((int)ii, "saturated spectrum"));
         }
         else if (data.peakSaturationAfterDarkCorrection < settings.minSaturationRatio)
         {
-            rejectedIndices.push_back(std::make_pair(ii, "dark spectrum"));
+            rejectedIndices.push_back(std::make_pair((int)ii, "dark spectrum"));
         }
         else
         {
