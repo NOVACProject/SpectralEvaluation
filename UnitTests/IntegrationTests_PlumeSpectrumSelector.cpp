@@ -6,6 +6,7 @@
 #include <SpectralEvaluation/File/ScanFileHandler.h>
 #include <SpectralEvaluation/File/ScanEvaluationLogFileHandler.h>
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
+#include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 #include "catch.hpp"
 #include "TestData.h"
 
@@ -18,10 +19,11 @@ namespace novac
         novac::CPlumeInScanProperty plumeInScanProperties;
         Configuration::RatioEvaluationSettings settings;
         PlumeSpectrumSelector sut;
+        novac::SpectrometerModel model;
 
         SECTION("Invalid scan file")
         {
-            const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationResult, plumeInScanProperties, settings);
+            const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationResult, plumeInScanProperties, settings, model);
 
             REQUIRE(nullptr == result);
         }
@@ -30,7 +32,7 @@ namespace novac
         {
             REQUIRE(true == fileHandler.CheckScanFile(TestData::GetBrORatioScanFile1()));
 
-            const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationResult, plumeInScanProperties, settings);
+            const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationResult, plumeInScanProperties, settings, model);
 
             REQUIRE(nullptr == result);
         }
@@ -43,6 +45,7 @@ namespace novac
         novac::CScanEvaluationLogFileHandler evaluationFileHandler;
         novac::BasicScanEvaluationResult evaluationResult;
         Configuration::RatioEvaluationSettings settings;
+        novac::SpectrometerModel model;
         PlumeSpectrumSelector sut;
 
         // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
@@ -59,7 +62,7 @@ namespace novac
         const int so2Index = 1; // here, O3 is actually the first specie
 
         // Act
-        const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationFileHandler.m_scan[0], plumeInScanProperties, settings, so2Index);
+        const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationFileHandler.m_scan[0], plumeInScanProperties, settings, model, so2Index);
 
         // Assert
         REQUIRE(result != nullptr);
@@ -102,6 +105,7 @@ namespace novac
         novac::CScanEvaluationLogFileHandler evaluationFileHandler;
         novac::BasicScanEvaluationResult evaluationResult;
         Configuration::RatioEvaluationSettings settings;
+        novac::SpectrometerModel model;
         PlumeSpectrumSelector sut;
 
         // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
@@ -119,7 +123,7 @@ namespace novac
 
         // Act
         std::string errorMessage;
-        const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationFileHandler.m_scan[0], plumeInScanProperties, settings, so2Index, &errorMessage);
+        const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationFileHandler.m_scan[0], plumeInScanProperties, settings, model, so2Index, &errorMessage);
 
         // Assert
         REQUIRE(result != nullptr);
@@ -163,6 +167,7 @@ namespace novac
         novac::CScanEvaluationLogFileHandler evaluationFileHandler;
         novac::BasicScanEvaluationResult evaluationResult;
         Configuration::RatioEvaluationSettings settings;
+        novac::SpectrometerModel model;
         PlumeSpectrumSelector sut;
 
         // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
@@ -180,7 +185,7 @@ namespace novac
 
         // Act
         std::string errorMessage;
-        const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationFileHandler.m_scan[0], plumeInScanProperties, settings, so2Index, &errorMessage);
+        const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationFileHandler.m_scan[0], plumeInScanProperties, settings, model, so2Index, &errorMessage);
 
         // Assert
         REQUIRE(result != nullptr);

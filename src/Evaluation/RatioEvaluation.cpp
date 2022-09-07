@@ -182,15 +182,15 @@ namespace novac
                 return result;
             }
 
-            const SpectrometerModel* spectrometerModel = (m_spectrometerModel != nullptr) ? m_spectrometerModel : &(CSpectrometerDatabase::GetInstance().GetModel(m_masterResult.m_skySpecInfo.m_specModelName));
+            const SpectrometerModel spectrometerModel = (m_spectrometerModel != nullptr) ? *m_spectrometerModel : (CSpectrometerDatabase::GetInstance().GetModel(m_masterResult.m_skySpecInfo.m_specModelName));
 
             // Get some parameters regarding the scan and the spectrometer
-            debugInfo.spectrometerModel = spectrometerModel->modelName;
-            debugInfo.spectrometerFullDynamicRange = spectrometerModel->maximumIntensityForSingleReadout;
+            debugInfo.spectrometerModel = spectrometerModel.modelName;
+            debugInfo.spectrometerFullDynamicRange = spectrometerModel.maximumIntensityForSingleReadout;
 
             {
                 PlumeSpectrumSelector selector;
-                std::unique_ptr<PlumeSpectra> selectedSpectra = selector.CreatePlumeSpectra(scan, m_masterResult, m_masterResultProperties, m_settings, *spectrometerModel, 0, &debugInfo.errorMessage);
+                std::unique_ptr<PlumeSpectra> selectedSpectra = selector.CreatePlumeSpectra(scan, m_masterResult, m_masterResultProperties, m_settings, spectrometerModel, 0, &debugInfo.errorMessage);
                 if (selectedSpectra == nullptr)
                 {
                     return result;

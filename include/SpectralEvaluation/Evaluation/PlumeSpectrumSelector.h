@@ -132,8 +132,9 @@ namespace novac
          * @param spectrometerModel Model of the spectrometer which collected this scan.
          * @param referenceSpectra Will on return be filled with the indices of the spectra to be used as out-of-plume spectra.
          * @param inPlumeSpectra Will on return be filled with the indices of the spectra to be used as in-plume spectra.
+         * @return true if the selection was successful.
         */
-        void SelectSpectra(
+        bool SelectSpectra(
             const std::vector< InitialEvaluationData> evaluationData,
             const CPlumeInScanProperty& properties,
             const Configuration::RatioEvaluationSettings settings,

@@ -79,7 +79,7 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
         return nullptr;
     }
 
-    SelectSpectra(
+    const bool spectraSelected = SelectSpectra(
         evaluationData,
         plumeProperties,
         settings,
@@ -87,7 +87,7 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
         result->inPlumeSpectrumIndices,
         errorMessage);
 
-    if (!errorMessage->empty())
+    if (!spectraSelected)
     {
         return result;
     }
@@ -223,7 +223,7 @@ void PlumeSpectrumSelector::ExtractEvaluationData(
     }
 }
 
-void PlumeSpectrumSelector::SelectSpectra(
+bool PlumeSpectrumSelector::SelectSpectra(
     const std::vector< InitialEvaluationData> evaluationData,
     const CPlumeInScanProperty& properties,
     const Configuration::RatioEvaluationSettings settings,
@@ -245,7 +245,7 @@ void PlumeSpectrumSelector::SelectSpectra(
         {
             *errorMessage = "Too few good spectra in plume.";
         }
-        return;
+        return false;
     }
 
     // Find the reference spectra as the spectra with lowest column value (ignore the sky and the dark spectra here..) 
@@ -259,10 +259,10 @@ void PlumeSpectrumSelector::SelectSpectra(
         {
             *errorMessage = "Too few good spectra out of plume.";
         }
-        return;
+        return false;
     }
 
-    return;
+    return true;
 }
 
 bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
