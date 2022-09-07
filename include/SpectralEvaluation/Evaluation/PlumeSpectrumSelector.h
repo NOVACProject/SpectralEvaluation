@@ -66,6 +66,7 @@ namespace novac
             const BasicScanEvaluationResult& originalScanResult,
             const CPlumeInScanProperty& plumeProperties,
             const Configuration::RatioEvaluationSettings settings,
+            const SpectrometerModel& spectrometerModel,
             int mainSpecieIndex = 0,
             std::string* errorMessage = nullptr);
 
@@ -83,6 +84,7 @@ namespace novac
             const BasicScanEvaluationResult& originalScanResult,
             const CPlumeInScanProperty& plumeProperties,
             const Configuration::RatioEvaluationSettings settings,
+            const SpectrometerModel& spectrometerModel,
             int mainSpecieIndex,
             const std::string& outputDirectory,
             std::string* errorMessage = nullptr);

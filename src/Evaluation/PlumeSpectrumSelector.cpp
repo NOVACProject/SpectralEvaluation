@@ -32,6 +32,7 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
     const BasicScanEvaluationResult& originalScanResult,
     const CPlumeInScanProperty& plumeProperties,
     const Configuration::RatioEvaluationSettings settings,
+    const SpectrometerModel& spectrometerModel,
     int mainSpecieIndex,
     std::string* errorMessage)
 {
@@ -56,10 +57,7 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
         return nullptr;
     }
 
-    // Get some parameters regarding the scan and the spectrometer
-    const auto model = CSpectrometerDatabase::GetInstance().GetModel(skySpectrum->m_info.m_specModelName);
-
-    if (!IsSuitableScanForRatioEvaluation(*skySpectrum, *darkSpectrum, originalScanResult, plumeProperties, model, settings, errorMessage))
+    if (!IsSuitableScanForRatioEvaluation(*skySpectrum, *darkSpectrum, originalScanResult, plumeProperties, spectrometerModel, settings, errorMessage))
     {
         return nullptr;
     }
@@ -68,7 +66,7 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
 
     // Concatenate the important information on the scan, keeping only the good spectra.
     std::vector< InitialEvaluationData> evaluationData;
-    ExtractEvaluationData(originalScanFile, *darkSpectrum, originalScanResult, settings, model, evaluationData, result->rejectedSpectrumIndices);
+    ExtractEvaluationData(originalScanFile, *darkSpectrum, originalScanResult, settings, spectrometerModel, evaluationData, result->rejectedSpectrumIndices);
     if (static_cast<int>(evaluationData.size()) < settings.minNumberOfSpectraInPlume + settings.numberOfSpectraOutsideOfPlume)
     {
         if (errorMessage != nullptr)
@@ -120,11 +118,12 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     const BasicScanEvaluationResult& originalScanResult,
     const CPlumeInScanProperty& plumeProperties,
     const Configuration::RatioEvaluationSettings settings,
+    const SpectrometerModel& spectrometerModel,
     int mainSpecieIndex,
     const std::string& outputDirectory,
     std::string* errorMessage)
 {
-    const auto spectra = this->CreatePlumeSpectra(originalScanFile, originalScanResult, plumeProperties, settings, mainSpecieIndex, errorMessage);
+    const auto spectra = this->CreatePlumeSpectra(originalScanFile, originalScanResult, plumeProperties, settings, spectrometerModel, mainSpecieIndex, errorMessage);
     if (spectra == nullptr)
     {
         return;

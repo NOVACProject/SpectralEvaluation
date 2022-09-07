@@ -4,6 +4,7 @@
 #include <SpectralEvaluation/Evaluation/RatioEvaluation.h>
 #include <SpectralEvaluation/Configuration/DarkSettings.h>
 #include <SpectralEvaluation/File/XmlUtil.h>
+#include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 
 #include <fstream>
 #include <sstream>
@@ -388,10 +389,13 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
         return result;
     }
 
+    // TODO: Make this possible to be setup by the user.
+    const auto spectrometerModel = novac::CSpectrometerDatabase::GetInstance().GuessModelFromSerial(initialResult.m_specInfo.front().m_device);
+
     // Setup the ratio evaluation and run it.
     novac::RatioEvaluation ratioEvaluation{ m_ratioEvaluationSettings, darkSettings };
     ratioEvaluation.SetupFitWindows(ratioFitWindows->so2Window, std::vector<novac::CFitWindow>{ ratioFitWindows->broWindow });
-    ratioEvaluation.SetupFirstResult(initialResult, plumeInScanProperties);
+    ratioEvaluation.SetupFirstResult(initialResult, plumeInScanProperties, &spectrometerModel);
     const auto ratios = ratioEvaluation.Run(scan, &result.debugInfo);
 
     // Extract the result

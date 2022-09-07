@@ -83,10 +83,11 @@ namespace novac
         /** Sets up this ratio-evaluation with the result from the first evaluation which has been done using the main fit window.
             @param result Is the result from evaluation using this FitWindow
             @param properties Is the plume-shape properties for this result. */
-        void SetupFirstResult(const BasicScanEvaluationResult& result, const CPlumeInScanProperty& properties)
+        void SetupFirstResult(const BasicScanEvaluationResult& result, const CPlumeInScanProperty& properties, const SpectrometerModel* model = nullptr)
         {
             m_masterResult = result;
             m_masterResultProperties = properties;
+            m_spectrometerModel = model;
         }
 
         /** Runs all the ratio evaluations.
@@ -105,6 +106,9 @@ namespace novac
         /** The results from evaluation from the scan using the m_masterFitWindow */
         BasicScanEvaluationResult m_masterResult;
         CPlumeInScanProperty m_masterResultProperties;
+
+        /** An optional user-supplied spectrometer model instance. If not supplied then the model will be guessed from the data. */
+        const SpectrometerModel* m_spectrometerModel = nullptr;
 
         /** Settings for dark-correction */
         const Configuration::CDarkSettings& m_darkSettings;
