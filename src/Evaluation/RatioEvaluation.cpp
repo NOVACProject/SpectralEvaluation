@@ -8,6 +8,7 @@
 #include <SpectralEvaluation/Evaluation/DoasFitPreparation.h>
 #include <SpectralEvaluation/Evaluation/PlumeSpectrumSelector.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include <SpectralEvaluation/File/ScanFileHandler.h>
 #include <SpectralEvaluation/StringUtils.h>
@@ -182,10 +183,22 @@ namespace novac
             }
 
             {
+                // Get some parameters regarding the scan and the spectrometer
+                const auto model = CSpectrometerDatabase::GetInstance().GetModel(m_masterResult.m_skySpecInfo.m_specModelName);
+                debugInfo.spectrometerModel = model.modelName;
+                debugInfo.spectrometerFullDynamicRange = model.maximumIntensityForSingleReadout;
+            }
+
+            {
                 PlumeSpectrumSelector selector;
                 std::unique_ptr<PlumeSpectra> selectedSpectra = selector.CreatePlumeSpectra(scan, m_masterResult, m_masterResultProperties, m_settings, 0, &debugInfo.errorMessage);
+                if (selectedSpectra == nullptr)
+                {
+                    return result;
+                }
                 debugInfo.outOfPlumeSpectrumIndices = selectedSpectra->referenceSpectrumIndices;
                 debugInfo.plumeSpectrumIndices = selectedSpectra->inPlumeSpectrumIndices;
+                debugInfo.rejectedSpectrumIndices = selectedSpectra->rejectedSpectrumIndices;
                 if (selectedSpectra->inPlumeSpectrum != nullptr)
                 {
                     debugInfo.inPlumeSpectrum = *(selectedSpectra->inPlumeSpectrum);

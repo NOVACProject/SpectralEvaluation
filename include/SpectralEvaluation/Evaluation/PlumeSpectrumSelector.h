@@ -36,6 +36,10 @@ namespace novac
         // Listing the indices (in the original scan) which were used to create the in plume spectrum.
         std::vector<int> inPlumeSpectrumIndices;
 
+        // Listing the indices (in the original scan) which for some reason were not considered for participating in the in-plume or out-of-plume spectra,
+        // together with the reason for not including them.
+        std::vector<std::pair<int, std::string>> rejectedSpectrumIndices;
+
         // The CSpectrumInfo of the sky-spectrum of the scan. Gives info on e.g. device and start time.
         CSpectrumInfo skySpectrumInfo;
     };
@@ -165,12 +169,14 @@ namespace novac
             double& peakSaturation,
             double& peakSaturationAfterDarkCorrection) const;
 
-        std::vector< InitialEvaluationData> ExtractEvaluationData(
+        void ExtractEvaluationData(
             IScanSpectrumSource& originalScanFile,
             const CSpectrum& darkSpectrum,
             const BasicScanEvaluationResult& originalScanResult,
             const Configuration::RatioEvaluationSettings settings,
-            const SpectrometerModel& spectrometermodel) const;
+            const SpectrometerModel& spectrometermodel,
+            std::vector< InitialEvaluationData>& evaluationData,
+            std::vector<std::pair<int, std::string>>& rejectedIndices) const;
 
         // Helper method for finding data points.
         double ColumnAtScanIndex(const std::vector< InitialEvaluationData> evaluationData, int scanIndex) const;

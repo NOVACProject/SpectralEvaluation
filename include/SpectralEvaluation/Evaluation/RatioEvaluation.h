@@ -25,11 +25,21 @@ namespace novac
         // A possible error message, empty if no error has occurred.
         std::string errorMessage;
 
-        // The zero-based indices of the scan used to create the in-plume spectrum
+        // The model name of the spectrometer which generated this measurement.
+        std::string spectrometerModel;
+
+        // The full dynamic range (of one readout) of the generating spectrometer.
+        double spectrometerFullDynamicRange = 4095.0;
+
+        // The zero-based indices of the spectra used to create the in-plume spectrum
         std::vector<int> plumeSpectrumIndices;
 
-        // The zero-based indices of the scan used to create the out-of-plume spectrum
+        // The zero-based indices of the spectra used to create the out-of-plume spectrum
         std::vector<int> outOfPlumeSpectrumIndices;
+
+        // Listing the indices (in the original scan) which for some reason were not considered for participating in the in-plume or out-of-plume spectra,
+        // together with the reason for not including them.
+        std::vector<std::pair<int, std::string>> rejectedSpectrumIndices;
 
         // The final (dark corrected) in-plume spectrum.
         CSpectrum inPlumeSpectrum;

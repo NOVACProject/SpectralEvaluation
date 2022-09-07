@@ -35,9 +35,6 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
     int mainSpecieIndex,
     std::string* errorMessage)
 {
-    std::vector<int> referenceSpectrumIndices;
-    std::vector<int> inPlumeSpectrumIndices;
-
     m_mainSpecieIndex = mainSpecieIndex;
 
     auto skySpectrum = std::make_unique<CSpectrum>();
@@ -67,8 +64,11 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
         return nullptr;
     }
 
-    // Concatenate the important information on the scan, keeping only the good spectra. TODO: refactor to separate function
-    const std::vector< InitialEvaluationData> evaluationData = ExtractEvaluationData(originalScanFile, *darkSpectrum, originalScanResult, settings, model);
+    auto result = std::make_unique<PlumeSpectra>();
+
+    // Concatenate the important information on the scan, keeping only the good spectra.
+    std::vector< InitialEvaluationData> evaluationData;
+    ExtractEvaluationData(originalScanFile, *darkSpectrum, originalScanResult, settings, model, evaluationData, result->rejectedSpectrumIndices);
     if (static_cast<int>(evaluationData.size()) < settings.minNumberOfSpectraInPlume + settings.numberOfSpectraOutsideOfPlume)
     {
         if (errorMessage != nullptr)
@@ -78,41 +78,37 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
             msg << settings.minNumberOfSpectraInPlume + settings.numberOfSpectraOutsideOfPlume << " required.";
             *errorMessage = msg.str();
         }
-        return false;
+        return nullptr;
     }
 
     SelectSpectra(
         evaluationData,
         plumeProperties,
         settings,
-        referenceSpectrumIndices,
-        inPlumeSpectrumIndices,
+        result->referenceSpectrumIndices,
+        result->inPlumeSpectrumIndices,
         errorMessage);
 
-    if (referenceSpectrumIndices.size() == 0 || inPlumeSpectrumIndices.size() == 0)
+    if (!errorMessage->empty())
     {
-        return nullptr;
+        return result;
     }
 
-    auto result = std::make_unique<PlumeSpectra>();
     result->referenceSpectrum = std::make_unique<CSpectrum>();
     result->inPlumeSpectrum = std::make_unique<CSpectrum>();
     result->darkSpectrum = std::make_unique<CSpectrum>();
 
     // Create the spectra
-    AverageSpectra(originalScanFile, referenceSpectrumIndices, *result->referenceSpectrum, false);
+    AverageSpectra(originalScanFile, result->referenceSpectrumIndices, *result->referenceSpectrum, false);
     result->referenceSpectrum->m_info.m_name = "sky";
     result->referenceSpectrum->m_info.m_scanIndex = 0;
 
     result->darkSpectrum = std::move(darkSpectrum);
     result->darkSpectrum->m_info.m_scanIndex = 1;
 
-    AverageSpectra(originalScanFile, inPlumeSpectrumIndices, *result->inPlumeSpectrum, false);
+    AverageSpectra(originalScanFile, result->inPlumeSpectrumIndices, *result->inPlumeSpectrum, false);
     result->inPlumeSpectrum->m_info.m_name = "plume";
     result->inPlumeSpectrum->m_info.m_scanIndex = 2;
-
-    result->referenceSpectrumIndices = std::move(referenceSpectrumIndices);
-    result->inPlumeSpectrumIndices = std::move(inPlumeSpectrumIndices);
 
     result->skySpectrumInfo = skySpectrum->m_info;
 
@@ -181,42 +177,51 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     textOutput << "  HWHM High: " << plumeProperties.plumeHalfHigh << std::endl;
 }
 
-std::vector< PlumeSpectrumSelector::InitialEvaluationData> PlumeSpectrumSelector::ExtractEvaluationData(
+void PlumeSpectrumSelector::ExtractEvaluationData(
     IScanSpectrumSource& originalScanFile,
     const CSpectrum& darkSpectrum,
     const BasicScanEvaluationResult& originalScanResult,
     const Configuration::RatioEvaluationSettings settings,
-    const SpectrometerModel& spectrometermodel) const
+    const SpectrometerModel& spectrometermodel,
+    std::vector< InitialEvaluationData>& evaluationData,
+    std::vector<std::pair<int, std::string>>& rejectedIndices) const
 {
-    std::vector< InitialEvaluationData> evaluationData;
+    evaluationData.clear();
+    rejectedIndices.clear();
+
+    for (size_t ii = 0; ii < originalScanResult.m_spec.size(); ++ii)
     {
-        for (size_t ii = 0; ii < originalScanResult.m_spec.size(); ++ii)
+        if (originalScanResult.m_spec[ii].IsBad())
         {
-            if (originalScanResult.m_spec[ii].IsBad())
-            {
-                continue;
-            }
+            rejectedIndices.push_back(std::make_pair(ii, "bad evaluation"));
+            continue;
+        }
 
-            InitialEvaluationData data;
-            data.indexInScan = static_cast<int>(ii);
-            data.scanAngle = originalScanResult.m_specInfo[ii].m_scanAngle;
-            data.offsetCorrectedColumn = originalScanResult.m_spec[ii].m_referenceResult[m_mainSpecieIndex].m_column;
+        InitialEvaluationData data;
+        data.indexInScan = static_cast<int>(ii);
+        data.scanAngle = originalScanResult.m_specInfo[ii].m_scanAngle;
+        data.offsetCorrectedColumn = originalScanResult.m_spec[ii].m_referenceResult[m_mainSpecieIndex].m_column;
 
-            CSpectrum spectrum;
-            if (0 == originalScanFile.GetSpectrum((int)ii, spectrum))
-            {
-                GetIntensityOfSpectrum(spectrum, darkSpectrum, spectrometermodel, data.peakSaturation, data.peakSaturationAfterDarkCorrection);
-            }
+        CSpectrum spectrum;
+        if (0 == originalScanFile.GetSpectrum((int)ii, spectrum))
+        {
+            GetIntensityOfSpectrum(spectrum, darkSpectrum, spectrometermodel, data.peakSaturation, data.peakSaturationAfterDarkCorrection);
+        }
 
-            // Already now, remove spectra which do not fulfill the intensity criteria
-            if (data.peakSaturation < settings.maxSaturationRatio && data.peakSaturationAfterDarkCorrection > settings.minSaturationRatio)
-            {
-                evaluationData.push_back(data);
-            }
+        // Already now, remove spectra which do not fulfill the intensity criteria
+        if (data.peakSaturation > settings.maxSaturationRatio)
+        {
+            rejectedIndices.push_back(std::make_pair(ii, "saturated spectrum"));
+        }
+        else if (data.peakSaturationAfterDarkCorrection < settings.minSaturationRatio)
+        {
+            rejectedIndices.push_back(std::make_pair(ii, "dark spectrum"));
+        }
+        else
+        {
+            evaluationData.push_back(data);
         }
     }
-
-    return evaluationData;
 }
 
 void PlumeSpectrumSelector::SelectSpectra(
@@ -230,14 +235,12 @@ void PlumeSpectrumSelector::SelectSpectra(
     referenceSpectra.clear();
     inPlumeSpectra.clear();
 
-    if (static_cast<int>(evaluationData.size()) <= settings.numberOfSpectraOutsideOfPlume + settings.minNumberOfSpectraInPlume)
-    {
-        return; // Cannot retrieve a region, too few spectra...
-    }
-
     // Find a proprosal for the in-plume region.
     auto inPlumeProposal = FindSpectraInPlume(evaluationData, properties, settings);
-    if (static_cast<int>(inPlumeProposal.size()) < settings.minNumberOfSpectraInPlume)
+    std::sort(begin(inPlumeProposal), end(inPlumeProposal));
+    inPlumeSpectra = std::move(inPlumeProposal);
+
+    if (static_cast<int>(inPlumeSpectra.size()) < settings.minNumberOfSpectraInPlume)
     {
         if (errorMessage != nullptr)
         {
@@ -247,8 +250,11 @@ void PlumeSpectrumSelector::SelectSpectra(
     }
 
     // Find the reference spectra as the spectra with lowest column value (ignore the sky and the dark spectra here..) 
-    auto referenceProposal = FindSpectraOutOfPlume(evaluationData, settings, inPlumeProposal);
-    if (static_cast<int>(referenceProposal.size()) < settings.numberOfSpectraOutsideOfPlume)
+    auto referenceProposal = FindSpectraOutOfPlume(evaluationData, settings, inPlumeSpectra);
+    std::sort(begin(referenceProposal), end(referenceProposal));
+    referenceSpectra = std::move(referenceProposal);
+
+    if (static_cast<int>(referenceSpectra.size()) < settings.numberOfSpectraOutsideOfPlume)
     {
         if (errorMessage != nullptr)
         {
@@ -256,12 +262,6 @@ void PlumeSpectrumSelector::SelectSpectra(
         }
         return;
     }
-
-    std::sort(begin(inPlumeProposal), end(inPlumeProposal));
-    std::sort(begin(referenceProposal), end(referenceProposal));
-
-    inPlumeSpectra = std::move(inPlumeProposal);
-    referenceSpectra = std::move(referenceProposal);
 
     return;
 }
