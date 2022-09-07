@@ -8,6 +8,68 @@
 
 namespace novac
 {
+    // Helper structure, collecting together data which we need for selecting spectra in the scan.
+    struct ScanEvaluationData
+    {
+        int indexInScan = 0;
+        double scanAngle = 0.0;
+        double scanAngle2 = 0.0; // the angle of the second motor, only for Mark-II (heidelberg) instruments
+        double offsetCorrectedColumn = 0.0;
+        double columnError = 0.0;
+        double peakSaturation = 0.0;
+    };
+
+    double AverageColumn(const std::vector< ScanEvaluationData>& data, int startIdx, int numberOfElements)
+    {
+        if (numberOfElements <= 0)
+        {
+            return 0.0;
+        }
+
+        double sum = 0;
+        for (int k = startIdx; k < startIdx + numberOfElements; ++k)
+        {
+            sum += data[k].offsetCorrectedColumn;
+        }
+
+        return (sum / numberOfElements);
+    }
+
+    double AverageColumnError(const std::vector< ScanEvaluationData>& data, int startIdx, int numberOfElements)
+    {
+        if (numberOfElements <= 0)
+        {
+            return 0.0;
+        }
+
+        double sum = 0;
+        for (int k = startIdx; k < startIdx + numberOfElements; ++k)
+        {
+            sum += data[k].columnError;
+        }
+
+        return (sum / numberOfElements);
+    }
+
+    double MinColumn(const std::vector< ScanEvaluationData>& data)
+    {
+        double minValue = data[0].offsetCorrectedColumn;
+        for (const auto& eval : data)
+        {
+            minValue = std::min(minValue, eval.offsetCorrectedColumn);
+        }
+        return minValue;
+    }
+
+    double MaxColumn(const std::vector< ScanEvaluationData>& data)
+    {
+        double minValue = data[0].offsetCorrectedColumn;
+        for (const auto& eval : data)
+        {
+            minValue = std::max(minValue, eval.offsetCorrectedColumn);
+        }
+        return minValue;
+    }
 
     template <class T> double Average(T array[], long nElements) {
         if (nElements <= 0)
@@ -38,67 +100,85 @@ namespace novac
         return maxValue;
     }
 
-    /// --------------------------- FINDING THE PLUME IN ONE SCAN ---------------------------
+    /// --------------------------- CALCULATING THE PLUME OFFSET ---------------------------
 
-    bool FindPlume(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, CPlumeInScanProperty& plumeProperties, std::string* message)
+    // Calculates the offset of the plume given all the evaluations of the 'good' spectra in the scan.
+    double CalculatePlumeOffsetFromGoodColumnValues(const std::vector<double>& goodColumns)
     {
-        std::vector<double> scanAngles;
-        std::vector<double> phi;
+        // Find the N lowest goodColumns values
+        const int N = (int)(0.2 * goodColumns.size());
+        std::vector<double> m(N, 1e6);
+        FindNLowest(goodColumns, N, m);
+        return Average(m.data(), N);
+    }
+
+    double CalculatePlumeOffset(const std::vector< ScanEvaluationData>& evaluation)
+    {
+        // calculate the offset as the average of the three lowest offsetCorrectedColumn values 
+        //    that are not considered as 'bad' values
         std::vector<double> columns;
-        std::vector<double> columnErrors;
-        std::vector<bool> badEvaluation;
+        columns.reserve(evaluation.size());
+
+        for (const auto& eval : evaluation)
+        {
+            columns.push_back(eval.offsetCorrectedColumn);
+        }
+
+        return CalculatePlumeOffsetFromGoodColumnValues(columns);
+    }
+
+    double CalculatePlumeOffset(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, CPlumeInScanProperty& plumeProperties)
+    {
+        std::vector<double> columns;
         const long numPoints = static_cast<long>(evaluatedScan.m_spec.size());
 
         for (long idx = 0; idx < numPoints; ++idx)
         {
-            scanAngles.push_back(evaluatedScan.m_specInfo[idx].m_scanAngle);
-            phi.push_back(evaluatedScan.m_specInfo[idx].m_scanAngle2);
-
-            columns.push_back(evaluatedScan.m_spec[idx].m_referenceResult[specieIdx].m_column);
-            columnErrors.push_back(evaluatedScan.m_spec[idx].m_referenceResult[specieIdx].m_columnError);
-            badEvaluation.push_back(evaluatedScan.m_spec[idx].IsBad());
-        }
-
-        return FindPlume(scanAngles, phi, columns, columnErrors, badEvaluation, numPoints, plumeProperties, message);
-    }
-
-
-    // VERSION 1: FROM NOVACPROGRAM
-    bool FindPlume(
-        const std::vector<double>& scanAngles,
-        const std::vector<double>& phi,
-        const std::vector<double>& columns,
-        const std::vector<double>& columnErrors,
-        const std::vector<bool>& badEvaluation,
-        long numPoints,
-        CPlumeInScanProperty& plumeProperties,
-        std::string* message)
-    {
-
-        // There is a plume iff there is a region, where the column-values are considerably
-        //	much higher than in the rest of the scan
-
-        // Make a local copy of the values, picking out only the data from the good spectra.
-        std::vector<double> columnOfGoodSpectra;
-        std::vector<double> columnErrorOfGoodSpectra;
-        std::vector<double> angleOfGoodSpectra;
-        std::vector<double> angle2OfGoodSpectra;
-
-        columnOfGoodSpectra.reserve(numPoints);
-        columnErrorOfGoodSpectra.reserve(numPoints);
-        angleOfGoodSpectra.reserve(numPoints);
-        angle2OfGoodSpectra.reserve(numPoints);
-
-        int numberOfGoodspectra = 0; // <-- the number of ok column values
-        for (int k = 0; k < numPoints; ++k) {
-            if (!badEvaluation[k]) {
-                columnOfGoodSpectra.push_back(columns[k]);
-                columnErrorOfGoodSpectra.push_back(columnErrors[k]);
-                angleOfGoodSpectra.push_back(scanAngles[k]);
-                angle2OfGoodSpectra.push_back(phi[k]);
-                ++numberOfGoodspectra;
+            if (!evaluatedScan.m_spec[idx].IsBad())
+            {
+                columns.push_back(evaluatedScan.m_spec[idx].m_referenceResult[specieIdx].m_column);
             }
         }
+
+        plumeProperties.offset = CalculatePlumeOffsetFromGoodColumnValues(columns);
+
+        return plumeProperties.offset;
+    }
+
+    double CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation, long numPoints)
+    {
+        // calculate the offset as the average of the three lowest offsetCorrectedColumn values 
+        //    that are not considered as 'bad' values
+        std::vector<double> testColumns;
+        testColumns.reserve(columns.size());
+
+        for (int i = 0; i < numPoints; ++i)
+        {
+            if (!badEvaluation[i])
+            {
+                testColumns.push_back(columns[i]);
+            }
+        }
+
+        if (testColumns.size() <= 5)
+        {
+            return 0.0;
+        }
+
+        // Find the N lowest offsetCorrectedColumn values
+        const int N = (int)(0.2 * testColumns.size());
+        std::vector<double> m(N, 1e6);
+        FindNLowest(testColumns, N, m);
+        const double avg = Average(m.data(), N);
+        return avg;
+    }
+
+    /// --------------------------- FINDING THE PLUME IN ONE SCAN ---------------------------
+
+    bool FindPlume(const std::vector< ScanEvaluationData>& evaluation, CPlumeInScanProperty& plumeProperties, std::string* message)
+    {
+        const int numberOfGoodspectra = static_cast<int>(evaluation.size());
+
         if (numberOfGoodspectra <= 5) { // <-- if too few ok points, then there's no plume
             if (nullptr != message)
             {
@@ -107,8 +187,14 @@ namespace novac
             return false;
         }
 
+        // If the plume offset hasn't already been calculated then do so now.
+        if (std::abs(plumeProperties.offset) < 1.0)
+        {
+            plumeProperties.offset = CalculatePlumeOffset(evaluation);
+        }
+
         // Try different divisions of the scan to see if there is a region of at least
-        //  'minWidth' values where the column-value is considerably higher than the rest
+        //  'minWidth' values where the offsetCorrectedColumn-value is considerably higher than the rest
         double highestDifference = -1e16; // maximum difference between in-plume and out-of-plume regions
         long minWidth = 5;
         int foundRegionLowIdx = 0;
@@ -126,11 +212,11 @@ namespace novac
                     continue;
                 }
 
-                // the average column value in the region we're testing
-                const double avgInRegion = Average(columnOfGoodSpectra.data() + testedLowIdx, testedRegionSize);
+                // the average offsetCorrectedColumn value in the region we're testing
+                const double avgInRegion = AverageColumn(evaluation, testedLowIdx, testedRegionSize);
 
-                // the average column value outside of the region we're testing
-                const double avgOutRegion = (Average(columnOfGoodSpectra.data(), testedLowIdx) * testedLowIdx + Average(columnOfGoodSpectra.data() + testedHighIdx, numberOfGoodspectra - testedHighIdx) * (numberOfGoodspectra - testedHighIdx)) / (testedLowIdx + numberOfGoodspectra - testedHighIdx);
+                // the average offsetCorrectedColumn value outside of the region we're testing
+                const double avgOutRegion = (AverageColumn(evaluation, 0, testedLowIdx) * testedLowIdx + AverageColumn(evaluation, testedHighIdx, numberOfGoodspectra - testedHighIdx) * (numberOfGoodspectra - testedHighIdx)) / (testedLowIdx + numberOfGoodspectra - testedHighIdx);
 
                 if (avgInRegion - avgOutRegion > highestDifference)
                 {
@@ -141,8 +227,8 @@ namespace novac
             }
         }
 
-        // Calculate the average column error, for the good measurement points
-        const double avgColError = Average(columnErrorOfGoodSpectra.data(), numberOfGoodspectra);
+        // Calculate the average offsetCorrectedColumn error, for the good measurement points
+        const double avgColError = AverageColumnError(evaluation, 0, numberOfGoodspectra);
 
         if (!(highestDifference > 5 * avgColError))
         {
@@ -156,30 +242,29 @@ namespace novac
         }
 
         // the plume centre is the average of the scan-angles in the 'plume-region'
-        //	weighted with the column values
+        //	weighted with the offsetCorrectedColumn values
         double sumAngle_alpha = 0, sumAngle_phi = 0, sumWeight = 0;
         for (int k = foundRegionLowIdx; k < foundRegionHighIdx; ++k)
         {
-            sumAngle_alpha += angleOfGoodSpectra[k] * columnOfGoodSpectra[k];
-            sumAngle_phi += angle2OfGoodSpectra[k] * columnOfGoodSpectra[k];
-            sumWeight += columnOfGoodSpectra[k];
+            sumAngle_alpha += evaluation[k].scanAngle * evaluation[k].offsetCorrectedColumn;
+            sumAngle_phi += evaluation[k].scanAngle2 * evaluation[k].offsetCorrectedColumn;
+            sumWeight += evaluation[k].offsetCorrectedColumn;
         }
         plumeProperties.plumeCenter = sumAngle_alpha / sumWeight;
         plumeProperties.plumeCenter2 = sumAngle_phi / sumWeight;
 
         // Add a reasonability check here. The plume center must never fall outside of the range of angles but may do so
-        // if there are 'bad' column values included in 'columnOfGoodSpectra'.
-        plumeProperties.plumeCenter = std::max(angleOfGoodSpectra[foundRegionLowIdx], std::min(angleOfGoodSpectra[foundRegionHighIdx], plumeProperties.plumeCenter));
-        plumeProperties.plumeCenter2 = std::max(angle2OfGoodSpectra[foundRegionLowIdx], std::min(angle2OfGoodSpectra[foundRegionHighIdx], plumeProperties.plumeCenter));
+        // if there are 'bad' offsetCorrectedColumn values included in 'columnOfGoodSpectra'.
+        plumeProperties.plumeCenter = std::max(evaluation[foundRegionLowIdx].scanAngle, std::min(evaluation[foundRegionHighIdx].scanAngle, plumeProperties.plumeCenter));
+        plumeProperties.plumeCenter2 = std::max(evaluation[foundRegionLowIdx].scanAngle2, std::min(evaluation[foundRegionHighIdx].scanAngle2, plumeProperties.plumeCenter));
 
         // The edges of the plume
         // TODO: this could really be better, with interpolation between the angles...
-        plumeProperties.plumeEdgeLow = angleOfGoodSpectra.front();
-        plumeProperties.plumeEdgeHigh = angleOfGoodSpectra.back();
-        double peakLow = angleOfGoodSpectra.front();
-        double peakHigh = angleOfGoodSpectra.back();
-        const double minCol = Min(columnOfGoodSpectra.data(), numberOfGoodspectra);
-        const double maxCol = Max(columnOfGoodSpectra.data(), numberOfGoodspectra) - minCol;
+        plumeProperties.plumeEdgeLow = evaluation.front().scanAngle;
+        plumeProperties.plumeEdgeHigh = evaluation.back().scanAngle;
+        double peakLow = evaluation.front().scanAngle;
+        double peakHigh = evaluation.back().scanAngle;
+        const double maxCol = MaxColumn(evaluation);
         const double maxCol_div_e = maxCol * 0.3679;
         const double maxCol_90 = maxCol * 0.90;
         const double maxCol_half = maxCol * 0.5;
@@ -187,48 +272,107 @@ namespace novac
         // The left size of the plume
         for (int idx = 0; idx < numberOfGoodspectra - 1; ++idx)
         {
-            if (angleOfGoodSpectra[idx] > plumeProperties.plumeCenter)
+            if (evaluation[idx].scanAngle > plumeProperties.plumeCenter)
             {
                 break;
             }
-            if ((columnOfGoodSpectra[idx] - minCol) < maxCol_div_e)
+            if (evaluation[idx].offsetCorrectedColumn < maxCol_div_e)
             {
-                plumeProperties.plumeEdgeLow = angleOfGoodSpectra[idx];
+                plumeProperties.plumeEdgeLow = evaluation[idx].scanAngle;
             }
-            if ((columnOfGoodSpectra[idx] - minCol) < maxCol_half)
+            if (evaluation[idx].offsetCorrectedColumn < maxCol_half)
             {
-                plumeProperties.plumeHalfLow = angleOfGoodSpectra[idx];
+                plumeProperties.plumeHalfLow = evaluation[idx].scanAngle;
             }
-            if (((columnOfGoodSpectra[idx] - minCol) < maxCol_90) && ((columnOfGoodSpectra[idx + 1] - minCol) >= maxCol_90))
+            if ((evaluation[idx].offsetCorrectedColumn < maxCol_90) && (evaluation[idx + 1].offsetCorrectedColumn >= maxCol_90))
             {
-                peakLow = angleOfGoodSpectra[idx];
+                peakLow = evaluation[idx].scanAngle;
             }
         }
 
         // The right side of the plume
         for (int idx = numberOfGoodspectra - 1; idx > 0; --idx)
         {
-            if (angleOfGoodSpectra[idx] <= plumeProperties.plumeCenter)
+            if (evaluation[idx].scanAngle <= plumeProperties.plumeCenter)
             {
                 break;
             }
-            if ((columnOfGoodSpectra[idx] - minCol) < maxCol_div_e)
+            if (evaluation[idx].offsetCorrectedColumn < maxCol_div_e)
             {
-                plumeProperties.plumeEdgeHigh = angleOfGoodSpectra[idx];
+                plumeProperties.plumeEdgeHigh = evaluation[idx].scanAngle;
             }
-            if ((columnOfGoodSpectra[idx] - minCol) < maxCol_half)
+            if (evaluation[idx].offsetCorrectedColumn < maxCol_half)
             {
-                plumeProperties.plumeHalfHigh = angleOfGoodSpectra[idx];
+                plumeProperties.plumeHalfHigh = evaluation[idx].scanAngle;
             }
-            if (((columnOfGoodSpectra[idx] - minCol) < maxCol_90) && ((columnOfGoodSpectra[idx - 1] - minCol) >= maxCol_90))
+            if ((evaluation[idx].offsetCorrectedColumn < maxCol_90) && (evaluation[idx - 1].offsetCorrectedColumn >= maxCol_90))
             {
-                peakHigh = angleOfGoodSpectra[idx];
+                peakHigh = evaluation[idx].scanAngle;
             }
         }
 
         plumeProperties.plumeCenterError = (peakHigh - peakLow) / 2;
 
         return true;
+
+    }
+
+    bool FindPlume(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, double plumeOffset, CPlumeInScanProperty& plumeProperties, std::string* message)
+    {
+        std::vector< ScanEvaluationData> evaluation;
+        const long numPoints = static_cast<long>(evaluatedScan.m_spec.size());
+
+        for (long idx = 0; idx < numPoints; ++idx)
+        {
+            if (evaluatedScan.m_spec[idx].IsBad())
+            {
+                continue;
+            }
+
+            ScanEvaluationData data;
+            data.scanAngle = evaluatedScan.m_specInfo[idx].m_scanAngle;
+            data.scanAngle2 = evaluatedScan.m_specInfo[idx].m_scanAngle2;
+            data.offsetCorrectedColumn = evaluatedScan.m_spec[idx].m_referenceResult[specieIdx].m_column - plumeOffset;
+            data.columnError = evaluatedScan.m_spec[idx].m_referenceResult[specieIdx].m_columnError;
+
+            evaluation.push_back(data);
+        }
+
+        return FindPlume(evaluation, plumeProperties, message);
+    }
+
+
+    // VERSION 1: FROM NOVACPROGRAM
+    bool FindPlume(
+        const std::vector<double>& scanAngles,
+        const std::vector<double>& phi,
+        const std::vector<double>& columns,
+        const std::vector<double>& columnErrors,
+        const std::vector<bool>& badEvaluation,
+        long numPoints,
+        double plumeOffset,
+        CPlumeInScanProperty& plumeProperties,
+        std::string* message)
+    {
+        std::vector< ScanEvaluationData> evaluation;
+
+        for (long idx = 0; idx < numPoints; ++idx)
+        {
+            if (badEvaluation[idx])
+            {
+                continue;
+            }
+
+            ScanEvaluationData data;
+            data.scanAngle = scanAngles[idx];
+            data.scanAngle2 = phi[idx];
+            data.offsetCorrectedColumn = columns[idx] - plumeOffset;
+            data.columnError = columnErrors[idx];
+
+            evaluation.push_back(data);
+        }
+
+        return FindPlume(evaluation, plumeProperties, message);
     }
 
     /// --------------------------- PLUME COMPLETENESS ---------------------------
@@ -271,7 +415,7 @@ namespace novac
         int nDataPointsToAverage = 5;
 
         // Check if there is a plume at all...
-        bool inPlume = ::novac::FindPlume(scanAngles, phi, columns, columnErrors, badEvaluation, numPoints, plumeProperties, message);
+        bool inPlume = ::novac::FindPlume(scanAngles, phi, columns, columnErrors, badEvaluation, numPoints, offset, plumeProperties, message);
         if (!inPlume) {
             plumeProperties.completeness = 0.0; // <-- no plume at all
             return false;
@@ -313,7 +457,7 @@ namespace novac
         }
         avgRight /= nDataPointsToAverage;
 
-        // Find the maximum column value
+        // Find the maximum offsetCorrectedColumn value
         double maxColumn = 0.0;
         for (int k = 0; k < numPoints; ++k) {
             if (!badEvaluation[k]) {
@@ -328,50 +472,4 @@ namespace novac
 
         return true;
     }
-
-    double CalculatePlumeOffset(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, CPlumeInScanProperty& plumeProperties)
-    {
-        std::vector<double> columns;
-        std::vector<bool> badEvaluation;
-        const long numPoints = static_cast<long>(evaluatedScan.m_spec.size());
-
-        for (long idx = 0; idx < numPoints; ++idx)
-        {
-            columns.push_back(evaluatedScan.m_spec[idx].m_referenceResult[specieIdx].m_column);
-            badEvaluation.push_back(evaluatedScan.m_spec[idx].IsBad());
-        }
-
-        plumeProperties.offset = CalculatePlumeOffset(columns, badEvaluation, numPoints);
-
-        return plumeProperties.offset;
-    }
-
-    double CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation, long numPoints)
-    {
-        // calculate the offset as the average of the three lowest column values 
-        //    that are not considered as 'bad' values
-        std::vector<double> testColumns;
-        testColumns.reserve(columns.size());
-
-        for (int i = 0; i < numPoints; ++i)
-        {
-            if (!badEvaluation[i])
-            {
-                testColumns.push_back(columns[i]);
-            }
-        }
-
-        if (testColumns.size() <= 5)
-        {
-            return 0.0;
-        }
-
-        // Find the N lowest column values
-        const int N = (int)(0.2 * testColumns.size());
-        std::vector<double> m(N, 1e6);
-        FindNLowest(testColumns, N, m);
-        const double avg = Average(m.data(), N);
-        return avg;
-    }
-
 }

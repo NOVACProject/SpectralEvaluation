@@ -67,16 +67,18 @@ namespace novac
                             badEvaluation[i] = true means a bad value
         @param numPoints - the number of points in the scan. Must also be the length
                             of the vectors 'columns', 'columnErrors', and 'badEvaluation'
+        @param plumeOffset - the offset of the plume. Must have been calculated by a prior call to CalculatePlumeOffset.
         @param plumeProperties - Will on successful return be filled with the calculated properties of the plume (not completeness though).
         @param message - Will be filled with the reason the plume wasn't found, if it wasn't.. */
-    bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, long numPoints, CPlumeInScanProperty& plumeProperties, std::string* message = nullptr);
+    bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, long numPoints, double plumeOffset, CPlumeInScanProperty& plumeProperties, std::string* message = nullptr);
 
     /** Finds the plume in the supplied scan. Return value is true if there is a plume, otherwise false
         @param evaluatedScan - the evaluated scan.
         @param specieIdx - the evaluated specie to get the columns for (normally zero).
+        @param plumeOffset - the offset of the plume. Must have been calculated by a prior call to CalculatePlumeOffset.
         @param plumeProperties - Will on successful return be filled with the calculated properties of the plume (not completeness though).
         @param message - Will be filled with the reason the plume wasn't found, if it wasn't.. */
-    bool FindPlume(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, CPlumeInScanProperty& plumeProperties, std::string* message = nullptr);
+    bool FindPlume(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, double plumeOffset, CPlumeInScanProperty& plumeProperties, std::string* message = nullptr);
 
     /** Tries to calculate the completeness of the given scan.
         This will internally call FindPlume to verify the location of the plume and sets the associated fields in plume

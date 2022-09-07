@@ -63,19 +63,21 @@ TEST_CASE("FindPlume with Gaussian plume", "[PlumeProperties]")
 
     SECTION("No plume - returns false.")
     {
+        const double columnOffsetInMeasurement = 0.0;
         PlumeMeasurement plume = GenerateGaussianPlume(0.0, 1.0, 20.0);
 
-        REQUIRE(false == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), plumeProperties));
+        REQUIRE(false == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), columnOffsetInMeasurement, plumeProperties));
     }
 
-    SECTION("Plume overhead - returns true and sets correct plume-center and edges.")
+    SECTION("Plume overhead - returns true and sets correct plume properties.")
     {
         const double acutalPlumeCenter = 0.0;
         const double actualPlumeFwhm = 20.0;
+        const double columnOffsetInMeasurement = 0.0;
         PlumeMeasurement plume = GenerateGaussianPlume(200.0, acutalPlumeCenter, actualPlumeFwhm);
         const double expectedPlumeWidth = CalculateGaussianOneOverEFromFwhm(actualPlumeFwhm);
 
-        REQUIRE(true == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), plumeProperties));
+        REQUIRE(true == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), columnOffsetInMeasurement, plumeProperties));
 
         // Assert, the calculated values should be as expected
         REQUIRE(std::abs(plumeProperties.plumeCenter) < angleTolerance);
@@ -86,7 +88,7 @@ TEST_CASE("FindPlume with Gaussian plume", "[PlumeProperties]")
         REQUIRE(std::abs(plumeProperties.plumeHalfLow - acutalPlumeCenter + actualPlumeFwhm * 0.5) < 1.5 * angleTolerance);
     }
 
-    SECTION("Plume overhead - large offset - returns true and sets correct plume-center and edges.")
+    SECTION("Plume overhead - large offset - returns true and sets correct plume properties.")
     {
         const double acutalPlumeCenter = 0.0;
         const double actualPlumeFwhm = 20.0;
@@ -94,7 +96,7 @@ TEST_CASE("FindPlume with Gaussian plume", "[PlumeProperties]")
         PlumeMeasurement plume = GenerateGaussianPlume(200.0, acutalPlumeCenter, actualPlumeFwhm, columnOffsetInMeasurement);
         const double expectedPlumeWidth = CalculateGaussianOneOverEFromFwhm(actualPlumeFwhm);
 
-        REQUIRE(true == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), plumeProperties));
+        REQUIRE(true == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), columnOffsetInMeasurement, plumeProperties));
 
         // Assert, the calculated values should be as expected
         REQUIRE(std::abs(plumeProperties.plumeCenter) < angleTolerance);
@@ -105,13 +107,14 @@ TEST_CASE("FindPlume with Gaussian plume", "[PlumeProperties]")
         REQUIRE(std::abs(plumeProperties.plumeHalfLow - acutalPlumeCenter + actualPlumeFwhm * 0.5) < 1.5 * angleTolerance);
     }
 
-    SECTION("Plume at -45degrees - returns true and sets correct plume-center.")
+    SECTION("Plume at -45degrees - returns true and sets correct plume properties.")
     {
         const double plumeCenter = -45.0;
+        const double columnOffsetInMeasurement = 0.0;
         PlumeMeasurement plume = GenerateGaussianPlume(200.0, plumeCenter, 20.0);
         const double expectedPlumeWidth = CalculateGaussianOneOverEFromFwhm(20.0);
 
-        REQUIRE(true == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), plumeProperties));
+        REQUIRE(true == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), columnOffsetInMeasurement, plumeProperties));
 
         // Assert, the calculated values should be as expected
         REQUIRE(std::abs(plumeProperties.plumeCenter - plumeCenter) < 4.0);
@@ -122,7 +125,7 @@ TEST_CASE("FindPlume with Gaussian plume", "[PlumeProperties]")
         REQUIRE(std::abs(plumeProperties.plumeHalfLow - plumeCenter + 20.0 * 0.5) < 1.5 * angleTolerance);
     }
 
-    SECTION("Plume at -45degrees - large offset  - returns true and sets correct plume-center.")
+    SECTION("Plume at -45degrees - large offset  - returns true and sets correct plume properties.")
     {
         const double acutalPlumeCenter = -45.0;
         const double actualPlumeFwhm = 20.0;
@@ -130,7 +133,7 @@ TEST_CASE("FindPlume with Gaussian plume", "[PlumeProperties]")
         PlumeMeasurement plume = GenerateGaussianPlume(200.0, acutalPlumeCenter, actualPlumeFwhm, columnOffsetInMeasurement);
         const double expectedPlumeWidth = CalculateGaussianOneOverEFromFwhm(20.0);
 
-        REQUIRE(true == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), plumeProperties));
+        REQUIRE(true == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), columnOffsetInMeasurement, plumeProperties));
 
         // Assert, the calculated values should be as expected
         REQUIRE(std::abs(plumeProperties.plumeCenter - acutalPlumeCenter) < 4.0);
@@ -141,13 +144,14 @@ TEST_CASE("FindPlume with Gaussian plume", "[PlumeProperties]")
         REQUIRE(std::abs(plumeProperties.plumeHalfLow - acutalPlumeCenter + 20.0 * 0.5) < 1.5 * angleTolerance);
     }
 
-    SECTION("Plume at +45degrees - returns true and sets correct plume-center.")
+    SECTION("Plume at +45degrees - returns true and sets correct plume properties.")
     {
         const double plumeCenter = 45.0;
+        const double columnOffsetInMeasurement = 0.0;
         PlumeMeasurement plume = GenerateGaussianPlume(200.0, plumeCenter, 20.0);
         const double expectedPlumeWidth = CalculateGaussianOneOverEFromFwhm(20.0);
 
-        REQUIRE(true == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), plumeProperties));
+        REQUIRE(true == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), columnOffsetInMeasurement, plumeProperties));
 
         // Assert, the calculated values should be as expected
         REQUIRE(std::abs(plumeProperties.plumeCenter - plumeCenter) < 4.0);
@@ -158,32 +162,33 @@ TEST_CASE("FindPlume with Gaussian plume", "[PlumeProperties]")
         REQUIRE(std::abs(plumeProperties.plumeHalfLow - plumeCenter + 20.0 * 0.5) < 1.5 * angleTolerance);
     }
 
-    SECTION("Plume at -75degrees - returns true and sets correct plume-center.")
+    SECTION("Plume at -75degrees - returns true and sets correct plume properties.")
     {
         const double acutalPlumeCenter = -75.0;
         const double actualPlumeFwhm = 20.0;
         const double columnOffsetInMeasurement = 0.0;
         PlumeMeasurement plume = GenerateGaussianPlume(200.0, acutalPlumeCenter, actualPlumeFwhm, columnOffsetInMeasurement);
 
-        REQUIRE(true == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), plumeProperties));
+        REQUIRE(true == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), columnOffsetInMeasurement, plumeProperties));
 
         // Assert, the calculated values should be as expected
         REQUIRE(std::abs(plumeProperties.plumeCenter + 75.0) < 4.0);
         REQUIRE(std::abs(plumeProperties.plumeCenter2) < 1.0);
     }
 
-    SECTION("Plume at +75degrees - returns true and sets correct plume-center.")
+    SECTION("Plume at +75degrees - returns true and sets correct plume properties.")
     {
+        const double columnOffsetInMeasurement = 0.0;
         PlumeMeasurement plume = GenerateGaussianPlume(200.0, +75.0, 20.0);
 
-        REQUIRE(true == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), plumeProperties));
+        REQUIRE(true == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), columnOffsetInMeasurement, plumeProperties));
 
         // Assert, the calculated values should be as expected
         REQUIRE(std::abs(plumeProperties.plumeCenter - 75.0) < 4.0);
         REQUIRE(std::abs(plumeProperties.plumeCenter2) < 1.0);
     }
 
-    SECTION("Plume at -45degrees - bad values edges of scan - returns true and sets plume-center within scan range.")
+    SECTION("Plume at -45degrees - bad values edges of scan - returns true and sets plume properties within scan range.")
     {
         const double acutalPlumeCenter = -45.0;
         const double actualPlumeFwhm = 90.0;
@@ -193,7 +198,7 @@ TEST_CASE("FindPlume with Gaussian plume", "[PlumeProperties]")
         plume.columns[0] = -5000.0;
         plume.columns[1] = -5000.0;
 
-        REQUIRE(true == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), plumeProperties));
+        REQUIRE(true == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), columnOffsetInMeasurement, plumeProperties));
 
         // Assert, the calculated values should be as expected
         REQUIRE(plumeProperties.plumeCenter < plume.scanAngles.back());
@@ -209,13 +214,15 @@ TEST_CASE("FindPlume with measured plume (BroSo2 ratio measurement)", "[PlumePro
     REQUIRE(evaluationFileIsOk); // check assumption on the setup
     REQUIRE(evaluationFileHandler.m_scan.size() == 1); // check assumption on the setup
 
-    // Act
     CPlumeInScanProperty plumeProperties;
-    REQUIRE(true == FindPlume(evaluationFileHandler.m_scan[0], 0, plumeProperties));
+    const double offset = CalculatePlumeOffset(evaluationFileHandler.m_scan[0], 0, plumeProperties);
+
+    // Act
+    REQUIRE(true == FindPlume(evaluationFileHandler.m_scan[0], 0, offset, plumeProperties));
 
     SECTION("Correct plume center.")
     {
-        REQUIRE(plumeProperties.plumeCenter == Approx(-23.48).margin(0.01));
+        REQUIRE(plumeProperties.plumeCenter == Approx(-23.12).margin(0.01));
     }
 
     SECTION("Correct plume edges.")
@@ -231,7 +238,7 @@ TEST_CASE("FindPlume with measured plume (BroSo2 ratio measurement)", "[PlumePro
     SECTION("Does not set completeness nor offset.")
     {
         REQUIRE(plumeProperties.completeness == Approx(0.0));
-        REQUIRE(plumeProperties.offset == Approx(0.0));
+        REQUIRE(plumeProperties.offset == Approx(offset));
     }
 }
 
@@ -359,7 +366,7 @@ TEST_CASE("CalculatePlumeCompleteness with measured plume (BroSo2 ratio measurem
 
     SECTION("Sets correct plume center.")
     {
-        REQUIRE(plumeProperties.plumeCenter == Approx(-23.48).margin(0.01));
+        REQUIRE(plumeProperties.plumeCenter == Approx(-23.12).margin(0.01));
     }
 
     SECTION("Sets correct plume edges.")

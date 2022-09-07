@@ -200,7 +200,7 @@ std::vector< PlumeSpectrumSelector::InitialEvaluationData> PlumeSpectrumSelector
             InitialEvaluationData data;
             data.indexInScan = static_cast<int>(ii);
             data.scanAngle = originalScanResult.m_specInfo[ii].m_scanAngle;
-            data.column = originalScanResult.m_spec[ii].m_referenceResult[m_mainSpecieIndex].m_column;
+            data.offsetCorrectedColumn = originalScanResult.m_spec[ii].m_referenceResult[m_mainSpecieIndex].m_column;
 
             CSpectrum spectrum;
             if (0 == originalScanFile.GetSpectrum((int)ii, spectrum))
@@ -337,7 +337,7 @@ double PlumeSpectrumSelector::ColumnAtScanIndex(const std::vector< InitialEvalua
     {
         if (data.indexInScan == scanIndex)
         {
-            return data.column;
+            return data.offsetCorrectedColumn;
         }
     }
     return 0.0;
@@ -396,7 +396,7 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraOutOfPlume(
         {
             continue;
         }
-        spectrumColumnVsIndex.push_back(std::pair<int, double>(data.indexInScan, data.column));
+        spectrumColumnVsIndex.push_back(std::pair<int, double>(data.indexInScan, data.offsetCorrectedColumn));
     }
     std::sort(begin(spectrumColumnVsIndex), end(spectrumColumnVsIndex), [&](const std::pair<int, double>& p1, const std::pair<int, double>& p2)
     {

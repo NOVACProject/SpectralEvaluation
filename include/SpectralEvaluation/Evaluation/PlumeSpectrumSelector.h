@@ -92,7 +92,7 @@ namespace novac
         {
             int indexInScan = 0;
             double scanAngle = 0.0;
-            double column = 0.0;
+            double offsetCorrectedColumn = 0.0;
             double peakSaturation = 0.0;
             double peakSaturationAfterDarkCorrection = 0.0;
         };
