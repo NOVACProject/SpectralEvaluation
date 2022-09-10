@@ -360,6 +360,18 @@ namespace novac
         }
     }
 
+    std::string GetFileName(const std::string& fullFileNameAndPath)
+    {
+        auto position = fullFileNameAndPath.rfind('\\');
+        if (position == std::string::npos)
+        {
+            return std::string();
+        }
+        auto length = fullFileNameAndPath.size();
+
+        return fullFileNameAndPath.substr(position + 1, length - position - 1);
+    }
+
     std::pair<std::string, std::string> FormatProperty(const char* name, double value)
     {
         char formattedValue[128];

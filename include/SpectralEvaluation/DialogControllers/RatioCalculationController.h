@@ -5,6 +5,7 @@
 #include <vector>
 #include <SpectralEvaluation/Evaluation/RatioEvaluation.h>
 #include <SpectralEvaluation/Spectra/WavelengthRange.h>
+#include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 #include <SpectralEvaluation/DateTime.h>
 #include <SpectralEvaluation/Units.h>
 
@@ -149,6 +150,10 @@ public:
     // Settings for how to select the in-plume and out-of-plume spectra.
     Configuration::RatioEvaluationSettings m_ratioEvaluationSettings;
 
+    // The model of the spectrometer which generated the spectra.
+    // This can be nullptr in which case the model is determined from the measurement.
+    std::unique_ptr<novac::SpectrometerModel> m_spectrometerModel;
+
     // A memory of all the results this instance of RatioCalculationController has produced.
     // It is up to the user of this class to clear this list when desired.
     std::vector<RatioCalculationResult> m_results;
@@ -188,6 +193,9 @@ private:
 
     // Verifies that the references have been setup as expected. Throws invalid_argument if not.
     void VerifyReferenceSetup();
+
+    // Retrieves a spectrometer model to be used. Either from the 'm_spectrometerModel' if that is set, or by guessing the model from the serial.
+    const novac::SpectrometerModel GetModelForMeasurement(const std::string& deviceSerial) const;
 };
 
 // Helper method, picks out the reference with the given specie and returns a pointer to it.

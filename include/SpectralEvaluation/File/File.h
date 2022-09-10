@@ -49,6 +49,9 @@ namespace novac
         NOTICE2: this will not guarantee that the fullFilePath has the default suffix, only that there is one. */
     std::string EnsureFilenameHasSuffix(const std::string& fullFilePath, const std::string& defaultSuffix);
 
+    /** Returns the file name component of the provide full filename and path */
+    std::string GetFileName(const std::string& fullFileNameAndPath);
+
     /** Returns the file extension (suffix) from the provided full file path */
     std::string GetFileExtension(const std::string& fullFilePath);
 

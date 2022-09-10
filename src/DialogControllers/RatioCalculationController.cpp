@@ -20,7 +20,9 @@ void RatioCalculationController::InitializeToDefault()
     m_pakfiles.clear();
 
     // Default settings
-    m_ratioEvaluationSettings.minInPlumeColumn = 40.0; // 40 ppmm.
+    m_ratioEvaluationSettings.minimumPlumeCompleteness = 0.7;
+
+    m_spectrometerModel.reset();
 
     // Insert the default species
     m_references.clear();
@@ -390,7 +392,7 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
     }
 
     // TODO: Make this possible to be setup by the user.
-    const auto spectrometerModel = novac::CSpectrometerDatabase::GetInstance().GuessModelFromSerial(initialResult.m_specInfo.front().m_device);
+    const auto spectrometerModel = GetModelForMeasurement(initialResult.m_specInfo.front().m_device);
 
     // Setup the ratio evaluation and run it.
     novac::RatioEvaluation ratioEvaluation{ m_ratioEvaluationSettings, darkSettings };
@@ -408,6 +410,16 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
     m_results.push_back(result);
 
     return result;
+}
+
+const novac::SpectrometerModel RatioCalculationController::GetModelForMeasurement(const std::string& deviceSerial) const
+{
+    if (m_spectrometerModel != nullptr)
+    {
+        return *(m_spectrometerModel);
+    }
+
+    return novac::CSpectrometerDatabase::GetInstance().GuessModelFromSerial(deviceSerial);
 }
 
 ReferenceForRatioCalculation* GetReferenceFor(RatioCalculationController& controller, StandardDoasSpecie specie)

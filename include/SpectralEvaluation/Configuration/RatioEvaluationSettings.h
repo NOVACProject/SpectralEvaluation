@@ -17,12 +17,7 @@ namespace Configuration
         int maxNumberOfSpectraInPlume = 10;
 
         // The minimum number of spectra which needs to be averaged outside of the plume for the calculation to be successful.
-        // int minNumberOfReferenceSpectra = 7;
-
         int numberOfSpectraOutsideOfPlume = 10;
-
-        // The minimum (SO2) column for the selected spectra in the plume. Defaults to 40ppmm = 1e17 molec/cm2.
-        double minInPlumeColumn = 1e17;
 
         // Lowest allowed angle to include, in degrees from zenith. Used to exclude spectra too close to the horizon.
         double minimumScanAngle = -75.0;
