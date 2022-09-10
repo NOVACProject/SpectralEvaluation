@@ -75,13 +75,13 @@ namespace novac
     }
 
     // TODO: this should be in a separate class.
-    bool CEvaluationResult::CheckGoodnessOfFit(const CSpectrumInfo& info, float chi2Limit, float upperLimit, float lowerLimit)
+    bool CEvaluationResult::CheckGoodnessOfFit(const CSpectrumInfo& info, const SpectrometerModel* spectrometer, float chi2Limit, float upperLimit, float lowerLimit)
     {
         // assume that this is an ok evaluation
         m_evaluationStatus &= ~MARK_BAD_EVALUATION;
 
         // The maximum intensity for one spectrum (# bits in the ADC)
-        const double maxInt = CSpectrometerDatabase::GetInstance().GetModel(info.m_specModelName).maximumIntensityForSingleReadout;
+        const double maxInt = (spectrometer != nullptr) ? (spectrometer->maximumIntensityForSingleReadout) : CSpectrometerDatabase::GetInstance().GetModel(info.m_specModelName).maximumIntensityForSingleReadout;
 
         // The maximum saturation-level in the fit-region
         double fitSaturation = 0.0;

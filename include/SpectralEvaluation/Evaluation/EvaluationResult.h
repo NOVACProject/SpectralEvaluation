@@ -8,6 +8,7 @@ namespace novac
 
     class CSpectrumInfo;
     struct DoasResult;
+    struct SpectrometerModel;
 
 #define MARK_BAD_EVALUATION 0x0001
 #define MARK_DELETED 0x0002
@@ -62,7 +63,7 @@ namespace novac
             @param upperLimit - (optional) the upper limit to use on the saturation level
             @param lowerLimit - (optional) the lower limit to use on the saturation level
             @return true if this spectrum result is evaluated to be good, otherwise returns false. */
-        bool CheckGoodnessOfFit(const CSpectrumInfo& info, float chi2Limit = -1, float upperLimit = -1, float lowerLimit = -1);
+        bool CheckGoodnessOfFit(const CSpectrumInfo& info, const SpectrometerModel* spectrometer = nullptr, float chi2Limit = -1, float upperLimit = -1, float lowerLimit = -1);
 
         /** Returns true if this spectrum is judges as being an ok spectrum */
         bool IsOK() const { return !(m_evaluationStatus & MARK_BAD_EVALUATION); }

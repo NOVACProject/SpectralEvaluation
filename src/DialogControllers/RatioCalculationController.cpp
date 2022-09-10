@@ -322,15 +322,27 @@ novac::BasicScanEvaluationResult RatioCalculationController::DoInitialEvaluation
     // TODO: This could be the basis for a (future) scan evaluation class based on the new DoasFit class...
     scan.ResetCounter();
     novac::CSpectrum measuredSpectrum;
+    novac::SpectrometerModel spectrometerModel = GetModelForMeasurement(measuredSkySpectrum.m_info.m_device);
     while (0 == scan.GetNextMeasuredSpectrum(measuredSpectrum))
     {
+        // Check the intensity and save this, such that we can use this later to verify if the evaluated column was good or not.
+        measuredSpectrum.m_info.m_peakIntensity = (float)measuredSpectrum.MaxValue(0, measuredSpectrum.m_length - 2);
+        measuredSpectrum.m_info.m_fitIntensity = (float)measuredSpectrum.MaxValue(localCopyOfWindow.fitLow, localCopyOfWindow.fitHigh);
+
+        // Dark-correct and prepare the spectrum for the fit
         measuredSpectrum.Sub(measuredDarkSpectrum);
         const auto filteredMeasuredSpectrum = novac::DoasFitPreparation::PrepareMeasuredSpectrum(measuredSpectrum, measuredSkySpectrum, localCopyOfWindow.fitType);
 
+        // do the actual DOAS fit.
         novac::DoasResult doasResult;
         doas.Run(filteredMeasuredSpectrum.data(), filteredMeasuredSpectrum.size(), doasResult);
 
+        // Convert the DoasResult into an CEvaluationResult
         novac::CEvaluationResult evaluationResult = doasResult;
+
+        // Check if the measurement was good or not
+        evaluationResult.CheckGoodnessOfFit(measuredSpectrum.m_info, &spectrometerModel);
+
         result.AppendResult(evaluationResult, measuredSpectrum.m_info);
     }
 
