@@ -352,9 +352,8 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraInPlume(
     const CPlumeInScanProperty& properties,
     const Configuration::RatioEvaluationSettings& settings)
 {
-    std::vector<int> scanIndices;
-
     // add all spectra in the scan-angle range [plumeHalfLow, plumeHalfHigh]
+    std::vector<std::pair<int, double>> spectrumColumnVsIndex;
     const double minimumScanAngle = std::max(settings.minimumScanAngle, properties.plumeHalfLow);
     const double maximumScanAngle = std::min(settings.maximumScanAngle, properties.plumeHalfHigh);
     for (int idx = 0; idx < (int)evaluationData.size(); ++idx)
@@ -362,23 +361,23 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraInPlume(
         if (evaluationData[idx].scanAngle > minimumScanAngle + 0.1 &&
             evaluationData[idx].scanAngle < maximumScanAngle - 0.1)
         {
-            scanIndices.push_back(evaluationData[idx].indexInScan);
+            spectrumColumnVsIndex.push_back(std::pair<int, double>(evaluationData[idx].indexInScan, evaluationData[idx].offsetCorrectedColumn));
         }
     }
-
-    // limit the number of spectra by removing the lowest columns
-    while (scanIndices.size() > static_cast<size_t>(settings.maxNumberOfSpectraInPlume))
+    // sort the values in order of descending column
+    std::sort(begin(spectrumColumnVsIndex), end(spectrumColumnVsIndex), [&](const std::pair<int, double>& p1, const std::pair<int, double>& p2)
     {
-        const double firstColumn = ColumnAtScanIndex(evaluationData, scanIndices.front());
-        const double lastColumn = ColumnAtScanIndex(evaluationData, scanIndices.back());
+        return p1.second > p2.second;
+    });
 
-        if (firstColumn > lastColumn)
+    std::vector<int> scanIndices;
+    for (const auto& item : spectrumColumnVsIndex)
+    {
+        scanIndices.push_back(item.first);
+
+        if (scanIndices.size() == static_cast<int>(settings.maxNumberOfSpectraInPlume))
         {
-            scanIndices.erase(scanIndices.end() - 1);
-        }
-        else
-        {
-            scanIndices.erase(scanIndices.begin());
+            return scanIndices;
         }
     }
 
@@ -408,6 +407,7 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraOutOfPlume(
             spectrumColumnVsIndex.push_back(std::pair<int, double>(data.indexInScan, data.offsetCorrectedColumn));
         }
     }
+    // sort the values in order of ascending column
     std::sort(begin(spectrumColumnVsIndex), end(spectrumColumnVsIndex), [&](const std::pair<int, double>& p1, const std::pair<int, double>& p2)
     {
         return p1.second < p2.second;
