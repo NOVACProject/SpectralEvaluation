@@ -5,7 +5,7 @@
 
 namespace novac
 {
-    TEST_CASE("ReadCrossSectionFile with simple two column cross section file", "[ReadCrossSectionFile][IntegrationTest]")
+    TEST_CASE("ReadCrossSectionFile with simple two column cross section file", "[ReadCrossSectionFile][IntegrationTest][File]")
     {
         CCrossSectionData result;
         ReadCrossSectionFile(TestData::GetHighResolutionSO2CrossSectionFile(), result);

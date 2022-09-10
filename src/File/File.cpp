@@ -360,9 +360,9 @@ namespace novac
         }
     }
 
-    std::string GetFileName(const std::string& fullFileNameAndPath)
+    std::string GetFileName(const std::string& fullFileNameAndPath, char pathSeparator)
     {
-        auto position = fullFileNameAndPath.rfind('\\');
+        auto position = fullFileNameAndPath.rfind(pathSeparator);
         if (position == std::string::npos)
         {
             return std::string();
@@ -370,6 +370,19 @@ namespace novac
         auto length = fullFileNameAndPath.size();
 
         return fullFileNameAndPath.substr(position + 1, length - position - 1);
+    }
+
+    std::string GetFileName(const std::string& fullFileNameAndPath)
+    {
+        // first attempt with using windows path-separator.
+        std::string result = GetFileName(fullFileNameAndPath, '\\');
+        if (!result.empty())
+        {
+            return result;
+        }
+
+        // If no paths were found, then instead use linux
+        return GetFileName(fullFileNameAndPath, '/');
     }
 
     std::pair<std::string, std::string> FormatProperty(const char* name, double value)

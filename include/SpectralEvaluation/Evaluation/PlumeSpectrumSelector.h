@@ -143,14 +143,15 @@ namespace novac
             std::string* errorMessage = nullptr);
 
         std::vector<int> FindSpectraInPlume(
-            const std::vector< InitialEvaluationData> evaluationData,
+            const std::vector< InitialEvaluationData>& evaluationData,
             const CPlumeInScanProperty& properties,
-            const Configuration::RatioEvaluationSettings settings);
+            const Configuration::RatioEvaluationSettings& settings);
 
         std::vector<int> FindSpectraOutOfPlume(
-            const std::vector< InitialEvaluationData> evaluationData,
-            const Configuration::RatioEvaluationSettings settings,
-            const std::vector<int>& inPlumeProposal);
+            const std::vector< InitialEvaluationData>& evaluationData,
+            const Configuration::RatioEvaluationSettings& settings,
+            const std::vector<int>& inPlumeProposal,
+            double minimumColumnInPlume);
 
         /**
          * @brief Return true if the provided spectrum has a good intensity for being included in a ratio evaluation.

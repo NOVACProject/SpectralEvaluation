@@ -35,6 +35,7 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Evaluation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_EvaluationResult.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_Fft.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/UnitTest_File.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitExtensions.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitWindow.cpp
     ${CMAKE_CURRENT_LIST_DIR}/UnitTest_FitInstrumentLineShapeFunction.cpp

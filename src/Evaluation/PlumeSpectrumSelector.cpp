@@ -235,9 +235,8 @@ bool PlumeSpectrumSelector::SelectSpectra(
     inPlumeSpectra.clear();
 
     // Find a proprosal for the in-plume region.
-    auto inPlumeProposal = FindSpectraInPlume(evaluationData, properties, settings);
-    std::sort(begin(inPlumeProposal), end(inPlumeProposal));
-    inPlumeSpectra = std::move(inPlumeProposal);
+    inPlumeSpectra = FindSpectraInPlume(evaluationData, properties, settings);
+    std::sort(begin(inPlumeSpectra), end(inPlumeSpectra));
 
     if (static_cast<int>(inPlumeSpectra.size()) < settings.minNumberOfSpectraInPlume)
     {
@@ -248,10 +247,16 @@ bool PlumeSpectrumSelector::SelectSpectra(
         return false;
     }
 
+    // Get the minimum column for the selected in-plume spectra
+    double minInPlumeColumn = std::numeric_limits<double>::max();
+    for (int scanIdx : inPlumeSpectra)
+    {
+        minInPlumeColumn = std::min(minInPlumeColumn, ColumnAtScanIndex(evaluationData, scanIdx));
+    }
+
     // Find the reference spectra as the spectra with lowest column value (ignore the sky and the dark spectra here..) 
-    auto referenceProposal = FindSpectraOutOfPlume(evaluationData, settings, inPlumeSpectra);
-    std::sort(begin(referenceProposal), end(referenceProposal));
-    referenceSpectra = std::move(referenceProposal);
+    referenceSpectra = FindSpectraOutOfPlume(evaluationData, settings, inPlumeSpectra, minInPlumeColumn);
+    std::sort(begin(referenceSpectra), end(referenceSpectra));
 
     if (static_cast<int>(referenceSpectra.size()) < settings.numberOfSpectraOutsideOfPlume)
     {
@@ -343,9 +348,9 @@ double PlumeSpectrumSelector::ColumnAtScanIndex(const std::vector< InitialEvalua
 }
 
 std::vector<int> PlumeSpectrumSelector::FindSpectraInPlume(
-    const std::vector< InitialEvaluationData> evaluationData,
+    const std::vector< InitialEvaluationData>& evaluationData,
     const CPlumeInScanProperty& properties,
-    const Configuration::RatioEvaluationSettings settings)
+    const Configuration::RatioEvaluationSettings& settings)
 {
     std::vector<int> scanIndices;
 
@@ -381,9 +386,10 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraInPlume(
 }
 
 std::vector<int> PlumeSpectrumSelector::FindSpectraOutOfPlume(
-    const std::vector< InitialEvaluationData> evaluationData,
-    const Configuration::RatioEvaluationSettings settings,
-    const std::vector<int>& inPlumeProposal)
+    const std::vector< InitialEvaluationData>& evaluationData,
+    const Configuration::RatioEvaluationSettings& settings,
+    const std::vector<int>& inPlumeProposal,
+    double minimumColumnInPlume)
 {
     std::vector<int> indices;
 
@@ -395,7 +401,12 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraOutOfPlume(
         {
             continue;
         }
-        spectrumColumnVsIndex.push_back(std::pair<int, double>(data.indexInScan, data.offsetCorrectedColumn));
+
+        // Only include spectra with an evaluation column smaller than the smallest in-plume column (in order to have contrast between in-plume and out-of-plume)
+        if (data.offsetCorrectedColumn < minimumColumnInPlume)
+        {
+            spectrumColumnVsIndex.push_back(std::pair<int, double>(data.indexInScan, data.offsetCorrectedColumn));
+        }
     }
     std::sort(begin(spectrumColumnVsIndex), end(spectrumColumnVsIndex), [&](const std::pair<int, double>& p1, const std::pair<int, double>& p2)
     {
