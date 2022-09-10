@@ -39,9 +39,11 @@ namespace novac
             errorMessage = "Too few spectra in scan for creating adding an in-plume-spectrum and an out-of-plume-spectrum.";
             return false; // not enough spectra
         }
-        if (properties.completeness < 0.7)
+        if (properties.completeness < settings.minimumPlumeCompleteness + 0.01)
         {
-            errorMessage = "Plume completeness below threshold of 0.7";
+            std::stringstream message;
+            message << "Plume completeness below threshold of " << settings.minimumPlumeCompleteness;
+            errorMessage = message.str();
             return false;
         }
         return true; // TODO: Add more checks...
