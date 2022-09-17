@@ -461,6 +461,18 @@ ReferenceForRatioCalculation* GetReferenceWithName(RatioCalculationController& c
     return nullptr; // not found
 }
 
+const RatioCalculationResult* GetFirstSuccessfulResult(const std::vector<RatioCalculationResult>& allResults)
+{
+    for (int ii = 0; ii < static_cast<int>(allResults.size()); ++ii)
+    {
+        if (allResults[ii].RatioCalculationSuccessful())
+        {
+            return &allResults[ii];
+        }
+    }
+
+    return nullptr;
+}
 
 void RatioCalculationController::SaveResultsToCsvFile(const std::string& filename, std::string columnSeparator) const
 {
@@ -478,31 +490,37 @@ void RatioCalculationController::SaveResultsToCsvFile(const std::string& filenam
         file << "ScanEndedAt" << columnSeparator;
         file << "EvaluatedAt" << columnSeparator;
         file << "Filename" << columnSeparator;
-        file << "Ratio" << columnSeparator << "RatioError" << columnSeparator;
+        file << "RatioSuccessfullyCalculated" << columnSeparator;
+        file << "BrO/SO2 Ratio" << columnSeparator << "BrO/SO2 RatioError" << columnSeparator;
+        file << "BrODetectionSignificant" << columnSeparator;
         file << "PlumeCompleteness" << columnSeparator;
         file << "PlumeCenter" << columnSeparator;
         file << "InPlumeSpectrum_ExposureNum" << columnSeparator;
         file << "OutOfPlumeSpectrum_ExposureNum" << columnSeparator;
 
-        // Write the specie-names from the first result, assuming that this hasn't changed for the other results.
-        for (size_t windowIdx = 0; windowIdx < m_results.front().debugInfo.doasResults.size(); ++windowIdx)
+        // Write the specie-names from the first successful result, assuming that this hasn't changed for the other results.
+        const auto firstSuccessfulResult = GetFirstSuccessfulResult(m_results);
+        if (firstSuccessfulResult != nullptr)
         {
-            const size_t humanFriendlyWindowIdx = windowIdx + 1; // humans start counting at 1
-            const auto& doasResult = m_results.front().debugInfo.doasResults[windowIdx];
-
-            file << "Window" << humanFriendlyWindowIdx << "_FitLow" << columnSeparator;
-            file << "Window" << humanFriendlyWindowIdx << "_FitHigh" << columnSeparator;
-            file << "Window" << humanFriendlyWindowIdx << "_Chi2" << columnSeparator;
-            file << "Window" << humanFriendlyWindowIdx << "_Delta" << columnSeparator;
-
-            for (const auto& referenceResult : doasResult.referenceResult)
+            for (size_t windowIdx = 0; windowIdx < firstSuccessfulResult->debugInfo.doasResults.size(); ++windowIdx)
             {
-                file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_Column" << columnSeparator;
-                file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_ColumnError" << columnSeparator;
-                file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_Shift" << columnSeparator;
-                file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_ShiftError" << columnSeparator;
-                file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_Squeeze" << columnSeparator;
-                file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_SqueezeError" << columnSeparator;
+                const size_t humanFriendlyWindowIdx = windowIdx + 1; // humans start counting at 1
+                const auto& doasResult = m_results.front().debugInfo.doasResults[windowIdx];
+
+                file << "Window" << humanFriendlyWindowIdx << "_FitLow" << columnSeparator;
+                file << "Window" << humanFriendlyWindowIdx << "_FitHigh" << columnSeparator;
+                file << "Window" << humanFriendlyWindowIdx << "_Chi2" << columnSeparator;
+                file << "Window" << humanFriendlyWindowIdx << "_Delta" << columnSeparator;
+
+                for (const auto& referenceResult : doasResult.referenceResult)
+                {
+                    file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_Column" << columnSeparator;
+                    file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_ColumnError" << columnSeparator;
+                    file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_Shift" << columnSeparator;
+                    file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_ShiftError" << columnSeparator;
+                    file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_Squeeze" << columnSeparator;
+                    file << "Window" << humanFriendlyWindowIdx << "_" << referenceResult.name << "_SqueezeError" << columnSeparator;
+                }
             }
         }
 
@@ -517,7 +535,9 @@ void RatioCalculationController::SaveResultsToCsvFile(const std::string& filenam
         file << result.endTime << columnSeparator;
         file << result.evaluatedAt << columnSeparator;
         file << result.filename << columnSeparator;
+        file << result.RatioCalculationSuccessful() << columnSeparator; // prints '1' whenever the error message is emtpy, i.e. the ratio is calculated without any errors.
         file << result.ratio.ratio << columnSeparator << result.ratio.error << columnSeparator;
+        file << result.SignificantMinorSpecieDetection() << columnSeparator;
         file << result.plumeInScanProperties.completeness << columnSeparator;
         file << result.plumeInScanProperties.plumeCenter << columnSeparator;
         file << result.debugInfo.inPlumeSpectrum.m_info.m_numSpec << columnSeparator;

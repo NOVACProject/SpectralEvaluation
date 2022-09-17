@@ -98,6 +98,12 @@ struct RatioCalculationResult
 
     // Detailed information the evaluation. Also contains any possible error message.
     novac::RatioEvaluationDebugInformation debugInfo;
+
+    // Returns true if this result contains a calculated ratio.
+    bool RatioCalculationSuccessful() const { return debugInfo.errorMessage.empty(); }
+
+    // Returns true if this result contains a significant detection of the minor specie (column > 2*columnError)
+    bool SignificantMinorSpecieDetection() const { return std::abs(ratio.minorResult) > 2 * ratio.minorError; }
 };
 
 class RatioCalculationController
