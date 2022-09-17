@@ -320,7 +320,7 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
         }
         return false;
     }
-    else if (std::abs(properties.plumeHalfLow - NOT_A_NUMBER) < 1.0 || std::abs(properties.plumeHalfHigh - NOT_A_NUMBER) < 1.0)
+    else if (std::abs(properties.plumeHalfLow - NOT_A_NUMBER) < 1.0 && std::abs(properties.plumeHalfHigh - NOT_A_NUMBER) < 1.0)
     {
         if (errorMessage != nullptr)
         {
