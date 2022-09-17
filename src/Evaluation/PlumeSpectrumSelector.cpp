@@ -290,7 +290,7 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
         }
         return false;
     }
-    else if (properties.completeness < settings.minimumPlumeCompleteness + 0.01)
+    else if (properties.completeness + 0.01 < settings.minimumPlumeCompleteness)
     {
         if (errorMessage != nullptr)
         {
