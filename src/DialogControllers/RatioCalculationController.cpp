@@ -21,6 +21,7 @@ void RatioCalculationController::InitializeToDefault()
 
     // Default settings
     m_ratioEvaluationSettings.minimumPlumeCompleteness = 0.7;
+    m_ratioEvaluationSettings.requireVisiblePlumeEdges = true;
 
     m_spectrometerModel.reset();
 

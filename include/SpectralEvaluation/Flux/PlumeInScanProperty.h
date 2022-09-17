@@ -21,10 +21,10 @@ namespace novac
         /** Assignment operator */
         CPlumeInScanProperty& operator=(const CPlumeInScanProperty& p2) = default;
 
-        /** The centre position of the plume, for the first motor (only in standard NOVAC instrument). */
+        /** The centre position of the plume for the first motor (only in standard NOVAC instrument). Scan angle in degrees.*/
         double plumeCenter = NOT_A_NUMBER;
 
-        /** The centre position of the plume, for the second motor (only available in Heidelberg type instruments). */
+        /** The centre position of the plume, for the second motor (only available in Heidelberg type instruments). Scan angle in degrees. */
         double plumeCenter2 = NOT_A_NUMBER;
 
         /** The estimated error in the estimation of the plume centre position for the first motor. */

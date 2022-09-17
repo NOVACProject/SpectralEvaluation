@@ -300,7 +300,7 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
         }
         return false;
     }
-    else if (std::abs(properties.plumeHalfLow - NOT_A_NUMBER) < 1.0)
+    else if (settings.requireVisiblePlumeEdges && std::abs(properties.plumeHalfLow - NOT_A_NUMBER) < 1.0)
     {
         if (errorMessage != nullptr)
         {
@@ -310,12 +310,22 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
         }
         return false;
     }
-    else if (std::abs(properties.plumeHalfHigh - NOT_A_NUMBER) < 1.0)
+    else if (settings.requireVisiblePlumeEdges && std::abs(properties.plumeHalfHigh - NOT_A_NUMBER) < 1.0)
     {
         if (errorMessage != nullptr)
         {
             std::stringstream msg;
             msg << "Column needs to drop at least 50% on upper flank";
+            *errorMessage = msg.str();
+        }
+        return false;
+    }
+    else if (std::abs(properties.plumeHalfLow - NOT_A_NUMBER) < 1.0 || std::abs(properties.plumeHalfHigh - NOT_A_NUMBER) < 1.0)
+    {
+        if (errorMessage != nullptr)
+        {
+            std::stringstream msg;
+            msg << "Column needs to drop at least 50% on either lower or upper flank";
             *errorMessage = msg.str();
         }
         return false;

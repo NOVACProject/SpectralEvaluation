@@ -12,7 +12,7 @@ namespace novac
     struct ScanEvaluationData
     {
         int indexInScan = 0;
-        double scanAngle = 0.0;
+        double scanAngle = 0.0; // the angle of the first motor, in degrees.
         double scanAngle2 = 0.0; // the angle of the second motor, only for Mark-II (heidelberg) instruments
         double offsetCorrectedColumn = 0.0;
         double columnError = 0.0;

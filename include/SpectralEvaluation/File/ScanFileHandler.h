@@ -123,10 +123,10 @@ namespace novac
         /** Retrieves the total number of spectra in the .pak-file (including sky and dark) */
         virtual int GetSpectrumNumInFile() const override;
 
-        /** Retrieves the time when the first spectrum was collected */
+        /** Retrieves the time (UTC) when the first spectrum was collected */
         virtual CDateTime GetScanStartTime() const override { return m_startTime; }
 
-        /** Retrieves the time when the last spectrum was collected */
+        /** Retrieves the time (UTC) when the last spectrum was collected */
         virtual CDateTime GetScanStopTime() const override { return m_stopTime; }
 
         /** Retrieves the serial number of the device which collected this scan. */

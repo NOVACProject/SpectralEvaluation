@@ -31,7 +31,11 @@ namespace Configuration
         // The minimum saturation ratio (intensity / maximum intensity of spectrometer)
         double minSaturationRatio = 0.12;
 
-        // The minimum plume completeness for a scan to be considered
+        // The minimum plume completeness for a scan to be considered (must be in the range 0.5 to 1.0 which are the limits of the plume completeness)
         double minimumPlumeCompleteness = 0.7;
+
+        // If requireVisiblePlumeEdges is true, then only plumes where the column falls to 50% of full peak value on BOTH sides are used.
+        // If requireVisiblePlumeEdges is false, then the column must fall to 50% of full peak value on ONE side (not both).
+        bool requireVisiblePlumeEdges = true;
     };
 }
