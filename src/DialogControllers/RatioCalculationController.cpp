@@ -359,6 +359,12 @@ bool RatioCalculationController::HasMoreScansToEvaluate() const
     return true;
 }
 
+void RatioCalculationController::ResetResults()
+{
+    m_currentPakFileIdx = 0;
+    m_results.clear();
+}
+
 RatioCalculationResult RatioCalculationController::EvaluateNextScan(std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows)
 {
     if (!HasMoreScansToEvaluate())
@@ -404,7 +410,6 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
         return result;
     }
 
-    // TODO: Make this possible to be setup by the user.
     const auto spectrometerModel = GetModelForMeasurement(initialResult.m_specInfo.front().m_device);
 
     // Setup the ratio evaluation and run it.

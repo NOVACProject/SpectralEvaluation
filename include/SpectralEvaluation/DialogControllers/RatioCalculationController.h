@@ -171,6 +171,9 @@ public:
     // @return true if there are more scans available to evaluate in the list of .pak-files.
     bool HasMoreScansToEvaluate() const;
 
+    // Resets the list of created results and the current point in the list of pak-files.
+    void ResetResults();
+
     // Performs the evaluation of the next scan (in the list m_pakFiles)
     // If a prior call to HasMoreScansToEvaluate() would return false, then this will return an empty result.
     // This require that SetupFitWindows() has been called since it will use the contents of the fit windows.
