@@ -37,5 +37,8 @@ namespace Configuration
         // If requireVisiblePlumeEdges is true, then only plumes where the column falls to 50% of full peak value on BOTH sides are used.
         // If requireVisiblePlumeEdges is false, then the column must fall to 50% of full peak value on ONE side (not both).
         bool requireVisiblePlumeEdges = true;
+
+        // The minimum difference between the in-plume and the out-of-plume spectra
+        double minimumInPlumeColumnDifference = 0.0;
     };
 }

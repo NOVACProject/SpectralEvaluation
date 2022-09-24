@@ -412,7 +412,7 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraOutOfPlume(
         }
 
         // Only include spectra with an evaluation column smaller than the smallest in-plume column (in order to have contrast between in-plume and out-of-plume)
-        if (data.offsetCorrectedColumn < minimumColumnInPlume)
+        if (data.offsetCorrectedColumn  + settings.minimumInPlumeColumnDifference < minimumColumnInPlume)
         {
             spectrumColumnVsIndex.push_back(std::pair<int, double>(data.indexInScan, data.offsetCorrectedColumn));
         }
