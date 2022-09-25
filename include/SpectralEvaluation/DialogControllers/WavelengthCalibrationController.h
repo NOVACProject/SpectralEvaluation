@@ -5,6 +5,7 @@
 #include <vector>
 #include <SpectralEvaluation/Spectra/WavelengthRange.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 
 namespace novac
 {
@@ -63,6 +64,10 @@ public:
          To get a full calibration in that case, call GetFinalCalibration() which will combine m_resultingCalibration with m_initialCalibration
             in order to get a full calibration. */
     std::unique_ptr<novac::InstrumentCalibration> m_resultingCalibration;
+
+    // The model of the spectrometer which generated the spectra.
+    // This can be nullptr in which case the model is determined from the measurement.
+    std::unique_ptr<novac::SpectrometerModel> m_spectrometerModel;
 
     /** User friendly description of the fitted parameters for the instrument line shape function. */
     std::vector<std::pair<std::string, std::string>> m_instrumentLineShapeParameterDescriptions;
@@ -156,9 +161,12 @@ protected:
 
     /** Checks the provided (dark corrected) spectrum and makes sure that it is good enough for the calibration to succeed.
         @throws an std::invalid_argument exception if the spectrum isn't good enough.  */
-    void CheckSpectrumQuality(const novac::CSpectrum& spectrum) const;
+    void CheckSpectrumQuality(const novac::CSpectrum& spectrum, const novac::SpectrometerModel& spectrometerModel) const;
 
-    double GetSpectrometerMaxIntensityForSingleReadout(const novac::CSpectrum& spectrum, std::string& modelName) const;
+    double GetSpectrometerMaxIntensityForSingleReadout(const novac::CSpectrum& spectrum, const novac::SpectrometerModel& spectrometerModel) const;
+
+    // Retrieves a spectrometer model to be used. Either from the 'm_spectrometerModel' if that is set, or by guessing the model from the serial.
+    novac::SpectrometerModel GetModelForMeasurement(const std::string& deviceSerial) const;
 
     void Log(const std::string& message);
     void Log(const std::string& message, double value);
