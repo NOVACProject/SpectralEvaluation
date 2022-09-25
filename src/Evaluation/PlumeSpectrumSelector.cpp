@@ -365,7 +365,7 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraInPlume(
     // add all spectra in the scan-angle range [plumeHalfLow, plumeHalfHigh]
     std::vector<std::pair<int, double>> spectrumColumnVsIndex;
     const double minimumScanAngle = std::max(settings.minimumScanAngle, properties.plumeHalfLow);
-    const double maximumScanAngle = std::min(settings.maximumScanAngle, properties.plumeHalfHigh);
+    const double maximumScanAngle = std::min(settings.maximumScanAngle, (properties.plumeHalfHigh > -200.0) ? properties.plumeHalfHigh : +90.0);
     for (int idx = 0; idx < (int)evaluationData.size(); ++idx)
     {
         if (evaluationData[idx].scanAngle > minimumScanAngle + 0.1 &&
