@@ -412,7 +412,7 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraOutOfPlume(
         }
 
         // Only include spectra with an evaluation column smaller than the smallest in-plume column (in order to have contrast between in-plume and out-of-plume)
-        if (data.offsetCorrectedColumn  + settings.minimumInPlumeColumnDifference < minimumColumnInPlume)
+        if (data.offsetCorrectedColumn + settings.minimumInPlumeColumnDifference < minimumColumnInPlume)
         {
             spectrumColumnVsIndex.push_back(std::pair<int, double>(data.indexInScan, data.offsetCorrectedColumn));
         }
@@ -443,7 +443,8 @@ bool PlumeSpectrumSelector::SpectrumFulfillsIntensityRequirement(
     const SpectrometerModel& spectrometerModel,
     const Configuration::RatioEvaluationSettings settings)
 {
-    double maxSaturationRatio = GetMaximumSaturationRatioOfSpectrum(spectrum, spectrometerModel);
+    // Measure the maximum intensity, ignoring the first and the last pixel values as these can (for some models) give odd values..
+    double maxSaturationRatio = GetMaximumSaturationRatioOfSpectrum(spectrum, spectrometerModel, 1, spectrometerModel.numberOfPixels - 1);
     if (maxSaturationRatio > settings.maxSaturationRatio)
     {
         return false;
@@ -453,7 +454,7 @@ bool PlumeSpectrumSelector::SpectrumFulfillsIntensityRequirement(
     CSpectrum spectrumClone(spectrum);
     spectrumClone.Sub(darkSpectrum);
 
-    maxSaturationRatio = GetMaximumSaturationRatioOfSpectrum(spectrumClone, spectrometerModel);
+    maxSaturationRatio = GetMaximumSaturationRatioOfSpectrum(spectrumClone, spectrometerModel, 1, spectrometerModel.numberOfPixels - 1);
     if (maxSaturationRatio < settings.minSaturationRatio)
     {
         return false;
@@ -470,11 +471,11 @@ void PlumeSpectrumSelector::GetIntensityOfSpectrum(
     double& peakSaturation,
     double& peakSaturationAfterDarkCorrection) const
 {
-    peakSaturation = GetMaximumSaturationRatioOfSpectrum(spectrum, spectrometerModel);
+    peakSaturation = GetMaximumSaturationRatioOfSpectrum(spectrum, spectrometerModel, 1, spectrometerModel.numberOfPixels -1);
 
     // dark correct and check for low intensity
     CSpectrum spectrumClone(spectrum);
     spectrumClone.Sub(darkSpectrum);
 
-    peakSaturationAfterDarkCorrection = GetMaximumSaturationRatioOfSpectrum(spectrumClone, spectrometerModel);
+    peakSaturationAfterDarkCorrection = GetMaximumSaturationRatioOfSpectrum(spectrumClone, spectrometerModel, 1, spectrometerModel.numberOfPixels - 1);
 }

@@ -297,13 +297,15 @@ novac::BasicScanEvaluationResult RatioCalculationController::DoInitialEvaluation
 
     // For each spectrum in the scan, do a DOAS evaluation
     novac::CSpectrum measuredSkySpectrum;
-    if (0 != scan.GetSky(measuredSkySpectrum))
+    int readSpectrumReturnCode = scan.GetSky(measuredSkySpectrum);
+    if (0 != readSpectrumReturnCode || measuredSkySpectrum.m_length == 0)
     {
         throw std::invalid_argument("cannot perform an evaluation on: '" + scan.GetFileName() + "' no sky spectrum found.");
     }
 
     novac::CSpectrum measuredDarkSpectrum;
-    if (0 != scan.GetDark(measuredDarkSpectrum))
+    readSpectrumReturnCode = scan.GetDark(measuredDarkSpectrum);
+    if (0 != readSpectrumReturnCode || measuredDarkSpectrum.m_length == 0)
     {
         throw std::invalid_argument("cannot perform an evaluation on: '" + scan.GetFileName() + "' no dark spectrum found.");
     }
@@ -510,7 +512,7 @@ void RatioCalculationController::SaveResultsToCsvFile(const std::string& filenam
             for (size_t windowIdx = 0; windowIdx < firstSuccessfulResult->debugInfo.doasResults.size(); ++windowIdx)
             {
                 const size_t humanFriendlyWindowIdx = windowIdx + 1; // humans start counting at 1
-                const auto& doasResult = m_results.front().debugInfo.doasResults[windowIdx];
+                const auto& doasResult = firstSuccessfulResult->debugInfo.doasResults[windowIdx];
 
                 file << "Window" << humanFriendlyWindowIdx << "_FitLow" << columnSeparator;
                 file << "Window" << humanFriendlyWindowIdx << "_FitHigh" << columnSeparator;
