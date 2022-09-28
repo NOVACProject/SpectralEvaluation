@@ -21,7 +21,7 @@ namespace novac
     public:
         CCrossSectionData();
 
-        /** Creates a fully copy of another cross section */
+        /** Creates a full copy of another cross section */
         CCrossSectionData(const CCrossSectionData& other);
 
         /** Creates a copy of a range of another cross section */
@@ -29,6 +29,9 @@ namespace novac
 
         /** Converts a CSpectrum to a CCrossSectionData */
         CCrossSectionData(const CSpectrum& spectrum);
+
+        /** Converts an array of data into a CCrossSectionData. Only 'm_crossSection' will be filled in. */
+        CCrossSectionData(const std::vector <double>& crossSectionData);
 
         CCrossSectionData& operator=(const CCrossSectionData& other);
 
