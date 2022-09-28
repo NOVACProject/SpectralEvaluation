@@ -332,17 +332,6 @@ namespace novac
             return false;
         }
 
-        if (!SpectrumFulfillsIntensityRequirement(skySpectrum, darkSpectrum, spectrometerModel, settings))
-        {
-            if (errorMessage != nullptr)
-            {
-                std::stringstream msg;
-                msg << "Sky spectrum does not have saturation ratio in required range " << settings.minSaturationRatio << " to " << settings.maxSaturationRatio;
-                *errorMessage = msg.str();
-            }
-            return false;
-        }
-
         return true;
     }
 
@@ -437,33 +426,6 @@ namespace novac
 
         return referenceSpectraProposal;
     }
-
-    bool PlumeSpectrumSelector::SpectrumFulfillsIntensityRequirement(
-        const CSpectrum& spectrum,
-        const CSpectrum& darkSpectrum,
-        const SpectrometerModel& spectrometerModel,
-        const Configuration::RatioEvaluationSettings settings)
-    {
-        // Measure the maximum intensity, ignoring the first and the last pixel values as these can (for some models) give odd values..
-        double maxSaturationRatio = GetMaximumSaturationRatioOfSpectrum(spectrum, spectrometerModel, 1, spectrometerModel.numberOfPixels - 1);
-        if (maxSaturationRatio > settings.maxSaturationRatio)
-        {
-            return false;
-        }
-
-        // dark correct and check for low intensity
-        CSpectrum spectrumClone(spectrum);
-        spectrumClone.Sub(darkSpectrum);
-
-        maxSaturationRatio = GetMaximumSaturationRatioOfSpectrum(spectrumClone, spectrometerModel, 1, spectrometerModel.numberOfPixels - 1);
-        if (maxSaturationRatio < settings.minSaturationRatio)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
 
     void PlumeSpectrumSelector::GetIntensityOfSpectrum(
         const CSpectrum& spectrum,

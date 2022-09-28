@@ -6,6 +6,7 @@
 #include <SpectralEvaluation/File/XmlUtil.h>
 #include <SpectralEvaluation/File/SpectrumIO.h>
 #include <SpectralEvaluation/File/STDFile.h>
+#include <SpectralEvaluation/File/File.h>
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 
 #include <fstream>
@@ -142,6 +143,19 @@ void RatioCalculationController::LoadSetup(const std::string& setupFilePath)
                     }
                 }
 
+                auto minSaturationRatioStr = novac::ParseXmlString("MinSaturationRatio", line);
+                auto maxSaturationRatioStr = novac::ParseXmlString("MaxSaturationRatio", line);
+                if (!minSaturationRatioStr.empty() && !maxSaturationRatioStr.empty())
+                {
+                    double from = std::atof(minSaturationRatioStr.c_str());
+                    double to = std::atof(maxSaturationRatioStr.c_str());
+                    if (from < to)
+                    {
+                        m_ratioEvaluationSettings.minSaturationRatio = from;
+                        m_ratioEvaluationSettings.maxSaturationRatio = to;
+                    }
+                }
+
                 int value = novac::ParseXmlInteger("MinInPlumeSpectra", line, 0);
                 if (value > 0)
                 {
@@ -223,6 +237,8 @@ void RatioCalculationController::SaveSetup(const std::string& setupFilePath)
         dst << "<RequireTwoFlanks>" << m_ratioEvaluationSettings.requireVisiblePlumeEdges << "</RequireTwoFlanks>";
         dst << "<MinScanAngle>" << m_ratioEvaluationSettings.minimumScanAngle << "</MinScanAngle>";
         dst << "<MaxScanAngle>" << m_ratioEvaluationSettings.maximumScanAngle << "</MaxScanAngle>";
+        dst << "<MinSaturationRatio>" << m_ratioEvaluationSettings.minSaturationRatio << "</MinSaturationRatio>";
+        dst << "<MaxSaturationRatio>" << m_ratioEvaluationSettings.maxSaturationRatio << "</MaxSaturationRatio>";
         dst << "</SelectionSettings>" << std::endl;
 
         dst << "<Unit>" << (int)m_crossSectionUnit << "</Unit>";
@@ -562,11 +578,14 @@ void RatioCalculationController::SaveResultsToCsvFile(const std::string& filenam
         return; // too few results to write to file
     }
 
+    const bool writeHeaderLine = !novac::IsExistingFile(filename);
+
     std::ios::openmode fileMode = overwrite ? std::ios::out : std::ios::app;
 
     std::ofstream file(filename, fileMode);
 
     // write the header
+    if (writeHeaderLine)
     {
         file << "Device" << columnSeparator;
         file << "ScanStartedAt" << columnSeparator;
