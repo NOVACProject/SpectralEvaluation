@@ -15,6 +15,10 @@ double Max(const std::vector<double>& values, size_t& idx);
     If values.size() == 0 then 0.0 is returned. */
 double Max(const std::vector<double>& values);
 
+/** @return the maximum value in the provided range of indices.
+    If values.size() == 0 or fromIdx >= values.size() or length == 0 then 0.0 is returned. */
+double Max(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end);
+
 /** @return the maximum absolute value in the provided vector.
     If values.size() == 0 then 0.0 is returned. */
 double MaxAbs(const std::vector<double>& values);
@@ -27,6 +31,10 @@ double Min(const std::vector<double>& values, size_t& idx);
 /** @return the minimum value in the provided vector.
     If values.size() == 0 then 0.0 is returned. */
 double Min(const std::vector<double>& values);
+
+/** @return the minimum value in the provided range of indices.
+    If values.size() == 0 or fromIdx >= values.size() or length == 0 then 0.0 is returned. */
+double Min(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end);
 
 /** @return the minimum _and_ maximum value in the provided vector.
     If values.size() == 0 then (0.0, 0.0) is returned. */

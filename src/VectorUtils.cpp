@@ -33,6 +33,27 @@ double Max(const std::vector<double>& values)
     return Max(values, idx);
 }
 
+double Max(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end)
+{
+    if (start > end)
+    {
+        return 0.0;
+    }
+    if (start == end)
+    {
+        return *start;
+    }
+
+    double m = *start;
+    for (auto it = start; it < end; ++it)
+    {
+        m = std::max(m, *it);
+    }
+
+    return m;
+}
+
+
 double MaxAbs(const std::vector<double>& values, size_t& idx)
 {
     idx = 0;
@@ -87,6 +108,27 @@ double Min(const std::vector<double>& values)
 {
     size_t idx = 0U;
     return Min(values, idx);
+}
+
+
+double Min(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end)
+{
+    if (start > end)
+    {
+        return 0.0;
+    }
+    if (start == end)
+    {
+        return *start;
+    }
+
+    double m = *start;
+    for (auto it = start; it < end; ++it)
+    {
+        m = std::min(m, *it);
+    }
+
+    return m;
 }
 
 std::pair<double, double> MinMax(const std::vector<double>& values)
