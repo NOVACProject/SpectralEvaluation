@@ -5,6 +5,7 @@
 
 #include <SpectralEvaluation/DialogControllers/ReferenceCreationController.h>
 #include <SpectralEvaluation/StringUtils.h>
+#include <SpectralEvaluation/VectorUtils.h>
 #include <SpectralEvaluation/Evaluation/BasicMath.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
@@ -113,6 +114,13 @@ void ReferenceCreationController::ConvolveReference(const novac::InstrumentCalib
     if (!novac::ReadCrossSectionFile(m_highResolutionCrossSection, highResReference))
     {
         throw std::invalid_argument("Failed to read the reference file");
+    }
+
+    // If the wavelengths are reversed in the input file, then flip the data
+    if (highResReference.m_waveLength.size() > 0 && highResReference.m_waveLength.back() < highResReference.m_waveLength.front())
+    {
+        Reverse(highResReference.m_crossSection);
+        Reverse(highResReference.m_waveLength);
     }
 
     // Do the convolution
