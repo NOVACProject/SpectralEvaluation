@@ -31,6 +31,10 @@ std::string Left(const std::string& input, size_t nChars);
 /** Finds the last occurrence of the given character in the provided string, -1 if the character is not found. */
 int ReverseFind(const std::string& str, char ch);
 
+/** Finds the first of the given substring in the provided string.
+    Returns the index of the first occurrance, -1 if the substring is not found. */
+int Find(const std::string& str, std::string substring);
+
 /** Converts all letters to upper-case in the provided string. */
 void MakeUpper(std::string& str);
 
