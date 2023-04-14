@@ -185,7 +185,6 @@ double Sum(const std::vector<double>& values)
     return Sum(begin(values), end(values));
 }
 
-
 double SumAbs(const std::vector<double>& values)
 {
     double sum = 0.0;
@@ -196,7 +195,6 @@ double SumAbs(const std::vector<double>& values)
 
     return sum;
 }
-
 
 double SumOfSquaredDifferences(const std::vector<double>& a, const std::vector<double>& b)
 {
@@ -228,6 +226,22 @@ void Invert(std::vector<double>& values)
     for (double& v : values)
     {
         v = 1.0 / v;
+    }
+}
+
+void Reverse(std::vector<double>& values)
+{
+    if (values.size() <= 1)
+    {
+        return;
+    }
+
+    const size_t midpoint = values.size() / 2;
+    for (size_t ii = 0; ii < midpoint; ++ii)
+    {
+        const double tempValue = values[ii];
+        values[ii] = values[values.size() - ii - 1];
+        values[values.size() - ii - 1] = tempValue;
     }
 }
 
