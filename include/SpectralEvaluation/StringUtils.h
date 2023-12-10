@@ -19,7 +19,7 @@ bool EqualsIgnoringCase(const std::string& str1, const std::string& str2, unsign
 /** Trims out the provided characters (usually spaces) from the beginning and the end of the string */
 void Trim(std::string& str, const char* characters = " ");
 
-/** Call this member function to remove instances of ch from the string. 
+/** Call this member function to remove instances of ch from the string.
     Comparisons for the character are case-sensitive.
     @return the number of characters removed. */
 void Remove(std::string& str, char character);
@@ -45,6 +45,6 @@ void MakeLower(std::string& str);
 bool Contains(const std::string& string, const std::string& substring);
 
 /** This function takes a string and removes any 'special' (ASCII code < 32) characters in it */
-std::string CleanString(const std::string &in);
+std::string CleanString(const std::string& in);
 
 std::string SimplifyString(const std::string& str);

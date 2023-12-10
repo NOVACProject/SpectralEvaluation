@@ -49,6 +49,26 @@ public:
 
     CNamedLocation(const CNamedLocation& gps2);
     CNamedLocation& operator=(const CNamedLocation& gps2);
-
 };
+
+/* GpsMath contains helper methods for performing calculations on Gps Data */
+class GpsMath
+{
+public:
+
+    /* This function returns the distance in <b>meters</b> between the two points defined
+        by (lat1,lon1) and (lat2, lon2). <b>All angles must be in degrees</b> */
+    static double Distance(double lat1, double lon1, double lat2, double lon2);
+
+    /* This function returns the initial bearing (<b>degrees</b>) when travelling from
+      the point defined by (lat1, lon1) to the point (lat2, lon2). <b>All angles must be in degrees</b> */
+    static double Bearing(double lat1, double lon1, double lat2, double lon2);
+
+    /** This function calculates the latitude and longitude for point
+            which is the distance 'dist' m and bearing 'az' degrees from
+            the point defied by 'lat1' and 'lon1' */
+    void CalculateDestination(double lat1, double lon1, double dist, double az, double& lat2, double& lon2);
+};
+
+
 }
