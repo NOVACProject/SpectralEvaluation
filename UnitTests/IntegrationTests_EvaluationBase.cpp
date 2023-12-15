@@ -7,8 +7,7 @@
 namespace novac
 {
 
-#pragma region helpers
-
+//Region Helper methods
 CFitWindow PrepareFitWindow()
 {
     const auto references = TestData::GetReferences_2009175M1();
@@ -60,7 +59,7 @@ CSpectrum ReadDarkSpectrum(const std::string& scanFile)
     return ReadSpectrumNumber(scanFile, 1);
 }
 
-#pragma endregion
+//endregion
 
 
 TEST_CASE("Evaluate Avaspec spectrum number eight in scan", "[Evaluate][EvaluationBase]")

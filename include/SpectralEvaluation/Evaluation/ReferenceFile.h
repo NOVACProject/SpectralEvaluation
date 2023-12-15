@@ -9,11 +9,19 @@ namespace novac
 
 class InvalidReferenceException : public std::exception
 {
+private:
+    const char* const m_msg = "";
+
 public:
+    InvalidReferenceException(const char* msg) :
+        m_msg(msg)
+    {}
 
-    explicit InvalidReferenceException(const std::string& _Message) : std::exception(_Message.c_str()) {}
+    InvalidReferenceException(const std::string& msg) :
+        m_msg(msg.c_str())
+    {}
 
-    explicit InvalidReferenceException(const char* _Message) : std::exception(_Message) {}
+    const char* what() const noexcept override final { return m_msg; }
 };
 
 /* the options for the shift and squeeze */

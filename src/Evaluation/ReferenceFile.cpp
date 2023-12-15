@@ -1,7 +1,9 @@
+#include <sstream>
+#include <cmath>
+#include <limits>
 #include <SpectralEvaluation/Evaluation/ReferenceFile.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Calibration/ReferenceSpectrumConvolution.h>
-#include <sstream>
 
 namespace novac
 {
