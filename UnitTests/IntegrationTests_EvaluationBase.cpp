@@ -163,9 +163,50 @@ TEST_CASE("Evaluate Avaspec spectrum number 21 in scan", "[Evaluate][EvaluationB
     REQUIRE(sut.m_result.m_referenceResult[2].m_columnError == Approx(72.4).margin(1.0));
     REQUIRE(sut.m_result.m_referenceResult[2].m_shift == 0.0);
     REQUIRE(sut.m_result.m_referenceResult[2].m_squeeze == 1.0);
-
 }
 
 
+TEST_CASE("EvaluateShift Avaspec spectrum number 28 in scan", "[Evaluate][EvaluationBase]")
+{
+    const auto scanFile = TestData::GetMeasuredSpectrumName_2009175M1();
+
+    CSpectrumIO reader;
+
+    CFitWindow window = PrepareFitWindow();
+    window.fraunhoferRef.m_path = TestData::GetSyntheticFraunhoferSpectrumName_2009175M1();
+    int retCode = window.fraunhoferRef.ReadCrossSectionDataFromFile();
+    REQUIRE(retCode == 0);
+
+    // Read the spectra
+    CEvaluationBase sut;
+    sut.SetFitWindow(window);
+
+    CSpectrum skySpectrum = ReadSkySpectrum(scanFile);
+    CSpectrum darkSpectrum = ReadDarkSpectrum(scanFile);
+    CSpectrum spectrumToEvaluate = ReadSpectrumNumber(scanFile, 28);
+    REQUIRE(spectrumToEvaluate.ScanAngle() == Approx(3.0)); // Verification that we did indeed read the correct spectrum
+
+    // Prepare the spectra
+    skySpectrum.Sub(darkSpectrum);
+    spectrumToEvaluate.Sub(darkSpectrum);
+
+    sut.SetSkySpectrum(skySpectrum);
+
+    double resultingShift = 0.0;
+    double resultingShiftError = 0.0;
+    double resultingSqueeze = 0.0;
+    double resultingSqueezeError = 0.0;
+
+    // Act
+    int returnCode = sut.EvaluateShift(spectrumToEvaluate, resultingShift, resultingShiftError, resultingSqueeze, resultingSqueezeError);
+
+    // Assert
+    REQUIRE(returnCode == 0);
+
+    REQUIRE(resultingShift == Approx(0.219).margin(0.01));
+    REQUIRE(resultingShiftError == Approx(0.091).margin(0.01));
+    REQUIRE(resultingSqueeze == Approx(1.0));
+    REQUIRE(resultingSqueezeError == Approx(0.0));
+}
 
 }

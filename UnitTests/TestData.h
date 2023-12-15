@@ -36,6 +36,11 @@ public:
         return GetTestDataDirectory() + std::string("2009175M1/2009175M1_211214_1817_0.pak");
     }
 
+    static std::string GetSyntheticFraunhoferSpectrumName_2009175M1()
+    {
+        return GetTestDataDirectory() + std::string("2009175M1/2002127M1_Fraunhofer.txt");
+    }
+
     static std::string GetInitialPixelToWavelengthCalibration_2009175M1()
     {
         return GetTestDataDirectory() + std::string("2009175M1/DD2J3040_MASTER_SO2_HP500_PPMM.txt");
