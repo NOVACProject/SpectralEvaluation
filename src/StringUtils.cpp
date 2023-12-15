@@ -94,7 +94,17 @@ bool Contains(const std::string& str, const std::string& substring)
     return (nullptr != pt);
 }
 
-void CleanString(const char *in, std::string &out)
+int Find(const std::string& str, std::string substring)
+{
+    size_t offset = str.find(substring, 0U);
+    if (offset == std::string::npos)
+    {
+        return -1;
+    }
+    return static_cast<int>(offset);
+}
+
+void CleanString(const char* in, std::string& out)
 {
     std::vector<char> clean;
     clean.reserve(strlen(in));
@@ -110,7 +120,7 @@ void CleanString(const char *in, std::string &out)
     out = std::string(begin(clean), end(clean));
 }
 
-std::string CleanString(const std::string &in)
+std::string CleanString(const std::string& in)
 {
     std::vector<char> okCharacters;
     okCharacters.reserve(in.size());

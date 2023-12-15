@@ -19,6 +19,8 @@
 #include <SpectralEvaluation/Fit/DOASVector.h>
 #include <SpectralEvaluation/Fit/NonlinearParameterFunction.h>
 
+#include <limits>
+
 using namespace MathFit;
 
 namespace novac

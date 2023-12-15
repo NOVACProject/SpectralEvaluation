@@ -21,6 +21,7 @@
 #include <memory>
 #include <cmath>
 #include <sstream>
+#include <limits>
 
 namespace novac
 {
