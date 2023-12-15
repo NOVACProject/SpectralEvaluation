@@ -9,6 +9,7 @@ add_executable(SpectralEvaluationTests
     ${CMAKE_CURRENT_LIST_DIR}/catch.hpp
     ${CMAKE_CURRENT_LIST_DIR}/TestData.h
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_Correspondence.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_EvaluationBase.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_File.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_InstrumentCalibrationInStdFile.cpp
     ${CMAKE_CURRENT_LIST_DIR}/IntegrationTests_InstrumentLineshapeCalibrationController.cpp
