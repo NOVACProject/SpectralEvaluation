@@ -39,6 +39,22 @@ namespace novac
         return true;
     }
 
+    std::string ReadEntireFile(const std::string& filename)
+    {
+        std::ifstream configFile{ filename };
+
+        // Get the length of the file
+        configFile.seekg(0, configFile.end);
+        size_t fileLength = configFile.tellg();
+        configFile.seekg(0, configFile.beg);
+
+        std::string buffer(fileLength, '\0');
+
+        configFile.read(&buffer[0], fileLength);
+
+        return buffer;
+    }
+
     // @return the number of columns read.
     int ReadFromFile(FILE* f, const char* formatStr, double& col1, double& col2)
     {
@@ -342,6 +358,31 @@ namespace novac
             // no period found _after_ the last path-separator character, hence no suffix
             return std::string();
         }
+    }
+
+    std::string GetFileName(const std::string& fullFileNameAndPath, char pathSeparator)
+    {
+        auto position = fullFileNameAndPath.rfind(pathSeparator);
+        if (position == std::string::npos)
+        {
+            return std::string();
+        }
+        auto length = fullFileNameAndPath.size();
+
+        return fullFileNameAndPath.substr(position + 1, length - position - 1);
+    }
+
+    std::string GetFileName(const std::string& fullFileNameAndPath)
+    {
+        // first attempt with using windows path-separator.
+        std::string result = GetFileName(fullFileNameAndPath, '\\');
+        if (!result.empty())
+        {
+            return result;
+        }
+
+        // If no paths were found, then instead use linux
+        return GetFileName(fullFileNameAndPath, '/');
     }
 
     std::pair<std::string, std::string> FormatProperty(const char* name, double value)

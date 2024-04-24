@@ -33,6 +33,27 @@ double Max(const std::vector<double>& values)
     return Max(values, idx);
 }
 
+double Max(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end)
+{
+    if (start > end)
+    {
+        return 0.0;
+    }
+    if (start == end)
+    {
+        return *start;
+    }
+
+    double m = *start;
+    for (auto it = start; it < end; ++it)
+    {
+        m = std::max(m, *it);
+    }
+
+    return m;
+}
+
+
 double MaxAbs(const std::vector<double>& values, size_t& idx)
 {
     idx = 0;
@@ -89,6 +110,27 @@ double Min(const std::vector<double>& values)
     return Min(values, idx);
 }
 
+
+double Min(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end)
+{
+    if (start > end)
+    {
+        return 0.0;
+    }
+    if (start == end)
+    {
+        return *start;
+    }
+
+    double m = *start;
+    for (auto it = start; it < end; ++it)
+    {
+        m = std::min(m, *it);
+    }
+
+    return m;
+}
+
 std::pair<double, double> MinMax(const std::vector<double>& values)
 {
     std::pair<size_t, size_t> idx;
@@ -143,7 +185,6 @@ double Sum(const std::vector<double>& values)
     return Sum(begin(values), end(values));
 }
 
-
 double SumAbs(const std::vector<double>& values)
 {
     double sum = 0.0;
@@ -154,7 +195,6 @@ double SumAbs(const std::vector<double>& values)
 
     return sum;
 }
-
 
 double SumOfSquaredDifferences(const std::vector<double>& a, const std::vector<double>& b)
 {
@@ -186,6 +226,22 @@ void Invert(std::vector<double>& values)
     for (double& v : values)
     {
         v = 1.0 / v;
+    }
+}
+
+void Reverse(std::vector<double>& values)
+{
+    if (values.size() <= 1)
+    {
+        return;
+    }
+
+    const size_t midpoint = values.size() / 2;
+    for (size_t ii = 0; ii < midpoint; ++ii)
+    {
+        const double tempValue = values[ii];
+        values[ii] = values[values.size() - ii - 1];
+        values[values.size() - ii - 1] = tempValue;
     }
 }
 

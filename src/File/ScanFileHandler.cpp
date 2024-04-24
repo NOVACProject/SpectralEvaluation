@@ -11,17 +11,6 @@ namespace novac
 
     CScanFileHandler::CScanFileHandler()
     {
-        m_specReadSoFarNum = 0;
-        m_initialized = false;
-        m_channel = 0;
-        m_specNum = 0;
-
-        m_spectrumBufferNum = 0;
-
-        m_fHasDark = true;
-        m_fHasSky = true;
-        m_fHasOffset = false;
-        m_fHasDarkCurrent = false;
     }
 
     bool CScanFileHandler::CheckScanFile(const std::string& fileName)
@@ -269,7 +258,6 @@ namespace novac
             return 1;
     }
 
-    /** Gets the dark-current spectrum of the scan - if any */
     int CScanFileHandler::GetDarkCurrent(CSpectrum& spec) const {
         spec = m_darkCurrent;
 
@@ -337,29 +325,6 @@ namespace novac
             return -1;
 
         return this->m_sky.m_info.m_startChannel;
-    }
-
-    int CScanFileHandler::AddSpectra(const std::vector<size_t>& indices, CSpectrum& result)
-    {
-        if (indices.size() == 0)
-        {
-            return 0;
-        }
-
-        this->GetSpectrum(result, (long)indices[0]);
-        int nofAveragedSpectra = 1;
-
-        for (size_t ii = 1; ii < indices.size(); ++ii)
-        {
-            CSpectrum tmpSpec;
-            if (this->GetSpectrum(tmpSpec, (long)indices[ii]))
-            {
-                result.Add(tmpSpec);
-                ++nofAveragedSpectra;
-            }
-        }
-
-        return nofAveragedSpectra;
     }
 }
 

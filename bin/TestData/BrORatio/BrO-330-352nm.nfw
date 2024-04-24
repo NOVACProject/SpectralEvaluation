@@ -1,0 +1,40 @@
+<fitWindow name="BrO">
+	<fitLow>644</fitLow>
+	<fitHigh>923</fitHigh>
+	<polyOrder>2</polyOrder>
+	<includeIntensitySpacePolyominal>true</includeIntensitySpacePolyominal>
+	<ringCalculation>calculatex2</ringCalculation>
+	<fitType>2</fitType>
+	<channel>0</channel>
+	<specLength>2048</specLength>
+	<fOptShift>0</fOptShift>
+	<UV>1</UV>
+	<shiftSky>0</shiftSky>
+	<interlaceStep>1</interlaceStep>
+	<solarSpectrum>../TestData/BrORatio/D2J2124_SolarSpec_Master.txt</solarSpectrum>
+	<nRef>5</nRef>
+	<ref name="BrO">
+		<path>../TestData/BrORatio/D2J2124_BrO_Fleischmann_298K.txt</path>
+		<shiftOption>1</shiftOption>
+		<shiftValue>0.000000</shiftValue>
+		<squeezeOption>1</squeezeOption>
+		<squeezeValue>1.000000</squeezeValue>
+		<columnOption>0</columnOption>
+	</ref>
+	<ref name="SO2">
+		<path>../TestData/BrORatio/D2J2124_SO2_Bogumil_293K_Master.txt</path>
+		<shiftOption>1</shiftOption>
+		<shiftValue>0.000000</shiftValue>
+		<squeezeOption>1</squeezeOption>
+		<squeezeValue>1.000000</squeezeValue>
+		<columnOption>0</columnOption>
+	</ref>
+	<ref name="O3">
+		<path>../TestData/BrORatio/D2J2124_O3_Voigt_223K_Master.txt</path>
+		<shiftOption>1</shiftOption>
+		<shiftValue>0.000000</shiftValue>
+		<squeezeOption>1</squeezeOption>
+		<squeezeValue>1.000000</squeezeValue>
+		<columnOption>0</columnOption>
+	</ref>
+</fitWindow>

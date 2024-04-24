@@ -21,6 +21,7 @@
 #include <memory>
 #include <cmath>
 #include <sstream>
+#include <limits>
 
 namespace novac
 {
@@ -604,6 +605,7 @@ namespace novac
         doasFitSetup.fitLow = static_cast<int>(settings.startPixel);
         doasFitSetup.fitHigh = static_cast<int>(settings.endPixel);
         doasFitSetup.polyOrder = 3;
+        doasFitSetup.fitType = FIT_TYPE::FIT_POLY;
 
         // Sample this Super-Gaussian to get the line shape to convolve with.
         auto sampledLineShape = SampleInstrumentLineShape(currentLineShape);

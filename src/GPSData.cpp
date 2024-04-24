@@ -1,5 +1,7 @@
 #include <SpectralEvaluation/GPSData.h>
-#include <math.h>
+#include <SpectralEvaluation/Definitions.h>
+#include <cmath>
+#include <algorithm>
 #include <cstdlib>
 
 using namespace novac;
@@ -31,7 +33,7 @@ CGPSData& CGPSData::operator =(const CGPSData& other)
     return *this;
 }
 
-bool CGPSData::operator==(const CGPSData &gps2) const
+bool CGPSData::operator==(const CGPSData& gps2) const
 {
     if (std::abs(this->m_longitude - gps2.m_longitude) > 1e-4)
     {
@@ -56,9 +58,9 @@ bool CGPSData::operator==(const CGPSData &gps2) const
   , this function converts this to the format dd.dddd */
 double CGPSData::DoubleToAngle(double rawData)
 {
-    double remainder = fmod(rawData, 100.0);
-    int degree = (int)(rawData / 100);
-    double fDegree = degree + remainder / 60.0;
+    const double remainder = fmod(rawData, 100.0);
+    const int degree = (int)(rawData / 100);
+    const double fDegree = degree + remainder / 60.0;
 
     return fDegree;
 }
@@ -77,10 +79,80 @@ CNamedLocation::CNamedLocation(const CNamedLocation& other) :
 }
 
 CNamedLocation& CNamedLocation::operator =(const CNamedLocation& other)
- {
+{
     this->m_altitude = other.m_altitude;
     this->m_latitude = other.m_latitude;
     this->m_longitude = other.m_longitude;
     this->m_name = other.m_name;
     return *this;
+}
+
+// R_Earth is the radius of the Earth, in meters.
+static const double R_Earth = 6367000;
+
+double GpsMath::Distance(double lat1, double lon1, double lat2, double lon2)
+{
+    lat1 = lat1 * DEGREETORAD;
+    lat2 = lat2 * DEGREETORAD;
+    lon1 = lon1 * DEGREETORAD;
+    lon2 = lon2 * DEGREETORAD;
+
+    const double dLon = lon2 - lon1;
+    const double dLat = lat2 - lat1;
+
+    if ((dLon == 0) && (dLat == 0))
+    {
+        return 0;
+    }
+
+    const double a = std::pow((std::sin(dLat / 2.0)), 2.0) + std::cos(lat1) * std::cos(lat2) * std::pow((std::sin(dLon / 2.0)), 2.0);
+    const double c = 2 * std::asin(std::min(1.0, std::sqrt(a)));
+    const double distance = R_Earth * c;
+
+    return distance;
+}
+
+double GpsMath::Bearing(double lat1, double lon1, double lat2, double lon2)
+{
+    lat1 = lat1 * DEGREETORAD;
+    lat2 = lat2 * DEGREETORAD;
+    lon1 = lon1 * DEGREETORAD;
+    lon2 = lon2 * DEGREETORAD;
+    const double dLat = lat1 - lat2;
+    const double dLon = lon1 - lon2;
+
+    if ((dLon == 0) && (dLat == 0))
+    {
+        return 0;
+    }
+
+    double tmpAngle = atan2(-sin(dLon) * cos(lat2),
+        cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon));
+
+    if (tmpAngle < 0)
+    {
+        tmpAngle = TWO_PI + tmpAngle;
+    }
+
+    tmpAngle = RADTODEGREE * tmpAngle;
+    return tmpAngle;
+}
+
+void GpsMath::CalculateDestination(double lat1, double lon1, double dist, double az, double& lat2, double& lon2) {
+
+    const double dR = dist / R_Earth;
+
+    // convert to radians
+    lat1 = lat1 * DEGREETORAD;
+    lon1 = lon1 * DEGREETORAD;
+    az = az * DEGREETORAD;
+
+    // calculate the second point
+    lat2 = asin(sin(lat1) * cos(dR) + cos(lat1) * sin(dR) * cos(az));
+
+    lon2 = lon1 + atan2(sin(az) * sin(dR) * cos(lat1), cos(dR) - sin(lat1) * sin(lat2));
+
+    // convert back to degrees
+    lat2 = lat2 * RADTODEGREE;
+    lon2 = lon2 * RADTODEGREE;
 }
