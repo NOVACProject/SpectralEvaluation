@@ -370,20 +370,23 @@ void WavelengthCalibrationController::SaveResultAsSlf(const std::string& filenam
     novac::SaveCrossSectionFile(filename, instrumentLineShape);
 }
 
-double WavelengthCalibrationController::GetSpectrometerMaxIntensityForSingleReadout(const novac::CSpectrum& spectrum, const novac::SpectrometerModel& spectrometerModel) const
+double WavelengthCalibrationController::GetSpectrometerMaxIntensityForSingleReadout(const novac::CSpectrum& spectrum, const novac::SpectrometerModel& model) const
 {
     if (m_spectrometerMaximumIntensityForSingleReadout > 0.0)
     {
+        // The dynamic range of the spectrometer is explicitly set by the user
         return novac::GetMaximumSaturationRatioOfSpectrum(spectrum, m_spectrometerMaximumIntensityForSingleReadout);
     }
-    else if (spectrometerModel.modelName == "UNKNOWN")
+
+    // If the device is unknown, then the dynamic range is also unknown.
+    if (model.modelName == "UNKNOWN")
     {
         return std::numeric_limits<double>::quiet_NaN();
     }
-    else
-    {
-        return novac::GetMaximumSaturationRatioOfSpectrum(spectrum, spectrometerModel);
-    }
+
+    // Derive the dynamic range from the spectrometer model.
+    const double maximumIntensityForSingleReadout = model.FullDynamicRangeForSpectrum(spectrum.m_info);
+    return novac::GetMaximumSaturationRatioOfSpectrum(spectrum, maximumIntensityForSingleReadout);
 }
 
 void WavelengthCalibrationController::CheckSpectrumQuality(const novac::CSpectrum& spectrum, const novac::SpectrometerModel& spectrometerModel) const
