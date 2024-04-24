@@ -84,6 +84,9 @@ struct RatioCalculationResult
     // The time when the ratio calculation was done.
     novac::CDateTime evaluatedAt;
 
+    // The CSpectrumInfo of the sky spectrum, gives info to when and where the measurement was started.
+    novac::CSpectrumInfo skySpectrumInfo;
+
     // The time when the scan started
     novac::CDateTime startTime;
 
@@ -189,8 +192,20 @@ public:
     // @return a vector containing the calculated ratio if the evaluation succeeded.
     RatioCalculationResult EvaluateScan(novac::IScanSpectrumSource& scan, const novac::BasicScanEvaluationResult& initialResult, std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows);
 
-    // Helper method, saves the results in this RatioCalculationController to file.
-    void SaveResultsToCsvFile(const std::string& filename, std::string columnSeparator = "\t") const;
+    // Helper method, saves the provided results in this RatioCalculationController to file.
+    // @param filename The full filename and path where the data should be saved.
+    // @param resultsToSave The results to save
+    // @param overwrite If true the file will be overwritten, if false then the result will be appended to the end of the file.
+    // @param columnSeparator The separator between the columns, defaults to 'tab'.
+    static void SaveResultsToCsvFile(const std::string& filename, const std::vector< RatioCalculationResult>& resultsToSave, bool overwrite, std::string columnSeparator = "\t");
+
+    // Helper method, saves the spectra in the provided RatioCalculationResult as a .pak-file.
+    // @param outputDirectory The directory where the data should be saved. The name of the file is auto-generated from the data.
+    static void SaveSpectraToPakFile(const std::string& outputDirectory, const RatioCalculationResult& resultToSave);
+
+    // Helper method, saves the spectra in the provided RatioCalculationResult as two Std-files.
+    // @param outputDirectory The directory where the data should be saved. The name of the file is auto-generated from the data.
+    static void SaveSpectraToStdFile(const std::string& outputDirectory, const RatioCalculationResult& resultToSave);
 
 private:
 

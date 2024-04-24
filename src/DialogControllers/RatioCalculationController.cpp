@@ -4,10 +4,19 @@
 #include <SpectralEvaluation/Evaluation/RatioEvaluation.h>
 #include <SpectralEvaluation/Configuration/DarkSettings.h>
 #include <SpectralEvaluation/File/XmlUtil.h>
+#include <SpectralEvaluation/File/SpectrumIO.h>
+#include <SpectralEvaluation/File/STDFile.h>
+#include <SpectralEvaluation/File/File.h>
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 
 #include <fstream>
 #include <sstream>
+
+namespace novac
+{
+    std::string FormatDate(const CSpectrumInfo& spectrumInfo);
+    std::string FormatTimestamp(const CDateTime& time);
+}
 
 RatioCalculationController::RatioCalculationController()
     : m_so2FitRange(314.8, 326.8), m_broFitRange(330.6, 352.8)
@@ -103,6 +112,65 @@ void RatioCalculationController::LoadSetup(const std::string& setupFilePath)
                     m_broPolynomialOrder = polyOrder;
                 }
             }
+            else if (line.find("<SelectionSettings>") != std::string::npos)
+            {
+                auto minDifferenceStr = novac::ParseXmlString("MinColumnDifference", line);
+                if (!minDifferenceStr.empty())
+                {
+                    m_ratioEvaluationSettings.minimumInPlumeColumnDifference = std::atof(minDifferenceStr.c_str());
+                }
+
+                auto minCompletenessStr = novac::ParseXmlString("MinPlumeCompleteness", line);
+                if (!minCompletenessStr.empty())
+                {
+                    const double completenessLimit = std::atof(minCompletenessStr.c_str());
+                    if (completenessLimit > 0.49 && completenessLimit < 1.01)
+                    {
+                        m_ratioEvaluationSettings.minimumPlumeCompleteness = completenessLimit;
+                    }
+                }
+
+                auto minScanAngleStr = novac::ParseXmlString("MinScanAngle", line);
+                auto maxScanAngleStr = novac::ParseXmlString("MaxScanAngle", line);
+                if (!minScanAngleStr.empty() && !maxScanAngleStr.empty())
+                {
+                    double from = std::atof(minScanAngleStr.c_str());
+                    double to = std::atof(maxScanAngleStr.c_str());
+                    if (from < to)
+                    {
+                        m_ratioEvaluationSettings.minimumScanAngle = from;
+                        m_ratioEvaluationSettings.maximumScanAngle = to;
+                    }
+                }
+
+                auto minSaturationRatioStr = novac::ParseXmlString("MinSaturationRatio", line);
+                auto maxSaturationRatioStr = novac::ParseXmlString("MaxSaturationRatio", line);
+                if (!minSaturationRatioStr.empty() && !maxSaturationRatioStr.empty())
+                {
+                    double from = std::atof(minSaturationRatioStr.c_str());
+                    double to = std::atof(maxSaturationRatioStr.c_str());
+                    if (from < to)
+                    {
+                        m_ratioEvaluationSettings.minSaturationRatio = from;
+                        m_ratioEvaluationSettings.maxSaturationRatio = to;
+                    }
+                }
+
+                int value = novac::ParseXmlInteger("MinInPlumeSpectra", line, 0);
+                if (value > 0)
+                {
+                    m_ratioEvaluationSettings.minNumberOfSpectraInPlume = value;
+                }
+
+                value = novac::ParseXmlInteger("MinOutPlumeSpectra", line, 0);
+                if (value > 0)
+                {
+                    m_ratioEvaluationSettings.numberOfSpectraOutsideOfPlume = value;
+                }
+
+                auto flanksStr = novac::ParseXmlInteger("RequireTwoFlanks", line);
+                m_ratioEvaluationSettings.requireVisiblePlumeEdges = (flanksStr == 1);
+            }
             else if (line.find("<DoasFitType>") != std::string::npos)
             {
                 auto fitType = novac::ParseXmlInteger("DoasFitType", line, -1);
@@ -111,6 +179,14 @@ void RatioCalculationController::LoadSetup(const std::string& setupFilePath)
                 case 0:  m_doasFitType = novac::FIT_TYPE::FIT_HP_DIV; break;
                 case 1:  m_doasFitType = novac::FIT_TYPE::FIT_HP_SUB; break;
                 default:  m_doasFitType = novac::FIT_TYPE::FIT_POLY; break;
+                }
+            }
+            else if (line.find("<Unit>") != std::string::npos)
+            {
+                auto unit = (novac::CrossSectionUnit)novac::ParseXmlInteger("Unit", line, (int)novac::CrossSectionUnit::cm2_molecule);
+                if (unit == novac::CrossSectionUnit::ppmm || unit == novac::CrossSectionUnit::cm2_molecule)
+                {
+                    m_crossSectionUnit = unit;
                 }
             }
         }
@@ -152,6 +228,20 @@ void RatioCalculationController::SaveSetup(const std::string& setupFilePath)
         dst << "<To>" << m_broFitRange.high << "</To>";
         dst << "<Poly>" << m_broPolynomialOrder << "</Poly>";
         dst << "</BrOSetup>" << std::endl;
+
+        dst << "\t<SelectionSettings>";
+        dst << "<MinColumnDifference>" << m_ratioEvaluationSettings.minimumInPlumeColumnDifference << "</MinColumnDifference>";
+        dst << "<MinPlumeCompleteness>" << m_ratioEvaluationSettings.minimumPlumeCompleteness << "</MinPlumeCompleteness>";
+        dst << "<MinInPlumeSpectra>" << m_ratioEvaluationSettings.minNumberOfSpectraInPlume << "</MinInPlumeSpectra>";
+        dst << "<MinOutPlumeSpectra>" << m_ratioEvaluationSettings.numberOfSpectraOutsideOfPlume << "</MinOutPlumeSpectra>";
+        dst << "<RequireTwoFlanks>" << m_ratioEvaluationSettings.requireVisiblePlumeEdges << "</RequireTwoFlanks>";
+        dst << "<MinScanAngle>" << m_ratioEvaluationSettings.minimumScanAngle << "</MinScanAngle>";
+        dst << "<MaxScanAngle>" << m_ratioEvaluationSettings.maximumScanAngle << "</MaxScanAngle>";
+        dst << "<MinSaturationRatio>" << m_ratioEvaluationSettings.minSaturationRatio << "</MinSaturationRatio>";
+        dst << "<MaxSaturationRatio>" << m_ratioEvaluationSettings.maxSaturationRatio << "</MaxSaturationRatio>";
+        dst << "</SelectionSettings>" << std::endl;
+
+        dst << "<Unit>" << (int)m_crossSectionUnit << "</Unit>";
 
         dst << "</RatioCalculationDlg>" << std::endl;
     }
@@ -481,16 +571,21 @@ const RatioCalculationResult* GetFirstSuccessfulResult(const std::vector<RatioCa
     return nullptr;
 }
 
-void RatioCalculationController::SaveResultsToCsvFile(const std::string& filename, std::string columnSeparator) const
+void RatioCalculationController::SaveResultsToCsvFile(const std::string& filename, const std::vector< RatioCalculationResult>& resultsToSave, bool overwrite, std::string columnSeparator)
 {
-    if (m_results.size() == 0)
+    if (resultsToSave.size() == 0)
     {
         return; // too few results to write to file
     }
 
-    std::ofstream file(filename);
+    const bool writeHeaderLine = !novac::IsExistingFile(filename);
+
+    std::ios::openmode fileMode = overwrite ? std::ios::out : std::ios::app;
+
+    std::ofstream file(filename, fileMode);
 
     // write the header
+    if (writeHeaderLine)
     {
         file << "Device" << columnSeparator;
         file << "ScanStartedAt" << columnSeparator;
@@ -506,7 +601,7 @@ void RatioCalculationController::SaveResultsToCsvFile(const std::string& filenam
         file << "OutOfPlumeSpectrum_ExposureNum" << columnSeparator;
 
         // Write the specie-names from the first successful result, assuming that this hasn't changed for the other results.
-        const auto firstSuccessfulResult = GetFirstSuccessfulResult(m_results);
+        const auto firstSuccessfulResult = GetFirstSuccessfulResult(resultsToSave);
         if (firstSuccessfulResult != nullptr)
         {
             for (size_t windowIdx = 0; windowIdx < firstSuccessfulResult->debugInfo.doasResults.size(); ++windowIdx)
@@ -535,14 +630,14 @@ void RatioCalculationController::SaveResultsToCsvFile(const std::string& filenam
     }
 
     // write the data
-    for (const auto& result : m_results)
+    for (const auto& result : resultsToSave)
     {
         file << result.deviceSerial << columnSeparator;
         file << result.startTime << columnSeparator;
         file << result.endTime << columnSeparator;
         file << result.evaluatedAt << columnSeparator;
         file << result.filename << columnSeparator;
-        file << result.RatioCalculationSuccessful() << columnSeparator; // prints '1' whenever the error message is emtpy, i.e. the ratio is calculated without any errors.
+        file << result.RatioCalculationSuccessful() << columnSeparator; // prints '1' whenever the error message is empty, i.e. the ratio is calculated without any errors.
         file << result.ratio.ratio << columnSeparator << result.ratio.error << columnSeparator;
         file << result.SignificantMinorSpecieDetection() << columnSeparator;
         file << result.plumeInScanProperties.completeness << columnSeparator;
@@ -567,4 +662,47 @@ void RatioCalculationController::SaveResultsToCsvFile(const std::string& filenam
 
         file << std::endl;
     }
+}
+
+void RatioCalculationController::SaveSpectraToPakFile(const std::string& outputDirectory, const RatioCalculationResult& resultToSave)
+{
+    // Save the spectra as 1) sky, 2) dark and 3) inplume. This simulates the usual order of the spectra in novac data.
+    // (Compare with PlumeSpectrumSelector::CreatePlumeSpectrumFile)
+
+    std::stringstream spectrumOutputFileName;
+    spectrumOutputFileName << outputDirectory << "/PlumeSpectra_" << resultToSave.deviceSerial;
+    spectrumOutputFileName << "_" << FormatDate(resultToSave.skySpectrumInfo);
+    spectrumOutputFileName << "_" << FormatTimestamp(resultToSave.startTime);
+    spectrumOutputFileName << "_0.pak";
+
+    const std::string filename = spectrumOutputFileName.str();
+
+    // Since the measurement is already dark-corrected, create an all-zero dark-spectrum to use
+    novac::CSpectrum darkSpectrum;
+    darkSpectrum.m_length = resultToSave.debugInfo.inPlumeSpectrum.m_length;
+
+    // Write the data to file.
+    novac::CSpectrumIO spectrumWriter;
+    spectrumWriter.AddSpectrumToFile(filename, resultToSave.debugInfo.outOfPlumeSpectrum, nullptr, 0, true);
+    spectrumWriter.AddSpectrumToFile(filename, darkSpectrum);
+    spectrumWriter.AddSpectrumToFile(filename, resultToSave.debugInfo.inPlumeSpectrum);
+}
+
+void RatioCalculationController::SaveSpectraToStdFile(const std::string& outputDirectory, const RatioCalculationResult& resultToSave)
+{
+    std::stringstream outOfPlumeSpectrumFileName;
+    outOfPlumeSpectrumFileName << outputDirectory << "/ReferenceSpectrum_" << resultToSave.deviceSerial;
+    outOfPlumeSpectrumFileName << "_" << FormatDate(resultToSave.skySpectrumInfo);
+    outOfPlumeSpectrumFileName << "_" << FormatTimestamp(resultToSave.startTime);
+    outOfPlumeSpectrumFileName << "_0.std";
+
+    std::stringstream inPlumeSpectrumFileName;
+    inPlumeSpectrumFileName << outputDirectory << "/InPlumeSpectrum_" << resultToSave.deviceSerial;
+    inPlumeSpectrumFileName << "_" << FormatDate(resultToSave.skySpectrumInfo);
+    inPlumeSpectrumFileName << "_" << FormatTimestamp(resultToSave.startTime);
+    inPlumeSpectrumFileName << "_0.std";
+
+    novac::CSTDFile fileWriter;
+    fileWriter.WriteSpectrum(resultToSave.debugInfo.outOfPlumeSpectrum, outOfPlumeSpectrumFileName.str(), 1);
+    fileWriter.WriteSpectrum(resultToSave.debugInfo.inPlumeSpectrum, inPlumeSpectrumFileName.str(), 1);
 }

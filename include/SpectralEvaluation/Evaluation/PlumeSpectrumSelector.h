@@ -154,18 +154,13 @@ namespace novac
             double minimumColumnInPlume);
 
         /**
-         * @brief Return true if the provided spectrum has a good intensity for being included in a ratio evaluation.
+         * @brief Return the peak intensity of the provided spectrum before and after dark-correction.
          * @param spectrum The spectrum to verify, not dark-corrected
          * @param darkSpectrum The dark-spectrum corresponding to the provded spectrum.
          * @param spectrometerModel The model of the spectrometer which collected the measurement.
-         * @return True if the provided spectrum has suitable properties.
-        */
-        bool SpectrumFulfillsIntensityRequirement(
-            const CSpectrum& spectrum,
-            const CSpectrum& darkSpectrum,
-            const SpectrometerModel& spectrometerModel,
-            const Configuration::RatioEvaluationSettings settings);
-
+         * @param peakSaturation Will on return equal the highest intensity of the spectrum
+         * @param peakSaturationAfterDarkCorrection Will on return equal the highest intensity of the spectrum
+         * after the dark spectrum has been subtracted. */
         void GetIntensityOfSpectrum(
             const CSpectrum& spectrum,
             const CSpectrum& darkSpectrum,
