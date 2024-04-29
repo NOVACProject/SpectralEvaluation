@@ -1,3 +1,6 @@
+#include <sstream>
+#include <cmath>
+#include <limits>
 #include <SpectralEvaluation/Evaluation/ReferenceFile.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Calibration/ReferenceSpectrumConvolution.h>
@@ -5,7 +8,7 @@
 namespace novac
 {
 
-CReferenceFile &CReferenceFile::operator=(const CReferenceFile &other)
+CReferenceFile& CReferenceFile::operator=(const CReferenceFile& other)
 {
     this->m_path = other.m_path;
     this->m_crossSectionFile = other.m_crossSectionFile;
@@ -32,7 +35,7 @@ CReferenceFile &CReferenceFile::operator=(const CReferenceFile &other)
     return *this;
 }
 
-CReferenceFile &CReferenceFile::operator=(CReferenceFile&& other)
+CReferenceFile& CReferenceFile::operator=(CReferenceFile&& other)
 {
     this->m_path = std::move(other.m_path);
     this->m_crossSectionFile = std::move(other.m_crossSectionFile);
@@ -177,4 +180,58 @@ int CReferenceFile::ConvolveReference()
     return 0;
 }
 
+std::string NameAndPathOfReference(const CReferenceFile& ref)
+{
+    std::stringstream message;
+    message << ref.Name() << " (" << ref.m_path << ")";
+    return message.str();
 }
+
+void CReferenceFile::VerifyReferenceValues(int fromIndex, int toIndex) const
+{
+    if (this->m_data == nullptr)
+    {
+        std::stringstream message;
+        message << "Invalid reference " << NameAndPathOfReference(*this) << ". Data is null.";
+        throw InvalidReferenceException(message.str());
+    }
+
+    fromIndex = std::max(fromIndex, 0);
+    toIndex = std::min(std::max(toIndex, fromIndex + 1), int(this->m_data->GetSize()));
+
+    double minValue = this->m_data->m_crossSection[fromIndex];
+    double maxValue = this->m_data->m_crossSection[fromIndex];
+
+    for (int idx = fromIndex; idx < toIndex; ++idx)
+    {
+        if (std::isnan(this->m_data->m_crossSection[idx]))
+        {
+            std::stringstream message;
+            message << "Invalid reference " << NameAndPathOfReference(*this) <<  ". Data contains NaN.";
+            throw InvalidReferenceException(message.str());
+        }
+        minValue = std::min(minValue, this->m_data->m_crossSection[idx]);
+        maxValue = std::max(maxValue, this->m_data->m_crossSection[idx]);
+    }
+
+    if (maxValue - minValue < std::numeric_limits<double>::epsilon())
+    {
+        std::stringstream message;
+        message << "Invalid reference " << NameAndPathOfReference(*this) << ". Data is constant in fit region.";
+        throw InvalidReferenceException(message.str());
+    }
+
+    return;
+}
+
+std::string CReferenceFile::Name() const
+{
+    if (this->m_specieName.length() > 0)
+    {
+        return this->m_specieName;
+    }
+    return std::string("unnamed reference");
+}
+
+}
+

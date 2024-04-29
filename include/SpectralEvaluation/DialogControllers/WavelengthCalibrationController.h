@@ -158,7 +158,7 @@ protected:
         @throws an std::invalid_argument exception if the spectrum isn't good enough.  */
     void CheckSpectrumQuality(const novac::CSpectrum& spectrum) const;
 
-    double GetSpectrometerMaxIntensityForSingleReadout(const novac::CSpectrum& spectrum, std::string& modelName) const;
+    double GetSpectrometerMaxIntensityForSingleReadout(const novac::CSpectrum& spectrum, const novac::SpectrometerModel& model) const;
 
     void Log(const std::string& message);
     void Log(const std::string& message, double value);

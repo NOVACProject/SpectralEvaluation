@@ -24,6 +24,17 @@ TEST_CASE("Min", "[Min][VectorUtils]")
         REQUIRE(minIdx == 0);
         REQUIRE(result == Approx(0.0));
     }
+
+    SECTION("Max of vector range - returns expected value")
+    {
+        std::vector<double> values{ -1, 3, 4, 5, 6, 7, 8, 9, 1, 8, 7, 6, 5, 4, -3 };
+
+        // Find the minimum value, excluding the first and the last
+        const double result = Min(begin(values) + 1, end(values) - 1);
+
+        // Find the maximum value, excluding the first and the last
+        REQUIRE(result == Approx(1.0));
+    }
 }
 
 TEST_CASE("Max", "[Max][VectorUtils]")
@@ -49,11 +60,21 @@ TEST_CASE("Max", "[Max][VectorUtils]")
         REQUIRE(maxIdx == 0);
         REQUIRE(result == Approx(0.0));
     }
+
+    SECTION("Max of vector range - returns expected value")
+    {
+        std::vector<double> values{ 10, 2, 4, 5, 6, 7, 8, 9, 1, 8, 7, 6, 5, 4, 11 };
+
+        // Find the maximum value, excluding the first and the last
+        const double result = Max(begin(values) + 1, end(values) - 1);
+
+        REQUIRE(result == Approx(9.0));
+    }
 }
 
 TEST_CASE("Normalize", "[Normalize][VectorUtils]")
 {
-    std::vector<double> values { 2, 3, 4, 5, 6, 7, 8, 9, 8, 7, 6, 5, 4, 3};
+    std::vector<double> values{ 2, 3, 4, 5, 6, 7, 8, 9, 8, 7, 6, 5, 4, 3 };
     std::vector<double> result;
 
     Normalize(values, result);
@@ -84,8 +105,6 @@ TEST_CASE("Normalize with empty input", "[Normalize][VectorUtils]")
 
     REQUIRE(0 == result.size());
 }
-
-
 
 TEST_CASE("NormalizeArea", "[NormalizeArea][VectorUtils]")
 {
@@ -121,7 +140,54 @@ TEST_CASE("NormalizeArea with empty input", "[Normalize][VectorUtils]")
 }
 
 
+TEST_CASE("Reverse", "[Reverse][VectorUtils]")
+{
+    SECTION("Expected contents for odd length vector")
+    {
+        // There are 9 values here, with the '5' being in the center
+        std::vector<double> values{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
+        Reverse(values);
+
+        REQUIRE(9 == values.size());
+        REQUIRE(9 == Approx(values[0]));
+        REQUIRE(8 == Approx(values[1]));
+        REQUIRE(7 == Approx(values[2]));
+        REQUIRE(6 == Approx(values[3]));
+        REQUIRE(5 == Approx(values[4]));
+        REQUIRE(4 == Approx(values[5]));
+        REQUIRE(3 == Approx(values[6]));
+        REQUIRE(2 == Approx(values[7]));
+        REQUIRE(1 == Approx(values[8]));
+    }
+
+    SECTION("Expected contents for even length vector")
+    {
+        // There are 8 values here, and hence no value is in the center
+        std::vector<double> values{ 1, 2, 3, 4, 5, 6, 7, 8 };
+
+        Reverse(values);
+
+        REQUIRE(8 == values.size());
+        REQUIRE(8 == Approx(values[0]));
+        REQUIRE(7 == Approx(values[1]));
+        REQUIRE(6 == Approx(values[2]));
+        REQUIRE(5 == Approx(values[3]));
+        REQUIRE(4 == Approx(values[4]));
+        REQUIRE(3 == Approx(values[5]));
+        REQUIRE(2 == Approx(values[6]));
+        REQUIRE(1 == Approx(values[7]));
+    }
+
+    SECTION("Empty vector returns")
+    {
+        std::vector<double> values;
+
+        Reverse(values);
+
+        REQUIRE(0 == values.size());
+    }
+}
 
 TEST_CASE("FindValue - Constantly increasing vector", "[FindValue][VectorUtils]")
 {
@@ -231,7 +297,7 @@ TEST_CASE("FindNLowest", "[FindNLowest][VectorUtils]")
 
     SECTION("Typical case - returns n lowest values (n = 3)")
     {
-        input = {3, 7, 2, 9, 4, 12, 3, 7};
+        input = { 3, 7, 2, 9, 4, 12, 3, 7 };
         FindNLowest(input, 3, result);
         REQUIRE(3 == result.size());
         REQUIRE(2 == result[0]);
