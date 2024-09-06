@@ -60,7 +60,7 @@ TEST_CASE("FindPlume", "[PlumeProperties]")
     SECTION("No plume - returns false.")
     {
         PlumeMeasurement plume = GenerateGaussianPlume(0.0, 1.0, 20.0);
-        
+
         REQUIRE(false == FindPlume(plume.scanAngles, plume.phi, plume.columns, plume.columnErrors, plume.badEvaluation, (long)plume.scanAngles.size(), plumeProperties));
     }
 
@@ -127,7 +127,28 @@ TEST_CASE("FindPlume", "[PlumeProperties]")
         REQUIRE(std::abs(plumeProperties.plumeCenter2) < 1.0);
     }
 
+    SECTION("Actual measurement #1")
+    {
+        const int numPoints = 44;
+        std::vector<double> columns = { 17.1010, -0.0151, -18.752, 0.0077, -1.376, -6.768, 1.322, 5.878, 16.303, 13.216, 18.263, 18.570, 18.566, 14.322, 10.781, 14.349, 10.949, 8.482, 3.636, 0.778, 1.369, 1.440, -1.00, -4.751, -10.700, -12.756, -13.213, -8.257, -18.936, -15.519, -19.413, -20.048, -26.563, -24.695, -29.760, -30.331, -29.405, -34.421, -40.300, -39.843, -48.137, -52.413, -52.963, -47.123 };
+        std::vector<double> columnErrors = { 7.86, 4.57, 4.43, 4.30, 4.55, 4.25, 4.01, 4.11, 4.25, 3.83, 4.24, 4.29,4.45, 4.46, 3.83, 3.92, 3.76, 4.09, 3.76, 3.46, 3.46, 3.69, 3.82, 3.72, 3.75, 3.78, 4.05, 3.78, 3.80, 4.01, 4.28, 4.27, 4.26, 4.00, 4.55, 4.21, 4.58, 4.03, 4.53, 4.53, 4.61, 4.94, 4.73, 4.05 };
+
+        std::vector<double> phi(numPoints);
+        std::fill(begin(phi), end(phi), 0.0);
+
+        std::vector<bool> badEvaluation(numPoints);
+        std::fill(begin(badEvaluation), end(badEvaluation), false);
+
+        std::vector<double> scanAngles(numPoints);
+        for (int idx = 0; idx < numPoints; ++idx)
+        {
+            scanAngles[idx] = -90.0 + idx * 3.0;
+        }
+
+        REQUIRE(true == FindPlume(scanAngles, phi, columns, columnErrors, badEvaluation, numPoints, plumeProperties));
+        REQUIRE(std::abs(plumeProperties.plumeCenter - 75.0) < 4.0);
+        REQUIRE(std::abs(plumeProperties.plumeCenter2) < 1.0);
+    }
 
     // TODO: Continue here...
-
 }

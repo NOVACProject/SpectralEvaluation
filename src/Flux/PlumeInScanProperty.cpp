@@ -18,7 +18,7 @@ template <class T> double Average(T array[], long nElements) {
     return (sum / nElements);
 }
 
-template <class T> T Min(T *pBuffer, long bufLen) {
+template <class T> T Min(T* pBuffer, long bufLen) {
     T minValue = pBuffer[0];
     for (long i = 1; i < bufLen; i++) {
         if (pBuffer[i] < minValue)
@@ -27,7 +27,7 @@ template <class T> T Min(T *pBuffer, long bufLen) {
     return minValue;
 }
 
-template <class T> T Max(T *pBuffer, long bufLen) {
+template <class T> T Max(T* pBuffer, long bufLen) {
     T maxValue = pBuffer[0];
     for (long i = 1; i < bufLen; ++i) {
         if (pBuffer[i] > maxValue)
@@ -51,9 +51,11 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
     std::vector<double> angle(numPoints);
     std::vector<double> p(numPoints);
 
-    int		nCol = 0; // <-- the number of ok column values
-    for (int k = 0; k < numPoints; ++k) {
-        if (!badEvaluation[k]) {
+    int nCol = 0; // <-- the number of ok column values
+    for (int k = 0; k < numPoints; ++k)
+    {
+        if (!badEvaluation[k])
+        {
             col[nCol] = columns[k];
             colE[nCol] = columnErrors[k];
             angle[nCol] = scanAngles[k];
@@ -92,7 +94,7 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
             const double avgInRegion = Average(col.data() + testedLowIdx, testedRegionSize);
 
             // the average column value outside of the region we're testing
-            const double avgOutRegion = (Average(col.data(), testedLowIdx)*testedLowIdx + Average(col.data() + testedHighIdx, nCol - testedHighIdx)*(nCol - testedHighIdx)) / (testedLowIdx + nCol - testedHighIdx);
+            const double avgOutRegion = (Average(col.data(), testedLowIdx) * testedLowIdx + Average(col.data() + testedHighIdx, nCol - testedHighIdx) * (nCol - testedHighIdx)) / (testedLowIdx + nCol - testedHighIdx);
 
             if (avgInRegion - avgOutRegion > highestDifference)
             {
@@ -132,7 +134,7 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
         const double maxCol_90 = maxCol * 0.90;
         const double maxCol_half = maxCol * 0.5;
 
-        for (int k = 0; k < nCol; ++k)
+        for (int k = 0; k < nCol - 1; ++k)
         {
             if (angle[k] > plumeProperties.plumeCenter)
             {
@@ -190,7 +192,7 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
 /// --------------------------- PLUME COMPLETENESS ---------------------------
 
 // VERSION 1: FROM NOVACPROGRAM
-bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, double offset, long numPoints, CPlumeInScanProperty &plumeProperties, std::string* message)
+bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, double offset, long numPoints, CPlumeInScanProperty& plumeProperties, std::string* message)
 {
 
     int nDataPointsToAverage = 5;

@@ -30,7 +30,7 @@ CEvaluationBase::CEvaluationBase()
     CreateXDataVector(MAX_SPECTRUM_LENGTH);
 }
 
-CEvaluationBase::CEvaluationBase(const CFitWindow &window)
+CEvaluationBase::CEvaluationBase(const CFitWindow& window)
     : m_window(window)
 {
     CreateXDataVector(MAX_SPECTRUM_LENGTH);
@@ -42,7 +42,7 @@ CEvaluationBase::~CEvaluationBase()
     ClearRefereneSpectra();
 }
 
-void CEvaluationBase::SetFitWindow(const CFitWindow &window)
+void CEvaluationBase::SetFitWindow(const CFitWindow& window)
 {
     this->m_window = window;
     CreateReferenceSpectra();
@@ -150,7 +150,7 @@ int CEvaluationBase::CreateReferenceSpectra()
     return 0;
 }
 
-void CEvaluationBase::RemoveOffset(double *spectrum, int sumChn, bool UV)
+void CEvaluationBase::RemoveOffset(double* spectrum, int sumChn, bool UV)
 {
     // TODO: Read this from the number of optically covered pixels of the SpectrometerModel
     int offsetFrom = (UV) ? 50 : 2;
@@ -169,7 +169,7 @@ void CEvaluationBase::RemoveOffset(double *spectrum, int sumChn, bool UV)
     return;
 }
 
-void CEvaluationBase::PrepareSpectra(double *sky, double *meas, const CFitWindow &window)
+void CEvaluationBase::PrepareSpectra(double* sky, double* meas, const CFitWindow& window)
 {
 
     if (window.fitType == FIT_TYPE::FIT_HP_DIV)
@@ -180,7 +180,7 @@ void CEvaluationBase::PrepareSpectra(double *sky, double *meas, const CFitWindow
         return PrepareSpectra_Poly(sky, meas, window);
 }
 
-void CEvaluationBase::PrepareSpectra_HP_Div(double *skyArray, double *measArray, const CFitWindow &window)
+void CEvaluationBase::PrepareSpectra_HP_Div(double* skyArray, double* measArray, const CFitWindow& window)
 {
 
     //  1. Remove any remaining offset
@@ -199,7 +199,7 @@ void CEvaluationBase::PrepareSpectra_HP_Div(double *skyArray, double *measArray,
     //	LowPassBinomial(measArray,window.specLength, 5);
 }
 
-void CEvaluationBase::PrepareSpectra_HP_Sub(double* /*skyArray*/, double *measArray, const CFitWindow &window)
+void CEvaluationBase::PrepareSpectra_HP_Sub(double* /*skyArray*/, double* measArray, const CFitWindow& window)
 {
 
     // 1. remove any remaining offset in the measured spectrum
@@ -212,7 +212,7 @@ void CEvaluationBase::PrepareSpectra_HP_Sub(double* /*skyArray*/, double *measAr
     Log(measArray, window.specLength);
 }
 
-void CEvaluationBase::PrepareSpectra_Poly(double* /*skyArray*/, double *measArray, const CFitWindow &window)
+void CEvaluationBase::PrepareSpectra_Poly(double* /*skyArray*/, double* measArray, const CFitWindow& window)
 {
     // 1. remove any remaining offset in the measured spectrum
     RemoveOffset(measArray, window.specLength, window.UV);
@@ -227,7 +227,7 @@ void CEvaluationBase::PrepareSpectra_Poly(double* /*skyArray*/, double *measArra
     }
 }
 
-int CEvaluationBase::SetSkySpectrum(const CSpectrum &spec)
+int CEvaluationBase::SetSkySpectrum(const CSpectrum& spec)
 {
     CCrossSectionData sky;
     sky.m_crossSection = std::vector<double>(spec.m_data, spec.m_data + spec.m_length);
@@ -461,7 +461,7 @@ void CEvaluationBase::SaveResidual(CStandardFit& cFirstFit)
     m_result.m_delta = (double)vResiduum.Delta();
 }
 
-int CEvaluationBase::Evaluate(const CSpectrum &measured, int numSteps)
+int CEvaluationBase::Evaluate(const CSpectrum& measured, int numSteps)
 {
     return Evaluate(measured.m_data, measured.m_length, measured.m_info.m_startChannel, numSteps);
 }
@@ -643,14 +643,14 @@ int CEvaluationBase::Evaluate(const double* measured, size_t measuredLength, int
         m_lastError = "Failed to evaluate: a fit exception occurred.";
         if (nullptr != e.mMessage && strlen(e.mMessage) > 0)
         {
-            m_lastError = m_lastError + " Message: '" + std::string{ e.mMessage } +"'";
+            m_lastError = m_lastError + " Message: '" + std::string{ e.mMessage } + "'";
         }
 
         return (1);
     }
 }
 
-int CEvaluationBase::EvaluateShift(const CSpectrum &measured, double &shift, double &shiftError, double &squeeze, double &squeezeError)
+int CEvaluationBase::EvaluateShift(const CSpectrum& measured, double& shift, double& shiftError, double& squeeze, double& squeezeError)
 {
     assert(vXData.GetSize() >= measured.m_length);
 
@@ -691,10 +691,10 @@ int CEvaluationBase::EvaluateShift(const CSpectrum &measured, double &shift, dou
     }
 
     // initialize the solar-spectrum function
-    CReferenceSpectrumFunction *solarSpec = new CReferenceSpectrumFunction();
+    CReferenceSpectrumFunction* solarSpec = new CReferenceSpectrumFunction();
 
     // Make a local copy of the data
-    double *measArray = (double *)calloc(measured.m_length, sizeof(double));
+    double* measArray = (double*)calloc(measured.m_length, sizeof(double));
     memcpy(measArray, measured.m_data, measured.m_length * sizeof(double));
 
     //----------------------------------------------------------------
