@@ -7,31 +7,43 @@
 namespace novac
 {
 
-template <class T> double Average(T array[], long nElements) {
+template <class T> double Average(T array[], long nElements)
+{
     if (nElements <= 0)
+    {
         return 0.0;
+    }
 
     double sum = 0;
-    for (int k = 0; k < nElements; ++k) {
+    for (int k = 0; k < nElements; ++k)
+    {
         sum += array[k];
     }
     return (sum / nElements);
 }
 
-template <class T> T Min(T* pBuffer, long bufLen) {
+template <class T> T Min(T* pBuffer, long bufLen)
+{
     T minValue = pBuffer[0];
-    for (long i = 1; i < bufLen; i++) {
+    for (long i = 1; i < bufLen; i++)
+    {
         if (pBuffer[i] < minValue)
+        {
             minValue = pBuffer[i];
+        }
     }
     return minValue;
 }
 
-template <class T> T Max(T* pBuffer, long bufLen) {
+template <class T> T Max(T* pBuffer, long bufLen)
+{
     T maxValue = pBuffer[0];
-    for (long i = 1; i < bufLen; ++i) {
+    for (long i = 1; i < bufLen; ++i)
+    {
         if (pBuffer[i] > maxValue)
+        {
             maxValue = pBuffer[i];
+        }
     }
     return maxValue;
 }
@@ -63,7 +75,8 @@ bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>&
             ++nCol;
         }
     }
-    if (nCol <= 5) { // <-- if too few ok points, then there's no plume
+    if (nCol <= 5)
+    { // <-- if too few ok points, then there's no plume
         if (nullptr != message)
         {
             *message = "Plume not found, less than five spectra are labelled as good evaluations.";
@@ -199,7 +212,8 @@ bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std
 
     // Check if there is a plume at all...
     bool inPlume = ::novac::FindPlume(scanAngles, phi, columns, columnErrors, badEvaluation, numPoints, plumeProperties, message);
-    if (!inPlume) {
+    if (!inPlume)
+    {
         plumeProperties.completeness = 0.0; // <-- no plume at all
         return false;
     }
@@ -207,15 +221,20 @@ bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std
     // Calculate the average of the 'nDataPointsToAverage' left-most values
     double avgLeft = 0.0;
     int nAverage = 0;
-    for (int k = 0; k < numPoints; ++k) {
-        if (!badEvaluation[k]) {
+    for (int k = 0; k < numPoints; ++k)
+    {
+        if (!badEvaluation[k])
+        {
             avgLeft += columns[k] - offset;
             ++nAverage;
             if (nAverage == nDataPointsToAverage)
+            {
                 break;
+            }
         }
     }
-    if (nAverage < nDataPointsToAverage) {
+    if (nAverage < nDataPointsToAverage)
+    {
         // not enough data-points to make an ok average, return fail
         plumeProperties.completeness = 0.0; // <-- no plume at all
         return false;
@@ -225,15 +244,20 @@ bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std
     // Calculate the average of the 'nDataPointsToAverage' right-most values
     double avgRight = 0.0;
     nAverage = 0;
-    for (int k = numPoints - 1; k > 0; --k) {
-        if (!badEvaluation[k]) {
+    for (int k = numPoints - 1; k > 0; --k)
+    {
+        if (!badEvaluation[k])
+        {
             avgRight += columns[k] - offset;
             ++nAverage;
             if (nAverage == nDataPointsToAverage)
+            {
                 break;
+            }
         }
     }
-    if (nAverage < nDataPointsToAverage) {
+    if (nAverage < nDataPointsToAverage)
+    {
         // not enough data-points to make an ok average, return fail
         plumeProperties.completeness = 0.0; // <-- no plume at all
         return false;
@@ -242,8 +266,10 @@ bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std
 
     // Find the maximum column value
     double maxColumn = 0.0;
-    for (int k = 0; k < numPoints; ++k) {
-        if (!badEvaluation[k]) {
+    for (int k = 0; k < numPoints; ++k)
+    {
+        if (!badEvaluation[k])
+        {
             maxColumn = std::max(maxColumn, columns[k] - offset);
         }
     }
@@ -251,7 +277,9 @@ bool CalculatePlumeCompleteness(const std::vector<double>& scanAngles, const std
     // The completeness
     plumeProperties.completeness = 1.0 - 0.5 * std::max(avgLeft, avgRight) / maxColumn;
     if (plumeProperties.completeness > 1.0)
+    {
         plumeProperties.completeness = 1.0;
+    }
 
     return true;
 }
