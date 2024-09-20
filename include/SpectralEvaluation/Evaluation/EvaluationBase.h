@@ -27,12 +27,12 @@ public:
     CEvaluationBase(const CEvaluationBase&) = delete;
     CEvaluationBase& operator=(const CEvaluationBase&) = delete;
 
-    explicit CEvaluationBase(const CFitWindow &window);
+    explicit CEvaluationBase(const CFitWindow& window);
 
     virtual ~CEvaluationBase();
 
     /** Sets the fit window to use. This will initialize the 'ref' member variables. */
-    void SetFitWindow(const CFitWindow &window);
+    void SetFitWindow(const CFitWindow& window);
 
     /** @return a reference to the local fit window */
     const CFitWindow& FitWindow() const { return m_window; }
@@ -61,7 +61,7 @@ public:
 
     /** Removes the offset from the supplied spectrum */
     // TODO: Change the last parameter from a boolean to the pixel-range which should be used!!
-    void RemoveOffset(double *spectrum, int sumChn, bool UV = true);
+    void RemoveOffset(double* spectrum, int sumChn, bool UV = true);
 
     /** Sets the sky-spectrum to use. This will be used in the upcoming evaluations.
         The provided spectrum must have been corrected for dark. */
@@ -90,7 +90,7 @@ public:
                     relative to the solarReference-spectrum found in 'window'
         @return 0 if the fit succeeds and the shift & squeeze could be determined
         @return 1 if any error occured, see m_lastError for the error message. */
-    int EvaluateShift(const CSpectrum &measured, double &shift, double &shiftError, double &squeeze, double &squeezeError);
+    int EvaluateShift(const CSpectrum& measured, double& shift, double& shiftError, double& squeeze, double& squeezeError);
 
     /** Returns the evaluation result for the last spectrum
            @return a reference to a 'CEvaluationResult' - data structure which holds the information from the last evaluation */
@@ -98,7 +98,7 @@ public:
 
     /** Returns the polynomial that was fitted in the last evaluation */
     // TODO: Change to std::vector<double>
-    const double *GetPolynomial() const { return m_result.m_polynomial; }
+    const double* GetPolynomial() const { return m_result.m_polynomial; }
 
     /** @return the number of references included in the fit.
         This may be higher than the number of referene from the fit window if
@@ -151,16 +151,16 @@ protected:
     void CreateXDataVector(int numberOfChannels);
 
     // Prepares the spectra for evaluation
-    void PrepareSpectra(double *sky, double *meas, const CFitWindow &window);
+    void PrepareSpectra(double* sky, double* meas, const CFitWindow& window);
 
     // Prepares the spectra for evaluation
-    void PrepareSpectra_HP_Div(double *sky, double *meas, const CFitWindow &window);
+    void PrepareSpectra_HP_Div(double* sky, double* meas, const CFitWindow& window);
 
     // Prepares the spectra for evaluation
-    void PrepareSpectra_HP_Sub(double *sky, double *meas, const CFitWindow &window);
+    void PrepareSpectra_HP_Sub(double* sky, double* meas, const CFitWindow& window);
 
     // Prepares the spectra for evaluation
-    void PrepareSpectra_Poly(double *sky, double *meas, const CFitWindow &window);
+    void PrepareSpectra_Poly(double* sky, double* meas, const CFitWindow& window);
 
     /** Updates the m_residual and m_result.delta */
     void SaveResidual(MathFit::CStandardFit& firstFit);
