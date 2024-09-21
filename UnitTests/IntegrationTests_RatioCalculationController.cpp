@@ -8,7 +8,7 @@
 
 using namespace novac;
 
-#pragma region helper methods
+// region helper methods
 
 RatioCalculationFitSetup GetSetupOfFitWindowsForTest()
 {
@@ -27,7 +27,7 @@ RatioCalculationFitSetup GetSetupOfFitWindowsForTest()
     return result;
 }
 
-#pragma endregion
+// endregion helper methods
 
 TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 not included SO2 window - throws invalid_argument", "[RatioCalculationController][Ratios]")
 {

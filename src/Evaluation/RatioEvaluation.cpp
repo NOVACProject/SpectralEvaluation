@@ -14,6 +14,7 @@
 #include <SpectralEvaluation/StringUtils.h>
 #include <SpectralEvaluation/Math/SpectrumMath.h>
 
+#include <cmath>
 #include <numeric>
 #include <sstream>
 

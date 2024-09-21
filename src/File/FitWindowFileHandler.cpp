@@ -26,21 +26,21 @@ std::string FormatEnum(novac::RING_CALCULATION_OPTION value)
 
 template<class T> bool TagNameEqualsIgnoringCase(const T* element, const char* name)
 {
-    return 0 == _strnicmp(element->name(), name, strlen(name));
+    return EqualsIgnoringCase(element->name(), name);
 }
 
 template<class T> bool TagValueEqualsIgnoringCase(const T* element, const char* name)
 {
-    return 0 == _strnicmp(element->value(), name, strlen(name));
+    return EqualsIgnoringCase(element->value(), name);
 }
 
 bool ToBooleanOrDefault(const char* str, bool defaultValue)
 {
-    if (0 == _strnicmp(str, "true", strlen("true")))
+    if (EqualsIgnoringCase(str, "true"))
     {
         return true;
     }
-    else if (0 == _strnicmp(str, "false", strlen("false")))
+    else if (EqualsIgnoringCase(str, "false"))
     {
         return false;
     }

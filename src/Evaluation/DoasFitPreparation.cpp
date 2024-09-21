@@ -3,6 +3,7 @@
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Spectra/Scattering.h>
 #include <SpectralEvaluation/VectorUtils.h>
+#include <limits>
 
 using namespace novac;
 

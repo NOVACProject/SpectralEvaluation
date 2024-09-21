@@ -4,6 +4,8 @@
 
 #include <algorithm>
 #include <numeric> // std::iota
+#include <math.h>
+#include <string.h>
 
 using namespace novac;
 
@@ -72,84 +74,84 @@ void CScanEvaluationLogFileHandler::ParseScanHeader(const char szLine[8192]) {
         ++curCol;
 
         // The scan-angle (previously known as elevation)
-        if (0 == _strnicmp(szToken, elevation, strlen(elevation))) {
+        if (EqualsIgnoringCase(szToken, elevation)) {
             m_tableColumnMapping.position = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The scan-angle (previously known as elevation)
-        if (0 == _strnicmp(szToken, scanAngle, strlen(scanAngle))) {
+        if (EqualsIgnoringCase(szToken, scanAngle)) {
             m_tableColumnMapping.position = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The observation-angle (the scan-angle for the heidelberg instrument)
-        if (0 == _strnicmp(szToken, obsAngle, strlen(obsAngle))) {
+        if (EqualsIgnoringCase(szToken, obsAngle)) {
             m_tableColumnMapping.position = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The azimuth-angle (defined for the heidelberg instrument)
-        if (0 == _strnicmp(szToken, azimuth, strlen(azimuth))) {
+        if (EqualsIgnoringCase(szToken, azimuth)) {
             m_tableColumnMapping.position2 = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The exposure time
-        if (0 == _strnicmp(szToken, exposureTime, strlen(exposureTime))) {
+        if (EqualsIgnoringCase(szToken, exposureTime)) {
             m_tableColumnMapping.expTime = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The start time
-        if (0 == _strnicmp(szToken, starttime, strlen(starttime))) {
+        if (EqualsIgnoringCase(szToken, starttime)) {
             m_tableColumnMapping.starttime = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The stop time
-        if (0 == _strnicmp(szToken, stoptime, strlen(stoptime))) {
+        if (EqualsIgnoringCase(szToken, stoptime)) {
             m_tableColumnMapping.stoptime = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The name of the spectrum
-        if (0 == _strnicmp(szToken, nameStr, strlen(nameStr))) {
+        if (EqualsIgnoringCase(szToken, nameStr)) {
             m_tableColumnMapping.name = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The number of co-added spectra
-        if (0 == _strnicmp(szToken, numSpec, strlen(numSpec))) {
+        if (EqualsIgnoringCase(szToken, numSpec)) {
             m_tableColumnMapping.nSpec = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The offset
-        if (0 == _strnicmp(szToken, offset, strlen(offset))) {
+        if (EqualsIgnoringCase(szToken, offset)) {
             m_tableColumnMapping.offset = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The column error (must be looked for before 'column')
-        if (0 == _strnicmp(szToken, columnError, strlen(columnError))) {
+        if (EqualsIgnoringCase(szToken, columnError)) {
             m_tableColumnMapping.columnError[m_evResult.NumberOfSpecies() - 1] = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The column
-        if (0 == _strnicmp(szToken, column, strlen(column))) {
+        if (EqualsIgnoringCase(szToken, column)) {
             m_tableColumnMapping.column[m_evResult.NumberOfSpecies()] = curCol;
             char* pt = szToken + strlen(column) + 1;
             szToken[strlen(szToken) - 1] = 0;
@@ -161,43 +163,43 @@ void CScanEvaluationLogFileHandler::ParseScanHeader(const char szLine[8192]) {
         }
 
         // The shift error (must be checked before 'shift')
-        if (0 == _strnicmp(szToken, shiftError, strlen(shiftError))) {
+        if (EqualsIgnoringCase(szToken, shiftError)) {
             m_tableColumnMapping.shiftError[m_evResult.NumberOfSpecies() - 1] = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The shift
-        if (0 == _strnicmp(szToken, shift, strlen(shift))) {
+        if (EqualsIgnoringCase(szToken, shift)) {
             m_tableColumnMapping.shift[m_evResult.NumberOfSpecies() - 1] = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The squeeze error (must be checked before 'squeeze')
-        if (0 == _strnicmp(szToken, squeezeError, strlen(squeezeError))) {
+        if (EqualsIgnoringCase(szToken, squeezeError)) {
             m_tableColumnMapping.squeezeError[m_evResult.NumberOfSpecies() - 1] = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The squeeze
-        if (0 == _strnicmp(szToken, squeeze, strlen(squeeze))) {
+        if (EqualsIgnoringCase(szToken, squeeze)) {
             m_tableColumnMapping.squeeze[m_evResult.NumberOfSpecies() - 1] = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The spectrum peak-intensity
-        if (0 == _strnicmp(szToken, intensity, strlen(intensity))) {
+        if (EqualsIgnoringCase(szToken, intensity)) {
             m_tableColumnMapping.intensity = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The spectrum fit-intensity
-        if (0 == _strnicmp(szToken, fitIntensity, strlen(fitIntensity)) ||
-            0 == _strnicmp(szToken, fitIntensity2, strlen(fitIntensity2))) {
+        if (EqualsIgnoringCase(szToken, fitIntensity) ||
+            EqualsIgnoringCase(szToken, fitIntensity2)) {
 
             m_tableColumnMapping.fitIntensity = curCol;
             szToken = nullptr;
@@ -205,28 +207,28 @@ void CScanEvaluationLogFileHandler::ParseScanHeader(const char szLine[8192]) {
         }
 
         // The spectrum maximum saturation ratio of the whole spectrum
-        if (0 == _strnicmp(szToken, peakSat, strlen(peakSat))) {
+        if (EqualsIgnoringCase(szToken, peakSat)) {
             m_tableColumnMapping.peakSaturation = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The spectrum maximum saturation ratio in the fit region
-        if (0 == _strnicmp(szToken, fitSat, strlen(fitSat))) {
+        if (EqualsIgnoringCase(szToken, fitSat)) {
             m_tableColumnMapping.fitSaturation = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The delta of the fit
-        if (0 == _strnicmp(szToken, delta, strlen(delta))) {
+        if (EqualsIgnoringCase(szToken, delta)) {
             m_tableColumnMapping.delta = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The chi-square of the fit
-        if (0 == _strnicmp(szToken, chiSquare, strlen(chiSquare))) {
+        if (EqualsIgnoringCase(szToken, chiSquare)) {
             m_tableColumnMapping.chiSquare = curCol;
             szToken = nullptr;
             continue;
@@ -571,10 +573,10 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
                 // m_scan[sortOrder[m_scanNum]].SetFlux(flux);
             }
 
-            double dynamicRange = 1.0; // <-- unknown
-            if (m_tableColumnMapping.peakSaturation != -1) { // If the intensity is specified as a saturation ratio...
-                dynamicRange = CSpectrometerDatabase::GetInstance().GetModel(m_specInfo.m_specModelName).maximumIntensityForSingleReadout;
-            }
+            // double dynamicRange = 1.0; // <-- unknown
+            // if (m_tableColumnMapping.peakSaturation != -1) { // If the intensity is specified as a saturation ratio...
+            //     dynamicRange = CSpectrometerDatabase::GetInstance().GetModel(m_specInfo.m_specModelName).maximumIntensityForSingleReadout;
+            // }
 
             // Update the quality of the DOAS fit
             if (m_scan[sortOrder[m_scanNum]].m_spec.size() > 0)
