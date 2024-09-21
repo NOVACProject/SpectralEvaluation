@@ -5,7 +5,7 @@
 
 using namespace novac;
 
-#pragma region Private helper methods
+// region Private helper methods
 
 void CreateEvaluationResult(CEvaluationResult& result)
 {
@@ -45,7 +45,7 @@ DoasResult::ReferenceFitResult CreateReferenceFitResult(double multiplier)
     return result;
 }
 
-#pragma endregion
+// endregion Private helper methods
 
 TEST_CASE("CEvaluationResult - Copy constructor, copies relevant parameters", "[CEvaluationResult]")
 {

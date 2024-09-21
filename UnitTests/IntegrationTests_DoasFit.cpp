@@ -52,8 +52,8 @@ TEST_CASE("DoasFit - IntegrationTest with good scan - scan file 1", "[DoasFit][I
         REQUIRE(result.fitLow == so2FitWindow.fitLow);
         REQUIRE(result.fitHigh == so2FitWindow.fitHigh);
         REQUIRE(result.referenceResult.size() == 3);
-        REQUIRE(result.polynomialCoefficients.size() == so2FitWindow.polyOrder + 1);
-        REQUIRE(result.polynomialValues.size() == so2FitWindow.fitHigh - so2FitWindow.fitLow);
+        REQUIRE(static_cast<int>(result.polynomialCoefficients.size()) == so2FitWindow.polyOrder + 1);
+        REQUIRE(static_cast<int>(result.polynomialValues.size()) == so2FitWindow.fitHigh - so2FitWindow.fitLow);
 
         // Verify that the result is indeed correct!
         REQUIRE(std::abs(result.chiSquare - 0.01) < 0.005);
@@ -96,8 +96,8 @@ TEST_CASE("DoasFit - IntegrationTest with good scan - scan file 1", "[DoasFit][I
         REQUIRE(result.fitLow == so2FitWindow.fitLow);
         REQUIRE(result.fitHigh == so2FitWindow.fitHigh);
         REQUIRE(result.referenceResult.size() == 2);
-        REQUIRE(result.polynomialCoefficients.size() == so2FitWindow.polyOrder + 1);
-        REQUIRE(result.polynomialValues.size() == so2FitWindow.fitHigh - so2FitWindow.fitLow);
+        REQUIRE(static_cast<int>(result.polynomialCoefficients.size()) == so2FitWindow.polyOrder + 1);
+        REQUIRE(static_cast<int>(result.polynomialValues.size()) == so2FitWindow.fitHigh - so2FitWindow.fitLow);
 
         // Verify that the result is indeed correct!
         REQUIRE(std::abs(result.chiSquare - 0.01) < 0.005);
@@ -138,8 +138,8 @@ TEST_CASE("DoasFit - IntegrationTest with good scan - scan file 1", "[DoasFit][I
         REQUIRE(result.fitLow == so2FitWindow.fitLow);
         REQUIRE(result.fitHigh == so2FitWindow.fitHigh);
         REQUIRE(result.referenceResult.size() == 3);
-        REQUIRE(result.polynomialCoefficients.size() == so2FitWindow.polyOrder + 1);
-        REQUIRE(result.polynomialValues.size() == so2FitWindow.fitHigh - so2FitWindow.fitLow);
+        REQUIRE(static_cast<int>(result.polynomialCoefficients.size()) == so2FitWindow.polyOrder + 1);
+        REQUIRE(static_cast<int>(result.polynomialValues.size()) == so2FitWindow.fitHigh - so2FitWindow.fitLow);
 
         // Verify that the result is indeed correct!
         REQUIRE(std::abs(result.chiSquare - 0.01) < 0.005);
