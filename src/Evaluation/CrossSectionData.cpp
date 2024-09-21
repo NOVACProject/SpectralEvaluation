@@ -49,6 +49,13 @@ CCrossSectionData::CCrossSectionData(const CSpectrum& spectrum)
 {
 }
 
+CCrossSectionData::CCrossSectionData(const std::vector <double>& crossSectionData)
+    : m_crossSection(crossSectionData)
+{
+
+}
+
+
 CCrossSectionData& CCrossSectionData::operator=(const CCrossSectionData& other)
 {
     this->m_crossSection = std::vector<double>(begin(other.m_crossSection), end(other.m_crossSection));
@@ -180,7 +187,7 @@ int CCrossSectionData::ReadCrossSectionFile(const std::string& fileName)
     fileRef.open(fileName, std::ios_base::in);
     if (!fileRef.is_open())
     {
-        std::cout << "ERROR: Cannot open reference file: " << fileName;
+        std::cout << "ERROR: Cannot open reference file: " << fileName << std::endl;
         return 1;
     }
 
@@ -248,7 +255,7 @@ int CCrossSectionData::SaveToFile(const std::string& filename) const
     file.open(filename, std::ios_base::out);
     if (!file.is_open())
     {
-        std::cout << "ERROR: Cannot open reference file: " << filename.c_str();
+        std::cout << "ERROR: Cannot open reference file: " << filename.c_str() << std::endl;
         return 1;
     }
 
@@ -274,16 +281,17 @@ int HighPassFilter(CCrossSectionData& crossSection, bool scaleToPpmm)
 {
     CBasicMath mathObject;
 
+    const double ppmmScaleFactor = 2.5e15; // magic scaling factor from molec/cm2 to ppmm.
     const int length = (int)crossSection.m_crossSection.size();
 
-    mathObject.Mul(crossSection.m_crossSection.data(), length, -2.5e15);
+    mathObject.Mul(crossSection.m_crossSection.data(), length, -ppmmScaleFactor);
     mathObject.Delog(crossSection.m_crossSection.data(), length);
     mathObject.HighPassBinomial(crossSection.m_crossSection.data(), length, 500);
     mathObject.Log(crossSection.m_crossSection.data(), length);
 
     if (!scaleToPpmm)
     {
-        mathObject.Div(crossSection.m_crossSection.data(), length, 2.5e15);
+        mathObject.Div(crossSection.m_crossSection.data(), length, ppmmScaleFactor);
     }
 
     return 0;

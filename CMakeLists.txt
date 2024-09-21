@@ -17,6 +17,11 @@ IF(OPENMP_FOUND)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 ENDIF()
 
+## ------------------- Dependencies -------------------
+
+set(RAPID_XML_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/rapidxml/)
+
+
 ## -------------------- NovacSpectralEvaluation -------------------------
 
 set(SPECTRALEVAUATION_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include CACHE STRING "")
@@ -76,7 +81,10 @@ add_library(NovacSpectralEvaluation
     ${CMAKE_CURRENT_SOURCE_DIR}/src/VectorUtils.cpp
 )
 
-target_include_directories(NovacSpectralEvaluation PUBLIC ${SPECTRALEVAUATION_INCLUDE_DIRS})
+target_include_directories(NovacSpectralEvaluation PUBLIC 
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}
+    ${RAPID_XML_INCLUDE_DIR}
+)
 
 #Organize the files into folders, for ease of use
 source_group("Header Files\\Calibration"            FILES ${SPECTRUM_CALIBRATION_HEADERS})
@@ -108,9 +116,9 @@ add_subdirectory(UnitTests)
 
 IF(MSVC)
     target_compile_definitions(NovacSpectralEvaluation PRIVATE -D_CRT_SECURE_NO_WARNINGS)
-    target_compile_options(NovacSpectralEvaluation PRIVATE /W4 /WX /sdl)
+    target_compile_options(NovacSpectralEvaluation PRIVATE /W4 /WX /sdl /MP)
 ELSE()
-    target_compile_options(NovacSpectralEvaluation PRIVATE -Wall -std=c++14 -fopenmp)
+    target_compile_options(NovacSpectralEvaluation PRIVATE -Wall -std=c++14 -fopenmp -Wno-reorder)
 ENDIF()
 
 

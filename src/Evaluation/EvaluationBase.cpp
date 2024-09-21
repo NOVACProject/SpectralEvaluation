@@ -30,7 +30,7 @@ CEvaluationBase::CEvaluationBase()
     CreateXDataVector(MAX_SPECTRUM_LENGTH);
 }
 
-CEvaluationBase::CEvaluationBase(const CFitWindow &window)
+CEvaluationBase::CEvaluationBase(const CFitWindow& window)
     : m_window(window)
 {
     CreateXDataVector(MAX_SPECTRUM_LENGTH);
@@ -42,7 +42,7 @@ CEvaluationBase::~CEvaluationBase()
     ClearRefereneSpectra();
 }
 
-void CEvaluationBase::SetFitWindow(const CFitWindow &window)
+void CEvaluationBase::SetFitWindow(const CFitWindow& window)
 {
     this->m_window = window;
     CreateReferenceSpectra();
@@ -100,28 +100,53 @@ int CEvaluationBase::CreateReferenceSpectra()
         // Chech the options for the column value
         switch (m_window.ref[i].m_columnOption)
         {
-        case SHIFT_TYPE::SHIFT_FIX:     m_ref[i]->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, m_window.ref[i].m_columnValue * m_ref[i]->GetAmplitudeScale()); break;
-        case SHIFT_TYPE::SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_columnValue]->LinkParameter(CReferenceSpectrumFunction::CONCENTRATION, *m_ref[i], CReferenceSpectrumFunction::CONCENTRATION); break;
+        case SHIFT_TYPE::SHIFT_FIX:
+            m_ref[i]->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, m_window.ref[i].m_columnValue * m_ref[i]->GetAmplitudeScale());
+            break;
+        case SHIFT_TYPE::SHIFT_LINK:
+            m_ref[(int)m_window.ref[i].m_columnValue]->LinkParameter(CReferenceSpectrumFunction::CONCENTRATION, *m_ref[i], CReferenceSpectrumFunction::CONCENTRATION);
+            break;
+        case SHIFT_TYPE::SHIFT_FREE:
+            m_ref[i]->ReleaseParameter(CReferenceSpectrumFunction::CONCENTRATION);
+            break;
+        default:
+            throw std::invalid_argument("Invalid column option found for reference");
         }
 
         // Check the options for the shift
         switch (m_window.ref[i].m_shiftOption)
         {
-        case SHIFT_TYPE::SHIFT_FIX:     m_ref[i]->FixParameter(CReferenceSpectrumFunction::SHIFT, m_window.ref[i].m_shiftValue); break;
-        case SHIFT_TYPE::SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_shiftValue]->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_ref[i], CReferenceSpectrumFunction::SHIFT); break;
-        case SHIFT_TYPE::SHIFT_LIMIT:   m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)m_window.ref[i].m_shiftValue, (TFitData)m_window.ref[i].m_shiftMaxValue, 1); break;
-        default:            m_ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SHIFT, (TFitData)0.0);
-            m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)-10.0, (TFitData)10.0, (TFitData)1e0); break; // TODO: Get these limits as parameters!
+        case SHIFT_TYPE::SHIFT_FIX:
+            m_ref[i]->FixParameter(CReferenceSpectrumFunction::SHIFT, m_window.ref[i].m_shiftValue);
+            break;
+        case SHIFT_TYPE::SHIFT_LINK:
+            m_ref[(int)m_window.ref[i].m_shiftValue]->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_ref[i], CReferenceSpectrumFunction::SHIFT);
+            break;
+        case SHIFT_TYPE::SHIFT_LIMIT:
+            m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)m_window.ref[i].m_shiftValue, (TFitData)m_window.ref[i].m_shiftMaxValue, 1);
+            break;
+        default:
+            m_ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SHIFT, (TFitData)0.0);
+            m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)-10.0, (TFitData)10.0, (TFitData)1e0); break;
+            // TODO: Get these limits as parameters!
         }
 
         // Check the options for the squeeze
         switch (m_window.ref[i].m_squeezeOption)
         {
-        case SHIFT_TYPE::SHIFT_FIX:     m_ref[i]->FixParameter(CReferenceSpectrumFunction::SQUEEZE, m_window.ref[i].m_squeezeValue); break;
-        case SHIFT_TYPE::SHIFT_LINK:    m_ref[(int)m_window.ref[i].m_squeezeValue]->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_ref[i], CReferenceSpectrumFunction::SQUEEZE); break;
-        case SHIFT_TYPE::SHIFT_LIMIT:   m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)m_window.ref[i].m_squeezeValue, (TFitData)m_window.ref[i].m_squeezeMaxValue, 1e7); break;
-        default:            m_ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SQUEEZE, (TFitData)1.0);
-            m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)0.98, (TFitData)1.02, (TFitData)1e0); break; // TODO: Get these limits as parameters!
+        case SHIFT_TYPE::SHIFT_FIX:
+            m_ref[i]->FixParameter(CReferenceSpectrumFunction::SQUEEZE, m_window.ref[i].m_squeezeValue);
+            break;
+        case SHIFT_TYPE::SHIFT_LINK:
+            m_ref[(int)m_window.ref[i].m_squeezeValue]->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_ref[i], CReferenceSpectrumFunction::SQUEEZE);
+            break;
+        case SHIFT_TYPE::SHIFT_LIMIT:
+            m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)m_window.ref[i].m_squeezeValue, (TFitData)m_window.ref[i].m_squeezeMaxValue, 1e7);
+            break;
+        default:
+            m_ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SQUEEZE, (TFitData)1.0);
+            m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)0.98, (TFitData)1.02, (TFitData)1e0);
+            break; // TODO: Get these limits as parameters!
         }
     }
 
@@ -150,7 +175,7 @@ int CEvaluationBase::CreateReferenceSpectra()
     return 0;
 }
 
-void CEvaluationBase::RemoveOffset(double *spectrum, int sumChn, bool UV)
+void CEvaluationBase::RemoveOffset(double* spectrum, int sumChn, bool UV)
 {
     // TODO: Read this from the number of optically covered pixels of the SpectrometerModel
     int offsetFrom = (UV) ? 50 : 2;
@@ -169,7 +194,7 @@ void CEvaluationBase::RemoveOffset(double *spectrum, int sumChn, bool UV)
     return;
 }
 
-void CEvaluationBase::PrepareSpectra(double *sky, double *meas, const CFitWindow &window)
+void CEvaluationBase::PrepareSpectra(double* sky, double* meas, const CFitWindow& window)
 {
 
     if (window.fitType == FIT_TYPE::FIT_HP_DIV)
@@ -180,7 +205,7 @@ void CEvaluationBase::PrepareSpectra(double *sky, double *meas, const CFitWindow
         return PrepareSpectra_Poly(sky, meas, window);
 }
 
-void CEvaluationBase::PrepareSpectra_HP_Div(double *skyArray, double *measArray, const CFitWindow &window)
+void CEvaluationBase::PrepareSpectra_HP_Div(double* skyArray, double* measArray, const CFitWindow& window)
 {
 
     //  1. Remove any remaining offset
@@ -199,7 +224,7 @@ void CEvaluationBase::PrepareSpectra_HP_Div(double *skyArray, double *measArray,
     //	LowPassBinomial(measArray,window.specLength, 5);
 }
 
-void CEvaluationBase::PrepareSpectra_HP_Sub(double* /*skyArray*/, double *measArray, const CFitWindow &window)
+void CEvaluationBase::PrepareSpectra_HP_Sub(double* /*skyArray*/, double* measArray, const CFitWindow& window)
 {
 
     // 1. remove any remaining offset in the measured spectrum
@@ -212,7 +237,7 @@ void CEvaluationBase::PrepareSpectra_HP_Sub(double* /*skyArray*/, double *measAr
     Log(measArray, window.specLength);
 }
 
-void CEvaluationBase::PrepareSpectra_Poly(double* /*skyArray*/, double *measArray, const CFitWindow &window)
+void CEvaluationBase::PrepareSpectra_Poly(double* /*skyArray*/, double* measArray, const CFitWindow& window)
 {
     // 1. remove any remaining offset in the measured spectrum
     RemoveOffset(measArray, window.specLength, window.UV);
@@ -227,7 +252,7 @@ void CEvaluationBase::PrepareSpectra_Poly(double* /*skyArray*/, double *measArra
     }
 }
 
-int CEvaluationBase::SetSkySpectrum(const CSpectrum &spec)
+int CEvaluationBase::SetSkySpectrum(const CSpectrum& spec)
 {
     CCrossSectionData sky;
     sky.m_crossSection = std::vector<double>(spec.m_data, spec.m_data + spec.m_length);
@@ -446,6 +471,9 @@ void CEvaluationBase::CreateReferenceForRingSpectrumLambda4(const CSpectrum& rin
         Error0("Error initializing spline object!");
         return;
     }
+
+    m_ringSpectrumLambda4->FixParameter(CReferenceSpectrumFunction::SHIFT, 0.0);
+    m_ringSpectrumLambda4->FixParameter(CReferenceSpectrumFunction::SQUEEZE, 1.0);
 }
 
 void CEvaluationBase::SaveResidual(CStandardFit& cFirstFit)
@@ -461,7 +489,7 @@ void CEvaluationBase::SaveResidual(CStandardFit& cFirstFit)
     m_result.m_delta = (double)vResiduum.Delta();
 }
 
-int CEvaluationBase::Evaluate(const CSpectrum &measured, int numSteps)
+int CEvaluationBase::Evaluate(const CSpectrum& measured, int numSteps)
 {
     return Evaluate(measured.m_data, measured.m_length, measured.m_info.m_startChannel, numSteps);
 }
@@ -481,12 +509,12 @@ int CEvaluationBase::Evaluate(const double* measured, size_t measuredLength, int
 
     // Get the correct limits for the fit
     int fitLow, fitHigh;
-    if (measuredStartChannel != 0 || measuredLength < m_window.specLength)
+    if (measuredStartChannel != 0 || measuredLength < static_cast<size_t>(m_window.specLength))
     {
         // Partial spectra
         fitLow = m_window.fitLow - measuredStartChannel;
         fitHigh = m_window.fitHigh - measuredStartChannel;
-        if (fitLow < 0 || fitHigh > measuredLength)
+        if (fitLow < 0 || fitHigh > static_cast<int>(measuredLength))
         {
             m_lastError = "Invalid fit region, fit-low is negative or fit-high is larger than the length of the measured spectrum.";
             return 1;
@@ -643,14 +671,14 @@ int CEvaluationBase::Evaluate(const double* measured, size_t measuredLength, int
         m_lastError = "Failed to evaluate: a fit exception occurred.";
         if (nullptr != e.mMessage && strlen(e.mMessage) > 0)
         {
-            m_lastError = m_lastError + " Message: '" + std::string{ e.mMessage } +"'";
+            m_lastError = m_lastError + " Message: '" + std::string{ e.mMessage } + "'";
         }
 
         return (1);
     }
 }
 
-int CEvaluationBase::EvaluateShift(const CSpectrum &measured, double &shift, double &shiftError, double &squeeze, double &squeezeError)
+int CEvaluationBase::EvaluateShift(const CSpectrum& measured, double& shift, double& shiftError, double& squeeze, double& squeezeError)
 {
     assert(vXData.GetSize() >= measured.m_length);
 
@@ -691,10 +719,10 @@ int CEvaluationBase::EvaluateShift(const CSpectrum &measured, double &shift, dou
     }
 
     // initialize the solar-spectrum function
-    CReferenceSpectrumFunction *solarSpec = new CReferenceSpectrumFunction();
+    CReferenceSpectrumFunction* solarSpec = new CReferenceSpectrumFunction();
 
     // Make a local copy of the data
-    double *measArray = (double *)calloc(measured.m_length, sizeof(double));
+    double* measArray = (double*)calloc(measured.m_length, sizeof(double));
     memcpy(measArray, measured.m_data, measured.m_length * sizeof(double));
 
     //----------------------------------------------------------------

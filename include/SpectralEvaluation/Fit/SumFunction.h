@@ -380,7 +380,7 @@ namespace MathFit
 		*/
 		virtual void GetNonlinearDyDa(CVector& vXValues, CMatrix& mDyDa)
 		{
-			const int iXSize = vXValues.GetSize();
+			// const int iXSize = vXValues.GetSize();
 			const int iParamSize = mNonlinearParams.GetSize();
 
 			int iParamID;

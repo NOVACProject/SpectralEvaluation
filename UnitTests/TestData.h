@@ -9,12 +9,10 @@ class TestData
 public:
     static std::string GetTestDataDirectory()
     {
-#ifdef _MSC_VER
         return std::string("../TestData/");
-#else
-        return std::string("TestData/");
-#endif // _MSC_VER 
     }
+
+    // region Instrument Calibration
 
     static std::string GetMeasuredSpectrumName_I2J8549()
     {
@@ -159,5 +157,78 @@ public:
     {
         return GetTestDataDirectory() + std::string("Temporary_InstrumentCalibration.std");
     }
+
+    static std::string GetTemporaryFitWindowFileName()
+    {
+        return GetTestDataDirectory() + std::string("Temporary_FitWindowFile.nfw");
+    }
+
+    static std::string GetTemporaryConfigurationFileName()
+    {
+        return GetTestDataDirectory() + std::string("Temporary_Congfiguration.config");
+    }
+
+    // endregion
+
+    // region Evaluation log file formats
+
+    static std::string GetEvaluationLogfile1()
+    {
+        return GetTestDataDirectory() + std::string("EvaluationLogs/") + std::string("EvaluationLog_1904156M1_2020.10.07.txt");
+    }
+
+    static std::string GetEvaluationLogfile2()
+    {
+        return GetTestDataDirectory() + std::string("EvaluationLogs/") + std::string("ReEvaluationLog_SO2.txt");
+    }
+
+    // endregion
+
+    //  region BrO to SO2 ratio calculations
+
+    static std::string GetBrORatioScanFile1()
+    {
+        return GetTestDataDirectory() + std::string("BrORatio/") + std::string("D2J2124_160331_1608_0.pak");
+    }
+
+    static std::string GetBrORatioEvaluationFile1()
+    {
+        return GetTestDataDirectory() + std::string("BrORatio/") + std::string("D2J2124_160331_1608_0.txt");
+    }
+
+    static std::string GetBrORatioFitWindowFileSO2()
+    {
+        return GetTestDataDirectory() + std::string("BrORatio/") + std::string("SO2-314-326nm.nfw");
+    }
+
+    static std::string GetBrORatioFitWindowFileBrO()
+    {
+        return GetTestDataDirectory() + std::string("BrORatio/") + std::string("BrO-330-352nm.nfw");
+    }
+
+    // Notice that this is a file where we don't expect to get a ratio due to too wide plume
+    static std::string GetBrORatioScanFile2()
+    {
+        return GetTestDataDirectory() + std::string("BrORatio/") + std::string("D2J2124_160331_2049_0.pak");
+    }
+
+    // Notice that this is a file where we don't expect to get a ratio due to too wide plume
+    static std::string GetBrORatioEvaluationFile2()
+    {
+        return GetTestDataDirectory() + std::string("BrORatio/") + std::string("D2J2124_160331_2049_0.txt");
+    }
+
+    static std::string GetBrORatioScanFile3()
+    {
+        return GetTestDataDirectory() + std::string("BrORatio/") + std::string("D2J2124_160331_1510_0.pak");
+    }
+
+    static std::string GetBrORatioEvaluationFile3()
+    {
+        return GetTestDataDirectory() + std::string("BrORatio/") + std::string("D2J2124_160331_1510_0.txt");
+    }
+
+    // endregion
+
 };
 }

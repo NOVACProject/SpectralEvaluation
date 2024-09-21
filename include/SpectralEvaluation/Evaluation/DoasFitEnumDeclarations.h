@@ -9,6 +9,4 @@ enum class FIT_TYPE
     FIT_HP_SUB,
     FIT_POLY
 };
-
-
 }

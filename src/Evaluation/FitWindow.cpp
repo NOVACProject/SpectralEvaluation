@@ -7,7 +7,7 @@
 namespace novac
 {
 
-CFitWindow::CFitWindow(const CFitWindow &other)
+CFitWindow::CFitWindow(const CFitWindow& other)
     : fitLow(other.fitLow),
     fitHigh(other.fitHigh),
     channel(other.channel),
@@ -61,7 +61,7 @@ CFitWindow::CFitWindow(CFitWindow&& other)
     }
 }
 
-CFitWindow &CFitWindow::operator=(const CFitWindow &other)
+CFitWindow& CFitWindow::operator=(const CFitWindow& other)
 {
     this->channel = other.channel;
     this->fitHigh = other.fitHigh;
@@ -90,7 +90,7 @@ CFitWindow &CFitWindow::operator=(const CFitWindow &other)
     return *this;
 }
 
-CFitWindow &CFitWindow::operator=(CFitWindow&& other)
+CFitWindow& CFitWindow::operator=(CFitWindow&& other)
 {
     this->channel = other.channel;
     this->fitHigh = other.fitHigh;
@@ -233,4 +233,43 @@ void ScaleReferencesToMolecCm2(CFitWindow& window)
     }
 }
 
+void AddAsReference(CFitWindow& window, const std::vector<double>& referenceData, const std::string& name, int linkShiftToIdx)
+{
+    window.ref[window.nRef].m_data = std::make_unique<CCrossSectionData>(referenceData);
+    window.ref[window.nRef].m_specieName = name;
+    window.ref[window.nRef].m_columnOption = novac::SHIFT_TYPE::SHIFT_FREE;
+    window.ref[window.nRef].m_columnValue = 1.0;
+    window.ref[window.nRef].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
+    window.ref[window.nRef].m_squeezeValue = 1.0;
+
+    if (linkShiftToIdx >= 0)
+    {
+        window.ref[window.nRef].m_shiftOption = SHIFT_TYPE::SHIFT_LINK;
+        window.ref[window.nRef].m_shiftValue = linkShiftToIdx;
+    }
+    else
+    {
+        window.ref[window.nRef].m_shiftOption = SHIFT_TYPE::SHIFT_FIX;
+        window.ref[window.nRef].m_shiftValue = 0.0;
+    }
+
+    window.nRef += 1;
+}
+
+int AddAsSky(CFitWindow& window, const std::vector<double>& referenceData, SHIFT_TYPE shiftOption)
+{
+    int indexOfSkySpectrum = window.nRef;
+
+    window.ref[window.nRef].m_data = std::make_unique<novac::CCrossSectionData>(referenceData);
+    window.ref[window.nRef].m_specieName = "sky";
+    window.ref[window.nRef].m_columnOption = novac::SHIFT_TYPE::SHIFT_FIX;
+    window.ref[window.nRef].m_columnValue = -1.0;
+    window.ref[window.nRef].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
+    window.ref[window.nRef].m_squeezeValue = 1.0;
+    window.ref[window.nRef].m_shiftOption = shiftOption;
+    window.ref[window.nRef].m_shiftValue = 0.0;
+    window.nRef += 1;
+
+    return indexOfSkySpectrum;
+}
 }

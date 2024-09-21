@@ -4,6 +4,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <assert.h>
+#include <limits>
 
 double Max(const std::vector<double>& values, size_t& idx)
 {

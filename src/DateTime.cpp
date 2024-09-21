@@ -2,6 +2,7 @@
 #include <time.h>
 #include <cstring>
 #include <string>
+#include <iostream>
 #include <SpectralEvaluation/StringUtils.h>
 
 namespace novac
@@ -115,12 +116,17 @@ namespace novac
         this->hour = t2.hour;
         this->minute = t2.minute;
         this->second = t2.second;
+        this->millisecond = t2.millisecond;
         return *this;
     }
 
     std::ostream& operator<<(std::ostream& os, const CDateTime& dt)
     {
-        os << (int)dt.year << '.' << (int)dt.month << '.' << (int)dt.day << 'T' << (int)dt.hour << ":" << (int)dt.minute << ":" << (int)dt.second;
+        char buffer[128];
+        sprintf(buffer, "%04d.%02d.%02dT%02d:%02d:%02d", (int)dt.year, (int)dt.month, (int)dt.day, (int)dt.hour, (int)dt.minute, (int)dt.second);
+
+        os << std::string(buffer);
+
         return os;
     }
 

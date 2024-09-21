@@ -71,7 +71,8 @@ double* CBasicMath::LowPassBinomial(double* fData, int iSize, int iNIterations)
             fOut[i] = 0.5 * lMid + 0.25 * lLeft + 0.25 * lRight;
         }
     }
-    if (fOut != fData) {
+    if (fOut != fData)
+    {
         memcpy(fData, fOut, sizeof(double) * iSize);
     }
 
@@ -621,7 +622,8 @@ void CBasicMath::CrossCorrelate(double* fFirst, int iLengthFirst, double* fSec, 
         iStopIndexSec += iLengthSec / 2;
 
         int iSecIndex;
-        for (iSecIndex = iStartIndexSec; iSecIndex < iStopIndexSec; iFirstIndex++, iSecIndex++) {
+        for (iSecIndex = iStartIndexSec; iSecIndex < iStopIndexSec; iFirstIndex++, iSecIndex++)
+        {
             fSum += fFirst[iFirstIndex] * fSec[iSecIndex];
         }
 
@@ -721,20 +723,24 @@ void CBasicMath::DFourier(double data[], unsigned long nn, int isign)
 
     n = nn << 1;
     j = 1;
-    for (i = 1; i < n; i += 2) {
-        if (j > i) {
+    for (i = 1; i < n; i += 2)
+    {
+        if (j > i)
+        {
             SWAP(data[j], data[i]);
             SWAP(data[j + 1], data[i + 1]);
         }
         m = n >> 1;
-        while (m >= 2 && j > m) {
+        while (m >= 2 && j > m)
+        {
             j -= m;
             m >>= 1;
         }
         j += m;
     }
     mmax = 2;
-    while (n > mmax) {
+    while (n > mmax)
+    {
         istep = mmax << 1;
         theta = isign * (6.28318530717959 / mmax);
         wtemp = sin(0.5 * theta);
@@ -742,8 +748,10 @@ void CBasicMath::DFourier(double data[], unsigned long nn, int isign)
         wpi = sin(theta);
         wr = 1.0;
         wi = 0.0;
-        for (m = 1; m < mmax; m += 2) {
-            for (i = m; i <= n; i += istep) {
+        for (m = 1; m < mmax; m += 2)
+        {
+            for (i = m; i <= n; i += istep)
+            {
                 j = i + mmax;
                 tempr = wr * data[j] - wi * data[j + 1];
                 tempi = wr * data[j + 1] + wi * data[j];
@@ -829,7 +837,8 @@ void CBasicMath::InverseFFT(double* fReal, double* fImaginary, double* fData, in
 
     DFourier(fBuffer.data() - 1, iLength, -1);
 
-    for (i = 0; i < iLength; i++) {
+    for (i = 0; i < iLength; i++)
+    {
         fData[i] = fBuffer[i * 2] / (double)iLength;
     }
 }
