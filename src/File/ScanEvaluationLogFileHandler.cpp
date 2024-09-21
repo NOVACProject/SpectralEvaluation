@@ -12,7 +12,8 @@ using namespace novac;
 CScanEvaluationLogFileHandler::CScanEvaluationLogFileHandler()
 {
     // Defining which column contains which information
-    for (int i = 0; i < MAX_N_REFERENCES_IN_EVALLOG; ++i) {
+    for (int i = 0; i < MAX_N_REFERENCES_IN_EVALLOG; ++i)
+    {
         m_tableColumnMapping.column[i] = 7;
         m_tableColumnMapping.columnError[i] = 8;
         m_tableColumnMapping.shift[i] = 9;
@@ -27,15 +28,20 @@ CScanEvaluationLogFileHandler::~CScanEvaluationLogFileHandler(void)
     m_scan.clear();
 }
 
-void CScanEvaluationLogFileHandler::ParseScanHeader(const char szLine[8192]) {
+void CScanEvaluationLogFileHandler::ParseScanHeader(const char szLine[8192])
+{
     // reset some old information
     ResetColumns();
 
     char str[8192];
     if (szLine[0] == '#')
+    {
         strncpy(str, szLine + 1, 8191 * sizeof(char));
+    }
     else
+    {
         strncpy(str, szLine, 8192 * sizeof(char));
+    }
 
     char* szToken = str;
     int curCol = -1;
@@ -66,6 +72,7 @@ void CScanEvaluationLogFileHandler::ParseScanHeader(const char szLine[8192]) {
     while (true)
     {
         szToken = strtok(szToken, "\t");
+
         if (szToken == nullptr)
         {
             break;
@@ -74,84 +81,96 @@ void CScanEvaluationLogFileHandler::ParseScanHeader(const char szLine[8192]) {
         ++curCol;
 
         // The scan-angle (previously known as elevation)
-        if (EqualsIgnoringCase(szToken, elevation)) {
+        if (EqualsIgnoringCase(szToken, elevation))
+        {
             m_tableColumnMapping.position = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The scan-angle (previously known as elevation)
-        if (EqualsIgnoringCase(szToken, scanAngle)) {
+        if (EqualsIgnoringCase(szToken, scanAngle))
+        {
             m_tableColumnMapping.position = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The observation-angle (the scan-angle for the heidelberg instrument)
-        if (EqualsIgnoringCase(szToken, obsAngle)) {
+        if (EqualsIgnoringCase(szToken, obsAngle))
+        {
             m_tableColumnMapping.position = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The azimuth-angle (defined for the heidelberg instrument)
-        if (EqualsIgnoringCase(szToken, azimuth)) {
+        if (EqualsIgnoringCase(szToken, azimuth))
+        {
             m_tableColumnMapping.position2 = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The exposure time
-        if (EqualsIgnoringCase(szToken, exposureTime)) {
+        if (EqualsIgnoringCase(szToken, exposureTime))
+        {
             m_tableColumnMapping.expTime = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The start time
-        if (EqualsIgnoringCase(szToken, starttime)) {
+        if (EqualsIgnoringCase(szToken, starttime))
+        {
             m_tableColumnMapping.starttime = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The stop time
-        if (EqualsIgnoringCase(szToken, stoptime)) {
+        if (EqualsIgnoringCase(szToken, stoptime))
+        {
             m_tableColumnMapping.stoptime = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The name of the spectrum
-        if (EqualsIgnoringCase(szToken, nameStr)) {
+        if (EqualsIgnoringCase(szToken, nameStr))
+        {
             m_tableColumnMapping.name = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The number of co-added spectra
-        if (EqualsIgnoringCase(szToken, numSpec)) {
+        if (EqualsIgnoringCase(szToken, numSpec))
+        {
             m_tableColumnMapping.nSpec = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The offset
-        if (EqualsIgnoringCase(szToken, offset)) {
+        if (EqualsIgnoringCase(szToken, offset))
+        {
             m_tableColumnMapping.offset = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The column error (must be looked for before 'column')
-        if (EqualsIgnoringCase(szToken, columnError)) {
+        if (EqualsIgnoringCase(szToken, columnError, static_cast<unsigned int>(strlen(columnError))))
+        {
             m_tableColumnMapping.columnError[m_evResult.NumberOfSpecies() - 1] = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The column
-        if (EqualsIgnoringCase(szToken, column)) {
+        if (EqualsIgnoringCase(szToken, column, static_cast<unsigned int>(strlen(column))))
+        {
             m_tableColumnMapping.column[m_evResult.NumberOfSpecies()] = curCol;
             char* pt = szToken + strlen(column) + 1;
             szToken[strlen(szToken) - 1] = 0;
@@ -163,35 +182,40 @@ void CScanEvaluationLogFileHandler::ParseScanHeader(const char szLine[8192]) {
         }
 
         // The shift error (must be checked before 'shift')
-        if (EqualsIgnoringCase(szToken, shiftError)) {
+        if (EqualsIgnoringCase(szToken, shiftError, static_cast<unsigned int>(strlen(shiftError))))
+        {
             m_tableColumnMapping.shiftError[m_evResult.NumberOfSpecies() - 1] = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The shift
-        if (EqualsIgnoringCase(szToken, shift)) {
+        if (EqualsIgnoringCase(szToken, shift, static_cast<unsigned int>(strlen(shift))))
+        {
             m_tableColumnMapping.shift[m_evResult.NumberOfSpecies() - 1] = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The squeeze error (must be checked before 'squeeze')
-        if (EqualsIgnoringCase(szToken, squeezeError)) {
+        if (EqualsIgnoringCase(szToken, squeezeError, static_cast<unsigned int>(strlen(squeezeError))))
+        {
             m_tableColumnMapping.squeezeError[m_evResult.NumberOfSpecies() - 1] = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The squeeze
-        if (EqualsIgnoringCase(szToken, squeeze)) {
+        if (EqualsIgnoringCase(szToken, squeeze, static_cast<unsigned int>(strlen(squeeze))))
+        {
             m_tableColumnMapping.squeeze[m_evResult.NumberOfSpecies() - 1] = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The spectrum peak-intensity
-        if (EqualsIgnoringCase(szToken, intensity)) {
+        if (EqualsIgnoringCase(szToken, intensity, static_cast<unsigned int>(strlen(intensity))))
+        {
             m_tableColumnMapping.intensity = curCol;
             szToken = nullptr;
             continue;
@@ -199,7 +223,8 @@ void CScanEvaluationLogFileHandler::ParseScanHeader(const char szLine[8192]) {
 
         // The spectrum fit-intensity
         if (EqualsIgnoringCase(szToken, fitIntensity) ||
-            EqualsIgnoringCase(szToken, fitIntensity2)) {
+            EqualsIgnoringCase(szToken, fitIntensity2))
+        {
 
             m_tableColumnMapping.fitIntensity = curCol;
             szToken = nullptr;
@@ -207,28 +232,32 @@ void CScanEvaluationLogFileHandler::ParseScanHeader(const char szLine[8192]) {
         }
 
         // The spectrum maximum saturation ratio of the whole spectrum
-        if (EqualsIgnoringCase(szToken, peakSat)) {
+        if (EqualsIgnoringCase(szToken, peakSat))
+        {
             m_tableColumnMapping.peakSaturation = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The spectrum maximum saturation ratio in the fit region
-        if (EqualsIgnoringCase(szToken, fitSat)) {
+        if (EqualsIgnoringCase(szToken, fitSat))
+        {
             m_tableColumnMapping.fitSaturation = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The delta of the fit
-        if (EqualsIgnoringCase(szToken, delta)) {
+        if (EqualsIgnoringCase(szToken, delta))
+        {
             m_tableColumnMapping.delta = curCol;
             szToken = nullptr;
             continue;
         }
 
         // The chi-square of the fit
-        if (EqualsIgnoringCase(szToken, chiSquare)) {
+        if (EqualsIgnoringCase(szToken, chiSquare))
+        {
             m_tableColumnMapping.chiSquare = curCol;
             szToken = nullptr;
             continue;
@@ -253,7 +282,6 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
     char  fluxInformation[] = "<fluxinfo>";           // this string only exists in the flux-information section before the scan-data
     char  spectralData[] = "<spectraldata>";
     char  endofSpectralData[] = "</spectraldata>";
-    std::string str;
     char szLine[8192];
     int measNr = 0;
     double fValue;
@@ -266,7 +294,7 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
         return false;
     }
 
-    m_evaluationLog = evaluationLogFile;
+    this->m_evaluationLog = evaluationLogFile;
 
     // First count the number of scans in the file.
     // This to speed up the initialization of the arrays
@@ -276,6 +304,7 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
     {
         return false;
     }
+
     m_scan.resize(allStartTimes.size());
     // m_windField.SetSize(nScans + 1);
 
@@ -287,7 +316,8 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
     // Open the evaluation log. (Notice that the NovacProgram did use a CriticalSection here for locking..)
     {
         FILE* f = fopen(m_evaluationLog.c_str(), "r");
-        if (nullptr == f) {
+        if (nullptr == f)
+        {
             return false;
         }
 
@@ -299,8 +329,10 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
         while (fgets(szLine, 8192, f))
         {
             // ignore empty lines
-            if (strlen(szLine) < 2) {
-                if (fReadingScan) {
+            if (strlen(szLine) < 2)
+            {
+                if (fReadingScan)
+                {
                     fReadingScan = false;
                     // Reset the column- and spectrum-information
                     ResetColumns();
@@ -310,27 +342,32 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
             }
 
             // convert the string to all lower-case letters
-            for (unsigned int it = 0; it < strlen(szLine); ++it) {
+            for (unsigned int it = 0; it < strlen(szLine); ++it)
+            {
                 szLine[it] = (char)tolower(szLine[it]);
             }
 
             // find the next scan-information section
-            if (nullptr != strstr(szLine, scanInformation)) {
+            if (nullptr != strstr(szLine, scanInformation))
+            {
                 ParseScanInformation(m_specInfo, flux, f);
                 continue;
             }
 
             // find the next flux-information section
-            if (nullptr != strstr(szLine, fluxInformation)) {
+            if (nullptr != strstr(szLine, fluxInformation))
+            {
                 // ParseFluxInformation(m_windField[sortOrder[m_scanNum + 1]], flux, f);
                 continue;
             }
 
-            if (nullptr != strstr(szLine, spectralData)) {
+            if (nullptr != strstr(szLine, spectralData))
+            {
                 fReadingScan = true;
                 continue;
             }
-            else if (nullptr != strstr(szLine, endofSpectralData)) {
+            else if (nullptr != strstr(szLine, endofSpectralData))
+            {
                 fReadingScan = false;
                 continue;
             }
@@ -340,7 +377,8 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
             {
                 // check so that there was some information in the last scan read
                 //	if not the re-use the memory space
-                if ((measNr > 0) || (measNr == 0 && m_scanNum < 0)) {
+                if ((measNr > 0) || (measNr == 0 && m_scanNum < 0))
+                {
 
                     // The current measurement position inside the scan
                     measNr = 0;
@@ -349,13 +387,15 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
                     // the old one
 
                     // 1. If the sky and dark were specified, remove them from the measurement
-                    if (m_scanNum >= 0 && fabs(m_scan[sortOrder[m_scanNum]].m_specInfo[1].m_scanAngle - 180.0) < 1) {
+                    if (m_scanNum >= 0 && fabs(m_scan[sortOrder[m_scanNum]].m_specInfo[1].m_scanAngle - 180.0) < 1)
+                    {
                         m_scan[sortOrder[m_scanNum]].RemoveResult(0); // remove sky
                         m_scan[sortOrder[m_scanNum]].RemoveResult(0); // remove dark
                     }
 
                     // 2. Calculate the offset
-                    if (m_scanNum >= 0 && m_scan[sortOrder[m_scanNum]].m_spec.size() > 0) {
+                    if (m_scanNum >= 0 && m_scan[sortOrder[m_scanNum]].m_spec.size() > 0)
+                    {
                         // const CEvaluationResult& evResult = m_scan[sortOrder[m_scanNum]].m_spec.front();
                         // if (evResult.m_referenceResult.size() > 0) {
                         //     m_scan[sortOrder[m_scanNum]].CalculateOffset(evResult.m_referenceResult.front().m_specieName);
@@ -400,15 +440,19 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
                 ++curCol;
 
                 // First check the starttime
-                if (curCol == m_tableColumnMapping.starttime) {
+                if (curCol == m_tableColumnMapping.starttime)
+                {
                     int fValue1, fValue2, fValue3, ret;
-                    if (strstr(szToken, ":")) {
+                    if (strstr(szToken, ":"))
+                    {
                         ret = sscanf(szToken, "%d:%d:%d", &fValue1, &fValue2, &fValue3);
                     }
-                    else {
+                    else
+                    {
                         ret = sscanf(szToken, "%d.%d.%d", &fValue1, &fValue2, &fValue3);
                     }
-                    if (ret == 3) {
+                    if (ret == 3)
+                    {
                         m_specInfo.m_startTime.hour = (unsigned char)fValue1;
                         m_specInfo.m_startTime.minute = (unsigned char)fValue2;
                         m_specInfo.m_startTime.second = (unsigned char)fValue3;
@@ -418,15 +462,19 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
                 }
 
                 // Then check the stoptime
-                if (curCol == m_tableColumnMapping.stoptime) {
+                if (curCol == m_tableColumnMapping.stoptime)
+                {
                     int fValue1, fValue2, fValue3, ret;
-                    if (strstr(szToken, ":")) {
+                    if (strstr(szToken, ":"))
+                    {
                         ret = sscanf(szToken, "%d:%d:%d", &fValue1, &fValue2, &fValue3);
                     }
-                    else {
+                    else
+                    {
                         ret = sscanf(szToken, "%d.%d.%d", &fValue1, &fValue2, &fValue3);
                     }
-                    if (ret == 3) {
+                    if (ret == 3)
+                    {
                         m_specInfo.m_stopTime.hour = (unsigned char)fValue1;
                         m_specInfo.m_stopTime.minute = (unsigned char)fValue2;
                         m_specInfo.m_stopTime.second = (unsigned char)fValue3;
@@ -436,106 +484,126 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
                 }
 
                 // Also check the name...
-                if (curCol == m_tableColumnMapping.name) {
+                if (curCol == m_tableColumnMapping.name)
+                {
                     m_specInfo.m_name = std::string(szToken);
                     szToken = nullptr;
                     continue;
                 }
 
                 // ignore columns whose value cannot be parsed into a float
-                if (1 != sscanf(szToken, "%lf", &fValue)) {
+                if (1 != sscanf(szToken, "%lf", &fValue))
+                {
                     szToken = nullptr;
                     continue;
                 }
 
-                if (curCol == m_tableColumnMapping.position) {
+                if (curCol == m_tableColumnMapping.position)
+                {
                     m_specInfo.m_scanAngle = (float)fValue;
                     szToken = nullptr;
                     continue;
                 }
 
-                if (curCol == m_tableColumnMapping.position2) {
+                if (curCol == m_tableColumnMapping.position2)
+                {
                     m_specInfo.m_scanAngle2 = (float)fValue;
                     szToken = nullptr;
                     continue;
                 }
 
-                if (curCol == m_tableColumnMapping.intensity) {
+                if (curCol == m_tableColumnMapping.intensity)
+                {
                     m_specInfo.m_peakIntensity = (float)fValue;
                     szToken = nullptr;
                     continue;
                 }
 
-                if (curCol == m_tableColumnMapping.fitIntensity) {
+                if (curCol == m_tableColumnMapping.fitIntensity)
+                {
                     m_specInfo.m_fitIntensity = (float)fValue;
                     szToken = nullptr;
                     continue;
                 }
 
-                if (curCol == m_tableColumnMapping.fitSaturation) {
+                if (curCol == m_tableColumnMapping.fitSaturation)
+                {
                     m_specInfo.m_fitIntensity = (float)fValue;
                     szToken = nullptr;
                     continue;
                 }
 
-                if (curCol == m_tableColumnMapping.peakSaturation) {
+                if (curCol == m_tableColumnMapping.peakSaturation)
+                {
                     m_specInfo.m_peakIntensity = (float)fValue;
                     szToken = nullptr;
                     continue;
                 }
 
-                if (curCol == m_tableColumnMapping.offset) {
+                if (curCol == m_tableColumnMapping.offset)
+                {
                     m_specInfo.m_offset = (float)fValue;
                     szToken = nullptr;
                     continue;
                 }
 
-                if (curCol == m_tableColumnMapping.delta) {
+                if (curCol == m_tableColumnMapping.delta)
+                {
                     m_evResult.m_delta = (float)fValue;
                     szToken = nullptr;
                     continue;
                 }
 
-                if (curCol == m_tableColumnMapping.chiSquare) {
+                if (curCol == m_tableColumnMapping.chiSquare)
+                {
                     m_evResult.m_chiSquare = (float)fValue;
                     szToken = nullptr;
                     continue;
                 }
 
-                if (curCol == m_tableColumnMapping.nSpec) {
+                if (curCol == m_tableColumnMapping.nSpec)
+                {
                     m_specInfo.m_numSpec = (long)fValue;
                     szToken = nullptr;
                     continue;
                 }
 
-                if (curCol == m_tableColumnMapping.expTime) {
+                if (curCol == m_tableColumnMapping.expTime)
+                {
                     m_specInfo.m_exposureTime = (long)fValue;
                     szToken = nullptr;
                     continue;
                 }
 
-                for (int k = 0; k < m_tableColumnMapping.nSpecies; ++k) {
-                    if (curCol == m_tableColumnMapping.column[k]) {
+                for (int k = 0; k < m_tableColumnMapping.nSpecies; ++k)
+                {
+                    if (curCol == m_tableColumnMapping.column[k])
+                    {
                         m_evResult.m_referenceResult[k].m_column = (float)fValue;
                         break;
                     }
-                    if (curCol == m_tableColumnMapping.columnError[k]) {
+                    if (curCol == m_tableColumnMapping.columnError[k])
+                    {
                         m_evResult.m_referenceResult[k].m_columnError = (float)fValue;
                         break;
                     }
-                    if (curCol == m_tableColumnMapping.shift[k]) {
+                    if (curCol == m_tableColumnMapping.shift[k])
+                    {
                         m_evResult.m_referenceResult[k].m_shift = (float)fValue;
                         break;
                     }
-                    if (curCol == m_tableColumnMapping.shiftError[k]) {
+                    if (curCol == m_tableColumnMapping.shiftError[k])
+                    {
                         m_evResult.m_referenceResult[k].m_shiftError = (float)fValue;
                         break;
                     }
-                    if (curCol == m_tableColumnMapping.squeeze[k]) {
+                    if (curCol == m_tableColumnMapping.squeeze[k])
+                    {
                         m_evResult.m_referenceResult[k].m_squeeze = (float)fValue;
                         break;
                     }
-                    if (curCol == m_tableColumnMapping.squeezeError[k]) {
+                    if (curCol == m_tableColumnMapping.squeezeError[k])
+                    {
                         m_evResult.m_referenceResult[k].m_squeezeError = (float)fValue;
                         break;
                     }
@@ -549,26 +617,32 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
 
             // If this is the first spectrum in the new scan, then make
             //	an initial guess for how large the arrays are going to be...
-            if (measNr == 0 && m_scanNum > 1) {
+            if (measNr == 0 && m_scanNum > 1)
+            {
                 // If this is the first spectrum in a new scan, then initialize the 
                 //	size of the arrays, to save some time on re-allocating memory
                 m_scan[sortOrder[m_scanNum]].InitializeArrays((long)m_scan[m_scanNum - 1].m_spec.size());
             }
 
             m_specInfo.m_scanIndex = (short)measNr;
-            if (EqualsIgnoringCase(m_specInfo.m_name, "sky")) {
+            if (EqualsIgnoringCase(m_specInfo.m_name, "sky"))
+            {
                 m_scan[sortOrder[m_scanNum]].m_skySpecInfo = m_specInfo;
             }
-            else if (EqualsIgnoringCase(m_specInfo.m_name, "dark")) {
+            else if (EqualsIgnoringCase(m_specInfo.m_name, "dark"))
+            {
                 m_scan[sortOrder[m_scanNum]].m_darkSpecInfo = m_specInfo;
             }
-            else if (EqualsIgnoringCase(m_specInfo.m_name, "offset")) {
+            else if (EqualsIgnoringCase(m_specInfo.m_name, "offset"))
+            {
                 m_scan[sortOrder[m_scanNum]].m_offsetSpecInfo = m_specInfo;
             }
-            else if (EqualsIgnoringCase(m_specInfo.m_name, "dark_cur")) {
+            else if (EqualsIgnoringCase(m_specInfo.m_name, "dark_cur"))
+            {
                 m_scan[sortOrder[m_scanNum]].m_darkCurSpecInfo = m_specInfo;
             }
-            else {
+            else
+            {
                 m_scan[sortOrder[m_scanNum]].AppendResult(m_evResult, m_specInfo);
                 // m_scan[sortOrder[m_scanNum]].SetFlux(flux);
             }
@@ -592,13 +666,15 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
     }
 
     // If the sky and dark were specified, remove them from the measurement
-    if (m_scanNum >= 0 && fabs(m_scan[sortOrder[m_scanNum]].m_specInfo[1].m_scanAngle - 180.0) < 1) {
+    if (m_scanNum >= 0 && fabs(m_scan[sortOrder[m_scanNum]].m_specInfo[1].m_scanAngle - 180.0) < 1)
+    {
         m_scan[sortOrder[m_scanNum]].RemoveResult(0); // remove sky
         m_scan[sortOrder[m_scanNum]].RemoveResult(0); // remove dark
     }
 
     // Calculate the offset
-    if (m_scanNum >= 0) {
+    if (m_scanNum >= 0)
+    {
         // m_scan[sortOrder[m_scanNum]].CalculateOffset(m_evResult.m_referenceResult[0].m_specieName);
     }
 
@@ -613,7 +689,8 @@ bool CScanEvaluationLogFileHandler::ReadEvaluationLog(const std::string& evaluat
 
 /** Makes a quick scan through the evaluation-log
     to count the number of scans in it */
-long CScanEvaluationLogFileHandler::CountScansInFile() {
+long CScanEvaluationLogFileHandler::CountScansInFile()
+{
     char  expTimeStr[] = "exposuretime"; // this string only exists in the header line.
     char szLine[8192];
     long  nScans = 0;
@@ -629,19 +706,23 @@ long CScanEvaluationLogFileHandler::CountScansInFile() {
 
         // Open the evaluation log
         FILE* f = fopen(m_evaluationLog.c_str(), "r");
-        if (nullptr == f) {
+        if (nullptr == f)
+        {
             return 0;
         }
 
         // Read the file, one line at a time
-        while (fgets(szLine, 8192, f)) {
+        while (fgets(szLine, 8192, f))
+        {
             // convert the string to all lower-case letters
-            for (unsigned int it = 0; it < strlen(szLine); ++it) {
+            for (unsigned int it = 0; it < strlen(szLine); ++it)
+            {
                 szLine[it] = (char)tolower(szLine[it]);
             }
 
             // find the next start of a scan 
-            if (nullptr != strstr(szLine, expTimeStr)) {
+            if (nullptr != strstr(szLine, expTimeStr))
+            {
                 ++nScans;
             }
         }
@@ -676,24 +757,30 @@ void CScanEvaluationLogFileHandler::GetScanStartTimes(std::vector<CDateTime>& st
     {
         // Open the evaluation log
         FILE* f = fopen(m_evaluationLog.c_str(), "r");
-        if (nullptr == f) {
+        if (nullptr == f)
+        {
             return;
         }
 
         // Read the file, one line at a time
-        while (fgets(szLine, 8192, f)) {
+        while (fgets(szLine, 8192, f))
+        {
             // convert the string to all lower-case letters
-            for (unsigned int it = 0; it < strlen(szLine); ++it) {
+            for (unsigned int it = 0; it < strlen(szLine); ++it)
+            {
                 szLine[it] = (char)tolower(szLine[it]);
             }
 
             // find the next start of a scan 
-            if (nullptr != strstr(szLine, scanInfoStart)) {
+            if (nullptr != strstr(szLine, scanInfoStart))
+            {
                 inScanInfoSection = true;
             }
 
-            if (nullptr != strstr(szLine, scanInfoStop)) {
-                if (foundDate && foundTime) {
+            if (nullptr != strstr(szLine, scanInfoStop))
+            {
+                if (foundDate && foundTime)
+                {
                     startTimes.push_back(CDateTime(scanStartTime));
                 }
                 inScanInfoSection = false;
@@ -702,11 +789,13 @@ void CScanEvaluationLogFileHandler::GetScanStartTimes(std::vector<CDateTime>& st
                 ++nScans;
             }
 
-            if (inScanInfoSection) {
+            if (inScanInfoSection)
+            {
                 const char* pt = strstr(szLine, "date=");
                 if (pt != nullptr)
                 {
-                    if (3 == sscanf(pt + 5, "%d.%d.%d", &tmpInt[0], &tmpInt[1], &tmpInt[2])) {
+                    if (3 == sscanf(pt + 5, "%d.%d.%d", &tmpInt[0], &tmpInt[1], &tmpInt[2]))
+                    {
                         scanStartTime.day = (unsigned char)tmpInt[0];
                         scanStartTime.month = (unsigned char)tmpInt[1];
                         scanStartTime.year = (unsigned short)tmpInt[2];
@@ -717,7 +806,8 @@ void CScanEvaluationLogFileHandler::GetScanStartTimes(std::vector<CDateTime>& st
                 pt = strstr(szLine, "starttime=");
                 if (pt != nullptr)
                 {
-                    if (3 == sscanf(pt + 10, "%d:%d:%d", &tmpInt[0], &tmpInt[1], &tmpInt[2])) {
+                    if (3 == sscanf(pt + 10, "%d:%d:%d", &tmpInt[0], &tmpInt[1], &tmpInt[2]))
+                    {
                         scanStartTime.hour = (unsigned char)tmpInt[0];
                         scanStartTime.minute = (unsigned char)tmpInt[1];
                         scanStartTime.second = (unsigned char)tmpInt[2];
@@ -732,7 +822,8 @@ void CScanEvaluationLogFileHandler::GetScanStartTimes(std::vector<CDateTime>& st
 }
 
 /** Reads and parses the 'scanInfo' header before the scan */
-void CScanEvaluationLogFileHandler::ParseScanInformation(CSpectrumInfo& scanInfo, double& flux, FILE* f) {
+void CScanEvaluationLogFileHandler::ParseScanInformation(CSpectrumInfo& scanInfo, double& flux, FILE* f)
+{
     char szLine[8192];
     int tmpInt[3];
     double tmpDouble;
@@ -742,10 +833,12 @@ void CScanEvaluationLogFileHandler::ParseScanInformation(CSpectrumInfo& scanInfo
     ResetScanInformation();
 
     // read the additional scan-information, line by line
-    while (fgets(szLine, 8192, f)) {
+    while (fgets(szLine, 8192, f))
+    {
 
         // convert to lower-case
-        for (unsigned int it = 0; it < strlen(szLine); ++it) {
+        for (unsigned int it = 0; it < strlen(szLine); ++it)
+        {
             szLine[it] = (char)tolower(szLine[it]);
         }
 
@@ -772,7 +865,8 @@ void CScanEvaluationLogFileHandler::ParseScanInformation(CSpectrumInfo& scanInfo
         pt = strstr(szLine, "date=");
         if (pt != nullptr)
         {
-            if (3 == sscanf(pt + 5, "%d.%d.%d", &tmpInt[0], &tmpInt[1], &tmpInt[2])) {
+            if (3 == sscanf(pt + 5, "%d.%d.%d", &tmpInt[0], &tmpInt[1], &tmpInt[2]))
+            {
                 scanInfo.m_startTime.year = (unsigned short)tmpInt[2];
                 scanInfo.m_startTime.month = (unsigned char)tmpInt[1];
                 scanInfo.m_startTime.day = (unsigned char)tmpInt[0];
@@ -787,7 +881,8 @@ void CScanEvaluationLogFileHandler::ParseScanInformation(CSpectrumInfo& scanInfo
         pt = strstr(szLine, "starttime=");
         if (pt != nullptr)
         {
-            if (3 == sscanf(pt + 10, "%d:%d:%d", &tmpInt[0], &tmpInt[1], &tmpInt[2])) {
+            if (3 == sscanf(pt + 10, "%d:%d:%d", &tmpInt[0], &tmpInt[1], &tmpInt[2]))
+            {
                 scanInfo.m_startTime.hour = (unsigned char)tmpInt[0];
                 scanInfo.m_startTime.minute = (unsigned char)tmpInt[1];
                 scanInfo.m_startTime.second = (unsigned char)tmpInt[2];
@@ -798,7 +893,8 @@ void CScanEvaluationLogFileHandler::ParseScanInformation(CSpectrumInfo& scanInfo
         pt = strstr(szLine, "stoptime=");
         if (pt != nullptr)
         {
-            if (3 == sscanf(pt + 9, "%d.%d.%d", &tmpInt[0], &tmpInt[1], &tmpInt[2])) {
+            if (3 == sscanf(pt + 9, "%d.%d.%d", &tmpInt[0], &tmpInt[1], &tmpInt[2]))
+            {
                 scanInfo.m_stopTime.hour = (unsigned char)tmpInt[0];
                 scanInfo.m_stopTime.minute = (unsigned char)tmpInt[1];
                 scanInfo.m_stopTime.second = (unsigned char)tmpInt[2];
@@ -809,7 +905,8 @@ void CScanEvaluationLogFileHandler::ParseScanInformation(CSpectrumInfo& scanInfo
         pt = strstr(szLine, "compass=");
         if (pt != nullptr)
         {
-            if (sscanf(pt + 8, "%lf", &tmpDouble) == 1) {
+            if (sscanf(pt + 8, "%lf", &tmpDouble) == 1)
+            {
                 scanInfo.m_compass = (float)fmod(tmpDouble, 360.0);
             }
             continue;
@@ -818,7 +915,8 @@ void CScanEvaluationLogFileHandler::ParseScanInformation(CSpectrumInfo& scanInfo
         pt = strstr(szLine, "tilt=");
         if (pt != nullptr)
         {
-            if (sscanf(pt + 5, "%lf", &tmpDouble) == 1) {
+            if (sscanf(pt + 5, "%lf", &tmpDouble) == 1)
+            {
                 scanInfo.m_pitch = (float)tmpDouble;
             }
             continue;
@@ -827,7 +925,8 @@ void CScanEvaluationLogFileHandler::ParseScanInformation(CSpectrumInfo& scanInfo
         pt = strstr(szLine, "lat=");
         if (pt != nullptr)
         {
-            if (sscanf(pt + 4, "%lf", &tmpDouble) == 1) {
+            if (sscanf(pt + 4, "%lf", &tmpDouble) == 1)
+            {
                 scanInfo.m_gps.m_latitude = tmpDouble;
             }
             continue;
@@ -836,7 +935,8 @@ void CScanEvaluationLogFileHandler::ParseScanInformation(CSpectrumInfo& scanInfo
         pt = strstr(szLine, "long=");
         if (pt != nullptr)
         {
-            if (sscanf(pt + 5, "%lf", &tmpDouble) == 1) {
+            if (sscanf(pt + 5, "%lf", &tmpDouble) == 1)
+            {
                 scanInfo.m_gps.m_longitude = tmpDouble;
             }
             continue;
@@ -845,7 +945,8 @@ void CScanEvaluationLogFileHandler::ParseScanInformation(CSpectrumInfo& scanInfo
         pt = strstr(szLine, "alt=");
         if (pt != nullptr)
         {
-            if (sscanf(pt + 4, "%lf", &tmpDouble) == 1) {
+            if (sscanf(pt + 4, "%lf", &tmpDouble) == 1)
+            {
                 scanInfo.m_gps.m_altitude = (long)tmpDouble;
             }
             continue;
@@ -891,7 +992,8 @@ void CScanEvaluationLogFileHandler::ParseScanInformation(CSpectrumInfo& scanInfo
         pt = strstr(szLine, "channel=");
         if (pt != nullptr)
         {
-            if (sscanf(pt + 8, "%lf", &tmpDouble) == 1) {
+            if (sscanf(pt + 8, "%lf", &tmpDouble) == 1)
+            {
                 scanInfo.m_channel = (unsigned char)tmpDouble;
             }
         }
@@ -899,7 +1001,8 @@ void CScanEvaluationLogFileHandler::ParseScanInformation(CSpectrumInfo& scanInfo
         pt = strstr(szLine, "coneangle=");
         if (pt != nullptr)
         {
-            if (sscanf(pt + 10, "%lf", &tmpDouble) == 1) {
+            if (sscanf(pt + 10, "%lf", &tmpDouble) == 1)
+            {
                 scanInfo.m_coneAngle = (float)tmpDouble;
             }
         }
@@ -907,7 +1010,8 @@ void CScanEvaluationLogFileHandler::ParseScanInformation(CSpectrumInfo& scanInfo
         pt = strstr(szLine, "flux=");
         if (pt != nullptr)
         {
-            if (sscanf(pt + 5, "%lf", &tmpDouble) == 1) {
+            if (sscanf(pt + 5, "%lf", &tmpDouble) == 1)
+            {
                 flux = tmpDouble;
             }
         }
@@ -1035,7 +1139,8 @@ void CScanEvaluationLogFileHandler::ParseScanInformation(CSpectrumInfo& scanInfo
 
 void CScanEvaluationLogFileHandler::ResetColumns()
 {
-    for (int k = 0; k < MAX_N_REFERENCES_IN_EVALLOG; ++k) {
+    for (int k = 0; k < MAX_N_REFERENCES_IN_EVALLOG; ++k)
+    {
         m_tableColumnMapping.column[k] = -1;
         m_tableColumnMapping.columnError[k] = -1;
         m_tableColumnMapping.shift[k] = -1;
@@ -1072,9 +1177,10 @@ bool CScanEvaluationLogFileHandler::IsWindSpeedMeasurement(int /*scanNo*/)
 
 void CScanEvaluationLogFileHandler::SortScans()
 {
-    std::sort(begin(m_scan), end(m_scan), [](const BasicScanEvaluationResult& result1, const BasicScanEvaluationResult& result2) {
-        return result1.m_skySpecInfo.m_startTime < result2.m_skySpecInfo.m_startTime;
-    });
+    std::sort(begin(m_scan), end(m_scan), [](const BasicScanEvaluationResult& result1, const BasicScanEvaluationResult& result2)
+        {
+            return result1.m_skySpecInfo.m_startTime < result2.m_skySpecInfo.m_startTime;
+        });
 }
 
 void CScanEvaluationLogFileHandler::SortScanStartTimes(std::vector<CDateTime>& timestamps, std::vector<unsigned int>& sortOrder)
@@ -1082,12 +1188,14 @@ void CScanEvaluationLogFileHandler::SortScanStartTimes(std::vector<CDateTime>& t
     sortOrder.resize(timestamps.size());
     std::iota(begin(sortOrder), end(sortOrder), 0);
 
-    std::sort(begin(sortOrder), end(sortOrder), [&](unsigned int idx1, unsigned int idx2) {
-        return timestamps[idx1] < timestamps[idx2];
-    });
+    std::sort(begin(sortOrder), end(sortOrder), [&](unsigned int idx1, unsigned int idx2)
+        {
+            return timestamps[idx1] < timestamps[idx2];
+        });
 }
 
-bool CScanEvaluationLogFileHandler::WriteEvaluationLog(const std::string fileName) {
+bool CScanEvaluationLogFileHandler::WriteEvaluationLog(const std::string fileName)
+{
     std::string string, specieName;
     std::string wsSrc, wdSrc, phSrc;
     CDateTime startTime;
@@ -1238,13 +1346,15 @@ void CScanEvaluationLogFileHandler::FormatEvaluationResult(
     // 6. The (maximum) saturation ratio of the whole spectrum,
     //			the (maximum) saturation ratio in the fit-region
     //			and the normalized maximum intensity of the whole spectrum
-    if (maxIntensity > 0.0) {
+    if (maxIntensity > 0.0)
+    {
         sprintf(tempBuffer, "%.2lf\t", info->m_peakIntensity / maxIntensity);
         destination += std::string(tempBuffer);
         sprintf(tempBuffer, "%.2lf\t", info->m_fitIntensity / maxIntensity);
         destination += std::string(tempBuffer);
     }
-    else {
+    else
+    {
         sprintf(tempBuffer, "%.2lf\t", info->m_peakIntensity);
         destination += std::string(tempBuffer);
         sprintf(tempBuffer, "%.2lf\t", info->m_fitIntensity);
@@ -1272,8 +1382,10 @@ void CScanEvaluationLogFileHandler::FormatEvaluationResult(
     destination += std::string(tempBuffer);
 
     // 10. The column/column error for each specie
-    for (int itSpecie = 0; itSpecie < nSpecies; ++itSpecie) {
-        if (result != nullptr) {
+    for (int itSpecie = 0; itSpecie < nSpecies; ++itSpecie)
+    {
+        if (result != nullptr)
+        {
             if ((fabs(result->m_referenceResult[itSpecie].m_column) > 5e-2) && (fabs(result->m_referenceResult[itSpecie].m_columnError) > 5e-2))
             {
                 sprintf(tempBuffer, "%.2lf\t%.2lf\t", result->m_referenceResult[itSpecie].m_column, result->m_referenceResult[itSpecie].m_columnError);
@@ -1290,7 +1402,8 @@ void CScanEvaluationLogFileHandler::FormatEvaluationResult(
             sprintf(tempBuffer, "%.2lf\t%.2lf\t", result->m_referenceResult[itSpecie].m_squeeze, result->m_referenceResult[itSpecie].m_squeezeError);
             destination += std::string(tempBuffer);
         }
-        else {
+        else
+        {
             sprintf(tempBuffer, "0.0\t0.0\t0.0\t0.0\t0.0\t0.0\t");
             destination += std::string(tempBuffer);
         }

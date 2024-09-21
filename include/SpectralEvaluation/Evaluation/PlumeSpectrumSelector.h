@@ -65,7 +65,7 @@ public:
         IScanSpectrumSource& originalScanFile,
         const BasicScanEvaluationResult& originalScanResult,
         const CPlumeInScanProperty& plumeProperties,
-        const Configuration::RatioEvaluationSettings settings,
+        const Configuration::RatioEvaluationSettings& settings,
         const SpectrometerModel& spectrometerModel,
         int mainSpecieIndex = 0,
         std::string* errorMessage = nullptr);
@@ -83,7 +83,7 @@ public:
         IScanSpectrumSource& originalScanFile,
         const BasicScanEvaluationResult& originalScanResult,
         const CPlumeInScanProperty& plumeProperties,
-        const Configuration::RatioEvaluationSettings settings,
+        const Configuration::RatioEvaluationSettings& settings,
         const SpectrometerModel& spectrometerModel,
         int mainSpecieIndex,
         const std::string& outputDirectory,
@@ -105,20 +105,14 @@ private:
 
     /**
      * @brief Returns true if the provided originalScanResult represents a scan which is suitable for performing ratio evaluation
-     * @param skySpectrum The sky spectrum of the scan.
-     * @param darkSpectrum The dark spectrum of the scan.
      * @param originalScanResult The evaluation result.
      * @param properties The properties of the scan, must have center and completeness filled in.
-     * @param spectrometerModel The model of the spectrometer which collected the measurement.
      * @return True if the scan is suitable.
     */
     bool IsSuitableScanForRatioEvaluation(
-        const CSpectrum& skySpectrum,
-        const CSpectrum& darkSpectrum,
         const BasicScanEvaluationResult& originalScanResult,
         const CPlumeInScanProperty& properties,
-        const SpectrometerModel& spectrometerModel,
-        const Configuration::RatioEvaluationSettings settings,
+        const Configuration::RatioEvaluationSettings& settings,
         std::string* errorMessage = nullptr);
 
     /**
@@ -135,9 +129,9 @@ private:
      * @return true if the selection was successful.
     */
     bool SelectSpectra(
-        const std::vector< InitialEvaluationData> evaluationData,
+        const std::vector< InitialEvaluationData>& evaluationData,
         const CPlumeInScanProperty& properties,
-        const Configuration::RatioEvaluationSettings settings,
+        const Configuration::RatioEvaluationSettings& settings,
         std::vector<int>& referenceSpectra,
         std::vector<int>& inPlumeSpectra,
         std::string* errorMessage = nullptr);
@@ -172,7 +166,7 @@ private:
         IScanSpectrumSource& originalScanFile,
         const CSpectrum& darkSpectrum,
         const BasicScanEvaluationResult& originalScanResult,
-        const Configuration::RatioEvaluationSettings settings,
+        const Configuration::RatioEvaluationSettings& settings,
         const SpectrometerModel& spectrometermodel,
         std::vector< InitialEvaluationData>& evaluationData,
         std::vector<std::pair<int, std::string>>& rejectedIndices) const;

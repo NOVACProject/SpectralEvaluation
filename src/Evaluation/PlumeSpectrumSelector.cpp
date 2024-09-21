@@ -32,7 +32,7 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
     IScanSpectrumSource& originalScanFile,
     const BasicScanEvaluationResult& originalScanResult,
     const CPlumeInScanProperty& plumeProperties,
-    const Configuration::RatioEvaluationSettings settings,
+    const Configuration::RatioEvaluationSettings& settings,
     const SpectrometerModel& spectrometerModel,
     int mainSpecieIndex,
     std::string* errorMessage)
@@ -58,7 +58,7 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
         return nullptr;
     }
 
-    if (!IsSuitableScanForRatioEvaluation(*skySpectrum, *darkSpectrum, originalScanResult, plumeProperties, spectrometerModel, settings, errorMessage))
+    if (!IsSuitableScanForRatioEvaluation(originalScanResult, plumeProperties, settings, errorMessage))
     {
         return nullptr;
     }
@@ -118,7 +118,7 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     IScanSpectrumSource& originalScanFile,
     const BasicScanEvaluationResult& originalScanResult,
     const CPlumeInScanProperty& plumeProperties,
-    const Configuration::RatioEvaluationSettings settings,
+    const Configuration::RatioEvaluationSettings& settings,
     const SpectrometerModel& spectrometerModel,
     int mainSpecieIndex,
     const std::string& outputDirectory,
@@ -181,7 +181,7 @@ void PlumeSpectrumSelector::ExtractEvaluationData(
     IScanSpectrumSource& originalScanFile,
     const CSpectrum& darkSpectrum,
     const BasicScanEvaluationResult& originalScanResult,
-    const Configuration::RatioEvaluationSettings settings,
+    const Configuration::RatioEvaluationSettings& settings,
     const SpectrometerModel& spectrometermodel,
     std::vector< InitialEvaluationData>& evaluationData,
     std::vector<std::pair<int, std::string>>& rejectedIndices) const
@@ -225,9 +225,9 @@ void PlumeSpectrumSelector::ExtractEvaluationData(
 }
 
 bool PlumeSpectrumSelector::SelectSpectra(
-    const std::vector< InitialEvaluationData> evaluationData,
+    const std::vector< InitialEvaluationData>& evaluationData,
     const CPlumeInScanProperty& properties,
-    const Configuration::RatioEvaluationSettings settings,
+    const Configuration::RatioEvaluationSettings& settings,
     std::vector<int>& referenceSpectra,
     std::vector<int>& inPlumeSpectra,
     std::string* errorMessage)
@@ -272,12 +272,9 @@ bool PlumeSpectrumSelector::SelectSpectra(
 }
 
 bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
-    const CSpectrum& skySpectrum,
-    const CSpectrum& darkSpectrum,
     const BasicScanEvaluationResult& originalScanResult,
     const CPlumeInScanProperty& properties,
-    const SpectrometerModel& spectrometerModel,
-    const Configuration::RatioEvaluationSettings settings,
+    const Configuration::RatioEvaluationSettings& settings,
     std::string* errorMessage)
 {
     if (static_cast<int>(originalScanResult.m_spec.size()) < settings.minNumberOfSpectraInPlume + settings.numberOfSpectraOutsideOfPlume)
