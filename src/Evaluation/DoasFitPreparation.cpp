@@ -149,7 +149,7 @@ std::vector<double> DoasFitPreparation::PrepareRingSpectrum(const CSpectrum& sky
 
 std::vector<double> DoasFitPreparation::PrepareIntensitySpacePolynomial(const CSpectrum& skySpectrum)
 {
-    const int spectrumLength = static_cast<int>(skySpectrum.m_length);
+    const size_t spectrumLength = static_cast<int>(skySpectrum.m_length);
     std::vector<double> result;
     result.resize(spectrumLength);
 

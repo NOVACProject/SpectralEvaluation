@@ -69,7 +69,7 @@ ELSE()
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release"
     )
 
-    target_compile_options(SpectralEvaluationTests PRIVATE -Wall -std=c++14)
+    target_compile_options(SpectralEvaluationTests PRIVATE -Wall -std=c++14 -fopenmp)
 ENDIF()
 
 
