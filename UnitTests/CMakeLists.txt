@@ -59,15 +59,16 @@ add_executable(SpectralEvaluationTests
 target_include_directories(SpectralEvaluationTests PRIVATE ${SPECTRALEVAUATION_INCLUDE_DIRS})
 target_link_libraries(SpectralEvaluationTests PRIVATE NovacSpectralEvaluation)
 
-set_target_properties(SpectralEvaluationTests
-    PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release"
-)
-
 IF(MSVC)
     target_compile_definitions(SpectralEvaluationTests PRIVATE -D_CRT_SECURE_NO_WARNINGS)
     target_compile_options(SpectralEvaluationTests PRIVATE /W4 /WX /sdl /MP)
 ELSE()
+    # Make sure both the Windows and the Linux versions have binaries which end up in the same directory
+    set_target_properties(SpectralEvaluationTests
+        PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release"
+    )
+
     target_compile_options(SpectralEvaluationTests PRIVATE -Wall -std=c++14)
 ENDIF()
 
