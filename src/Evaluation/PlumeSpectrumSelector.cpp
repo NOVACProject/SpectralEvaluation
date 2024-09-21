@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <limits>
 
 #include <SpectralEvaluation/Evaluation/PlumeSpectrumSelector.h>
 #include <SpectralEvaluation/File/SpectrumIO.h>
