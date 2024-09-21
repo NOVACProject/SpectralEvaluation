@@ -292,7 +292,7 @@ bool CFitWindowFileHandler::WriteFitWindow(const novac::CFitWindow& window, cons
     entryValue = FormatEnum(window.ringCalculation);
     fprintf(f, "%s<ringCalculation>%s</ringCalculation>\n", indent.c_str(), entryValue.c_str());
 
-    fprintf(f, "%s<fitType>%d</fitType>\n", indent.c_str(), window.fitType);
+    fprintf(f, "%s<fitType>%d</fitType>\n", indent.c_str(), static_cast<int>(window.fitType));
 
     fprintf(f, "%s<channel>%d</channel>\n", indent.c_str(), window.channel);
     fprintf(f, "%s<specLength>%d</specLength>\n", indent.c_str(), window.specLength);
