@@ -9,11 +9,7 @@ class TestData
 public:
     static std::string GetTestDataDirectory()
     {
-#ifdef _MSC_VER
         return std::string("../TestData/");
-#else
-        return std::string("TestData/");
-#endif // _MSC_VER 
     }
 
     // region Instrument Calibration

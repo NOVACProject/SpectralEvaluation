@@ -58,6 +58,11 @@ std::vector<double> GetPixelToWavelengthMapping(const std::vector<double>& polyn
 /// <param name="spectrum"></param>
 void RemoveBaseline(CSpectrum& spectrum)
 {
+    if (spectrum.m_length == 0)
+    {
+        return;
+    }
+
     std::vector<double> spectrumValues(spectrum.m_data, spectrum.m_data + spectrum.m_length);
     std::vector<double> lowestPoints;
     FindNLowest(spectrumValues, 20, lowestPoints);
