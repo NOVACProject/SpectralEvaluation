@@ -1,7 +1,9 @@
 #include <SpectralEvaluation/Evaluation/DoasFitPreparation.h>
 #include <SpectralEvaluation/Evaluation/BasicMath.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/Spectra/Scattering.h>
 #include <SpectralEvaluation/VectorUtils.h>
+#include <limits>
 
 using namespace novac;
 
@@ -100,8 +102,62 @@ void DoasFitPreparation::RemoveOffset(std::vector<double>& spectrum, int startIn
         return;
     }
 
-    const double skySpectrumOffset = Average(begin(spectrum) + startIndex, begin(spectrum) + endIndex);
+    const double spectrumOffset = Average(begin(spectrum) + startIndex, begin(spectrum) + endIndex);
 
     CBasicMath math;
-    math.Sub(spectrum.data(), static_cast<int>(spectrum.size()), skySpectrumOffset);
+    math.Sub(spectrum.data(), static_cast<int>(spectrum.size()), spectrumOffset);
+}
+
+void DoasFitPreparation::RemoveOffset(CSpectrum& spectrum, int startIndex, int endIndex)
+{
+    if (startIndex == endIndex)
+    {
+        return;
+    }
+    std::vector<double> values(spectrum.m_data + startIndex, spectrum.m_data + endIndex);
+
+    const double spectrumOffset = Average(values);
+
+    CBasicMath math;
+    math.Sub(spectrum.m_data, static_cast<int>(spectrum.m_length), spectrumOffset);
+}
+
+std::vector<double> DoasFitPreparation::PrepareRingSpectrum(const CSpectrum& skySpectrum, FIT_TYPE doasFitType)
+{
+    CSpectrum copyOfSky = skySpectrum;
+    auto ringSpectrum = Doasis::Scattering::CalcRingSpectrum(copyOfSky);
+
+    const int spectrumLength = static_cast<int>(skySpectrum.m_length);
+
+    if (doasFitType == FIT_TYPE::FIT_HP_DIV || doasFitType == FIT_TYPE::FIT_HP_SUB)
+    {
+        CBasicMath math;
+        math.HighPassBinomial(ringSpectrum.m_data, spectrumLength, 500);
+    }
+    else if (doasFitType == FIT_TYPE::FIT_POLY)
+    {
+        // Do nothing here.
+    }
+    else
+    {
+        throw std::invalid_argument("Unknown type of Doas fit passed to DoasFitPreparation::PrepareRingSpectrum");
+    }
+
+    std::vector<double> filteredMeasSpectrum{ ringSpectrum.m_data, ringSpectrum.m_data + spectrumLength };
+    return filteredMeasSpectrum;
+}
+
+std::vector<double> DoasFitPreparation::PrepareIntensitySpacePolynomial(const CSpectrum& skySpectrum)
+{
+    const size_t spectrumLength = static_cast<int>(skySpectrum.m_length);
+    std::vector<double> result;
+    result.resize(spectrumLength);
+
+    for (size_t ii = 0; ii < spectrumLength; ++ii)
+    {
+        result[ii] = std::abs(skySpectrum.m_data[ii]) < std::numeric_limits<double>::epsilon() ? 0.0 : 1.0 / skySpectrum.m_data[ii];
+    }
+
+    return result;
+
 }

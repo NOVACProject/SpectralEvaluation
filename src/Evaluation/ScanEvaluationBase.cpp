@@ -275,13 +275,13 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
     else if (indexOfMostSuitableSpectrum == INDEX_OF_SKYSPECTRUM)
     {
         scan.GetSky(spectrum);
-        m_lastErrorMessage = "  Determining shift and squeeze from sky-spectrum";
+        m_lastErrorMessage = "Determining shift and squeeze from sky-spectrum";
     }
     else
     {
         scan.GetSpectrum(spectrum, indexOfMostSuitableSpectrum);
         std::stringstream msg;
-        msg << "  Determining shift and squeeze from spectrum " << indexOfMostSuitableSpectrum;
+        msg << "Determining shift and squeeze from spectrum " << indexOfMostSuitableSpectrum;
         m_lastErrorMessage = msg.str();
     }
 
@@ -345,7 +345,7 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
         }
 
         std::stringstream msg;
-        msg << "  Determining shift and squeeze from spectrum " << indexOfMostSuitableSpectrum << std::endl;
+        msg << "Determining shift and squeeze from spectrum " << indexOfMostSuitableSpectrum << std::endl;
         msg << "  Shift: " << shift << " +- " << shiftError << "; Squeeze: " << squeeze << " +- " << squeezeError;
         m_lastErrorMessage = msg.str();
         return new CEvaluationBase(improvedFitWindow);

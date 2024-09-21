@@ -16,6 +16,10 @@ namespace novac
         by attempting to open the file for reading. */
     bool IsExistingFile(const std::string& fullFileName);
 
+    /** Reads the entire contents of the provided file into a string.
+        No validation is done to make sure that the file isn't too large. */
+    std::string ReadEntireFile(const std::string& filename);
+
     /** Reads cross section data from the provded file.
             This is able to read ASCII data files with data in one or two columns.
             If the file contains two columns then the first column will be saved in result.m_waveLength
@@ -44,6 +48,9 @@ namespace novac
         NOTICE: the provided suffix should not start with a period.
         NOTICE2: this will not guarantee that the fullFilePath has the default suffix, only that there is one. */
     std::string EnsureFilenameHasSuffix(const std::string& fullFilePath, const std::string& defaultSuffix);
+
+    /** Returns the file name component of the provide full filename and path */
+    std::string GetFileName(const std::string& fullFileNameAndPath);
 
     /** Returns the file extension (suffix) from the provided full file path */
     std::string GetFileExtension(const std::string& fullFilePath);

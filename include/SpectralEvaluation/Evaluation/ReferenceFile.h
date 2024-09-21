@@ -15,17 +15,20 @@ private:
 public:
     InvalidReferenceException(const char* msg) :
         m_msg(msg)
-    {}
+    {
+    }
 
     InvalidReferenceException(const std::string& msg) :
         m_msg(msg.c_str())
-    {}
+    {
+    }
 
     const char* what() const noexcept override final { return m_msg; }
 };
 
 /* the options for the shift and squeeze */
-enum class SHIFT_TYPE {
+enum class SHIFT_TYPE
+{
     SHIFT_FREE,     /* Include the shift and squeeze in the fit */
     SHIFT_FIX,      /* Set the shift/squeee to a fixed value */
     SHIFT_LINK,     /* Links the shift/squeeze to the value of another reference */

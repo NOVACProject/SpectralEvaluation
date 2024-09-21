@@ -17,7 +17,7 @@ namespace Evaluation
 {
 
 // TODO: Move this to a separate file!
-/** The CDoasFit performs a general DOAS fit using an already created set of 
+/** The CDoasFit performs a general DOAS fit using an already created set of
     references (with associated shift/squeeze options). */
 class CDoasFit
 {

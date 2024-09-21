@@ -5,6 +5,7 @@
 // ---------------------------------------------------------------------------------------------------------------
 
 #include <vector>
+#include <stddef.h>
 
 /** @return the maximum value in the provided vector.
     @param idx will be filled with the index where the maximum value is found.

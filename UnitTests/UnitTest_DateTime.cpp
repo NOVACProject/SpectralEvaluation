@@ -1,5 +1,6 @@
 #include "catch.hpp"
 #include <SpectralEvaluation/DateTime.h>
+#include <sstream>
 
 namespace novac
 {
@@ -29,6 +30,29 @@ namespace novac
         sut.millisecond = 32;
 
         CDateTime copy = CDateTime{ sut };
+
+        REQUIRE(copy.year == sut.year);
+        REQUIRE(copy.month == sut.month);
+        REQUIRE(copy.day == sut.day);
+        REQUIRE(copy.hour == sut.hour);
+        REQUIRE(copy.minute == sut.minute);
+        REQUIRE(copy.second == sut.second);
+        REQUIRE(copy.millisecond == sut.millisecond);
+    }
+
+    TEST_CASE("CDateTime - Copy assignment operator copies all values", "[DateTime]")
+    {
+        CDateTime sut;
+        sut.year = 2009;
+        sut.month = 12;
+        sut.day = 14;
+        sut.hour = 16;
+        sut.minute = 34;
+        sut.second = 23;
+        sut.millisecond = 32;
+        CDateTime copy;
+
+        copy = sut;
 
         REQUIRE(copy.year == sut.year);
         REQUIRE(copy.month == sut.month);
@@ -358,4 +382,15 @@ namespace novac
         }
     }
 
+    TEST_CASE("CDateTime - Print to string.", "[DateTime]")
+    {
+        CDateTime sut{ 2010, 6, 6, 22, 5, 12 };
+        std::stringstream msg;
+
+        // Act
+        msg << sut;
+
+        // Assert.
+        REQUIRE("2010.06.06T22:05:12" == msg.str());
+    }
 }

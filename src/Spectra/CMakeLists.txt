@@ -8,6 +8,7 @@ set(SPECTRUM_CLASS_HEADERS
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Geometry.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/EstimatedValue.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/Grid.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/IScanSpectrumSource.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/Scattering.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/Spectrum.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/SpectrumInfo.h

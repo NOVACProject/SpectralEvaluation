@@ -5,11 +5,10 @@
 
 namespace novac
 {
-
-TEST_CASE("ReadCrossSectionFile with simple two column cross section file", "[ReadCrossSectionFile][IntegrationTest]")
-{
-    CCrossSectionData result;
-    ReadCrossSectionFile(TestData::GetHighResolutionSO2CrossSectionFile(), result);
+    TEST_CASE("ReadCrossSectionFile with simple two column cross section file", "[ReadCrossSectionFile][IntegrationTest][File]")
+    {
+        CCrossSectionData result;
+        ReadCrossSectionFile(TestData::GetHighResolutionSO2CrossSectionFile(), result);
 
     REQUIRE(result.m_crossSection.size() == 1402);
     REQUIRE(result.m_waveLength.size() == 1402);

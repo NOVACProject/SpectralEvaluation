@@ -76,6 +76,14 @@ namespace novac
         REQUIRE(spectrum.m_info.m_startTime.day == 16);
         REQUIRE(spectrum.m_info.m_startTime.hour == 12);
         REQUIRE(spectrum.m_info.m_startTime.minute == 30);
+        REQUIRE(spectrum.m_info.m_startTime.second == 44);
+
+        REQUIRE(spectrum.m_info.m_stopTime.year == 2017);
+        REQUIRE(spectrum.m_info.m_stopTime.month == 2);
+        REQUIRE(spectrum.m_info.m_stopTime.day == 16);
+        REQUIRE(spectrum.m_info.m_stopTime.hour == 12);
+        REQUIRE(spectrum.m_info.m_stopTime.minute == 30);
+        REQUIRE(spectrum.m_info.m_stopTime.second == 56);
 
         REQUIRE(spectrum.m_info.m_scanIndex == 0);
 

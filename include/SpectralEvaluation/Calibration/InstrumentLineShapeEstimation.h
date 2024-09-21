@@ -11,7 +11,6 @@ namespace novac
     class CSpectrum;
     class IFraunhoferSpectrumGenerator;
     class ICrossSectionSpectrumGenerator;
-    class DoasFit;
     struct IndexRange;
 
     class InstrumentLineShapeEstimationException : public std::exception

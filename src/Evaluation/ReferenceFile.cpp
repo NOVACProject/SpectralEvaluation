@@ -207,7 +207,7 @@ void CReferenceFile::VerifyReferenceValues(int fromIndex, int toIndex) const
         if (std::isnan(this->m_data->m_crossSection[idx]))
         {
             std::stringstream message;
-            message << "Invalid reference " << NameAndPathOfReference(*this) <<  ". Data contains NaN.";
+            message << "Invalid reference " << NameAndPathOfReference(*this) << ". Data contains NaN.";
             throw InvalidReferenceException(message.str());
         }
         minValue = std::min(minValue, this->m_data->m_crossSection[idx]);
