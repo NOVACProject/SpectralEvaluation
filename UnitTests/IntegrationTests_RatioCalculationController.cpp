@@ -463,8 +463,8 @@ TEST_CASE("RatioCalculationController - Evaluate", "[RatioCalculationController]
     REQUIRE(result.debugInfo.outOfPlumeSpectrumIndices.size() == 10);
     REQUIRE(result.debugInfo.outOfPlumeSpectrumIndices.front() == 29);
     REQUIRE(result.debugInfo.outOfPlumeSpectrumIndices.back() == 50);
-    REQUIRE(result.debugInfo.inPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.plumeSpectrumIndices.size());
-    REQUIRE(result.debugInfo.outOfPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.outOfPlumeSpectrumIndices.size());
+    REQUIRE(result.debugInfo.inPlumeSpectrum.NumSpectra() == 15 * static_cast<long>(result.debugInfo.plumeSpectrumIndices.size()));
+    REQUIRE(result.debugInfo.outOfPlumeSpectrum.NumSpectra() == 15 * static_cast<long>(result.debugInfo.outOfPlumeSpectrumIndices.size()));
 
     // The DOAS results
     REQUIRE(result.debugInfo.doasResults.size() == 2);
@@ -579,10 +579,10 @@ TEST_CASE("RatioCalculationController - Evaluate without Ring", "[RatioCalculati
     // Also, verify that the result contains the additional informatino which we need in order to show the results to the user
     REQUIRE(result.filename == fileHandler.GetFileName());
     REQUIRE(result.debugInfo.errorMessage == "");
-    REQUIRE(result.debugInfo.plumeSpectrumIndices.size() >= sut.m_ratioEvaluationSettings.minNumberOfSpectraInPlume);
-    REQUIRE(result.debugInfo.outOfPlumeSpectrumIndices.size() >= sut.m_ratioEvaluationSettings.numberOfSpectraOutsideOfPlume);
-    REQUIRE(result.debugInfo.inPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.plumeSpectrumIndices.size());
-    REQUIRE(result.debugInfo.outOfPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.outOfPlumeSpectrumIndices.size());
+    REQUIRE(static_cast<int>(result.debugInfo.plumeSpectrumIndices.size()) >= sut.m_ratioEvaluationSettings.minNumberOfSpectraInPlume);
+    REQUIRE(static_cast<int>(result.debugInfo.outOfPlumeSpectrumIndices.size()) >= sut.m_ratioEvaluationSettings.numberOfSpectraOutsideOfPlume);
+    REQUIRE(result.debugInfo.inPlumeSpectrum.NumSpectra() == 15 * static_cast<long>(result.debugInfo.plumeSpectrumIndices.size()));
+    REQUIRE(result.debugInfo.outOfPlumeSpectrum.NumSpectra() == 15 * static_cast<long>(result.debugInfo.outOfPlumeSpectrumIndices.size()));
 
     // The DOAS results
     REQUIRE(result.debugInfo.doasResults.size() == 2);
@@ -663,10 +663,10 @@ TEST_CASE("RatioCalculationController - Evaluate without offset polynomial", "[R
     // Also, verify that the result contains the additional informatino which we need in order to show the results to the user
     REQUIRE(result.filename == fileHandler.GetFileName());
     REQUIRE(result.debugInfo.errorMessage == "");
-    REQUIRE(result.debugInfo.plumeSpectrumIndices.size() >= sut.m_ratioEvaluationSettings.minNumberOfSpectraInPlume);
-    REQUIRE(result.debugInfo.outOfPlumeSpectrumIndices.size() >= sut.m_ratioEvaluationSettings.numberOfSpectraOutsideOfPlume);
-    REQUIRE(result.debugInfo.inPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.plumeSpectrumIndices.size());
-    REQUIRE(result.debugInfo.outOfPlumeSpectrum.NumSpectra() == 15 * result.debugInfo.outOfPlumeSpectrumIndices.size());
+    REQUIRE(static_cast<int>(result.debugInfo.plumeSpectrumIndices.size()) >= sut.m_ratioEvaluationSettings.minNumberOfSpectraInPlume);
+    REQUIRE(static_cast<int>(result.debugInfo.outOfPlumeSpectrumIndices.size()) >= sut.m_ratioEvaluationSettings.numberOfSpectraOutsideOfPlume);
+    REQUIRE(result.debugInfo.inPlumeSpectrum.NumSpectra() == 15 * static_cast<long>(result.debugInfo.plumeSpectrumIndices.size()));
+    REQUIRE(result.debugInfo.outOfPlumeSpectrum.NumSpectra() == 15 * static_cast<long>(result.debugInfo.outOfPlumeSpectrumIndices.size()));
 
     // The DOAS results
     REQUIRE(result.debugInfo.doasResults.size() == 2);

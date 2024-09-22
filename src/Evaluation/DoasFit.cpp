@@ -153,28 +153,53 @@ void DoasFit::Setup(const CFitWindow& setup)
         //  Notice the multiplication with minus one here, this is done to keep the signs of everything compatible with DOASIS.
         switch (setup.ref[refIdx].m_columnOption)
         {
-        case novac::SHIFT_TYPE::SHIFT_FIX:     newReferenceSetup->m_ref[refIdx]->FixParameter(MathFit::CReferenceSpectrumFunction::CONCENTRATION, -1.0 * setup.ref[refIdx].m_columnValue * newReferenceSetup->m_ref[refIdx]->GetAmplitudeScale()); break;
-        case novac::SHIFT_TYPE::SHIFT_LINK:    newReferenceSetup->m_ref[(int)setup.ref[refIdx].m_columnValue]->LinkParameter(MathFit::CReferenceSpectrumFunction::CONCENTRATION, *newReferenceSetup->m_ref[refIdx], MathFit::CReferenceSpectrumFunction::CONCENTRATION); break;
+        case novac::SHIFT_TYPE::SHIFT_FIX:
+            newReferenceSetup->m_ref[refIdx]->FixParameter(MathFit::CReferenceSpectrumFunction::CONCENTRATION, -1.0 * setup.ref[refIdx].m_columnValue * newReferenceSetup->m_ref[refIdx]->GetAmplitudeScale());
+            break;
+        case novac::SHIFT_TYPE::SHIFT_LINK:
+            newReferenceSetup->m_ref[(int)setup.ref[refIdx].m_columnValue]->LinkParameter(MathFit::CReferenceSpectrumFunction::CONCENTRATION, *newReferenceSetup->m_ref[refIdx], MathFit::CReferenceSpectrumFunction::CONCENTRATION);
+            break;
+        case novac::SHIFT_TYPE::SHIFT_FREE:
+            newReferenceSetup->m_ref[refIdx]->ReleaseParameter(MathFit::CReferenceSpectrumFunction::CONCENTRATION);
+            break;
+        default:
+            throw std::invalid_argument("Invalid type of shift set for the column option for a reference in DoasFit");
         }
 
         // Check the options for the shift
         switch (setup.ref[refIdx].m_shiftOption)
         {
-        case novac::SHIFT_TYPE::SHIFT_FIX:     newReferenceSetup->m_ref[refIdx]->FixParameter(MathFit::CReferenceSpectrumFunction::SHIFT, setup.ref[refIdx].m_shiftValue); break;
-        case novac::SHIFT_TYPE::SHIFT_LINK:    newReferenceSetup->m_ref[(int)setup.ref[refIdx].m_shiftValue]->LinkParameter(MathFit::CReferenceSpectrumFunction::SHIFT, *newReferenceSetup->m_ref[refIdx], MathFit::CReferenceSpectrumFunction::SHIFT); break;
-        case novac::SHIFT_TYPE::SHIFT_LIMIT:   newReferenceSetup->m_ref[refIdx]->SetParameterLimits(MathFit::CReferenceSpectrumFunction::SHIFT, (MathFit::TFitData)setup.ref[refIdx].m_shiftValue, (MathFit::TFitData)setup.ref[refIdx].m_shiftMaxValue, 1); break;
-        default:            newReferenceSetup->m_ref[refIdx]->SetDefaultParameter(MathFit::CReferenceSpectrumFunction::SHIFT, (MathFit::TFitData)0.0);
-            newReferenceSetup->m_ref[refIdx]->SetParameterLimits(MathFit::CReferenceSpectrumFunction::SHIFT, (MathFit::TFitData)-10.0, (MathFit::TFitData)10.0, (MathFit::TFitData)1e0); break; // TODO: Get these limits as parameters!
+        case novac::SHIFT_TYPE::SHIFT_FIX:
+            newReferenceSetup->m_ref[refIdx]->FixParameter(MathFit::CReferenceSpectrumFunction::SHIFT, setup.ref[refIdx].m_shiftValue);
+            break;
+        case novac::SHIFT_TYPE::SHIFT_LINK:
+            newReferenceSetup->m_ref[(int)setup.ref[refIdx].m_shiftValue]->LinkParameter(MathFit::CReferenceSpectrumFunction::SHIFT, *newReferenceSetup->m_ref[refIdx], MathFit::CReferenceSpectrumFunction::SHIFT);
+            break;
+        case novac::SHIFT_TYPE::SHIFT_LIMIT:
+            newReferenceSetup->m_ref[refIdx]->SetParameterLimits(MathFit::CReferenceSpectrumFunction::SHIFT, (MathFit::TFitData)setup.ref[refIdx].m_shiftValue, (MathFit::TFitData)setup.ref[refIdx].m_shiftMaxValue, 1);
+            break;
+        default:
+            newReferenceSetup->m_ref[refIdx]->SetDefaultParameter(MathFit::CReferenceSpectrumFunction::SHIFT, (MathFit::TFitData)0.0);
+            newReferenceSetup->m_ref[refIdx]->SetParameterLimits(MathFit::CReferenceSpectrumFunction::SHIFT, (MathFit::TFitData)-10.0, (MathFit::TFitData)10.0, (MathFit::TFitData)1e0);
+            break; // TODO: Get these limits as parameters!
         }
 
         // Check the options for the squeeze
         switch (setup.ref[refIdx].m_squeezeOption)
         {
-        case novac::SHIFT_TYPE::SHIFT_FIX:     newReferenceSetup->m_ref[refIdx]->FixParameter(MathFit::CReferenceSpectrumFunction::SQUEEZE, setup.ref[refIdx].m_squeezeValue); break;
-        case novac::SHIFT_TYPE::SHIFT_LINK:    newReferenceSetup->m_ref[(int)setup.ref[refIdx].m_squeezeValue]->LinkParameter(MathFit::CReferenceSpectrumFunction::SQUEEZE, *newReferenceSetup->m_ref[refIdx], MathFit::CReferenceSpectrumFunction::SQUEEZE); break;
-        case novac::SHIFT_TYPE::SHIFT_LIMIT:   newReferenceSetup->m_ref[refIdx]->SetParameterLimits(MathFit::CReferenceSpectrumFunction::SQUEEZE, (MathFit::TFitData)setup.ref[refIdx].m_squeezeValue, (MathFit::TFitData)setup.ref[refIdx].m_squeezeMaxValue, 1e7); break;
-        default:            newReferenceSetup->m_ref[refIdx]->SetDefaultParameter(MathFit::CReferenceSpectrumFunction::SQUEEZE, (MathFit::TFitData)1.0);
-            newReferenceSetup->m_ref[refIdx]->SetParameterLimits(MathFit::CReferenceSpectrumFunction::SQUEEZE, (MathFit::TFitData)0.98, (MathFit::TFitData)1.02, (MathFit::TFitData)1e0); break; // TODO: Get these limits as parameters!
+        case novac::SHIFT_TYPE::SHIFT_FIX:
+            newReferenceSetup->m_ref[refIdx]->FixParameter(MathFit::CReferenceSpectrumFunction::SQUEEZE, setup.ref[refIdx].m_squeezeValue);
+            break;
+        case novac::SHIFT_TYPE::SHIFT_LINK:
+            newReferenceSetup->m_ref[(int)setup.ref[refIdx].m_squeezeValue]->LinkParameter(MathFit::CReferenceSpectrumFunction::SQUEEZE, *newReferenceSetup->m_ref[refIdx], MathFit::CReferenceSpectrumFunction::SQUEEZE);
+            break;
+        case novac::SHIFT_TYPE::SHIFT_LIMIT:
+            newReferenceSetup->m_ref[refIdx]->SetParameterLimits(MathFit::CReferenceSpectrumFunction::SQUEEZE, (MathFit::TFitData)setup.ref[refIdx].m_squeezeValue, (MathFit::TFitData)setup.ref[refIdx].m_squeezeMaxValue, 1e7);
+            break;
+        default:
+            newReferenceSetup->m_ref[refIdx]->SetDefaultParameter(MathFit::CReferenceSpectrumFunction::SQUEEZE, (MathFit::TFitData)1.0);
+            newReferenceSetup->m_ref[refIdx]->SetParameterLimits(MathFit::CReferenceSpectrumFunction::SQUEEZE, (MathFit::TFitData)0.98, (MathFit::TFitData)1.02, (MathFit::TFitData)1e0);
+            break; // TODO: Get these limits as parameters!
         }
     }
 

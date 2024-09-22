@@ -373,7 +373,7 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraInPlume(
     {
         scanIndices.push_back(item.first);
 
-        if (scanIndices.size() == static_cast<int>(settings.maxNumberOfSpectraInPlume))
+        if (static_cast<int>(scanIndices.size()) == settings.maxNumberOfSpectraInPlume)
         {
             return scanIndices;
         }
@@ -416,7 +416,7 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraOutOfPlume(
     {
         referenceSpectraProposal.push_back(item.first);
 
-        if (referenceSpectraProposal.size() == static_cast<int>(settings.numberOfSpectraOutsideOfPlume))
+        if (static_cast<int>(referenceSpectraProposal.size()) == settings.numberOfSpectraOutsideOfPlume)
         {
             return referenceSpectraProposal;
         }

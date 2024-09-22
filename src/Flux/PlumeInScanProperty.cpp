@@ -148,7 +148,7 @@ double CalculatePlumeOffset(const BasicScanEvaluationResult& evaluatedScan, int 
     {
         if (!evaluatedScan.m_spec[idx].IsBad())
         {
-            assert(evaluatedScan.m_spec[idx].m_referenceResult.size() >= specieIdx + 1);
+            assert(static_cast<int>(evaluatedScan.m_spec[idx].m_referenceResult.size()) >= specieIdx + 1);
             columns.push_back(evaluatedScan.m_spec[idx].m_referenceResult[specieIdx].m_column);
         }
     }

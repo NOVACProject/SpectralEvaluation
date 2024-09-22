@@ -319,19 +319,19 @@ bool CFitWindowFileHandler::WriteFitWindow(const novac::CFitWindow& window, cons
         fprintf(f, "%s<ref name=\"%s\">\n", indent.c_str(), window.ref[i].m_specieName.c_str());
         fprintf(f, "%s\t<path>%s</path>\n", indent.c_str(), window.ref[i].m_path.c_str());
 
-        fprintf(f, "%s\t<shiftOption>%d</shiftOption>\n", indent.c_str(), window.ref[i].m_shiftOption);
+        fprintf(f, "%s\t<shiftOption>%d</shiftOption>\n", indent.c_str(), (int)window.ref[i].m_shiftOption);
         if (window.ref[i].m_shiftOption != novac::SHIFT_TYPE::SHIFT_FREE)
         {
             fprintf(f, "%s\t<shiftValue>%lf</shiftValue>\n", indent.c_str(), window.ref[i].m_shiftValue);
         }
 
-        fprintf(f, "%s\t<squeezeOption>%d</squeezeOption>\n", indent.c_str(), window.ref[i].m_squeezeOption);
+        fprintf(f, "%s\t<squeezeOption>%d</squeezeOption>\n", indent.c_str(), (int)window.ref[i].m_squeezeOption);
         if (window.ref[i].m_squeezeOption != novac::SHIFT_TYPE::SHIFT_FREE)
         {
             fprintf(f, "%s\t<squeezeValue>%lf</squeezeValue>\n", indent.c_str(), window.ref[i].m_squeezeValue);
         }
 
-        fprintf(f, "%s\t<columnOption>%d</columnOption>\n", indent.c_str(), window.ref[i].m_columnOption);
+        fprintf(f, "%s\t<columnOption>%d</columnOption>\n", indent.c_str(), (int)window.ref[i].m_columnOption);
         if (window.ref[i].m_columnOption != novac::SHIFT_TYPE::SHIFT_FREE)
         {
             fprintf(f, "%s\t<columnValue>%lf</columnValue>\n", indent.c_str(), window.ref[i].m_columnValue);

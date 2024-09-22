@@ -20,6 +20,7 @@
 
 namespace novac
 {
+
 struct PreparedInputSpectraForDoasEvaluation
 {
     std::vector<double> filteredInPlumeSpectrum;
@@ -227,7 +228,7 @@ std::vector<Ratio> RatioEvaluation::Run(IScanSpectrumSource& scan, RatioEvaluati
 
         // Get the pixel-to-wavelength calibration of the out-of-plume-spectrum.
         // TODO: Decide on a better input for this.
-        if (m_masterFitWindow.fraunhoferRef.m_data != nullptr && m_masterFitWindow.fraunhoferRef.m_data->m_waveLength.size() == debugInfo.outOfPlumeSpectrum.m_length)
+        if (m_masterFitWindow.fraunhoferRef.m_data != nullptr && static_cast<long>(m_masterFitWindow.fraunhoferRef.m_data->m_waveLength.size()) == debugInfo.outOfPlumeSpectrum.m_length)
         {
             debugInfo.outOfPlumeSpectrum.m_wavelength = m_masterFitWindow.fraunhoferRef.m_data->m_waveLength;
         }
