@@ -88,6 +88,14 @@ double Average(const std::vector<double>& values);
     If values.size() == 0 then 0.0 is returned. */
 double Average(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end);
 
+/** This function calculates the variance of all the elements
+    If values.size() <= 1 then 0.0 is returned. */
+double Variance(const std::vector<double>& values);
+
+/** This function calculates the standard deviation of all the elements
+    If values.size() <= 1 then 0.0 is returned. */
+double Stdev(const std::vector<double>& values);
+
 /** @return the average of all the given values weighted with the inverse of each of the error.
     If values.size() == 0 or values.size() != errors.size() then 0.0 is returned. */
 double WeightedAverage(const std::vector<double>& values, const std::vector<double>& errors);
