@@ -8,7 +8,7 @@
 
 namespace novac
 {
-
+  
 /** ScanFileHandler is a class to read in information from the scan-files
     (all the spectra from one scan are supposed to be packed together in one file in Manne's 'pak'-format.
     Each instance of 'CScanFileHandler' is capable of reading data from one .pak-file.
@@ -177,6 +177,5 @@ private:
 
     /** Updates the m_startTime and m_stopTime to include the timestamp of the provided spectrum */
     void UpdateStartAndStopTimeOfScan(novac::CSpectrum& spec);
-
 };
 }
