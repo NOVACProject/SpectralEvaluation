@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 #include <SpectralEvaluation/DateTime.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
@@ -7,8 +8,7 @@
 
 namespace novac
 {
-class CGPSData;
-
+  
 /** ScanFileHandler is a class to read in information from the scan-files
     (all the spectra from one scan are supposed to be packed together in one file in Manne's 'pak'-format.
     Each instance of 'CScanFileHandler' is capable of reading data from one .pak-file.
@@ -23,16 +23,18 @@ public:
     // ---------------------- PUBLIC DATA -----------------------------------
     // ----------------------------------------------------------------------
 
-    /** The serial number of the spectrometer which has collected the spectra
-        in this scan */
+    /** The serial number of the spectrometer which collected the spectra in this scan.
+        Set by CheckScanFile */
     std::string m_device = "";
 
     /** The channel of the spectrometer which was used for collecting this scan.
-        (if a SD2000 with multiple channels is used, one spectrometer should be
-        configured for each channel). */
+         (if a SD2000 with multiple channels is used, one spectrometer should be
+        configured for each channel).
+        Set by CheckScanFile */
     unsigned char m_channel = 0;
 
-    /** The time (UTC) when the measurement started */
+    /** The time (UTC) when the measurement started.
+        Set by CheckScanFile */
     CDateTime m_startTime;
 
     /** The time (UTC) when the measurement was finished */
@@ -110,7 +112,7 @@ public:
     int GetStartChannel() const;
 
     /** Retrieves GPS-information from the spectrum files */
-    const CGPSData& GetGPS() const;
+    const CGPSData GetGPS() const;
 
     /** Retrieves compass-information from the spectrum files */
     double GetCompass() const;
@@ -138,21 +140,17 @@ private:
     // ---------------------- PRIVATE DATA ----------------------------------
     // ----------------------------------------------------------------------
 
-    /** The dark spectrum */
-    CSpectrum m_dark;
-    bool m_fHasDark = true;
+    /** The dark spectrum. this may be null if there's no dark spectrum in the scan. */
+    std::unique_ptr<CSpectrum> m_dark;
 
     /** The sky spectrum */
-    CSpectrum m_sky;
-    bool m_fHasSky = true;
+    std::unique_ptr<CSpectrum> m_sky;
 
     /** The offset spectrum - if any */
-    CSpectrum m_offset;
-    bool m_fHasOffset = false;
+    std::unique_ptr<CSpectrum> m_offset;
 
     /** The dark-current spectrum - if any */
-    CSpectrum m_darkCurrent;
-    bool m_fHasDarkCurrent = false;
+    std::unique_ptr<CSpectrum> m_darkCurrent;
 
     /** Remember how many spectra we have read from the scan */
     unsigned int m_specReadSoFarNum = 0U;
@@ -176,5 +174,8 @@ private:
     /** The number of spectra read in to the m_spectrumBuffer
         This might not be the same as 'm_specNum' */
     unsigned int m_spectrumBufferNum = 0;
+
+    /** Updates the m_startTime and m_stopTime to include the timestamp of the provided spectrum */
+    void UpdateStartAndStopTimeOfScan(novac::CSpectrum& spec);
 };
 }

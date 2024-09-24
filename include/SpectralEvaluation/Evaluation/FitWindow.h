@@ -1,11 +1,10 @@
 #pragma once
 
+#include <SpectralEvaluation/Definitions.h>
 #include <SpectralEvaluation/Evaluation/ReferenceFile.h>
 #include <SpectralEvaluation/Evaluation/DoasFitEnumDeclarations.h>
 #include <vector>
 
-// TODO: Remove
-#define MAX_N_REFERENCES 10
 
 namespace novac
 {
