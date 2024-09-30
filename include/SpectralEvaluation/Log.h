@@ -1,22 +1,33 @@
 #pragma once
 
+#include <string>
+
 namespace novac
 {
 
-/** Simple interface for a basic logging class. */
-class SimpleLog
+/** Abstract logger base class. */
+class ILogger
 {
 public:
+    virtual void Debug(const std::string& message) = 0;
 
-    virtual void Information(const char* message) = 0;
+    virtual void Information(const std::string& message) = 0;
+
+    virtual void Error(const std::string& message) = 0;
 };
 
 /** The simplest form of logging, using the console */
-class ConsoleLog : public SimpleLog
+class ConsoleLog : public ILogger
 {
 public:
 
-    virtual void Information(const char* message) override;
+    // Inherited via ILogger
+    virtual void Debug(const std::string& message) override;
+
+    virtual void Information(const std::string& message) override;
+
+    virtual void Error(const std::string& message) override;
+
 };
 
 

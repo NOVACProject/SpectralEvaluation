@@ -45,8 +45,8 @@ bool CScanFileHandler::CheckScanFile(const std::string& fileName)
                 }
                 else
                 {
-                    printf("Could not read spectrum from file: %s", fileName.c_str());
                     this->m_lastError = reader.m_lastError;
+                    this->m_lastErrorMessage = "Could not read spectrum from file: '" + fileName + "'";
                     fclose(f);
                     return false;
                 }
@@ -94,8 +94,8 @@ bool CScanFileHandler::CheckScanFile(const std::string& fileName)
 
     if (error)
     {
-        printf("Could not read sky-spectrum in file: %s", fileName.c_str());
         this->m_lastError = reader.m_lastError;
+        this->m_lastErrorMessage = "Could not read sky-spectrum in file: '" + fileName + "'";
         return false;
     }
 
@@ -128,8 +128,8 @@ bool CScanFileHandler::CheckScanFile(const std::string& fileName)
 
     if (error)
     {
-        printf("Could not read dark-spectrum in file: %s", fileName.c_str());
         this->m_lastError = reader.m_lastError;
+        this->m_lastErrorMessage = "Could not read dark spectrum in file: '" + fileName + "'";
         return false;
     }
 
@@ -139,8 +139,8 @@ bool CScanFileHandler::CheckScanFile(const std::string& fileName)
         std::unique_ptr<CSpectrum> spectrum = std::make_unique<CSpectrum>();
         if (true != reader.ReadSpectrum(m_fileName, indices[3], *spectrum))
         {
-            printf("Could not read offset-spectrum in file: %s", fileName.c_str());
             this->m_lastError = reader.m_lastError;
+            this->m_lastErrorMessage = "Could not read offset spectrum in file: '" + fileName + "'";
             return false;
         }
 
@@ -153,8 +153,8 @@ bool CScanFileHandler::CheckScanFile(const std::string& fileName)
         std::unique_ptr<CSpectrum> spectrum = std::make_unique<CSpectrum>();
         if (true != reader.ReadSpectrum(m_fileName, indices[4], *spectrum))
         {
-            printf("Could not read offset-spectrum in file: %s", fileName.c_str());
             this->m_lastError = reader.m_lastError;
+            this->m_lastErrorMessage = "Could not read dark current spectrum in file: '" + fileName + "'";
             return false;
         }
         this->m_darkCurrent = std::move(spectrum);
@@ -164,7 +164,7 @@ bool CScanFileHandler::CheckScanFile(const std::string& fileName)
         std::unique_ptr<CSpectrum> spectrum = std::make_unique<CSpectrum>();
         if (true != reader.ReadSpectrum(m_fileName, indices[5], *spectrum))
         {
-            printf("Could not read offset-spectrum in file: %s", fileName.c_str());
+            this->m_lastErrorMessage = "Could not read offset spectrum in file: '" + fileName + "'";
             this->m_lastError = reader.m_lastError;
             return false;
         }
@@ -214,6 +214,7 @@ int CScanFileHandler::GetNextSpectrum(CSpectrum& spec)
         if (m_specReadSoFarNum >= m_spectrumBufferNum)
         {
             this->m_lastError = CSpectrumIO::ERROR_SPECTRUM_NOT_FOUND;
+            this->m_lastErrorMessage = "Requested spectrum not found";
             ++m_specReadSoFarNum; // <-- go to the next spectum
             return 0;
         }
@@ -229,6 +230,7 @@ int CScanFileHandler::GetNextSpectrum(CSpectrum& spec)
         {
             // if there was an error reading the spectrum, set the error-flag
             this->m_lastError = reader.m_lastError;
+            this->m_lastErrorMessage = "Error reading spectrum: " + reader.m_lastError;
             ++m_specReadSoFarNum; // <-- go to the next spectum
             return 0;
         }
@@ -262,6 +264,7 @@ int CScanFileHandler::GetSpectrum(CSpectrum& spec, long specNo)
         if (true != reader.ReadSpectrum(m_fileName, specNo, spec))
         {
             this->m_lastError = reader.m_lastError;
+            this->m_lastErrorMessage = "Error reading spectrum, error code: " + reader.m_lastError;
             return 0;
         }
     }

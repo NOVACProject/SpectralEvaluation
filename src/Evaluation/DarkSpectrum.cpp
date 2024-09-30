@@ -7,7 +7,7 @@ namespace novac
 // Defined in ScanEvaluationBase.cpp
 bool ReadSpectrumFromFile(const std::string& fullFilename, CSpectrum& spec);
 
-bool GetDark(IScanSpectrumSource& scan, const CSpectrum& spec, const Configuration::CDarkSettings& darkSettings, CSpectrum& dark, std::string& errorMessage)
+bool GetDark(const IScanSpectrumSource& scan, const CSpectrum& spec, const Configuration::CDarkSettings& darkSettings, CSpectrum& dark, std::string& errorMessage)
 {
     // 1. The user wants to take the dark spectrum directly from the measurement
     //      as the second spectrum in the scan.
@@ -103,7 +103,7 @@ bool GetDark(IScanSpectrumSource& scan, const CSpectrum& spec, const Configurati
     return false;
 }
 
-bool ModelDarkSpectrum(IScanSpectrumSource& scan, const CSpectrum& spec, const Configuration::CDarkSettings& darkSettings, CSpectrum& dark, std::string& errorMessage)
+bool ModelDarkSpectrum(const IScanSpectrumSource& scan, const CSpectrum& spec, const Configuration::CDarkSettings& darkSettings, CSpectrum& dark, std::string& errorMessage)
 {
     bool offsetCorrectDC = true;
 
@@ -162,7 +162,7 @@ bool ModelDarkSpectrum(IScanSpectrumSource& scan, const CSpectrum& spec, const C
     }
 }
 
-bool GetOffsetSpectrum(IScanSpectrumSource& scan, const Configuration::CDarkSettings& darkSettings, CSpectrum& offsetSpectrum)
+bool GetOffsetSpectrum(const IScanSpectrumSource& scan, const Configuration::CDarkSettings& darkSettings, CSpectrum& offsetSpectrum)
 {
     if (darkSettings.m_offsetOption == Configuration::DARK_MODEL_OPTION::USER_SUPPLIED)
     {
@@ -174,7 +174,7 @@ bool GetOffsetSpectrum(IScanSpectrumSource& scan, const Configuration::CDarkSett
     }
 }
 
-bool GetDarkCurrentSpectrum(IScanSpectrumSource& scan, const Configuration::CDarkSettings& darkSettings, CSpectrum& darkCurrent, bool& needsOffsetCorrection)
+bool GetDarkCurrentSpectrum(const IScanSpectrumSource& scan, const Configuration::CDarkSettings& darkSettings, CSpectrum& darkCurrent, bool& needsOffsetCorrection)
 {
     needsOffsetCorrection = true;
     if (darkSettings.m_darkCurrentOption == Configuration::DARK_MODEL_OPTION::USER_SUPPLIED)
