@@ -292,6 +292,35 @@ double Average(const std::vector<double>& values)
     return Average(begin(values), end(values));
 }
 
+double Variance(const std::vector<double>& values)
+{
+    if (values.size() <= 1)
+    {
+        return 0.0;
+    }
+
+    // First get the mean-value
+    double mean = Average(values);
+
+    double sum = 0;
+    for (size_t k = 0; k < values.size(); ++k)
+    {
+        sum += (values[k] - mean) * (values[k] - mean);
+    }
+    sum = sum / static_cast<double>(values.size());
+    return sum;
+}
+
+double Stdev(const std::vector<double>& values)
+{
+    if (values.size() <= 1)
+    {
+        return 0.0;
+    }
+
+    return std::sqrt(Variance(values));
+}
+
 double MinOfAbsolutes(const std::vector<double>& values)
 {
     if (values.size() == 0)

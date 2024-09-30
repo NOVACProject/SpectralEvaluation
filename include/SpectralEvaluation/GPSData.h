@@ -67,7 +67,7 @@ public:
     /** This function calculates the latitude and longitude for point
             which is the distance 'dist' m and bearing 'az' degrees from
             the point defied by 'lat1' and 'lon1' */
-    void CalculateDestination(double lat1, double lon1, double dist, double az, double& lat2, double& lon2);
+    static void CalculateDestination(double lat1, double lon1, double dist, double az, double& lat2, double& lon2);
 };
 
 

@@ -4,7 +4,17 @@
 using namespace novac;
 
 
-void ConsoleLog::Information(const char* message)
+void novac::ConsoleLog::Debug(const std::string& message)
 {
-    std::cout << message << std::endl;
+    std::cout << "[Debug]" << message << std::endl;
+}
+
+void novac::ConsoleLog::Information(const std::string& message)
+{
+    std::cout << "[Info]" << message << std::endl;
+}
+
+void novac::ConsoleLog::Error(const std::string& message)
+{
+    std::cout << "[Error]" << message << std::endl;
 }

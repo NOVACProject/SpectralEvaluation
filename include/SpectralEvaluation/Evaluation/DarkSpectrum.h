@@ -20,7 +20,7 @@ class IScanSpectrumSource;
     @param dark Will on successful return be filled with the dark current spectrum.
     @param errorMessage Will be set to an error message if the result was not successful.
     @return true on success. */
-bool GetDark(IScanSpectrumSource& scan, const CSpectrum& spec, const Configuration::CDarkSettings& darkSettings, CSpectrum& dark, std::string& errorMessage);
+bool GetDark(const IScanSpectrumSource& scan, const CSpectrum& spec, const Configuration::CDarkSettings& darkSettings, CSpectrum& dark, std::string& errorMessage);
 
 /** Models a dark spectrum to use for the provided spectrum from an offset and a dark-current spectrum which should exist
     in the provided scan.
@@ -30,14 +30,14 @@ bool GetDark(IScanSpectrumSource& scan, const CSpectrum& spec, const Configurati
     @param dark Will on successful return be filled with the dark current spectrum.
     @param errorMessage Will be set to an error message if the result was not successful.
     @return true on success. */
-bool ModelDarkSpectrum(IScanSpectrumSource& scan, const CSpectrum& spec, const Configuration::CDarkSettings& darkSettings, CSpectrum& dark, std::string& errorMessage);
+bool ModelDarkSpectrum(const IScanSpectrumSource& scan, const CSpectrum& spec, const Configuration::CDarkSettings& darkSettings, CSpectrum& dark, std::string& errorMessage);
 
 /** Reads the offset spectrum from the given scan and stores the result in offsetSpectrum.
     @return true on success. */
-bool GetOffsetSpectrum(IScanSpectrumSource& scan, const Configuration::CDarkSettings& darkSettings, CSpectrum& offsetSpectrum);
+bool GetOffsetSpectrum(const IScanSpectrumSource& scan, const Configuration::CDarkSettings& darkSettings, CSpectrum& offsetSpectrum);
 
 /** Reads the dark-current spectrum from the given scan and stores the result in offsetSpectrum.
     @return true on success. */
-bool GetDarkCurrentSpectrum(IScanSpectrumSource& scan, const Configuration::CDarkSettings& darkSettings, CSpectrum& darkCurrent, bool& needsOffsetCorrection);
+bool GetDarkCurrentSpectrum(const IScanSpectrumSource& scan, const Configuration::CDarkSettings& darkSettings, CSpectrum& darkCurrent, bool& needsOffsetCorrection);
 
 }

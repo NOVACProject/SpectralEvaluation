@@ -19,15 +19,12 @@ bool CScanFileHandler::CheckScanFile(const std::string& fileName)
     const std::string strings[] = { std::string("sky"), std::string("zenith"), std::string("dark"), std::string("offset"), std::string("dark_cur"), std::string("darkcur") };
     int indices[] = { -1, -1, -1, -1, -1, -1 };
     bool error = false;
-    CSpectrum tempSpec;
 
     m_fileName = fileName;
 
     // Count the number of spectra in the .pak-file
     m_specNum = reader.ScanSpectrumFile(m_fileName, strings, 6, indices);
-
-    // Error checking on the contents of the file
-    if (m_specNum <= 0)
+    if (m_specNum == 0)
     {
         return false;
     }
@@ -39,6 +36,7 @@ bool CScanFileHandler::CheckScanFile(const std::string& fileName)
         FILE* f = fopen(m_fileName.c_str(), "rb");
         if (f != NULL)
         {
+            CSpectrum tempSpec;
             for (unsigned int k = 0; k < m_specNum; ++k)
             {
                 if (true == reader.ReadNextSpectrum(f, tempSpec))
@@ -47,8 +45,8 @@ bool CScanFileHandler::CheckScanFile(const std::string& fileName)
                 }
                 else
                 {
-                    printf("Could not read spectrum from file: %s", fileName.c_str());
                     this->m_lastError = reader.m_lastError;
+                    this->m_lastErrorMessage = "Could not read spectrum from file: '" + fileName + "'";
                     fclose(f);
                     return false;
                 }
@@ -65,112 +63,139 @@ bool CScanFileHandler::CheckScanFile(const std::string& fileName)
     }
 
     // --------------- read the sky spectrum ----------------------
+    int indexOfSkySpectrum = 0;
     if (indices[0] != -1)
     {
-        if (true != reader.ReadSpectrum(m_fileName, indices[0], m_sky))
-        {
-            error = true;
-            m_fHasSky = false;
-        }
+        // The spectrum named 'sky' is to be read as the sky spectrum.
+        indexOfSkySpectrum = indices[0];
     }
     else if (indices[1] != -1)
     {
-        if (true != reader.ReadSpectrum(m_fileName, indices[1], m_sky))
+        // The spectrum named 'zenith' is to be read as the sky spectrum.
+        indexOfSkySpectrum = indices[1];
+    }
+    else
+    {
+        // no spectrum named 'sky' or 'zenith'. Just assume that the first spectrum is the sky spectrum
+        indexOfSkySpectrum = 0;
+    }
+
+    {
+        std::unique_ptr<CSpectrum> spectrum = std::make_unique<CSpectrum>();
+        if (true != reader.ReadSpectrum(m_fileName, indexOfSkySpectrum, *spectrum))
         {
             error = true;
-            m_fHasSky = false;
+        }
+        else
+        {
+            this->m_sky = std::move(spectrum);
         }
     }
-    else if (true != reader.ReadSpectrum(m_fileName, 0, m_sky))
-    {
-        error = true;
-        m_fHasSky = false;
-    }
+
     if (error)
     {
-        printf("Could not read sky-spectrum in file: %s", fileName.c_str());
         this->m_lastError = reader.m_lastError;
+        this->m_lastErrorMessage = "Could not read sky-spectrum in file: '" + fileName + "'";
         return false;
     }
 
     // --------------- read the dark spectrum ----------------------
+    int indexOfDarkSpectrum = 0;
     if (indices[2] != -1)
     {
         // If there is a dark-spectrum specified, then read it!
-        if (true != reader.ReadSpectrum(m_fileName, indices[2], m_dark))
-        {
-            error = true;
-        }
+        indexOfDarkSpectrum = indices[2];
     }
     else if (indices[3] == -1 && indices[4] == -1)
     {
         // If there's no spectrum called 'dark' and no spectrum called 'dark_cur'
         //	and also no spectrum called 'offset', then we assume that something is wrong
         //	in the names and use the second spectrum in the scan as dark
-        if (true != reader.ReadSpectrum(m_fileName, 1, m_dark))
+        indexOfDarkSpectrum = 1;
+    }
+
+    {
+        std::unique_ptr<CSpectrum> spectrum = std::make_unique<CSpectrum>();
+        if (true != reader.ReadSpectrum(m_fileName, indexOfDarkSpectrum, *spectrum))
         {
             error = true;
         }
+        else
+        {
+            this->m_dark = std::move(spectrum);
+        }
     }
+
     if (error)
     {
-        m_fHasDark = false;
-        printf("Could not read dark-spectrum in file: %s", fileName.c_str());
         this->m_lastError = reader.m_lastError;
+        this->m_lastErrorMessage = "Could not read dark spectrum in file: '" + fileName + "'";
         return false;
     }
 
     // --------------- read the offset spectrum (if any) ----------------------
     if (indices[3] != -1)
     {
-        if (true != reader.ReadSpectrum(m_fileName, indices[3], m_offset))
+        std::unique_ptr<CSpectrum> spectrum = std::make_unique<CSpectrum>();
+        if (true != reader.ReadSpectrum(m_fileName, indices[3], *spectrum))
         {
-            printf("Could not read offset-spectrum in file: %s", fileName.c_str());
             this->m_lastError = reader.m_lastError;
+            this->m_lastErrorMessage = "Could not read offset spectrum in file: '" + fileName + "'";
             return false;
         }
-        m_fHasOffset = true;
+
+        this->m_offset = std::move(spectrum);
     }
 
     // --------------- read the dark-current spectrum (if any) ----------------------
     if (indices[4] != -1)
     {
-        if (true != reader.ReadSpectrum(m_fileName, indices[4], m_darkCurrent))
+        std::unique_ptr<CSpectrum> spectrum = std::make_unique<CSpectrum>();
+        if (true != reader.ReadSpectrum(m_fileName, indices[4], *spectrum))
         {
-            printf("Could not read offset-spectrum in file: %s", fileName.c_str());
             this->m_lastError = reader.m_lastError;
+            this->m_lastErrorMessage = "Could not read dark current spectrum in file: '" + fileName + "'";
             return false;
         }
-        m_fHasDarkCurrent = true;
+        this->m_darkCurrent = std::move(spectrum);
     }
     if (indices[5] != -1)
     {
-        if (true != reader.ReadSpectrum(m_fileName, indices[5], m_darkCurrent))
+        std::unique_ptr<CSpectrum> spectrum = std::make_unique<CSpectrum>();
+        if (true != reader.ReadSpectrum(m_fileName, indices[5], *spectrum))
         {
-            printf("Could not read offset-spectrum in file: %s", fileName.c_str());
+            this->m_lastErrorMessage = "Could not read offset spectrum in file: '" + fileName + "'";
             this->m_lastError = reader.m_lastError;
             return false;
         }
-        m_fHasDarkCurrent = true;
+        this->m_offset = std::move(spectrum);
     }
+
     // set the start and stop time of the measurement
-    if (true == reader.ReadSpectrum(m_fileName, 0, tempSpec))
     {
-        this->m_startTime = tempSpec.m_info.m_startTime;
-        this->m_stopTime = tempSpec.m_info.m_stopTime;
+        std::unique_ptr<CSpectrum> spectrum = std::make_unique<CSpectrum>();
+        if (true == reader.ReadSpectrum(m_fileName, 0, *spectrum))
+        {
+            this->m_startTime = spectrum->m_info.m_startTime;
+            this->m_stopTime = spectrum->m_info.m_stopTime;
 
-        // get the serial number of the spectrometer
-        m_device = std::string(tempSpec.m_info.m_device.c_str());
+            // get the serial number of the spectrometer
+            m_device = std::string(spectrum->m_info.m_device.c_str());
 
-        // get the channel of the spectrometer
-        m_channel = tempSpec.m_info.m_channel;
+            // get the channel of the spectrometer
+            m_channel = spectrum->m_info.m_channel;
+        }
     }
 
     // set the number of spectra that we have read from the file so far
-    if (m_sky.ScanIndex() == 0 && m_dark.ScanIndex() == 1)
+    if (m_sky != nullptr && m_sky->ScanIndex() == 0 && m_dark != nullptr && m_dark->ScanIndex() == 1)
+    {
         m_specReadSoFarNum = 2;
+    }
     else
+    {
         m_specReadSoFarNum = 0;
+    }
 
     // This CScanFileHandler object has been initialized
     m_initialized = true;
@@ -178,7 +203,6 @@ bool CScanFileHandler::CheckScanFile(const std::string& fileName)
     return true;
 }
 
-/** Returns the next spectrum in the scan */
 int CScanFileHandler::GetNextSpectrum(CSpectrum& spec)
 {
     CSpectrumIO reader;
@@ -190,6 +214,7 @@ int CScanFileHandler::GetNextSpectrum(CSpectrum& spec)
         if (m_specReadSoFarNum >= m_spectrumBufferNum)
         {
             this->m_lastError = CSpectrumIO::ERROR_SPECTRUM_NOT_FOUND;
+            this->m_lastErrorMessage = "Requested spectrum not found";
             ++m_specReadSoFarNum; // <-- go to the next spectum
             return 0;
         }
@@ -205,6 +230,7 @@ int CScanFileHandler::GetNextSpectrum(CSpectrum& spec)
         {
             // if there was an error reading the spectrum, set the error-flag
             this->m_lastError = reader.m_lastError;
+            this->m_lastErrorMessage = "Error reading spectrum: " + reader.m_lastError;
             ++m_specReadSoFarNum; // <-- go to the next spectum
             return 0;
         }
@@ -212,11 +238,7 @@ int CScanFileHandler::GetNextSpectrum(CSpectrum& spec)
 
     ++m_specReadSoFarNum;
 
-    // set the start and stop time of the measurement
-    if (this->m_stopTime < spec.m_info.m_stopTime)
-        this->m_stopTime = spec.m_info.m_stopTime;
-    if (spec.m_info.m_startTime < this->m_startTime)
-        this->m_startTime = spec.m_info.m_startTime;
+    UpdateStartAndStopTimeOfScan(spec);
 
     // Extract the spectrometer-model from the serial-number of the spectrometer
     SpectrometerModel spectrometer = CSpectrometerDatabase::GetInstance().GuessModelFromSerial(spec.m_info.m_device);
@@ -242,122 +264,138 @@ int CScanFileHandler::GetSpectrum(CSpectrum& spec, long specNo)
         if (true != reader.ReadSpectrum(m_fileName, specNo, spec))
         {
             this->m_lastError = reader.m_lastError;
+            this->m_lastErrorMessage = "Error reading spectrum, error code: " + reader.m_lastError;
             return 0;
         }
     }
 
-    // set the start and stop time of the measurement
-    if (this->m_stopTime < spec.m_info.m_stopTime)
-        this->m_stopTime = spec.m_info.m_stopTime;
-    if (spec.m_info.m_startTime < this->m_startTime)
-        this->m_startTime = spec.m_info.m_startTime;
+    UpdateStartAndStopTimeOfScan(spec);
 
     return 1;
 }
 
+void CScanFileHandler::UpdateStartAndStopTimeOfScan(novac::CSpectrum& spec)
+{
+    if (this->m_stopTime < spec.m_info.m_stopTime)
+    {
+        this->m_stopTime = spec.m_info.m_stopTime;
+    }
+    if (spec.m_info.m_startTime < this->m_startTime)
+    {
+        this->m_startTime = spec.m_info.m_startTime;
+    }
+}
+
+int CopySpectrumIfNotNull(const std::unique_ptr<CSpectrum>& possibleNullSource, CSpectrum& destination)
+{
+    if (possibleNullSource == nullptr)
+    {
+        return 1;
+    }
+
+    destination = *possibleNullSource;
+    return 0;
+}
+
 int CScanFileHandler::GetDark(CSpectrum& spec) const
 {
-    spec = m_dark;
-
-    if (m_fHasDark)
-        return 0;
-    else
-        return 1;
+    return CopySpectrumIfNotNull(this->m_dark, spec);
 }
 
 int CScanFileHandler::GetSky(CSpectrum& spec) const
 {
-    spec = m_sky;
-
-    if (m_fHasSky)
-        return 0;
-    else
-        return 1;
+    return CopySpectrumIfNotNull(this->m_sky, spec);
 }
 
 int CScanFileHandler::GetOffset(CSpectrum& spec) const
 {
-    spec = m_offset;
-
-    if (m_fHasOffset)
-        return 0;
-    else
-        return 1;
+    return CopySpectrumIfNotNull(this->m_offset, spec);
 }
 
 int CScanFileHandler::GetDarkCurrent(CSpectrum& spec) const
 {
-    spec = m_darkCurrent;
-
-    if (m_fHasDarkCurrent)
-        return 0;
-    else
-        return 1;
+    return CopySpectrumIfNotNull(this->m_darkCurrent, spec);
 }
 
-/** Retrieves GPS-information from the spectrum files */
-const CGPSData& CScanFileHandler::GetGPS() const
+const CGPSData CScanFileHandler::GetGPS() const
 {
-    return m_dark.GPS();
+    if (this->m_dark != nullptr)
+    {
+        return this->m_dark->GPS();
+    }
+
+    CGPSData defaultValue;
+    return defaultValue;
 }
 
-/** Retrieves compass-information from the spectrum files */
 double CScanFileHandler::GetCompass() const
 {
-    return m_dark.Compass();
+    if (this->m_dark != nullptr)
+    {
+        return this->m_dark->Compass();
+    }
+
+    return 0.0;
 }
 
-
-/** Resets the m_specReadSoFarNum to 0 */
 void  CScanFileHandler::ResetCounter()
 {
     m_specReadSoFarNum = 0;
 
-    if (m_sky.ScanIndex() == 0)
+    if (m_sky != nullptr && m_sky->ScanIndex() == 0)
+    {
         m_specReadSoFarNum = 1;
+    }
 
-    if ((unsigned int)m_dark.ScanIndex() == m_specReadSoFarNum)
+    if (m_dark != nullptr && (unsigned int)m_dark->ScanIndex() == m_specReadSoFarNum)
+    {
         m_specReadSoFarNum += 1;
+    }
 
-    if ((unsigned int)m_offset.ScanIndex() == m_specReadSoFarNum || (unsigned int)m_darkCurrent.ScanIndex() == m_specReadSoFarNum)
+    if (m_offset != nullptr && ((unsigned int)m_offset->ScanIndex() == m_specReadSoFarNum))
+    {
         m_specReadSoFarNum += 1;
+    }
 
-    if ((unsigned int)m_offset.ScanIndex() == m_specReadSoFarNum || (unsigned int)m_darkCurrent.ScanIndex() == m_specReadSoFarNum)
+    if (m_darkCurrent != nullptr && (unsigned int)m_darkCurrent->ScanIndex() == m_specReadSoFarNum)
+    {
         m_specReadSoFarNum += 1;
+    }
 }
 
 int CScanFileHandler::GetSpectrumNumInFile() const
 {
     return 	m_specNum;
 }
-/** Returns the interlace steps for the spectra in this scan-file.
-            @return the interlace steps for the spectra in this scan.
-            @return -1 if the function 'CheckScanFile' has not been called */
+
 int	CScanFileHandler::GetInterlaceSteps() const
 {
-    if (!m_initialized)
+    if (!m_initialized || this->m_sky == nullptr)
+    {
         return -1;
+    }
 
-    return this->m_sky.m_info.m_interlaceStep;
+    return this->m_sky->m_info.m_interlaceStep;
 }
 
-/** Returns the length of the spectra in this scan-file.
-            @return the spectrum-length for the spectra in this scan.
-            @return -1 if the function 'CheckScanFile' has not been called */
 int	CScanFileHandler::GetSpectrumLength() const
 {
-    if (!m_initialized)
+    if (!m_initialized || this->m_sky == nullptr)
+    {
         return -1;
+    }
 
-    return this->m_sky.m_length;
+    return this->m_sky->m_length;
 }
 
 int	CScanFileHandler::GetStartChannel() const
 {
-    if (!m_initialized)
+    if (!m_initialized || this->m_sky == nullptr)
+    {
         return -1;
+    }
 
-    return this->m_sky.m_info.m_startChannel;
+    return this->m_sky->m_info.m_startChannel;
 }
 }
 
