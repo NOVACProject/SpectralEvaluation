@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <SpectralEvaluation/Log.h>
 
 namespace Configuration
 {
@@ -23,7 +24,7 @@ bool ReadSpectrumFromFile(const std::string& fullFilename, CSpectrum& spec);
 class ScanEvaluationBase
 {
 public:
-    ScanEvaluationBase();
+    ScanEvaluationBase(novac::ILogger& log);
     virtual ~ScanEvaluationBase();
 
     /** Setting the option for wheather the spectra are averaged or not.
@@ -39,6 +40,7 @@ public:
         @return a new evaluator (with a new fit-window set) to use to evaluate this scan with the shift/squeeze fixed to a good value.
         @return nullptr if the determination failed. */
     CEvaluationBase* FindOptimumShiftAndSqueezeFromFraunhoferReference(
+        novac::LogContext context,
         const CFitWindow& fitWindow,
         const Configuration::CDarkSettings& darkSettings,
         const Configuration::CSkySettings& skySettings,
@@ -49,6 +51,9 @@ public:
     static int GetIndexOfSpectrumWithBestIntensity(const CFitWindow& fitWindow, CScanFileHandler& scan);
 
 protected:
+
+    novac::ILogger& m_log;
+
     /** This is the lower edge of the fit region used in the last evaluation performed (in pixels).
         Used for reference and further processing. */
     int m_fitLow = 320;
