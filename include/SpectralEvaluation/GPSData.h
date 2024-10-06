@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <iosfwd>
 
 namespace novac
 {
@@ -18,6 +19,8 @@ public:
     CGPSData& operator=(const CGPSData& gps2);
 
     bool operator==(const CGPSData& gps2) const;
+
+    friend std::ostream& operator<<(std::ostream& os, const CGPSData& gps);
 
     ~CGPSData() = default;
 

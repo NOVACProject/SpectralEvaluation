@@ -55,7 +55,7 @@ struct SpectrometerModel
     bool isCustom = true;
 
     // @return true if this model is not well defined.
-    bool IsUnknown() const { return modelName.size() == 0; }
+    bool IsUnknown() const { return modelName.size() == 0 || modelName == "UNKNOWN"; }
 
     /** For models where averagesSpectra is true, the maximum intensity of any spectrum equals the maximumIntensityForSingleReadout.
         For models where averagesSpectra is false, the maximum intensity of any spectrum equals maximumIntensityForSingleReadout * number of spectra */
