@@ -11,7 +11,7 @@ novac::LogContext novac::LogContext::With(std::string name, std::string value)
 
 static std::ostream& operator << (std::ostream& out, const novac::LogContext& c)
 {
-    for each (const auto & p in c.properties)
+    for (const auto & p : c.properties)
     {
         out << "[" << p.first << "=" << p.second << "] ";
     }

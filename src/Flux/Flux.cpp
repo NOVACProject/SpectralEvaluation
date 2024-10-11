@@ -2,6 +2,7 @@
 #include <SpectralEvaluation/Definitions.h>
 
 #include <assert.h>
+#include <limits>
 #include <cmath>
 #include <vector>
 #include <iostream>
