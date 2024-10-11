@@ -8,7 +8,7 @@
 
 namespace novac
 {
-  
+
 /** ScanFileHandler is a class to read in information from the scan-files
     (all the spectra from one scan are supposed to be packed together in one file in Manne's 'pak'-format.
     Each instance of 'CScanFileHandler' is capable of reading data from one .pak-file.
@@ -43,6 +43,10 @@ public:
     /** If any error occurs in the reading of the file, this int is set to
         any of the errors defined int 'SpectrumIO.h. */
     int m_lastError = 0;
+
+    /** If any error occurs in the reading of the file, this is set to a
+    *   human readable error message describing the problem. */
+    std::string m_lastErrorMessage = "";
 
     // ----------------------------------------------------------------------
     // --------------------- PUBLIC METHODS ---------------------------------
