@@ -56,7 +56,7 @@ public:
         E.g. checks the scan result for which index corresponds to SO2.
         The comparison is done ignoring case.
         @return -1 if the specie could not be found */
-    int GetSpecieIndex(const char* specieName) const;
+    int GetSpecieIndex(const std::string& specieName) const;
 
 protected:
 
