@@ -1,12 +1,26 @@
 #include <SpectralEvaluation/Log.h>
 #include <iostream>
-
+#include <sstream>
 
 novac::LogContext novac::LogContext::With(std::string name, std::string value)
 {
     novac::LogContext c(*this);
     c.properties.push_back(std::pair<std::string, std::string>(name, value));
     return c;
+}
+
+novac::LogContext novac::LogContext::With(std::string name, int value)
+{
+    std::stringstream s;
+    s << value;
+    return this->With(name, s.str());
+}
+
+novac::LogContext novac::LogContext::With(std::string name, double value)
+{
+    std::stringstream s;
+    s << value;
+    return this->With(name, s.str());
 }
 
 static std::ostream& operator << (std::ostream& out, const novac::LogContext& c)

@@ -16,6 +16,8 @@ public:
     std::vector<std::pair<std::string, std::string>> properties;
 
     LogContext With(std::string name, std::string value);
+    LogContext With(std::string name, int value);
+    LogContext With(std::string name, double value);
 };
 
 /** Abstract logger base class. */
