@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <iosfwd>
 
 namespace novac
 {
@@ -11,7 +12,11 @@ class LogContext
 public:
     LogContext() = default;
 
+    LogContext(std::string name, std::string value);
+
     ~LogContext() = default;
+
+    friend std::ostream& operator<<(std::ostream& os, const LogContext& c);
 
     std::vector<std::pair<std::string, std::string>> properties;
 
@@ -19,6 +24,7 @@ public:
     LogContext With(std::string name, int value);
     LogContext With(std::string name, double value);
 };
+
 
 /** Abstract logger base class. */
 class ILogger
