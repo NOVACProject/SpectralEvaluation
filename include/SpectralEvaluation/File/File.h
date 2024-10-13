@@ -31,7 +31,8 @@ std::string ReadEntireFile(const std::string& filename);
         @param fullFilePath The full path to the file to read.  */
 bool ReadCrossSectionFile(const std::string& fullFilePath, CCrossSectionData& result, bool saveAsWavelength = false);
 
-/** Saves the provied cross section data to a space-separated file */
+/** Saves the provied cross section data to a space-separated file.
+    @return true if the file was successfully saved. */
 bool SaveCrossSectionFile(const std::string& fullFilePath, const CCrossSectionData& data);
 
 /** Saves the provied spectrum to a space-separated file in cross-section file format */

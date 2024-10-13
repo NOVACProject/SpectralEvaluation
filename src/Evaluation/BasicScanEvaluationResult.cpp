@@ -44,7 +44,7 @@ void BasicScanEvaluationResult::InitializeArrays(long size)
     m_specInfo.reserve(size);
 }
 
-int BasicScanEvaluationResult::GetSpecieIndex(const char* specieName) const
+int BasicScanEvaluationResult::GetSpecieIndex(const std::string& specieName) const
 {
     // If there are no spectra, there can be no species
     if (m_spec.size() <= 0)

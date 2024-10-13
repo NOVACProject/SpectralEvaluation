@@ -180,19 +180,37 @@ int CReferenceFile::ConvolveReference()
     return 0;
 }
 
-std::string NameAndPathOfReference(const CReferenceFile& ref)
+static std::string NameAndPathOfReference(const CReferenceFile& ref)
 {
     std::stringstream message;
-    message << ref.Name() << " (" << ref.m_path << ")";
+    message << "'" << ref.Name() << "' (" << ref.m_path << ")";
     return message.str();
+}
+
+static bool AreEqual(double a, double b, double epsilon)
+{
+    return (std::abs(a - b) <= epsilon * std::max(std::abs(a), std::abs(b)));
 }
 
 void CReferenceFile::VerifyReferenceValues(int fromIndex, int toIndex) const
 {
+    if (fromIndex < 0 || toIndex < 0 || toIndex <= fromIndex)
+    {
+        std::stringstream message;
+        message << "Invalid call to 'VerifyReferenceValues'. From: " << fromIndex << " and To: " << toIndex << " are out of range.";
+        throw std::invalid_argument(message.str());
+    }
+
     if (this->m_data == nullptr)
     {
         std::stringstream message;
         message << "Invalid reference " << NameAndPathOfReference(*this) << ". Data is null.";
+        throw InvalidReferenceException(message.str());
+    }
+    if (this->m_data->m_crossSection.size() < (size_t)toIndex)
+    {
+        std::stringstream message;
+        message << "Invalid setup of reference " << NameAndPathOfReference(*this) << ". Data does not cover fit region.";
         throw InvalidReferenceException(message.str());
     }
 
@@ -214,10 +232,10 @@ void CReferenceFile::VerifyReferenceValues(int fromIndex, int toIndex) const
         maxValue = std::max(maxValue, this->m_data->m_crossSection[idx]);
     }
 
-    if (maxValue - minValue < std::numeric_limits<double>::epsilon())
+    if (AreEqual(minValue, maxValue, std::numeric_limits<double>::epsilon()))
     {
         std::stringstream message;
-        message << "Invalid reference " << NameAndPathOfReference(*this) << ". Data is constant in fit region.";
+        message << "Invalid reference " << NameAndPathOfReference(*this) << ". Data has constant value " << maxValue << " in fit region (" << fromIndex << " to " << toIndex << ").";
         throw InvalidReferenceException(message.str());
     }
 

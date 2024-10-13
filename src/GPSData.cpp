@@ -3,9 +3,10 @@
 #include <cmath>
 #include <algorithm>
 #include <cstdlib>
+#include <iostream>
 
-using namespace novac;
-
+namespace novac
+{
 CGPSData::CGPSData()
     : m_altitude(0.0), m_latitude(0.0), m_longitude(0.0)
 {
@@ -51,7 +52,16 @@ bool CGPSData::operator==(const CGPSData& gps2) const
     {
         return true;
     }
+}
 
+std::ostream& operator<<(std::ostream& os, const CGPSData& gps)
+{
+    char buffer[128];
+    sprintf(buffer, "(lat: %.4lf; lon: %.4lf; alt: %.1lf)", gps.m_latitude, gps.m_longitude, gps.m_altitude);
+
+    os << std::string(buffer);
+
+    return os;
 }
 
 /* The GPS reports latitude and longitude in the format ddmm.mmmm
@@ -156,3 +166,5 @@ void GpsMath::CalculateDestination(double lat1, double lon1, double dist, double
     lat2 = lat2 * RADTODEGREE;
     lon2 = lon2 * RADTODEGREE;
 }
+
+} // namespace novac

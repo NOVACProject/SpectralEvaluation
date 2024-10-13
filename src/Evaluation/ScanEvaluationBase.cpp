@@ -33,14 +33,13 @@ bool ReadSpectrumFromFile(const std::string& fullFilename, CSpectrum& spec)
     return false;
 }
 
-ScanEvaluationBase::ScanEvaluationBase()
+ScanEvaluationBase::ScanEvaluationBase(novac::ILogger& log)
+    : m_log(log)
 {
-
 }
 
 ScanEvaluationBase::~ScanEvaluationBase()
 {
-
 }
 
 bool ScanEvaluationBase::GetDark(CScanFileHandler& scan, const CSpectrum& spec, CSpectrum& dark, const Configuration::CDarkSettings* darkSettings)
@@ -244,8 +243,8 @@ int ScanEvaluationBase::GetIndexOfSpectrumWithBestIntensity(const CFitWindow& fi
     return indexOfMostSuitableSpectrum;
 }
 
-
 CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferReference(
+    novac::LogContext context,
     const CFitWindow& fitWindow,
     const Configuration::CDarkSettings& darkSettings,
     const Configuration::CSkySettings& skySettings,
@@ -254,6 +253,7 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
     // Check that the Fraunhofer reference has been read in
     if (fitWindow.fraunhoferRef.m_data == nullptr || fitWindow.fraunhoferRef.m_data->m_crossSection.size() == 0)
     {
+        m_log.Information(context, "cannot determine shift and squeeze from Fraunhofer reference. Reference has no values.");
         return nullptr;
     }
 
@@ -269,20 +269,20 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
     CSpectrum spectrum;
     if (indexOfMostSuitableSpectrum == NO_SPECTRUM_INDEX)
     {
-        m_lastErrorMessage = "  Could not find any suitable spectrum to determine shift from.";
+        m_log.Information(context, "Could not find any suitable spectrum to determine shift from.");
         return nullptr; // we could not find any good spectrum to use...
     }
     else if (indexOfMostSuitableSpectrum == INDEX_OF_SKYSPECTRUM)
     {
         scan.GetSky(spectrum);
-        m_lastErrorMessage = "Determining shift and squeeze from sky-spectrum";
+        m_log.Information(context, "Determining shift and squeeze from sky-spectrum");
     }
     else
     {
         scan.GetSpectrum(spectrum, indexOfMostSuitableSpectrum);
         std::stringstream msg;
         msg << "Determining shift and squeeze from spectrum " << indexOfMostSuitableSpectrum;
-        m_lastErrorMessage = msg.str();
+        m_log.Information(context, msg.str());
     }
 
 
@@ -294,7 +294,7 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
     CSpectrum dark;
     if (!GetDark(scan, spectrum, dark, &darkSettings))
     {
-        m_lastErrorMessage = "Failed to get dark spectrum, determination of shift-and-squeeze from Fraunhofer lines failed.";
+        m_log.Information(context, "Failed to get dark spectrum, determination of shift-and-squeeze from Fraunhofer lines failed.");
         return nullptr; // fail
     }
     if (dark.NumSpectra() > 0 && !m_averagedSpectra)
@@ -307,7 +307,7 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
     CSpectrum sky;
     if (!GetSky(scan, skySettings, sky))
     {
-        m_lastErrorMessage = "Failed to get sky spectrum, determination of shift-and-squeeze from Fraunhofer lines failed.";
+        m_log.Information(context, "Failed to get sky spectrum, determination of shift-and-squeeze from Fraunhofer lines failed.");
         return nullptr; // fail
     }
     if (sky.NumSpectra() > 0 && !m_averagedSpectra)
@@ -328,6 +328,7 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
         std::stringstream msg;
         msg << "Failed to determine shift and squeeze in scan " << scan.GetFileName() << ". Will proceed with default parameters";
         m_lastErrorMessage = msg.str();
+        m_log.Information(context, msg.str());
         return nullptr;
     }
 
@@ -345,13 +346,12 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
         }
 
         std::stringstream msg;
-        msg << "Determining shift and squeeze from spectrum " << indexOfMostSuitableSpectrum << std::endl;
-        msg << "  Shift: " << shift << " +- " << shiftError << "; Squeeze: " << squeeze << " +- " << squeezeError;
-        m_lastErrorMessage = msg.str();
+        msg << "Determined shift: " << shift << " +- " << shiftError << "; Squeeze: " << squeeze << " +- " << squeezeError;
+        m_log.Information(context, msg.str());
         return new CEvaluationBase(improvedFitWindow);
     }
 
-    m_lastErrorMessage = "Fit not good enough. Will proceed with default parameters.";
+    m_log.Information(context, "Fit not good enough. Will proceed with default parameters.");
     return nullptr;
 }
 
