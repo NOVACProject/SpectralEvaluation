@@ -25,7 +25,6 @@ public:
     LogContext With(std::string name, double value);
 };
 
-
 /** Abstract logger base class. */
 class ILogger
 {
