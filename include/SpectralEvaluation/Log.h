@@ -25,7 +25,7 @@ public:
     LogContext With(std::string name, double value);
 };
 
-  /** Abstract logger base class. */
+/** Abstract logger base class. */
 class ILogger
 {
 public:
@@ -35,7 +35,7 @@ public:
     virtual void Information(const std::string& message) = 0;
     virtual void Information(const LogContext& c, const std::string& message) = 0;
 
-  virtual void Error(const std::string& message) = 0;
+    virtual void Error(const std::string& message) = 0;
     virtual void Error(const LogContext& c, const std::string& message) = 0;
 };
 
