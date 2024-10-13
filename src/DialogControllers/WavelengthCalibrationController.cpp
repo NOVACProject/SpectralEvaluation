@@ -55,10 +55,11 @@ std::vector<std::pair<std::string, std::string>> GetFunctionDescription(const no
     return result;
 }
 
-WavelengthCalibrationController::WavelengthCalibrationController()
+WavelengthCalibrationController::WavelengthCalibrationController(novac::ILogger& log)
     : m_instrumentLineShapeFitOption(InstrumentLineShapeFitOption::None),
     m_instrumentLineShapeFitRegion(330.0, 350.0),
-    m_calibrationDebug(0U)
+    m_calibrationDebug(0U),
+    m_log(log)
 {
 }
 
@@ -118,7 +119,7 @@ novac::SpectrometerModel WavelengthCalibrationController::GetModelForMeasurement
 void WavelengthCalibrationController::RunCalibration()
 {
     m_errorMessage.clear();
-    m_log.clear();
+    m_logMessages.clear();
     m_instrumentLineShapeParameterDescriptions.clear();
 
     auto startTime = std::chrono::steady_clock::now();
@@ -422,7 +423,7 @@ void WavelengthCalibrationController::ClearResult()
 {
     m_calibrationDebug = WavelengthCalibrationController::WavelengthCalibrationDebugState(0U);
     m_errorMessage.clear();
-    m_log.clear();
+    m_logMessages.clear();
     m_instrumentLineShapeParameterDescriptions.clear();
     m_resultingCalibration.reset();
     m_initialCalibration.reset();
@@ -430,21 +431,21 @@ void WavelengthCalibrationController::ClearResult()
 
 void WavelengthCalibrationController::Log(const std::string& message)
 {
-    m_log.push_back(message);
+    m_logMessages.push_back(message);
 }
 
 void WavelengthCalibrationController::Log(const std::string& message, double value)
 {
     std::stringstream formattedMessage;
     formattedMessage << message << value;
-    m_log.push_back(formattedMessage.str());
+    m_logMessages.push_back(formattedMessage.str());
 }
 
 void WavelengthCalibrationController::Log(const std::string& part1, const std::string& part2)
 {
     std::string message = part1;
     message.append(part2);
-    m_log.push_back(message);
+    m_logMessages.push_back(message);
 }
 
 void MobileDoasWavelengthCalibrationController::ReadInput(novac::CSpectrum& measuredSpectrum)

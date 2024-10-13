@@ -125,6 +125,9 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     const std::string& outputDirectory,
     std::string* errorMessage)
 {
+
+    novac::LogContext context; // TODO: Get from input
+
     const auto spectra = this->CreatePlumeSpectra(originalScanFile, originalScanResult, plumeProperties, settings, spectrometerModel, mainSpecieIndex, errorMessage);
     if (spectra == nullptr)
     {
@@ -154,7 +157,7 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     for (int idx : spectra->inPlumeSpectrumIndices)
     {
         CSpectrum spectrum;
-        originalScanFile.GetSpectrum((int)idx, spectrum);
+        originalScanFile.GetSpectrum(context, (int)idx, spectrum);
         textOutput << idx << "\t" << spectrum.m_info.m_scanAngle << "\t" << FormatTimestamp(spectrum.m_info.m_startTime) << std::endl;
     }
     textOutput << std::endl;
@@ -163,7 +166,7 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     for (int idx : spectra->referenceSpectrumIndices)
     {
         CSpectrum spectrum;
-        originalScanFile.GetSpectrum((int)idx, spectrum);
+        originalScanFile.GetSpectrum(context, (int)idx, spectrum);
         textOutput << idx << "\t" << spectrum.m_info.m_scanAngle << "\t" << FormatTimestamp(spectrum.m_info.m_startTime) << std::endl;
     }
     textOutput << std::endl;
@@ -187,6 +190,8 @@ void PlumeSpectrumSelector::ExtractEvaluationData(
     std::vector< InitialEvaluationData>& evaluationData,
     std::vector<std::pair<int, std::string>>& rejectedIndices) const
 {
+    novac::LogContext context; // TODO: Get from input
+
     evaluationData.clear();
     rejectedIndices.clear();
 
@@ -204,7 +209,7 @@ void PlumeSpectrumSelector::ExtractEvaluationData(
         data.offsetCorrectedColumn = originalScanResult.m_spec[ii].m_referenceResult[m_mainSpecieIndex].m_column;
 
         CSpectrum spectrum;
-        if (0 == originalScanFile.GetSpectrum((int)ii, spectrum))
+        if (0 == originalScanFile.GetSpectrum(context, (int)ii, spectrum))
         {
             GetIntensityOfSpectrum(spectrum, darkSpectrum, spectrometermodel, data.peakSaturation, data.peakSaturationAfterDarkCorrection);
         }

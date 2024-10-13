@@ -1,10 +1,11 @@
 #pragma once
 
-#include "BasicMath.h"
+#include <SpectralEvaluation/Log.h>
+#include <SpectralEvaluation/Fit/ReferenceSpectrumFunction.h>
+#include <SpectralEvaluation/Evaluation/BasicMath.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Evaluation/FitWindow.h>
-#include "EvaluationResult.h"
-#include "../Fit/ReferenceSpectrumFunction.h"
+#include <SpectralEvaluation/Evaluation/EvaluationResult.h>
 
 namespace MathFit
 {
@@ -15,19 +16,28 @@ namespace novac
 {
 class CSpectrum;
 
+struct ShiftEvaluationResult
+{
+    double shift = 0.0;
+    double shiftError = 0.0;
+    double squeeze = 0.0;
+    double squeezeError = 0.0;
+    double chi2 = 0.0;
+};
+
 /** The CEvaluationBase is the base class for all evaluation-classes
     in NovacProgram, NovacPPP and MobileDOAS and collects common elements and routines */
 class CEvaluationBase : public CBasicMath
 {
 public:
-    CEvaluationBase();
+    CEvaluationBase(novac::ILogger& log);
 
     // This object is not copyable due to the nature of its members.
     //  This could be implemented in the future if necessary
     CEvaluationBase(const CEvaluationBase&) = delete;
     CEvaluationBase& operator=(const CEvaluationBase&) = delete;
 
-    explicit CEvaluationBase(const CFitWindow& window);
+    explicit CEvaluationBase(const CFitWindow& window, novac::ILogger& log);
 
     virtual ~CEvaluationBase();
 
@@ -90,7 +100,7 @@ public:
                     relative to the solarReference-spectrum found in 'window'
         @return 0 if the fit succeeds and the shift & squeeze could be determined
         @return 1 if any error occured, see m_lastError for the error message. */
-    int EvaluateShift(const CSpectrum& measured, double& shift, double& shiftError, double& squeeze, double& squeezeError);
+    int EvaluateShift(novac::LogContext context, const CSpectrum& measured, ShiftEvaluationResult& result);
 
     /** Returns the evaluation result for the last spectrum
            @return a reference to a 'CEvaluationResult' - data structure which holds the information from the last evaluation */
@@ -128,6 +138,8 @@ public:
     CReferenceSpectrumFunction* m_ringSpectrumLambda4 = nullptr;
 
 protected:
+
+    novac::ILogger& m_log;
 
     /** The sky spectrum to use in the evaluations.
         This is set by calling 'SetSkySpectrum' which must be called prior to calling 'Evaluate' */

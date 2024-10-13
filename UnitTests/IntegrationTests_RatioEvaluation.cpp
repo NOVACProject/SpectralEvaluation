@@ -16,8 +16,10 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
     Configuration::CDarkSettings darkSettings;
 
     // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
-    novac::CScanFileHandler fileHandler;
-    const bool scanFileIsOk = fileHandler.CheckScanFile(TestData::GetBrORatioScanFile1());
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    CScanFileHandler fileHandler(log);
+    const bool scanFileIsOk = fileHandler.CheckScanFile(context, TestData::GetBrORatioScanFile1());
     REQUIRE(scanFileIsOk); // check assumption on the setup
 
     novac::CScanEvaluationLogFileHandler evaluationFileHandler;

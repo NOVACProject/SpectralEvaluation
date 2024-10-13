@@ -8,9 +8,11 @@ namespace novac
 
 TEST_CASE("ScanFileHandler CheckScanFile", "[ScanFileHandler][IntegrationTests]")
 {
-    CScanFileHandler sut;
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    CScanFileHandler sut(log);
     std::string file = TestData::GetMeasuredSpectrumName_I2J8549();
-    sut.CheckScanFile(file);
+    sut.CheckScanFile(context, file);
 
     SECTION("Sets filename")
     {
@@ -52,9 +54,11 @@ TEST_CASE("ScanFileHandler CheckScanFile", "[ScanFileHandler][IntegrationTests]"
 
 TEST_CASE("ScanFileHandler GetSpectrumLength", "[ScanFileHandler][IntegrationTests]")
 {
-    CScanFileHandler sut;
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    CScanFileHandler sut(log);
     std::string file = TestData::GetMeasuredSpectrumName_I2J8549();
-    sut.CheckScanFile(file);
+    sut.CheckScanFile(context, file);
 
     SECTION("Gets length of spectra")
     {
@@ -64,9 +68,11 @@ TEST_CASE("ScanFileHandler GetSpectrumLength", "[ScanFileHandler][IntegrationTes
 
 TEST_CASE("ScanFileHandler GetSpectrumNumInFile", "[ScanFileHandler][IntegrationTests]")
 {
-    CScanFileHandler sut;
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    CScanFileHandler sut(log);
     std::string file = TestData::GetMeasuredSpectrumName_I2J8549();
-    sut.CheckScanFile(file);
+    sut.CheckScanFile(context, file);
 
     SECTION("Gets number of spectra")
     {
@@ -76,9 +82,11 @@ TEST_CASE("ScanFileHandler GetSpectrumNumInFile", "[ScanFileHandler][Integration
 
 TEST_CASE("ScanFileHandler GetDark", "[ScanFileHandler][IntegrationTests]")
 {
-    CScanFileHandler sut;
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    CScanFileHandler sut(log);
     std::string file = TestData::GetMeasuredSpectrumName_I2J8549();
-    sut.CheckScanFile(file);
+    sut.CheckScanFile(context, file);
 
     SECTION("Reads the dark spectrum")
     {
@@ -92,9 +100,11 @@ TEST_CASE("ScanFileHandler GetDark", "[ScanFileHandler][IntegrationTests]")
 
 TEST_CASE("ScanFileHandler GetSky", "[ScanFileHandler][IntegrationTests]")
 {
-    CScanFileHandler sut;
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    CScanFileHandler sut(log);
     std::string file = TestData::GetMeasuredSpectrumName_I2J8549();
-    sut.CheckScanFile(file);
+    sut.CheckScanFile(context, file);
 
     SECTION("Reads the sky spectrum")
     {
@@ -108,15 +118,17 @@ TEST_CASE("ScanFileHandler GetSky", "[ScanFileHandler][IntegrationTests]")
 
 TEST_CASE("ScanFileHandler GetSpectrum", "[ScanFileHandler][IntegrationTests]")
 {
-    CScanFileHandler sut;
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    CScanFileHandler sut(log);
     std::string file = TestData::GetMeasuredSpectrumName_I2J8549();
-    sut.CheckScanFile(file);
+    sut.CheckScanFile(context, file);
 
     SECTION("Reads all spectra in the file (INCLUDING sky and dark) one at a time")
     {
         CSpectrum spec;
         int counter = 0;
-        while (0 != sut.GetSpectrum(spec, counter))
+        while (0 != sut.GetSpectrum(context, spec, counter))
         {
             ++counter;
             REQUIRE(spec.ScanIndex() >= 0);
@@ -128,15 +140,17 @@ TEST_CASE("ScanFileHandler GetSpectrum", "[ScanFileHandler][IntegrationTests]")
 
 TEST_CASE("ScanFileHandler GetNextSpectrum", "[ScanFileHandler][IntegrationTests]")
 {
-    CScanFileHandler sut;
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    CScanFileHandler sut(log);
     std::string file = TestData::GetMeasuredSpectrumName_I2J8549();
-    sut.CheckScanFile(file);
+    sut.CheckScanFile(context, file);
 
     SECTION("Reads all spectra in the file (except sky and dark) one at a time")
     {
         CSpectrum spec;
         int counter = 0;
-        while (0 != sut.GetNextSpectrum(spec))
+        while (0 != sut.GetNextSpectrum(context, spec))
         {
             ++counter;
             REQUIRE(spec.ScanIndex() >= 0);
@@ -149,7 +163,7 @@ TEST_CASE("ScanFileHandler GetNextSpectrum", "[ScanFileHandler][IntegrationTests
     {
         CSpectrum spec;
         int firstCounter = 0;
-        while (0 != sut.GetNextSpectrum(spec))
+        while (0 != sut.GetNextSpectrum(context, spec))
         {
             ++firstCounter;
         }
@@ -159,7 +173,7 @@ TEST_CASE("ScanFileHandler GetNextSpectrum", "[ScanFileHandler][IntegrationTests
 
         // Assert by verifying that we can read the same number of spectra as above.
         int secondCounter = 0;
-        while (0 != sut.GetNextSpectrum(spec))
+        while (0 != sut.GetNextSpectrum(context, spec))
         {
             ++secondCounter;
         }

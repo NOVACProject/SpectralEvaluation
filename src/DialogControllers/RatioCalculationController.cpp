@@ -19,8 +19,8 @@ namespace novac
     std::string FormatTimestamp(const CDateTime& time);
 }
 
-RatioCalculationController::RatioCalculationController()
-    : m_so2FitRange(314.8, 326.8), m_broFitRange(330.6, 352.8)
+RatioCalculationController::RatioCalculationController(novac::ILogger& log)
+    : m_so2FitRange(314.8, 326.8), m_broFitRange(330.6, 352.8), m_log(log)
 {
     InitializeToDefault();
 }
@@ -385,6 +385,7 @@ std::shared_ptr<RatioCalculationFitSetup> RatioCalculationController::SetupFitWi
 novac::BasicScanEvaluationResult RatioCalculationController::DoInitialEvaluation(novac::IScanSpectrumSource& scan, std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows)
 {
     novac::BasicScanEvaluationResult result;
+    novac::LogContext context; // TODO: Get from input
 
     // For each spectrum in the scan, do a DOAS evaluation
     novac::CSpectrum measuredSkySpectrum;
@@ -417,7 +418,7 @@ novac::BasicScanEvaluationResult RatioCalculationController::DoInitialEvaluation
     scan.ResetCounter();
     novac::CSpectrum measuredSpectrum;
     novac::SpectrometerModel spectrometerModel = GetModelForMeasurement(measuredSkySpectrum.m_info.m_device);
-    while (0 == scan.GetNextMeasuredSpectrum(measuredSpectrum))
+    while (0 == scan.GetNextMeasuredSpectrum(context, measuredSpectrum))
     {
         // Check the intensity and save this, such that we can use this later to verify if the evaluated column was good or not.
         measuredSpectrum.m_info.m_peakIntensity = (float)measuredSpectrum.MaxValue(0, measuredSpectrum.m_length - 2);
@@ -468,8 +469,9 @@ RatioCalculationResult RatioCalculationController::EvaluateNextScan(std::shared_
     }
 
     const auto& pakFileName = m_pakfiles[m_currentPakFileIdx++];
-    novac::CScanFileHandler scan;
-    scan.CheckScanFile(pakFileName);
+    novac::CScanFileHandler scan(m_log);
+    novac::LogContext context;
+    scan.CheckScanFile(context, pakFileName);
 
     const auto initialResult = DoInitialEvaluation(scan, ratioFitWindows);
 

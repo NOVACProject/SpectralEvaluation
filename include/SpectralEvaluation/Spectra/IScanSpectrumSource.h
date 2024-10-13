@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <SpectralEvaluation/Log.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 
 namespace novac
@@ -14,7 +15,7 @@ public:
         @param specNumber The zero-based index into the scan-file (including sky and dark).
         @param spec will on successful return be filled with the requested spectrum in the scan.
         @return zero if successful. */
-    virtual int GetSpectrum(int specNumber, CSpectrum& spec) = 0;
+    virtual int GetSpectrum(novac::LogContext context, int specNumber, CSpectrum& spec) = 0;
 
     /** Retrieves the total number of spectra in the file (including sky and dark) */
     virtual int GetSpectrumNumInFile() const = 0;
@@ -33,7 +34,7 @@ public:
 
     /** Retrieves the next measured spectrum in the scan, ignoring special spectra such as sky and dark.
         @return zero on success. */
-    virtual int GetNextMeasuredSpectrum(CSpectrum& spec) = 0;
+    virtual int GetNextMeasuredSpectrum(novac::LogContext context, CSpectrum& spec) = 0;
 
     /** Retrieves the measured sky spectrum in the scan and copies it to 'result'.
         @return zero if there is a sky spectum. */

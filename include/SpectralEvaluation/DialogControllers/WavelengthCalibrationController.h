@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <SpectralEvaluation/Log.h>
 #include <SpectralEvaluation/Spectra/WavelengthRange.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
@@ -20,7 +21,7 @@ namespace novac
 class WavelengthCalibrationController
 {
 public:
-    WavelengthCalibrationController();
+    WavelengthCalibrationController(novac::ILogger& log);
     virtual ~WavelengthCalibrationController();
 
     enum class InstrumentLineShapeFitOption
@@ -76,7 +77,7 @@ public:
     std::string m_errorMessage;
 
     /** An elementary log, will contain debugging information from running the calibration. */
-    std::vector<std::string> m_log;
+    std::vector<std::string> m_logMessages;
 
     /** An optional override of the check for the maximum intensity of the spectrometer model.
         Sometimes the intensity is specified by the user directly and not taken from the device (e.g. directory reading mode in MobileDoas)
@@ -154,6 +155,8 @@ public:
 
 protected:
 
+    novac::ILogger& m_log;
+
     virtual void ReadInput(novac::CSpectrum& measurement) = 0;
 
     /** Guesses for an instrment line shape from the measured spectrum. Useful if no measured instrument line shape exists */
@@ -179,8 +182,8 @@ protected:
 class MobileDoasWavelengthCalibrationController : public WavelengthCalibrationController
 {
 public:
-    MobileDoasWavelengthCalibrationController()
-        : WavelengthCalibrationController()
+    MobileDoasWavelengthCalibrationController(novac::ILogger& log)
+        : WavelengthCalibrationController(log)
     {
         // MobileDOAS will always average spectra together
         m_spectraAreAverages = true;
@@ -202,8 +205,8 @@ protected:
 class InMemoryWavelengthCalibrationController : public WavelengthCalibrationController
 {
 public:
-    InMemoryWavelengthCalibrationController()
-        : WavelengthCalibrationController() { }
+    InMemoryWavelengthCalibrationController(novac::ILogger& log)
+        : WavelengthCalibrationController(log) { }
 
     /** The spectrum to calibrate. Notice that this may be modified during the calibration. */
     novac::CSpectrum m_measuredSpectrum;
