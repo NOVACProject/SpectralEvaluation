@@ -66,12 +66,14 @@ TEST_CASE("Evaluate Avaspec spectrum number eight in scan", "[Evaluate][Evaluati
 {
     const auto scanFile = TestData::GetMeasuredSpectrumName_2009175M1();
 
-    CSpectrumIO reader;
+    novac::ConsoleLog log;
+    novac::LogContext context;
 
+    CSpectrumIO reader;
     CFitWindow window = PrepareFitWindow();
 
     // Read the spectra
-    CEvaluationBase sut;
+    CEvaluationBase sut(log);
     sut.SetFitWindow(window);
 
     CSpectrum skySpectrum = ReadSkySpectrum(scanFile);
@@ -117,12 +119,14 @@ TEST_CASE("Evaluate Avaspec spectrum number 21 in scan", "[Evaluate][EvaluationB
 {
     const auto scanFile = TestData::GetMeasuredSpectrumName_2009175M1();
 
-    CSpectrumIO reader;
+    novac::ConsoleLog log;
+    novac::LogContext context;
 
+    CSpectrumIO reader;
     CFitWindow window = PrepareFitWindow();
 
     // Read the spectra
-    CEvaluationBase sut;
+    CEvaluationBase sut(log);
     sut.SetFitWindow(window);
 
     CSpectrum skySpectrum = ReadSkySpectrum(scanFile);
@@ -171,13 +175,16 @@ TEST_CASE("EvaluateShift Avaspec spectrum number 28 in scan", "[Evaluate][Evalua
 
     CSpectrumIO reader;
 
+    novac::ConsoleLog log;
+    novac::LogContext context;
+
     CFitWindow window = PrepareFitWindow();
     window.fraunhoferRef.m_path = TestData::GetSyntheticFraunhoferSpectrumName_2009175M1();
     int retCode = window.fraunhoferRef.ReadCrossSectionDataFromFile();
     REQUIRE(retCode == 0);
 
     // Read the spectra
-    CEvaluationBase sut;
+    CEvaluationBase sut(log);
     sut.SetFitWindow(window);
 
     CSpectrum skySpectrum = ReadSkySpectrum(scanFile);
@@ -191,21 +198,18 @@ TEST_CASE("EvaluateShift Avaspec spectrum number 28 in scan", "[Evaluate][Evalua
 
     sut.SetSkySpectrum(skySpectrum);
 
-    double resultingShift = 0.0;
-    double resultingShiftError = 0.0;
-    double resultingSqueeze = 0.0;
-    double resultingSqueezeError = 0.0;
+    novac::ShiftEvaluationResult result;
 
     // Act
-    int returnCode = sut.EvaluateShift(spectrumToEvaluate, resultingShift, resultingShiftError, resultingSqueeze, resultingSqueezeError);
+    int returnCode = sut.EvaluateShift(context, spectrumToEvaluate, result);
 
     // Assert
     REQUIRE(returnCode == 0);
 
-    REQUIRE(resultingShift == Approx(0.219).margin(0.01));
-    REQUIRE(resultingShiftError == Approx(0.091).margin(0.01));
-    REQUIRE(resultingSqueeze == Approx(1.0));
-    REQUIRE(resultingSqueezeError == Approx(0.0));
+    REQUIRE(result.shift == Approx(0.219).margin(0.01));
+    REQUIRE(result.shiftError == Approx(0.091).margin(0.01));
+    REQUIRE(result.squeeze == Approx(1.0));
+    REQUIRE(result.squeezeError == Approx(0.0));
 }
 
 }

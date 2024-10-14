@@ -17,7 +17,7 @@ namespace novac
 class CScanFileHandler : public IScanSpectrumSource
 {
 public:
-    CScanFileHandler();
+    CScanFileHandler(ILogger& log);
 
     // ----------------------------------------------------------------------
     // ---------------------- PUBLIC DATA -----------------------------------
@@ -57,17 +57,17 @@ public:
         @param fileName - the name of the file in which the spectra of the scan are saved.
         @return true on success.
         @return false if any error occurs */
-    bool CheckScanFile(const std::string& fileName);
+    bool CheckScanFile(novac::LogContext context, const std::string& fileName);
 
     /** Gets the next spectrum in the scan.
         If any file-error occurs the parameter 'm_lastError' will be set.
         @param spec - will on successful return be filled with the newly read spectrum.
         @return the number of spectra read (1 if successful, otherwise 0).*/
-    int GetNextSpectrum(CSpectrum& spec);
+    int GetNextSpectrum(novac::LogContext context, CSpectrum& spec);
 
-    virtual int GetNextMeasuredSpectrum(CSpectrum& spec) override
+    virtual int GetNextMeasuredSpectrum(novac::LogContext context, CSpectrum& spec) override
     {
-        return 1 - GetNextSpectrum(spec);
+        return 1 - GetNextSpectrum(context, spec);
     }
 
     /** Returns the desired spectrum in the scan.
@@ -75,11 +75,11 @@ public:
         @param spec - will on successful return be filled with the newly read spectrum.
         @param specNo - The zero-based index into the scan-file.
         @return the number of spectra read (1 if successful, otherwise 0) */
-    int GetSpectrum(CSpectrum& spec, long specNo);
+    int GetSpectrum(novac::LogContext context, CSpectrum& spec, long specNo);
 
-    virtual int GetSpectrum(int spectrumNumber, CSpectrum& spec) override
+    virtual int GetSpectrum(novac::LogContext context, int spectrumNumber, CSpectrum& spec) override
     {
-        return 1 - GetSpectrum(spec, (long)spectrumNumber);
+        return 1 - GetSpectrum(context, spec, (long)spectrumNumber);
     }
 
     /** Gets the dark spectrum of the scan
@@ -143,6 +143,8 @@ private:
     // ----------------------------------------------------------------------
     // ---------------------- PRIVATE DATA ----------------------------------
     // ----------------------------------------------------------------------
+
+    ILogger& m_log;
 
     /** The dark spectrum. this may be null if there's no dark spectrum in the scan. */
     std::unique_ptr<CSpectrum> m_dark;

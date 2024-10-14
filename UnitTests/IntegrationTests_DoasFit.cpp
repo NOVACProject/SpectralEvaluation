@@ -10,8 +10,10 @@ using namespace novac;
 TEST_CASE("DoasFit - IntegrationTest with good scan - scan file 1", "[DoasFit][IntegrationTest]")
 {
     // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
-    novac::CScanFileHandler fileHandler;
-    const bool scanFileIsOk = fileHandler.CheckScanFile(TestData::GetBrORatioScanFile1());
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    novac::CScanFileHandler fileHandler(log);
+    const bool scanFileIsOk = fileHandler.CheckScanFile(context, TestData::GetBrORatioScanFile1());
     REQUIRE(scanFileIsOk); // check assumption on the setup
 
     // Read in the fit window to use
@@ -31,7 +33,7 @@ TEST_CASE("DoasFit - IntegrationTest with good scan - scan file 1", "[DoasFit][I
     skySpectrum.Sub(darkSpectrum);
     DoasFitPreparation::RemoveOffset(skySpectrum);
     CSpectrum measuredSpectrum;
-    fileHandler.GetSpectrum(42, measuredSpectrum);
+    fileHandler.GetSpectrum(context, 42, measuredSpectrum);
     measuredSpectrum.Sub(darkSpectrum);
 
     SECTION("Polynomial fit")

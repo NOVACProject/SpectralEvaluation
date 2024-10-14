@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SpectralEvaluation/Log.h>
 #include <SpectralEvaluation/Evaluation/Ratio.h>
 #include <SpectralEvaluation/Evaluation/FitWindow.h>
 #include <SpectralEvaluation/Evaluation/DoasFit.h>
@@ -65,7 +66,7 @@ struct RatioEvaluationDebugInformation
 class RatioEvaluation
 {
 public:
-    RatioEvaluation(const Configuration::RatioEvaluationSettings& settings, const Configuration::CDarkSettings& darkSettings);
+    RatioEvaluation(const Configuration::RatioEvaluationSettings& settings, const Configuration::CDarkSettings& darkSettings, novac::ILogger& log);
 
     // Calculates the ratio of an evaluation in a major window and a minor window.
     // The ratio is calculated using the first reference result in each DoasResult.
@@ -96,9 +97,12 @@ public:
         @return A vector with all the calculated quotients. The length of this vector equals
         the number of reference-fit windows passed to 'SetupFitWindows', which must have been called before this,
         or an empty vector if the evaluations fail.  */
-    std::vector<Ratio> Run(IScanSpectrumSource& scan, RatioEvaluationDebugInformation* debugInfo = nullptr);
+    std::vector<Ratio> Run(novac::LogContext context, IScanSpectrumSource& scan, RatioEvaluationDebugInformation* debugInfo = nullptr);
 
 private:
+
+    novac::ILogger& m_log;
+    
     /** The fit window against which the ratio will be calculated (typically SO2).
         The ratio will be performed against the first specie in the fit window. */
     CFitWindow m_masterFitWindow;
@@ -121,7 +125,7 @@ private:
     /** The settings for how the ratio-calculation should be performed. */
     Configuration::RatioEvaluationSettings m_settings;
 
-    std::vector<Ratio> Run(IScanSpectrumSource& scan, RatioEvaluationDebugInformation& debugInfo);
+    std::vector<Ratio> Run(novac::LogContext context, IScanSpectrumSource& scan, RatioEvaluationDebugInformation& debugInfo);
 
     // Performs a dark-correction of the provided spectrum, which is assumed to be an average of several spectra in the scan.
     // @throws std::invalid_argument if the dark correction failed.

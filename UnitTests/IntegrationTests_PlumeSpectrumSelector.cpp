@@ -15,25 +15,27 @@ namespace novac
 
 TEST_CASE("PlumeSpectrumSelector returns nullptr if input not readable", "[PlumeSpectrumSelector][IntegrationTest][Ratios]")
 {
-    novac::CScanFileHandler fileHandler;
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    CScanFileHandler fileHandler(log);
     novac::BasicScanEvaluationResult evaluationResult;
     novac::CPlumeInScanProperty plumeInScanProperties;
     Configuration::RatioEvaluationSettings settings;
-    PlumeSpectrumSelector sut;
+    PlumeSpectrumSelector sut(log);
     novac::SpectrometerModel model;
 
     SECTION("Invalid scan file")
     {
-        const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationResult, plumeInScanProperties, settings, model);
+        const auto result = sut.CreatePlumeSpectra(context, fileHandler, evaluationResult, plumeInScanProperties, settings, model);
 
         REQUIRE(nullptr == result);
     }
 
     SECTION("Invalid evaluation result")
     {
-        REQUIRE(true == fileHandler.CheckScanFile(TestData::GetBrORatioScanFile1()));
+        REQUIRE(true == fileHandler.CheckScanFile(context, TestData::GetBrORatioScanFile1()));
 
-        const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationResult, plumeInScanProperties, settings, model);
+        const auto result = sut.CreatePlumeSpectra(context, fileHandler, evaluationResult, plumeInScanProperties, settings, model);
 
         REQUIRE(nullptr == result);
     }
@@ -42,15 +44,17 @@ TEST_CASE("PlumeSpectrumSelector returns nullptr if input not readable", "[Plume
 // happy case where there is a good plume and we should be able to extract in plume and out of plume spectra
 TEST_CASE("PlumeSpectrumSelector returns expected in and out of plume for good scan - scan file 1", "[PlumeSpectrumSelector][IntegrationTest][Ratios]")
 {
-    novac::CScanFileHandler fileHandler;
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    CScanFileHandler fileHandler(log);
     novac::CScanEvaluationLogFileHandler evaluationFileHandler;
     novac::BasicScanEvaluationResult evaluationResult;
     Configuration::RatioEvaluationSettings settings;
     novac::SpectrometerModel model;
-    PlumeSpectrumSelector sut;
+    PlumeSpectrumSelector sut(log);
 
     // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
-    const bool scanFileIsOk = fileHandler.CheckScanFile(TestData::GetBrORatioScanFile1());
+    const bool scanFileIsOk = fileHandler.CheckScanFile(context, TestData::GetBrORatioScanFile1());
     REQUIRE(scanFileIsOk); // check assumption on the setup
 
     const bool evaluationFileIsOk = evaluationFileHandler.ReadEvaluationLog(TestData::GetBrORatioEvaluationFile1());
@@ -66,7 +70,7 @@ TEST_CASE("PlumeSpectrumSelector returns expected in and out of plume for good s
     REQUIRE(true == novac::CalculatePlumeCompleteness(evaluationFileHandler.m_scan[0], 0, plumeInScanProperties));
 
     // Act
-    const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationFileHandler.m_scan[0], plumeInScanProperties, settings, model, so2Index);
+    const auto result = sut.CreatePlumeSpectra(context, fileHandler, evaluationFileHandler.m_scan[0], plumeInScanProperties, settings, model, so2Index);
     
     // Assert
     REQUIRE(result != nullptr);
@@ -106,15 +110,17 @@ TEST_CASE("PlumeSpectrumSelector returns expected in and out of plume for good s
 // handling the case where there isn't a good or visible plume in the scan
 TEST_CASE("PlumeSpectrumSelector returns no in and out of plume for scan with too wide plume - scan file 2", "[PlumeSpectrumSelector][IntegrationTest][Ratios]")
 {
-    novac::CScanFileHandler fileHandler;
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    CScanFileHandler fileHandler(log);
     novac::CScanEvaluationLogFileHandler evaluationFileHandler;
     novac::BasicScanEvaluationResult evaluationResult;
     Configuration::RatioEvaluationSettings settings;
     novac::SpectrometerModel model;
-    PlumeSpectrumSelector sut;
+    PlumeSpectrumSelector sut(log);
 
     // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
-    const bool scanFileIsOk = fileHandler.CheckScanFile(TestData::GetBrORatioScanFile2());
+    const bool scanFileIsOk = fileHandler.CheckScanFile(context, TestData::GetBrORatioScanFile2());
     REQUIRE(scanFileIsOk); // check assumption on the setup
 
     const bool evaluationFileIsOk = evaluationFileHandler.ReadEvaluationLog(TestData::GetBrORatioEvaluationFile2());
@@ -128,26 +134,26 @@ TEST_CASE("PlumeSpectrumSelector returns no in and out of plume for scan with to
     REQUIRE(true == novac::CalculatePlumeCompleteness(evaluationFileHandler.m_scan[0], 1, plumeInScanProperties));
 
     // Act
-    std::string errorMessage;
-    const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationFileHandler.m_scan[0], plumeInScanProperties, settings, model, so2Index, &errorMessage);
+    const auto result = sut.CreatePlumeSpectra(context, fileHandler, evaluationFileHandler.m_scan[0], plumeInScanProperties, settings, model, so2Index);
 
     // Assert
     REQUIRE(result == nullptr);
-    REQUIRE(errorMessage.length() > 10); // there should be an error message
 }
 
 // another happy case where there is a good plume and we should be able to extract in plume and out of plume spectra (but trickier than the one above)
 TEST_CASE("PlumeSpectrumSelector returns expected in and out of plume for good scan - scan file 3", "[PlumeSpectrumSelector][IntegrationTest][Ratios]")
 {
-    novac::CScanFileHandler fileHandler;
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    CScanFileHandler fileHandler(log);
     novac::CScanEvaluationLogFileHandler evaluationFileHandler;
     novac::BasicScanEvaluationResult evaluationResult;
     Configuration::RatioEvaluationSettings settings;
     novac::SpectrometerModel model;
-    PlumeSpectrumSelector sut;
+    PlumeSpectrumSelector sut(log);
 
     // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
-    const bool scanFileIsOk = fileHandler.CheckScanFile(TestData::GetBrORatioScanFile3());
+    const bool scanFileIsOk = fileHandler.CheckScanFile(context, TestData::GetBrORatioScanFile3());
     REQUIRE(scanFileIsOk); // check assumption on the setup
 
     const bool evaluationFileIsOk = evaluationFileHandler.ReadEvaluationLog(TestData::GetBrORatioEvaluationFile3());
@@ -161,8 +167,7 @@ TEST_CASE("PlumeSpectrumSelector returns expected in and out of plume for good s
     REQUIRE(true == novac::CalculatePlumeCompleteness(evaluationFileHandler.m_scan[0], 1, plumeInScanProperties));
 
     // Act
-    std::string errorMessage;
-    const auto result = sut.CreatePlumeSpectra(fileHandler, evaluationFileHandler.m_scan[0], plumeInScanProperties, settings, model, so2Index, &errorMessage);
+    const auto result = sut.CreatePlumeSpectra(context, fileHandler, evaluationFileHandler.m_scan[0], plumeInScanProperties, settings, model, so2Index);
 
     // Assert
     REQUIRE(result != nullptr);

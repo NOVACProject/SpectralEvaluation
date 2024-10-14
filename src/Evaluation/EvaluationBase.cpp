@@ -25,13 +25,14 @@ using namespace MathFit;
 
 namespace novac
 {
-CEvaluationBase::CEvaluationBase()
+CEvaluationBase::CEvaluationBase(novac::ILogger& log)
+    : m_log(log)
 {
     CreateXDataVector(MAX_SPECTRUM_LENGTH);
 }
 
-CEvaluationBase::CEvaluationBase(const CFitWindow& window)
-    : m_window(window)
+CEvaluationBase::CEvaluationBase(const CFitWindow& window, novac::ILogger& log)
+    : m_window(window), m_log(log)
 {
     CreateXDataVector(MAX_SPECTRUM_LENGTH);
     CreateReferenceSpectra();
@@ -678,7 +679,7 @@ int CEvaluationBase::Evaluate(const double* measured, size_t measuredLength, int
     }
 }
 
-int CEvaluationBase::EvaluateShift(const CSpectrum& measured, double& shift, double& shiftError, double& squeeze, double& squeezeError)
+int CEvaluationBase::EvaluateShift(novac::LogContext context, const CSpectrum& measured, ShiftEvaluationResult& shiftResult)
 {
     assert(vXData.GetSize() >= measured.m_length);
 
@@ -690,14 +691,14 @@ int CEvaluationBase::EvaluateShift(const CSpectrum& measured, double& shift, dou
     // Check so that the length of the spectra agree with each other
     if (m_window.specLength != measured.m_length)
     {
-        m_lastError = "Failed to evaluate shift: the length of the measured spectrum does not equal the spectrum length of the fit-window used.";
+        m_log.Error(context, "Failed to evaluate shift: the length of the measured spectrum does not equal the spectrum length of the fit-window used.");
         return 1;
     }
 
     // Check that we have a solar-spectrum to check against
     if (m_window.fraunhoferRef.m_path.size() < 6)
     {
-        m_lastError = "Failed to evaluate shift: the fraunhofer reference does not exist.";
+        m_log.Error(context, "Failed to evaluate shift: the fraunhofer reference does not exist.");
         return 1;
     }
 
@@ -708,7 +709,7 @@ int CEvaluationBase::EvaluateShift(const CSpectrum& measured, double& shift, dou
         fitHigh = m_window.fitHigh - measured.m_info.m_startChannel;
         if (fitLow < 0 || fitHigh > measured.m_length)
         {
-            m_lastError = "Invalid fit region, fit-low is negative or fit-high is larger than the length of the measured spectrum.";
+            m_log.Error(context, "Invalid fit region, fit-low is negative or fit-high is larger than the length of the measured spectrum.");
             return 1;
         }
     }
@@ -719,22 +720,22 @@ int CEvaluationBase::EvaluateShift(const CSpectrum& measured, double& shift, dou
     }
 
     // initialize the solar-spectrum function
-    CReferenceSpectrumFunction* solarSpec = new CReferenceSpectrumFunction();
+    std::unique_ptr<CReferenceSpectrumFunction> solarSpec = std::make_unique<CReferenceSpectrumFunction>();
 
     // Make a local copy of the data
-    double* measArray = (double*)calloc(measured.m_length, sizeof(double));
-    memcpy(measArray, measured.m_data, measured.m_length * sizeof(double));
+    std::vector<double> measArray(measured.m_length, 0.0);
+    memcpy(measArray.data(), measured.m_data, measured.m_length * sizeof(double));
 
     //----------------------------------------------------------------
     // --------- prepare the spectrum for evaluation -----------------
     //----------------------------------------------------------------
 
-    RemoveOffset(measArray, m_window.specLength, m_window.UV);
+    RemoveOffset(measArray.data(), m_window.specLength, m_window.UV);
     if (m_window.fitType == FIT_TYPE::FIT_HP_DIV || m_window.fitType == FIT_TYPE::FIT_HP_SUB)
     {
-        HighPassBinomial(measArray, m_window.specLength, 500);
+        HighPassBinomial(measArray.data(), m_window.specLength, 500);
     }
-    Log(measArray, m_window.specLength);
+    Log(measArray.data(), m_window.specLength);
 
     if (m_window.fitType == FIT_TYPE::FIT_POLY)
     {
@@ -756,7 +757,7 @@ int CEvaluationBase::EvaluateShift(const CSpectrum& measured, double& shift, dou
 
     // Copy the measured spectrum to vMeas
     CVector vMeas;
-    vMeas.Copy(measArray, m_window.specLength, 1);
+    vMeas.Copy(measArray.data(), m_window.specLength, 1);
 
     // To perform the fit we need to extract the wavelength (or pixel)
     //	information from the vXData-vector
@@ -794,9 +795,7 @@ int CEvaluationBase::EvaluateShift(const CSpectrum& measured, double& shift, dou
     auto tempXVec = vXData.SubVector(0, localSolarSpectrumData.GetSize());
     if (!solarSpec->SetData(tempXVec, localSolarSpectrumData))
     {
-        m_lastError = "Failed to evaluate shift: could not initialize spline object for the solar spectrum.";
-        free(measArray);
-        delete solarSpec;
+        m_log.Error(context, "Failed to evaluate shift: could not initialize spline object for the solar spectrum.");
         return(1);
     }
 
@@ -853,12 +852,7 @@ int CEvaluationBase::EvaluateShift(const CSpectrum& measured, double& shift, dou
         // actually do the fitting
         if (!cFirstFit.Minimize())
         {
-            // novac::CString message;
-            // message.Format("Fit Failed!");
-            // ShowMessage(message);
-            m_lastError = "Failed to evaluate shift: fit failed.";
-            free(measArray);
-            delete solarSpec;
+            m_log.Error(context, "Failed to evaluate shift: fit failed.");
             return 1;
         }
 
@@ -866,23 +860,19 @@ int CEvaluationBase::EvaluateShift(const CSpectrum& measured, double& shift, dou
         cFirstFit.FinishMinimize();
 
         // get the basic fit results
-        //long stepNum				= (long)cFirstFit.GetFitSteps();
-        // double chiSquare			= (double)cFirstFit.GetChiSquare();
-        // unsigned long speciesNum	= (unsigned long)m_window.nRef;
+        // long stepNum = (long)cFirstFit.GetFitSteps();
+        shiftResult.chi2 = (double)cFirstFit.GetChiSquare();
+        // unsigned long speciesNum = (unsigned long)m_window.nRef;
 
         SaveResidual(cFirstFit);
 
         // finally get the fit-result
         // double column       = (double)solarSpec->GetModelParameter(CReferenceSpectrumFunction::CONCENTRATION);
         // double columnError  = (double)solarSpec->GetModelParameterError(CReferenceSpectrumFunction::CONCENTRATION);
-        shift = (double)solarSpec->GetModelParameter(CReferenceSpectrumFunction::SHIFT);
-        shiftError = (double)solarSpec->GetModelParameterError(CReferenceSpectrumFunction::SHIFT);
-        squeeze = (double)solarSpec->GetModelParameter(CReferenceSpectrumFunction::SQUEEZE);
-        squeezeError = (double)solarSpec->GetModelParameterError(CReferenceSpectrumFunction::SQUEEZE);
-
-        // clean up the evaluation
-        free(measArray);
-        delete solarSpec;
+        shiftResult.shift = (double)solarSpec->GetModelParameter(CReferenceSpectrumFunction::SHIFT);
+        shiftResult.shiftError = (double)solarSpec->GetModelParameterError(CReferenceSpectrumFunction::SHIFT);
+        shiftResult.squeeze = (double)solarSpec->GetModelParameter(CReferenceSpectrumFunction::SQUEEZE);
+        shiftResult.squeezeError = (double)solarSpec->GetModelParameterError(CReferenceSpectrumFunction::SQUEEZE);
 
         return 0;
     }
@@ -905,11 +895,7 @@ int CEvaluationBase::EvaluateShift(const CSpectrum& measured, double& shift, dou
         // message.Format("A Fit Exception has occurred. Are the reference files OK?");
         // ShowMessage(message);
 
-        m_lastError = "Failed to evaluate shift: a fit exception occurred.";
-
-        // clean up the evaluation
-        free(measArray);
-        delete solarSpec;
+        m_log.Error(context, "Failed to evaluate shift: a fit exception occurred.");
 
         return (1);
     }

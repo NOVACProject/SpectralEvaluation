@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <SpectralEvaluation/Log.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 
 namespace Configuration
@@ -52,6 +53,8 @@ class PlumeSpectrumSelector
 {
 public:
 
+    PlumeSpectrumSelector(novac::ILogger& log) : m_log(log) { }
+
     /**
      * @brief Selects in-plume and out-of-plume spectra from the given scan file with given evaluation result and selection criteria.
      * @param originalScanFile The .pak file where the spectra are found.
@@ -62,13 +65,13 @@ public:
      * @return A created PlumeSpectra struct, or nullptr if none could be created.
     */
     std::unique_ptr<PlumeSpectra> CreatePlumeSpectra(
+        novac::LogContext context,
         IScanSpectrumSource& originalScanFile,
         const BasicScanEvaluationResult& originalScanResult,
         const CPlumeInScanProperty& plumeProperties,
         const Configuration::RatioEvaluationSettings& settings,
         const SpectrometerModel& spectrometerModel,
-        int mainSpecieIndex = 0,
-        std::string* errorMessage = nullptr);
+        int mainSpecieIndex = 0);
 
     /**
      * @brief Selects in-plume and out-of-plume spectra from the given scan file with given evaluation result and selection criteria
@@ -80,16 +83,18 @@ public:
      * @param outputDirectory The destination directory where the output file should be saved.
     */
     void CreatePlumeSpectrumFile(
+        novac::LogContext context,
         IScanSpectrumSource& originalScanFile,
         const BasicScanEvaluationResult& originalScanResult,
         const CPlumeInScanProperty& plumeProperties,
         const Configuration::RatioEvaluationSettings& settings,
         const SpectrometerModel& spectrometerModel,
         int mainSpecieIndex,
-        const std::string& outputDirectory,
-        std::string* errorMessage = nullptr);
+        const std::string& outputDirectory);
 
 private:
+
+    novac::ILogger& m_log;
 
     int m_mainSpecieIndex = 0;
 
@@ -163,6 +168,7 @@ private:
         double& peakSaturationAfterDarkCorrection) const;
 
     void ExtractEvaluationData(
+        novac::LogContext context,
         IScanSpectrumSource& originalScanFile,
         const CSpectrum& darkSpectrum,
         const BasicScanEvaluationResult& originalScanResult,

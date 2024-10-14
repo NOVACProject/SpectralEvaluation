@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <SpectralEvaluation/Log.h>
 #include <SpectralEvaluation/Evaluation/RatioEvaluation.h>
 #include <SpectralEvaluation/Spectra/WavelengthRange.h>
 #include <SpectralEvaluation/Spectra/SpectrometerModel.h>
@@ -112,7 +113,7 @@ struct RatioCalculationResult
 class RatioCalculationController
 {
 public:
-    RatioCalculationController();
+    RatioCalculationController(novac::ILogger& log);
 
     // Sets up all the values, and the fit windows, to their default values
     void InitializeToDefault();
@@ -190,7 +191,7 @@ public:
     // Performs the evaluation of the given scan.
     // This require that SetupFitWindows() has been called since it will use the contents of the fit windows.
     // @return a vector containing the calculated ratio if the evaluation succeeded.
-    RatioCalculationResult EvaluateScan(novac::IScanSpectrumSource& scan, const novac::BasicScanEvaluationResult& initialResult, std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows);
+    RatioCalculationResult EvaluateScan(novac::LogContext context, novac::IScanSpectrumSource& scan, const novac::BasicScanEvaluationResult& initialResult, std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows);
 
     // Helper method, saves the provided results in this RatioCalculationController to file.
     // @param filename The full filename and path where the data should be saved.
@@ -206,6 +207,10 @@ public:
     // Helper method, saves the spectra in the provided RatioCalculationResult as two Std-files.
     // @param outputDirectory The directory where the data should be saved. The name of the file is auto-generated from the data.
     static void SaveSpectraToStdFile(const std::string& outputDirectory, const RatioCalculationResult& resultToSave);
+
+protected:
+
+    novac::ILogger& m_log;
 
 private:
 

@@ -11,6 +11,7 @@ struct CSkySettings;
 
 namespace novac
 {
+struct SpectrometerModel;
 class CScanFileHandler;
 class CSpectrum;
 class CEvaluationBase;
@@ -42,13 +43,18 @@ public:
     CEvaluationBase* FindOptimumShiftAndSqueezeFromFraunhoferReference(
         novac::LogContext context,
         const CFitWindow& fitWindow,
+        const novac::SpectrometerModel& spectrometerModel,
         const Configuration::CDarkSettings& darkSettings,
         const Configuration::CSkySettings& skySettings,
         CScanFileHandler& scan);
 
     /** @return the index of the spectrum with the 'most suitable intensity for fitting', i.e. this is the
         spectrum with the highest intensity which isn't (close to being) saturated. */
-    static int GetIndexOfSpectrumWithBestIntensity(const CFitWindow& fitWindow, CScanFileHandler& scan);
+    static int GetIndexOfSpectrumWithBestIntensity(
+        novac::LogContext context,
+        const CFitWindow& fitWindow,
+        const novac::SpectrometerModel& spectrometerModel,
+        CScanFileHandler& scan);
 
 protected:
 

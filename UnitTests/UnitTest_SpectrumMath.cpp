@@ -10,7 +10,7 @@ public:
     std::vector<novac::CSpectrum> m_spectra;
     int m_internalSpectrumCounter = 0;
 
-    virtual int GetSpectrum(int specNumber, novac::CSpectrum& spec) override
+    virtual int GetSpectrum(novac::LogContext context, int specNumber, novac::CSpectrum& spec) override
     {
         if (specNumber >= 0 && specNumber < (int)m_spectra.size())
         {
@@ -31,7 +31,7 @@ public:
         m_internalSpectrumCounter = 0;
     }
 
-    virtual int GetNextMeasuredSpectrum(novac::CSpectrum& spec) override
+    virtual int GetNextMeasuredSpectrum(novac::LogContext context, novac::CSpectrum& spec) override
     {
         if ((size_t)m_internalSpectrumCounter < m_spectra.size())
         {

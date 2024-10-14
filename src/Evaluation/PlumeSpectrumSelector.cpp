@@ -30,37 +30,33 @@ std::string FormatTimestamp(const CDateTime& time)
 }
 
 std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
+    novac::LogContext context,
     IScanSpectrumSource& originalScanFile,
     const BasicScanEvaluationResult& originalScanResult,
     const CPlumeInScanProperty& plumeProperties,
     const Configuration::RatioEvaluationSettings& settings,
     const SpectrometerModel& spectrometerModel,
-    int mainSpecieIndex,
-    std::string* errorMessage)
+    int mainSpecieIndex)
 {
     m_mainSpecieIndex = mainSpecieIndex;
 
     auto skySpectrum = std::make_unique<CSpectrum>();
     if (originalScanFile.GetSky(*skySpectrum))
     {
-        if (errorMessage != nullptr)
-        {
-            *errorMessage = "Failed to read sky spectrum of scan.";
-        }
+        m_log.Error(context, "Failed to read sky spectrum of scan.");
         return nullptr;
     }
     auto darkSpectrum = std::make_unique<CSpectrum>();
     if (originalScanFile.GetDark(*darkSpectrum))
     {
-        if (errorMessage != nullptr)
-        {
-            *errorMessage = "Failed to read dark spectrum of scan.";
-        }
+        m_log.Error(context, "Failed to read dark spectrum of scan.");
         return nullptr;
     }
 
-    if (!IsSuitableScanForRatioEvaluation(originalScanResult, plumeProperties, settings, errorMessage))
+    std::string errorMessage;
+    if (!IsSuitableScanForRatioEvaluation(originalScanResult, plumeProperties, settings, &errorMessage))
     {
+        m_log.Information(context, errorMessage);
         return nullptr;
     }
 
@@ -68,16 +64,13 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
 
     // Concatenate the important information on the scan, keeping only the good spectra.
     std::vector< InitialEvaluationData> evaluationData;
-    ExtractEvaluationData(originalScanFile, *darkSpectrum, originalScanResult, settings, spectrometerModel, evaluationData, result->rejectedSpectrumIndices);
+    ExtractEvaluationData(context, originalScanFile, *darkSpectrum, originalScanResult, settings, spectrometerModel, evaluationData, result->rejectedSpectrumIndices);
     if (static_cast<int>(evaluationData.size()) < settings.minNumberOfSpectraInPlume + settings.numberOfSpectraOutsideOfPlume)
     {
-        if (errorMessage != nullptr)
-        {
-            std::stringstream msg;
-            msg << "Too few spectra with good intensity in scan (" << evaluationData.size() << ") at least ";
-            msg << settings.minNumberOfSpectraInPlume + settings.numberOfSpectraOutsideOfPlume << " required.";
-            *errorMessage = msg.str();
-        }
+        std::stringstream msg;
+        msg << "Too few spectra with good intensity in scan (" << evaluationData.size() << ") at least ";
+        msg << settings.minNumberOfSpectraInPlume + settings.numberOfSpectraOutsideOfPlume << " required.";
+        m_log.Information(context, msg.str());
         return nullptr;
     }
 
@@ -87,11 +80,12 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
         settings,
         result->referenceSpectrumIndices,
         result->inPlumeSpectrumIndices,
-        errorMessage);
+        &errorMessage);
 
     if (!spectraSelected)
     {
-        return result;
+        m_log.Information(context, errorMessage);
+        return nullptr;
     }
 
     result->referenceSpectrum = std::make_unique<CSpectrum>();
@@ -116,16 +110,16 @@ std::unique_ptr<PlumeSpectra> PlumeSpectrumSelector::CreatePlumeSpectra(
 }
 
 void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
+    novac::LogContext context,
     IScanSpectrumSource& originalScanFile,
     const BasicScanEvaluationResult& originalScanResult,
     const CPlumeInScanProperty& plumeProperties,
     const Configuration::RatioEvaluationSettings& settings,
     const SpectrometerModel& spectrometerModel,
     int mainSpecieIndex,
-    const std::string& outputDirectory,
-    std::string* errorMessage)
+    const std::string& outputDirectory)
 {
-    const auto spectra = this->CreatePlumeSpectra(originalScanFile, originalScanResult, plumeProperties, settings, spectrometerModel, mainSpecieIndex, errorMessage);
+    const auto spectra = this->CreatePlumeSpectra(context, originalScanFile, originalScanResult, plumeProperties, settings, spectrometerModel, mainSpecieIndex);
     if (spectra == nullptr)
     {
         return;
@@ -154,7 +148,7 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     for (int idx : spectra->inPlumeSpectrumIndices)
     {
         CSpectrum spectrum;
-        originalScanFile.GetSpectrum((int)idx, spectrum);
+        originalScanFile.GetSpectrum(context, (int)idx, spectrum);
         textOutput << idx << "\t" << spectrum.m_info.m_scanAngle << "\t" << FormatTimestamp(spectrum.m_info.m_startTime) << std::endl;
     }
     textOutput << std::endl;
@@ -163,7 +157,7 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     for (int idx : spectra->referenceSpectrumIndices)
     {
         CSpectrum spectrum;
-        originalScanFile.GetSpectrum((int)idx, spectrum);
+        originalScanFile.GetSpectrum(context, (int)idx, spectrum);
         textOutput << idx << "\t" << spectrum.m_info.m_scanAngle << "\t" << FormatTimestamp(spectrum.m_info.m_startTime) << std::endl;
     }
     textOutput << std::endl;
@@ -179,6 +173,7 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
 }
 
 void PlumeSpectrumSelector::ExtractEvaluationData(
+    novac::LogContext context,
     IScanSpectrumSource& originalScanFile,
     const CSpectrum& darkSpectrum,
     const BasicScanEvaluationResult& originalScanResult,
@@ -187,6 +182,7 @@ void PlumeSpectrumSelector::ExtractEvaluationData(
     std::vector< InitialEvaluationData>& evaluationData,
     std::vector<std::pair<int, std::string>>& rejectedIndices) const
 {
+
     evaluationData.clear();
     rejectedIndices.clear();
 
@@ -204,7 +200,7 @@ void PlumeSpectrumSelector::ExtractEvaluationData(
         data.offsetCorrectedColumn = originalScanResult.m_spec[ii].m_referenceResult[m_mainSpecieIndex].m_column;
 
         CSpectrum spectrum;
-        if (0 == originalScanFile.GetSpectrum((int)ii, spectrum))
+        if (0 == originalScanFile.GetSpectrum(context, (int)ii, spectrum))
         {
             GetIntensityOfSpectrum(spectrum, darkSpectrum, spectrometermodel, data.peakSaturation, data.peakSaturationAfterDarkCorrection);
         }

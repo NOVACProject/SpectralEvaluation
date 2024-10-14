@@ -33,7 +33,8 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 not included SO2 w
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
-    RatioCalculationController sut;
+    novac::ConsoleLog log;
+    RatioCalculationController sut(log);
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references
@@ -56,7 +57,8 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - BrO not included BrO w
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
-    RatioCalculationController sut;
+    novac::ConsoleLog log;
+    RatioCalculationController sut(log);
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references
@@ -79,7 +81,8 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 and BrO included i
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
-    RatioCalculationController sut;
+    novac::ConsoleLog log;
+    RatioCalculationController sut(log);
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references
@@ -137,7 +140,8 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - Sets up fitLow and fit
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
-    RatioCalculationController sut;
+    novac::ConsoleLog log;
+    RatioCalculationController sut(log);
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references
@@ -172,7 +176,8 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - Sets fitType to HP_DIV
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
-    RatioCalculationController sut;
+    novac::ConsoleLog log;
+    RatioCalculationController sut(log);
     sut.m_doasFitType = novac::FIT_TYPE::FIT_HP_DIV;
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
@@ -206,7 +211,8 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - SO2 included in only m
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
-    RatioCalculationController sut;
+    novac::ConsoleLog log;
+    RatioCalculationController sut(log);
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references
@@ -252,7 +258,8 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - Two references in each
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
-    RatioCalculationController sut;
+    novac::ConsoleLog log;
+    RatioCalculationController sut(log);
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references
@@ -311,7 +318,8 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - Calculated Ring includ
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
-    RatioCalculationController sut;
+    novac::ConsoleLog log;
+    RatioCalculationController sut(log);
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references
@@ -355,7 +363,8 @@ TEST_CASE("RatioCalculationController - SetupFitWindows - Calculated Ring and Ri
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
-    RatioCalculationController sut;
+    novac::ConsoleLog log;
+    RatioCalculationController sut(log);
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references
@@ -402,7 +411,9 @@ TEST_CASE("RatioCalculationController - Evaluate", "[RatioCalculationController]
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
-    RatioCalculationController sut;
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    RatioCalculationController sut(log);
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references for a good fit
@@ -428,8 +439,8 @@ TEST_CASE("RatioCalculationController - Evaluate", "[RatioCalculationController]
     ringReference2->m_includeInMinor = true;
 
     // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
-    novac::CScanFileHandler fileHandler;
-    const bool scanFileIsOk = fileHandler.CheckScanFile(TestData::GetBrORatioScanFile1());
+    CScanFileHandler fileHandler(log);
+    const bool scanFileIsOk = fileHandler.CheckScanFile(context, TestData::GetBrORatioScanFile1());
     REQUIRE(scanFileIsOk); // check assumption on the setup
 
     novac::CScanEvaluationLogFileHandler evaluationFileHandler;
@@ -441,7 +452,7 @@ TEST_CASE("RatioCalculationController - Evaluate", "[RatioCalculationController]
     auto fitWindowsetup = sut.SetupFitWindows();
 
     // Act
-    const auto result = sut.EvaluateScan(fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
+    const auto result = sut.EvaluateScan(context, fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
 
     // Assert
     // Verify that the result is indeed correct!
@@ -480,7 +491,9 @@ TEST_CASE("RatioCalculationController - Evaluate - plume too wide", "[RatioCalcu
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
-    RatioCalculationController sut;
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    RatioCalculationController sut(log);
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references for a good fit
@@ -506,8 +519,8 @@ TEST_CASE("RatioCalculationController - Evaluate - plume too wide", "[RatioCalcu
     ringReference2->m_includeInMinor = true;
 
     // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
-    novac::CScanFileHandler fileHandler;
-    const bool scanFileIsOk = fileHandler.CheckScanFile(TestData::GetBrORatioScanFile2());
+    CScanFileHandler fileHandler(log);
+    const bool scanFileIsOk = fileHandler.CheckScanFile(context, TestData::GetBrORatioScanFile2());
     REQUIRE(scanFileIsOk); // check assumption on the setup
 
     novac::CScanEvaluationLogFileHandler evaluationFileHandler;
@@ -519,7 +532,7 @@ TEST_CASE("RatioCalculationController - Evaluate - plume too wide", "[RatioCalcu
     auto fitWindowsetup = sut.SetupFitWindows();
 
     // Act
-    const auto result = sut.EvaluateScan(fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
+    const auto result = sut.EvaluateScan(context, fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
 
     // Assert
     REQUIRE(!result.debugInfo.errorMessage.empty());
@@ -531,7 +544,9 @@ TEST_CASE("RatioCalculationController - Evaluate without Ring", "[RatioCalculati
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
-    RatioCalculationController sut;
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    RatioCalculationController sut(log);
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references for a good fit
@@ -553,8 +568,8 @@ TEST_CASE("RatioCalculationController - Evaluate without Ring", "[RatioCalculati
     ringReference2->m_automaticallyCalculate = false;
 
     // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
-    novac::CScanFileHandler fileHandler;
-    const bool scanFileIsOk = fileHandler.CheckScanFile(TestData::GetBrORatioScanFile1());
+    CScanFileHandler fileHandler(log);
+    const bool scanFileIsOk = fileHandler.CheckScanFile(context, TestData::GetBrORatioScanFile1());
     REQUIRE(scanFileIsOk); // check assumption on the setup
 
     novac::CScanEvaluationLogFileHandler evaluationFileHandler;
@@ -566,7 +581,7 @@ TEST_CASE("RatioCalculationController - Evaluate without Ring", "[RatioCalculati
     auto fitWindowsetup = sut.SetupFitWindows();
 
     // Act
-    const auto result = sut.EvaluateScan(fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
+    const auto result = sut.EvaluateScan(context, fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
 
     // Assert
     // Verify that the result is indeed correct!
@@ -606,7 +621,9 @@ TEST_CASE("RatioCalculationController - Evaluate without offset polynomial", "[R
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
-    RatioCalculationController sut;
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    RatioCalculationController sut(log);
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references, with varied number of references in each window
@@ -632,8 +649,8 @@ TEST_CASE("RatioCalculationController - Evaluate without offset polynomial", "[R
     ringReference2->m_includeInMinor = false;
 
     // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
-    novac::CScanFileHandler fileHandler;
-    const bool scanFileIsOk = fileHandler.CheckScanFile(TestData::GetBrORatioScanFile1());
+    CScanFileHandler fileHandler(log);
+    const bool scanFileIsOk = fileHandler.CheckScanFile(context, TestData::GetBrORatioScanFile1());
     REQUIRE(scanFileIsOk); // check assumption on the setup
 
     novac::CScanEvaluationLogFileHandler evaluationFileHandler;
@@ -650,7 +667,7 @@ TEST_CASE("RatioCalculationController - Evaluate without offset polynomial", "[R
 
 
     // Act
-    const auto result = sut.EvaluateScan(fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
+    const auto result = sut.EvaluateScan(context, fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
 
     // Assert
     // Verify that the result is indeed correct!
@@ -691,7 +708,9 @@ TEST_CASE("RatioCalculationController - DoInitialEvaluation", "[RatioCalculation
 {
     const auto testWindows = GetSetupOfFitWindowsForTest();
 
-    RatioCalculationController sut;
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    RatioCalculationController sut(log);
     REQUIRE(sut.m_references.size() == 5); // check assumption here.
 
     // Setup the references for a good fit
@@ -717,8 +736,8 @@ TEST_CASE("RatioCalculationController - DoInitialEvaluation", "[RatioCalculation
     ringReference2->m_includeInMinor = true;
 
     // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
-    novac::CScanFileHandler fileHandler;
-    const bool scanFileIsOk = fileHandler.CheckScanFile(TestData::GetBrORatioScanFile1());
+    CScanFileHandler fileHandler(log);
+    const bool scanFileIsOk = fileHandler.CheckScanFile(context, TestData::GetBrORatioScanFile1());
     REQUIRE(scanFileIsOk); // check assumption on the setup
 
     novac::CScanEvaluationLogFileHandler evaluationFileHandler;
@@ -745,7 +764,8 @@ TEST_CASE("RatioCalculationController - DoInitialEvaluation", "[RatioCalculation
 
 TEST_CASE("RatioCalculationController - Save and LoadSetup restores original data", "[RatioCalculationController][Ratios]")
 {
-    RatioCalculationController original;
+    novac::ConsoleLog log;
+    RatioCalculationController original(log);
     // Setup the references
     ReferenceForRatioCalculation* so2Reference = GetReferenceFor(original, StandardDoasSpecie::SO2);
     so2Reference->m_path = "This is a test ";
@@ -772,7 +792,7 @@ TEST_CASE("RatioCalculationController - Save and LoadSetup restores original dat
     original.m_broFitRange = novac::WavelengthRange(333.3, 366.6);
     original.m_broPolynomialOrder = 9;
     original.m_doasFitType = novac::FIT_TYPE::FIT_HP_SUB;
-    RatioCalculationController restored;
+    RatioCalculationController restored(log);
     const std::string temporaryFile = TestData::GetTemporaryConfigurationFileName();
 
     // Act

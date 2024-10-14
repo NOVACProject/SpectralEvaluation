@@ -16,8 +16,10 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
     Configuration::CDarkSettings darkSettings;
 
     // Prepare the test by reading in the .pak-file and the evaluation result and calculate the plume-properties from the result.
-    novac::CScanFileHandler fileHandler;
-    const bool scanFileIsOk = fileHandler.CheckScanFile(TestData::GetBrORatioScanFile1());
+    novac::ConsoleLog log;
+    novac::LogContext context;
+    CScanFileHandler fileHandler(log);
+    const bool scanFileIsOk = fileHandler.CheckScanFile(context, TestData::GetBrORatioScanFile1());
     REQUIRE(scanFileIsOk); // check assumption on the setup
 
     novac::CScanEvaluationLogFileHandler evaluationFileHandler;
@@ -50,12 +52,12 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
     SECTION("Polynomial fit")
     {
         // Setup the sut
-        RatioEvaluation sut{ settings, darkSettings };
+        RatioEvaluation sut{ settings, darkSettings, log };
         sut.SetupFirstResult(evaluationFileHandler.m_scan[0], plumeInScanProperties);
         sut.SetupFitWindows(so2FitWindow, std::vector<CFitWindow>{ broFitWindow});
 
         // Act
-        const auto ratios = sut.Run(fileHandler);
+        const auto ratios = sut.Run(context, fileHandler);
 
         // Assert
         REQUIRE(ratios.size() == 1);
@@ -88,12 +90,12 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
         }
 
         // Setup the sut
-        RatioEvaluation sut{ settings, darkSettings };
+        RatioEvaluation sut{ settings, darkSettings, log };
         sut.SetupFirstResult(evaluationFileHandler.m_scan[0], plumeInScanProperties);
         sut.SetupFitWindows(so2FitWindow, std::vector<CFitWindow>{ broFitWindow});
 
         // Act
-        const auto ratios = sut.Run(fileHandler);
+        const auto ratios = sut.Run(context, fileHandler);
 
         // Assert
         REQUIRE(ratios.size() == 1);

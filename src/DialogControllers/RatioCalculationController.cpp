@@ -19,8 +19,8 @@ namespace novac
     std::string FormatTimestamp(const CDateTime& time);
 }
 
-RatioCalculationController::RatioCalculationController()
-    : m_so2FitRange(314.8, 326.8), m_broFitRange(330.6, 352.8)
+RatioCalculationController::RatioCalculationController(novac::ILogger& log)
+    : m_so2FitRange(314.8, 326.8), m_broFitRange(330.6, 352.8), m_log(log)
 {
     InitializeToDefault();
 }
@@ -385,6 +385,7 @@ std::shared_ptr<RatioCalculationFitSetup> RatioCalculationController::SetupFitWi
 novac::BasicScanEvaluationResult RatioCalculationController::DoInitialEvaluation(novac::IScanSpectrumSource& scan, std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows)
 {
     novac::BasicScanEvaluationResult result;
+    novac::LogContext context; // TODO: Get from input
 
     // For each spectrum in the scan, do a DOAS evaluation
     novac::CSpectrum measuredSkySpectrum;
@@ -417,7 +418,7 @@ novac::BasicScanEvaluationResult RatioCalculationController::DoInitialEvaluation
     scan.ResetCounter();
     novac::CSpectrum measuredSpectrum;
     novac::SpectrometerModel spectrometerModel = GetModelForMeasurement(measuredSkySpectrum.m_info.m_device);
-    while (0 == scan.GetNextMeasuredSpectrum(measuredSpectrum))
+    while (0 == scan.GetNextMeasuredSpectrum(context, measuredSpectrum))
     {
         // Check the intensity and save this, such that we can use this later to verify if the evaluated column was good or not.
         measuredSpectrum.m_info.m_peakIntensity = (float)measuredSpectrum.MaxValue(0, measuredSpectrum.m_length - 2);
@@ -468,15 +469,17 @@ RatioCalculationResult RatioCalculationController::EvaluateNextScan(std::shared_
     }
 
     const auto& pakFileName = m_pakfiles[m_currentPakFileIdx++];
-    novac::CScanFileHandler scan;
-    scan.CheckScanFile(pakFileName);
+    novac::CScanFileHandler scan(m_log);
+    novac::LogContext context("file", pakFileName);
+    scan.CheckScanFile(context, pakFileName);
 
     const auto initialResult = DoInitialEvaluation(scan, ratioFitWindows);
 
-    return EvaluateScan(scan, initialResult, ratioFitWindows);
+    return EvaluateScan(context, scan, initialResult, ratioFitWindows);
 }
 
 RatioCalculationResult RatioCalculationController::EvaluateScan(
+    novac::LogContext context,
     novac::IScanSpectrumSource& scan,
     const novac::BasicScanEvaluationResult& initialResult,
     std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows)
@@ -506,10 +509,10 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
     const auto spectrometerModel = GetModelForMeasurement(initialResult.m_specInfo.front().m_device);
 
     // Setup the ratio evaluation and run it.
-    novac::RatioEvaluation ratioEvaluation{ m_ratioEvaluationSettings, darkSettings };
+    novac::RatioEvaluation ratioEvaluation{ m_ratioEvaluationSettings, darkSettings, m_log };
     ratioEvaluation.SetupFitWindows(ratioFitWindows->so2Window, std::vector<novac::CFitWindow>{ ratioFitWindows->broWindow });
     ratioEvaluation.SetupFirstResult(initialResult, plumeInScanProperties, &spectrometerModel);
-    const auto ratios = ratioEvaluation.Run(scan, &result.debugInfo);
+    const auto ratios = ratioEvaluation.Run( context, scan, &result.debugInfo);
 
     // Extract the result
     if (ratios.size() > 0)
