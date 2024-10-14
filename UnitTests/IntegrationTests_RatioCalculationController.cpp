@@ -452,7 +452,7 @@ TEST_CASE("RatioCalculationController - Evaluate", "[RatioCalculationController]
     auto fitWindowsetup = sut.SetupFitWindows();
 
     // Act
-    const auto result = sut.EvaluateScan(fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
+    const auto result = sut.EvaluateScan(context, fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
 
     // Assert
     // Verify that the result is indeed correct!
@@ -532,7 +532,7 @@ TEST_CASE("RatioCalculationController - Evaluate - plume too wide", "[RatioCalcu
     auto fitWindowsetup = sut.SetupFitWindows();
 
     // Act
-    const auto result = sut.EvaluateScan(fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
+    const auto result = sut.EvaluateScan(context, fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
 
     // Assert
     REQUIRE(!result.debugInfo.errorMessage.empty());
@@ -581,7 +581,7 @@ TEST_CASE("RatioCalculationController - Evaluate without Ring", "[RatioCalculati
     auto fitWindowsetup = sut.SetupFitWindows();
 
     // Act
-    const auto result = sut.EvaluateScan(fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
+    const auto result = sut.EvaluateScan(context, fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
 
     // Assert
     // Verify that the result is indeed correct!
@@ -667,7 +667,7 @@ TEST_CASE("RatioCalculationController - Evaluate without offset polynomial", "[R
 
 
     // Act
-    const auto result = sut.EvaluateScan(fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
+    const auto result = sut.EvaluateScan(context, fileHandler, evaluationFileHandler.m_scan[0], fitWindowsetup);
 
     // Assert
     // Verify that the result is indeed correct!

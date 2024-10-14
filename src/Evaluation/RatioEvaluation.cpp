@@ -154,25 +154,25 @@ DoasResult RunEvaluation(const CFitWindow& window, PreparedInputSpectraForDoasEv
     return doasResult;
 }
 
-RatioEvaluation::RatioEvaluation(const Configuration::RatioEvaluationSettings& settings, const Configuration::CDarkSettings& darkSettings)
-    : m_darkSettings(darkSettings), m_settings(settings)
+RatioEvaluation::RatioEvaluation(const Configuration::RatioEvaluationSettings& settings, const Configuration::CDarkSettings& darkSettings, novac::ILogger& log)
+    : m_darkSettings(darkSettings), m_settings(settings), m_log(log)
 {
 }
 
-std::vector<Ratio> RatioEvaluation::Run(IScanSpectrumSource& scan, RatioEvaluationDebugInformation* debugInfo)
+std::vector<Ratio> RatioEvaluation::Run(novac::LogContext context, IScanSpectrumSource& scan, RatioEvaluationDebugInformation* debugInfo)
 {
     if (debugInfo != nullptr)
     {
-        return this->Run(scan, *debugInfo);
+        return this->Run(context, scan, *debugInfo);
     }
     else
     {
         RatioEvaluationDebugInformation localDebugInfo;
-        return this->Run(scan, localDebugInfo);
+        return this->Run(context, scan, localDebugInfo);
     }
 }
 
-std::vector<Ratio> RatioEvaluation::Run(IScanSpectrumSource& scan, RatioEvaluationDebugInformation& debugInfo)
+std::vector<Ratio> RatioEvaluation::Run(novac::LogContext context, IScanSpectrumSource& scan, RatioEvaluationDebugInformation& debugInfo)
 {
     std::vector<Ratio> result;
     debugInfo.doasResults.clear();
@@ -193,8 +193,8 @@ std::vector<Ratio> RatioEvaluation::Run(IScanSpectrumSource& scan, RatioEvaluati
         debugInfo.spectrometerFullDynamicRange = spectrometerModel.maximumIntensityForSingleReadout;
 
         {
-            PlumeSpectrumSelector selector;
-            std::unique_ptr<PlumeSpectra> selectedSpectra = selector.CreatePlumeSpectra(scan, m_masterResult, m_masterResultProperties, m_settings, spectrometerModel, 0, &debugInfo.errorMessage);
+            PlumeSpectrumSelector selector(m_log);
+            std::unique_ptr<PlumeSpectra> selectedSpectra = selector.CreatePlumeSpectra(context, scan, m_masterResult, m_masterResultProperties, m_settings, spectrometerModel, 0);
             if (selectedSpectra == nullptr)
             {
                 return result;

@@ -49,7 +49,9 @@ bool CScanFileHandler::CheckScanFile(novac::LogContext context, const std::strin
                 else
                 {
                     this->m_lastError = reader.m_lastError;
-                    m_log.Error(context, "Could not read spectrum from file");
+                    std::stringstream msg;
+                    msg << "Could not read spectrum " << k << " from file. " << reader.FormatLastError();
+                    m_log.Error(context, msg.str());
                     fclose(f);
                     return false;
                 }
@@ -98,7 +100,7 @@ bool CScanFileHandler::CheckScanFile(novac::LogContext context, const std::strin
     if (error)
     {
         this->m_lastError = reader.m_lastError;
-        m_log.Error(context, "Could not read sky spectrum from file");
+        m_log.Error(context, "Could not read sky spectrum from file. " + reader.FormatLastError());
         return false;
     }
 
@@ -132,7 +134,7 @@ bool CScanFileHandler::CheckScanFile(novac::LogContext context, const std::strin
     if (error)
     {
         this->m_lastError = reader.m_lastError;
-        m_log.Error(context, "Could not read dark spectrum from file");
+        m_log.Error(context, "Could not read dark spectrum from file." + reader.FormatLastError());
         return false;
     }
 
@@ -143,7 +145,7 @@ bool CScanFileHandler::CheckScanFile(novac::LogContext context, const std::strin
         if (true != reader.ReadSpectrum(m_fileName, indices[3], *spectrum))
         {
             this->m_lastError = reader.m_lastError;
-            m_log.Error(context, "Could not read offset spectrum from file");
+            m_log.Error(context, "Could not read offset spectrum from file." + reader.FormatLastError());
             return false;
         }
 
@@ -157,7 +159,7 @@ bool CScanFileHandler::CheckScanFile(novac::LogContext context, const std::strin
         if (true != reader.ReadSpectrum(m_fileName, indices[4], *spectrum))
         {
             this->m_lastError = reader.m_lastError;
-            m_log.Error(context, "Could not read dark current spectrum from file");
+            m_log.Error(context, "Could not read dark current spectrum from file." + reader.FormatLastError());
             return false;
         }
         this->m_darkCurrent = std::move(spectrum);
@@ -167,7 +169,7 @@ bool CScanFileHandler::CheckScanFile(novac::LogContext context, const std::strin
         std::unique_ptr<CSpectrum> spectrum = std::make_unique<CSpectrum>();
         if (true != reader.ReadSpectrum(m_fileName, indices[5], *spectrum))
         {
-            m_log.Error(context, "Could not read offset spectrum spectrum from file");
+            m_log.Error(context, "Could not read offset spectrum spectrum from file." + reader.FormatLastError());
             this->m_lastError = reader.m_lastError;
             return false;
         }
@@ -217,7 +219,6 @@ int CScanFileHandler::GetNextSpectrum(novac::LogContext context, CSpectrum& spec
         if (m_specReadSoFarNum >= m_spectrumBufferNum)
         {
             this->m_lastError = CSpectrumIO::ERROR_SPECTRUM_NOT_FOUND;
-            m_log.Error(context, "Requested spectrum not found");
             ++m_specReadSoFarNum; // <-- go to the next spectum
             return 0;
         }
@@ -233,7 +234,7 @@ int CScanFileHandler::GetNextSpectrum(novac::LogContext context, CSpectrum& spec
         {
             // if there was an error reading the spectrum, set the error-flag
             this->m_lastError = reader.m_lastError;
-            m_log.Error(context, "Error reading spectrum");
+            m_log.Error(context, "Error reading spectrum." + reader.FormatLastError());
             ++m_specReadSoFarNum; // <-- go to the next spectum
             return 0;
         }
@@ -259,6 +260,11 @@ int CScanFileHandler::GetSpectrum(novac::LogContext context, CSpectrum& spec, lo
         // We've read in the spectra into the buffer, just read it from there
         // instead of reading from the file itself.
         spec = m_spectrumBuffer.at(specNo);
+    }
+    else if ((uint32_t)specNo >= m_specNum)
+    {
+        // Attempt to read past the end of the file
+        return 0;
     }
     else
     {

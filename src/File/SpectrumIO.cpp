@@ -24,6 +24,24 @@ CSpectrumIO::CSpectrumIO()
     this->m_outbuf.resize(16384);
 }
 
+std::string CSpectrumIO::FormatLastError() const
+{
+    switch (this->m_lastError)
+    {
+    case ERROR_NO_ERROR: return "No error";
+    case ERROR_EOF: return "End of File";
+    case ERROR_COULD_NOT_OPEN_FILE: return "Could not open file";
+    case ERROR_CHECKSUM_MISMATCH: return "Checksum mismatch";
+    case ERROR_SPECTRUM_TOO_LARGE: return "Spectrum too large to be opened";
+    case ERROR_SPECTRUM_NOT_FOUND: return "Requested spectrum not found";
+    case ERROR_DECOMPRESS: return "Error decompressing spectrum";
+    case ERROR_SPECTRUM_NOT_COMPLETE: return "Spectrum not complete in file";
+    case ERROR_COULD_NOT_CHANGE_POS: return "Could not change position in file";
+    default:
+        return "Unknown error";
+    }
+}
+
 int CSpectrumIO::CountSpectra(const std::string& fileName)
 {
     std::uint32_t specNum = 0;

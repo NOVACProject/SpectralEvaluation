@@ -259,7 +259,7 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
     // Check that the Fraunhofer reference has been read in
     if (fitWindow.fraunhoferRef.m_data == nullptr || fitWindow.fraunhoferRef.m_data->m_crossSection.size() == 0)
     {
-        m_log.Information(context, "cannot determine shift and squeeze from Fraunhofer reference. Reference has no values.");
+        m_log.Information(context, "Cannot determine shift and squeeze from Fraunhofer reference. Reference has no values.");
         return nullptr;
     }
 
@@ -281,13 +281,13 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
     else if (indexOfMostSuitableSpectrum == INDEX_OF_SKYSPECTRUM)
     {
         scan.GetSky(spectrum);
-        m_log.Information(context, "Determining shift and squeeze from sky-spectrum");
+        m_log.Information(context, "Determining shift and squeeze from given Fraunhofer Reference spectrum and sky spectrum");
     }
     else
     {
         scan.GetSpectrum(context, spectrum, indexOfMostSuitableSpectrum);
         std::stringstream msg;
-        msg << "Determining shift and squeeze from spectrum " << indexOfMostSuitableSpectrum;
+        msg << "Determining shift and squeeze from given Fraunhofer Reference spectrum and spectrum " << indexOfMostSuitableSpectrum;
         m_log.Information(context, msg.str());
     }
 
@@ -331,7 +331,7 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
     {
         // We failed to make the fit, what shall we do now??
         std::stringstream msg;
-        msg << "Failed to determine shift and squeeze in scan " << scan.GetFileName() << ". Will proceed with default parameters";
+        msg << "Failed to determine shift and squeeze from Fraunhofer reference in scan " << scan.GetFileName() << ". Will proceed with default parameters";
         m_lastErrorMessage = msg.str();
         m_log.Information(context, msg.str());
         return nullptr;

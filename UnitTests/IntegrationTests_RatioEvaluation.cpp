@@ -52,12 +52,12 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
     SECTION("Polynomial fit")
     {
         // Setup the sut
-        RatioEvaluation sut{ settings, darkSettings };
+        RatioEvaluation sut{ settings, darkSettings, log };
         sut.SetupFirstResult(evaluationFileHandler.m_scan[0], plumeInScanProperties);
         sut.SetupFitWindows(so2FitWindow, std::vector<CFitWindow>{ broFitWindow});
 
         // Act
-        const auto ratios = sut.Run(fileHandler);
+        const auto ratios = sut.Run(context, fileHandler);
 
         // Assert
         REQUIRE(ratios.size() == 1);
@@ -90,12 +90,12 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
         }
 
         // Setup the sut
-        RatioEvaluation sut{ settings, darkSettings };
+        RatioEvaluation sut{ settings, darkSettings, log };
         sut.SetupFirstResult(evaluationFileHandler.m_scan[0], plumeInScanProperties);
         sut.SetupFitWindows(so2FitWindow, std::vector<CFitWindow>{ broFitWindow});
 
         // Act
-        const auto ratios = sut.Run(fileHandler);
+        const auto ratios = sut.Run(context, fileHandler);
 
         // Assert
         REQUIRE(ratios.size() == 1);

@@ -470,15 +470,16 @@ RatioCalculationResult RatioCalculationController::EvaluateNextScan(std::shared_
 
     const auto& pakFileName = m_pakfiles[m_currentPakFileIdx++];
     novac::CScanFileHandler scan(m_log);
-    novac::LogContext context;
+    novac::LogContext context("file", pakFileName);
     scan.CheckScanFile(context, pakFileName);
 
     const auto initialResult = DoInitialEvaluation(scan, ratioFitWindows);
 
-    return EvaluateScan(scan, initialResult, ratioFitWindows);
+    return EvaluateScan(context, scan, initialResult, ratioFitWindows);
 }
 
 RatioCalculationResult RatioCalculationController::EvaluateScan(
+    novac::LogContext context,
     novac::IScanSpectrumSource& scan,
     const novac::BasicScanEvaluationResult& initialResult,
     std::shared_ptr<RatioCalculationFitSetup> ratioFitWindows)
@@ -508,10 +509,10 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
     const auto spectrometerModel = GetModelForMeasurement(initialResult.m_specInfo.front().m_device);
 
     // Setup the ratio evaluation and run it.
-    novac::RatioEvaluation ratioEvaluation{ m_ratioEvaluationSettings, darkSettings };
+    novac::RatioEvaluation ratioEvaluation{ m_ratioEvaluationSettings, darkSettings, m_log };
     ratioEvaluation.SetupFitWindows(ratioFitWindows->so2Window, std::vector<novac::CFitWindow>{ ratioFitWindows->broWindow });
     ratioEvaluation.SetupFirstResult(initialResult, plumeInScanProperties, &spectrometerModel);
-    const auto ratios = ratioEvaluation.Run(scan, &result.debugInfo);
+    const auto ratios = ratioEvaluation.Run( context, scan, &result.debugInfo);
 
     // Extract the result
     if (ratios.size() > 0)

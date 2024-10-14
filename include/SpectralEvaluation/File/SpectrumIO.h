@@ -34,6 +34,9 @@ public:
         @return true if all is ok. */
     bool ReadSpectrum(const std::string& fileName, const int spectrumNumber, CSpectrum& spec, char* headerBuffer = nullptr, int headerBufferSize = 0, int* headerSize = nullptr);
 
+    /** Returns the contents of m_lastError as a string. */
+    std::string FormatLastError() const;
+
     /** Reads the next spectrum in the provided spectrum file.
             The spectrum file (which must be in the .pak format) must be opened for reading
             in binary mode. File will not be closed by this routine.
