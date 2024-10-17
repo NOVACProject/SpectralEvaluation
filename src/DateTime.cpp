@@ -3,6 +3,7 @@
 #include <cstring>
 #include <string>
 #include <iostream>
+#include <sstream>
 #include <SpectralEvaluation/StringUtils.h>
 
 namespace novac
@@ -135,6 +136,13 @@ std::ostream& operator<<(std::ostream& os, const CDateTime& dt)
     os << std::string(buffer);
 
     return os;
+}
+
+std::string CDateTime::ToString() const
+{
+    std::stringstream str;
+    str << this;
+    return str.str();
 }
 
 void CDateTime::SetToNow() {
