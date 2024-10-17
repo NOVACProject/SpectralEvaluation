@@ -4,6 +4,7 @@
 #define DATETIME_H
 
 #include <iosfwd>
+#include <string>
 
 namespace novac
 {
@@ -50,6 +51,8 @@ public:
     bool operator>=(const CDateTime& t2) const;
 
     friend std::ostream& operator<<(std::ostream& os, const CDateTime& dt);
+
+    std::string ToString() const;
 
     // --------------- METHODS --------------------
 

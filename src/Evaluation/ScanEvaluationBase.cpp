@@ -331,7 +331,7 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
     {
         // We failed to make the fit, what shall we do now??
         std::stringstream msg;
-        msg << "Failed to determine shift and squeeze from Fraunhofer reference in scan " << scan.GetFileName() << ". Will proceed with default parameters";
+        msg << "Failed to determine shift and squeeze from Fraunhofer reference in scan " << scan.GetFileName() << ". Will proceed with default shift and squeeze";
         m_lastErrorMessage = msg.str();
         m_log.Information(context, msg.str());
         return nullptr;
@@ -353,18 +353,18 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
         }
 
         std::stringstream msg;
-        msg << "Determined shift: " << shiftResult.shift << " +- " << shiftResult.shiftError << "; Squeeze: " << shiftResult.squeeze << " +- " << shiftResult.squeezeError << ". Doas ch2: " << shiftResult.chi2;
+        msg << "Determined shift: " << shiftResult.shift << " +- " << shiftResult.shiftError << "; Squeeze: " << shiftResult.squeeze << " +- " << shiftResult.squeezeError << ". Doas chi2: " << shiftResult.chi2;
         m_log.Information(context, msg.str());
         return new CEvaluationBase(improvedFitWindow, m_log);
     }
     else
     {
         std::stringstream msg;
-        msg << "Inadequate result from deciding shift. Output was, shift: " << shiftResult.shift << " +- " << shiftResult.shiftError << "; Squeeze: " << shiftResult.squeeze << " +- " << shiftResult.squeezeError << ". Doas ch2: " << shiftResult.chi2;
+        msg << "Inadequate result from deciding shift. Output was, shift: " << shiftResult.shift << " +- " << shiftResult.shiftError << "; Squeeze: " << shiftResult.squeeze << " +- " << shiftResult.squeezeError << ". Doas chi2: " << shiftResult.chi2;
         m_log.Information(context, msg.str());
     }
 
-    m_log.Information(context, "Fit not good enough. Will proceed with default parameters.");
+    m_log.Information(context, "Fit not good enough. Will proceed with default shift and squeeze.");
     return nullptr;
 }
 

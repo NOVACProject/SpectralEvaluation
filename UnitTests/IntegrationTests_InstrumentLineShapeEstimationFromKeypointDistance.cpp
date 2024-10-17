@@ -14,7 +14,7 @@ std::vector<double> GetPixelToWavelengthMappingFromFile(const std::string& clbFi
 static void GetMeasuredPakFileSpectrum(const std::string& fileName, CSpectrum& measuredSpectrum)
 {
     novac::ConsoleLog log;
-    novac::LogContext context("file", fileName);
+    novac::LogContext context(novac::LogContext::FileName, fileName);
     CScanFileHandler pakFileHandler(log);
     if (!pakFileHandler.CheckScanFile(context, fileName))
     {

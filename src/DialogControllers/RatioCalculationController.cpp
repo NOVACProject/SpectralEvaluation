@@ -470,7 +470,7 @@ RatioCalculationResult RatioCalculationController::EvaluateNextScan(std::shared_
 
     const auto& pakFileName = m_pakfiles[m_currentPakFileIdx++];
     novac::CScanFileHandler scan(m_log);
-    novac::LogContext context("file", pakFileName);
+    novac::LogContext context(novac::LogContext::FileName, pakFileName);
     scan.CheckScanFile(context, pakFileName);
 
     const auto initialResult = DoInitialEvaluation(scan, ratioFitWindows);
