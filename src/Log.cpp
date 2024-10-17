@@ -1,4 +1,5 @@
 #include <SpectralEvaluation/Log.h>
+#include <SpectralEvaluation/DateTime.h>
 #include <iostream>
 #include <sstream>
 
@@ -31,6 +32,13 @@ LogContext LogContext::With(std::string name, double value)
     return this->With(name, s.str());
 }
 
+LogContext LogContext::WithTimestamp(const CDateTime& value)
+{
+    std::stringstream s;
+    s << value;
+    return this->With(LogContext::Time, s.str());
+}
+
 std::ostream& operator << (std::ostream& out, const LogContext& c)
 {
     for (const auto& p : c.properties)
@@ -40,6 +48,13 @@ std::ostream& operator << (std::ostream& out, const LogContext& c)
 
     return out;
 }
+
+const std::string LogContext::FileName = "file";
+const std::string LogContext::Directory = "directory";
+const std::string LogContext::Device = "device";
+const std::string LogContext::DeviceModel = "model";
+const std::string LogContext::Time = "time";
+
 
 static void Output(const char* level, std::string message)
 {

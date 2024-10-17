@@ -7,6 +7,8 @@
 namespace novac
 {
 
+class CDateTime;
+
 class LogContext
 {
 public:
@@ -23,6 +25,24 @@ public:
     LogContext With(std::string name, std::string value);
     LogContext With(std::string name, int value);
     LogContext With(std::string name, double value);
+    LogContext WithTimestamp(const CDateTime& value);
+
+    /// List of recommended and commonly used 'name' parameters
+
+    // The name of a file
+    static const std::string FileName;
+
+    // The name of a directory
+    static const std::string Directory;
+
+    // Device serial number
+    static const std::string Device;
+
+    // Device model
+    static const std::string DeviceModel;
+
+    // A timestamp
+    static const std::string Time;
 };
 
 /** Abstract logger base class. */
