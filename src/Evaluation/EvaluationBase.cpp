@@ -20,6 +20,7 @@
 #include <SpectralEvaluation/Fit/NonlinearParameterFunction.h>
 
 #include <limits>
+#include <sstream>
 
 using namespace MathFit;
 
@@ -193,6 +194,28 @@ void CEvaluationBase::RemoveOffset(double* spectrum, int sumChn, bool UV)
     Sub(spectrum, sumChn, avg);
 
     return;
+}
+
+void CEvaluationBase::RemoveOffset(std::vector<double>& spectrum, size_t from, size_t to)
+{
+    if (from > to || to > spectrum.size())
+    {
+        std::stringstream msg;
+        msg << "Cannot remove offset, invalid spectrum region [" << from << ", " << to << "] for spectrum of length " << spectrum.size();
+        throw std::invalid_argument(msg.str());
+    }
+
+    double avg = 0;
+    for (size_t i = from; i < to; i++)
+    {
+        avg += spectrum[i];
+    }
+    avg = avg / (double)(to - from);
+
+    Sub(spectrum.data(), static_cast<int>(spectrum.size()), avg);
+
+    return;
+
 }
 
 void CEvaluationBase::PrepareSpectra(double* sky, double* meas, const CFitWindow& window)
