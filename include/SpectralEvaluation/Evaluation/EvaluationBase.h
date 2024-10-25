@@ -73,6 +73,10 @@ public:
     // TODO: Change the last parameter from a boolean to the pixel-range which should be used!!
     void RemoveOffset(double* spectrum, int sumChn, bool UV = true);
 
+    /** Removes the offset from the supplied spectrum.
+        The offset is calculated in the [from, to] region but the offset is subtracted from the entire spectrum. */
+    void RemoveOffset(std::vector<double>& spectrum, size_t from, size_t to);
+
     /** Sets the sky-spectrum to use. This will be used in the upcoming evaluations.
         The provided spectrum must have been corrected for dark. */
     int SetSkySpectrum(const CSpectrum& spec);

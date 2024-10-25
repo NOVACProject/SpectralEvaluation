@@ -40,25 +40,24 @@ CBasicMath::~CBasicMath()
 
 double* CBasicMath::LowPassBinomial(double* fData, int iSize, int iNIterations)
 {
-    std::vector<double> fBuffer(iSize);
+    std::vector<double> fBuffer(iSize); // an additional buffer, since we can't do the filtering in place
     double* fOut = fData;
     double* fIn = fBuffer.data();
     const int iLast = iSize - 1;
     const int iFirst = 0;
 
-    int j, i;
-    for (j = 0; j < iNIterations; j++)
+    for (int iteration = 0; iteration < iNIterations; ++iteration)
     {
         // now swap buffers
         double* fTemp = fIn;
         fIn = fOut;
         fOut = fTemp;
 
-        for (i = iFirst; i < iSize; i++)
+        for (int i = iFirst; i < iSize; i++)
         {
-            double lMid, lLeft, lRight;
+            double lLeft, lRight;
 
-            lMid = fIn[i];
+            const double lMid = fIn[i];
             if (i == iFirst)
                 lLeft = fIn[i];
             else
@@ -68,7 +67,8 @@ double* CBasicMath::LowPassBinomial(double* fData, int iSize, int iNIterations)
                 lRight = fIn[i];
             else
                 lRight = fIn[i + 1];
-            fOut[i] = 0.5 * lMid + 0.25 * lLeft + 0.25 * lRight;
+
+            fOut[i] = 0.5 * lMid + 0.25 * (lLeft + lRight);
         }
     }
     if (fOut != fData)

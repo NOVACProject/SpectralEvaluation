@@ -69,4 +69,8 @@ protected:
     @return an empty vector if result is empty specieIndex is invalid. */
 std::vector<double> GetColumns(const BasicScanEvaluationResult& result, int specieIndex);
 
+/** @return the errors of all the evaluated columns for the specie with the provided index.
+    @return an empty vector if result is empty specieIndex is invalid. */
+std::vector<double> GetColumnErrors(const BasicScanEvaluationResult& result, int specieIndex);
+
 }

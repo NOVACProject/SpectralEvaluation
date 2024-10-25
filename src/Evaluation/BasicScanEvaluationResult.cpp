@@ -86,4 +86,23 @@ std::vector<double> GetColumns(const BasicScanEvaluationResult& result, int spec
 
     return columns;
 }
+
+std::vector<double> GetColumnErrors(const BasicScanEvaluationResult& result, int specieIndex)
+{
+    std::vector<double> errors;
+    if (specieIndex < 0 || result.m_spec.size() == 0 || result.m_spec[0].m_referenceResult.size() <= (size_t)specieIndex)
+    {
+        return errors;
+    }
+
+    errors.reserve(result.m_spec.size());
+
+    for (size_t ii = 0; ii < result.m_spec.size(); ++ii)
+    {
+        errors.push_back(result.m_spec[ii].m_referenceResult[specieIndex].m_columnError);
+    }
+
+    return errors;
+}
+
 }
