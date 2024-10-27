@@ -122,6 +122,28 @@ double GpsMath::Distance(double lat1, double lon1, double lat2, double lon2)
     return distance;
 }
 
+double GpsMath::Distance(CGPSData position1, CGPSData position2)
+{
+    const double lat1 = position1.m_latitude * DEGREETORAD;
+    const double lat2 = position2.m_latitude * DEGREETORAD;
+    const double lon1 = position1.m_longitude * DEGREETORAD;
+    const double lon2 = position2.m_longitude * DEGREETORAD;
+
+    const double dLon = lon2 - lon1;
+    const double dLat = lat2 - lat1;
+
+    if ((dLon == 0) && (dLat == 0))
+    {
+        return 0;
+    }
+
+    const double a = std::pow((std::sin(dLat / 2.0)), 2.0) + std::cos(lat1) * std::cos(lat2) * std::pow((std::sin(dLon / 2.0)), 2.0);
+    const double c = 2 * std::asin(std::min(1.0, std::sqrt(a)));
+    const double distance = R_Earth * c;
+
+    return distance;
+}
+
 double GpsMath::Bearing(double lat1, double lon1, double lat2, double lon2)
 {
     lat1 = lat1 * DEGREETORAD;
@@ -136,8 +158,8 @@ double GpsMath::Bearing(double lat1, double lon1, double lat2, double lon2)
         return 0;
     }
 
-    double tmpAngle = atan2(-sin(dLon) * cos(lat2),
-        cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon));
+    double tmpAngle = atan2(-std::sin(dLon) * std::cos(lat2),
+        std::cos(lat1) * std::sin(lat2) - sin(lat1) * std::cos(lat2) * std::cos(dLon));
 
     if (tmpAngle < 0)
     {
@@ -148,7 +170,34 @@ double GpsMath::Bearing(double lat1, double lon1, double lat2, double lon2)
     return tmpAngle;
 }
 
-void GpsMath::CalculateDestination(double lat1, double lon1, double dist, double az, double& lat2, double& lon2) {
+double GpsMath::Bearing(CGPSData position1, CGPSData position2)
+{
+    const double lat1 = position1.m_latitude * DEGREETORAD;
+    const double lat2 = position2.m_latitude * DEGREETORAD;
+    const double lon1 = position1.m_longitude * DEGREETORAD;
+    const double lon2 = position2.m_longitude * DEGREETORAD;
+    const double dLat = lat1 - lat2;
+    const double dLon = lon1 - lon2;
+
+    if ((dLon == 0) && (dLat == 0))
+    {
+        return 0;
+    }
+
+    double tmpAngle = atan2(-std::sin(dLon) * std::cos(lat2),
+        std::cos(lat1) * std::sin(lat2) - std::sin(lat1) * std::cos(lat2) * std::cos(dLon));
+
+    if (tmpAngle < 0)
+    {
+        tmpAngle = TWO_PI + tmpAngle;
+    }
+
+    tmpAngle = RADTODEGREE * tmpAngle;
+    return tmpAngle;
+}
+
+void GpsMath::CalculateDestination(double lat1, double lon1, double dist, double az, double& lat2, double& lon2)
+{
 
     const double dR = dist / R_Earth;
 
@@ -158,13 +207,31 @@ void GpsMath::CalculateDestination(double lat1, double lon1, double dist, double
     az = az * DEGREETORAD;
 
     // calculate the second point
-    lat2 = asin(sin(lat1) * cos(dR) + cos(lat1) * sin(dR) * cos(az));
+    lat2 = asin(std::sin(lat1) * std::cos(dR) + std::cos(lat1) * std::sin(dR) * std::cos(az));
 
-    lon2 = lon1 + atan2(sin(az) * sin(dR) * cos(lat1), cos(dR) - sin(lat1) * sin(lat2));
+    lon2 = lon1 + atan2(std::sin(az) * std::sin(dR) * std::cos(lat1), std::cos(dR) - std::sin(lat1) * std::sin(lat2));
 
     // convert back to degrees
     lat2 = lat2 * RADTODEGREE;
     lon2 = lon2 * RADTODEGREE;
+}
+
+CGPSData GpsMath::CalculateDestination(CGPSData origin, double dist, double az)
+{
+    const double dR = dist / R_Earth;
+
+    // convert to radians
+    const double lat1 = origin.m_latitude * DEGREETORAD;
+    const double lon1 = origin.m_longitude * DEGREETORAD;
+    az = az * DEGREETORAD;
+
+    // calculate the second point
+    const double lat2 = asin(std::sin(lat1) * std::cos(dR) + std::cos(lat1) * std::sin(dR) * std::cos(az));
+
+    const double lon2 = lon1 + atan2(std::sin(az) * std::sin(dR) * std::cos(lat1), std::cos(dR) - std::sin(lat1) * std::sin(lat2));
+
+    // convert back to degrees
+    return CGPSData(lat2 * RADTODEGREE, lon2 * RADTODEGREE, 0.0);
 }
 
 } // namespace novac
