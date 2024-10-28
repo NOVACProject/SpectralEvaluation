@@ -21,7 +21,7 @@ struct ScanEvaluationData
     double peakSaturation = 0.0;
 };
 
-double AverageColumn(const std::vector< ScanEvaluationData>& data, int startIdx, int numberOfElements)
+static double AverageColumn(const std::vector< ScanEvaluationData>& data, int startIdx, int numberOfElements)
 {
     if (numberOfElements <= 0)
     {
@@ -37,7 +37,7 @@ double AverageColumn(const std::vector< ScanEvaluationData>& data, int startIdx,
     return (sum / numberOfElements);
 }
 
-double AverageColumnError(const std::vector< ScanEvaluationData>& data, int startIdx, int numberOfElements)
+static double AverageColumnError(const std::vector< ScanEvaluationData>& data, int startIdx, int numberOfElements)
 {
     if (numberOfElements <= 0)
     {
@@ -53,17 +53,7 @@ double AverageColumnError(const std::vector< ScanEvaluationData>& data, int star
     return (sum / numberOfElements);
 }
 
-double MinColumn(const std::vector< ScanEvaluationData>& data)
-{
-    double minValue = data[0].offsetCorrectedColumn;
-    for (const auto& eval : data)
-    {
-        minValue = std::min(minValue, eval.offsetCorrectedColumn);
-    }
-    return minValue;
-}
-
-double MaxColumn(const std::vector< ScanEvaluationData>& data)
+static double MaxColumn(const std::vector< ScanEvaluationData>& data)
 {
     double minValue = data[0].offsetCorrectedColumn;
     for (const auto& eval : data)
@@ -112,7 +102,7 @@ template <class T> T Max(T* pBuffer, long bufLen)
 
 // Calculates the offset of the plume given all the evaluations of the 'good' spectra in the scan.
 // There needs to be at least six good measurements, as the baseline is taken as the 20% lowest values.
-double CalculatePlumeOffsetFromGoodColumnValues(const std::vector<double>& goodColumns)
+static double CalculatePlumeOffsetFromGoodColumnValues(const std::vector<double>& goodColumns)
 {
     if (goodColumns.size() <= 5)
     {
@@ -126,7 +116,7 @@ double CalculatePlumeOffsetFromGoodColumnValues(const std::vector<double>& goodC
     return Average(m.data(), N);
 }
 
-double CalculatePlumeOffset(const std::vector< ScanEvaluationData>& evaluation)
+static double CalculatePlumeOffset(const std::vector< ScanEvaluationData>& evaluation)
 {
     // calculate the offset as the average of the three lowest offsetCorrectedColumn values 
     //    that are not considered as 'bad' values
@@ -270,8 +260,8 @@ bool FindPlume(const std::vector< ScanEvaluationData>& evaluation, CPlumeInScanP
 
     // Add a reasonability check here. The plume center must never fall outside of the range of angles but may do so
     // if there are 'bad' offsetCorrectedColumn values included in 'columnOfGoodSpectra'.
-    plumeProperties.plumeCenter = std::max(evaluation[foundRegionLowIdx].scanAngle, std::min(evaluation[foundRegionHighIdx].scanAngle, plumeProperties.plumeCenter));
-    plumeProperties.plumeCenter2 = std::max(evaluation[foundRegionLowIdx].scanAngle2, std::min(evaluation[foundRegionHighIdx].scanAngle2, plumeProperties.plumeCenter));
+    plumeProperties.plumeCenter = std::max(evaluation[foundRegionLowIdx].scanAngle, std::min(evaluation[foundRegionHighIdx].scanAngle, plumeProperties.plumeCenter.Value()));
+    plumeProperties.plumeCenter2 = std::max(evaluation[foundRegionLowIdx].scanAngle2, std::min(evaluation[foundRegionHighIdx].scanAngle2, plumeProperties.plumeCenter.Value()));
 
     // The edges of the plume
     // TODO: this could really be better, with interpolation between the angles...
@@ -287,7 +277,7 @@ bool FindPlume(const std::vector< ScanEvaluationData>& evaluation, CPlumeInScanP
     // The left size of the plume
     for (int idx = 0; idx < numberOfGoodspectra - 1; ++idx)
     {
-        if (evaluation[idx].scanAngle > plumeProperties.plumeCenter)
+        if (evaluation[idx].scanAngle > plumeProperties.plumeCenter.Value())
         {
             break;
         }
@@ -308,7 +298,7 @@ bool FindPlume(const std::vector< ScanEvaluationData>& evaluation, CPlumeInScanP
     // The right side of the plume
     for (int idx = numberOfGoodspectra - 1; idx > 0; --idx)
     {
-        if (evaluation[idx].scanAngle <= plumeProperties.plumeCenter)
+        if (evaluation[idx].scanAngle <= plumeProperties.plumeCenter.Value())
         {
             break;
         }

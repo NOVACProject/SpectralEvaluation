@@ -164,12 +164,12 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
 
     textOutput << "Plume Properties: " << std::endl;
     textOutput << "  Completeness: " << plumeProperties.completeness << std::endl;
-    textOutput << "  Center: " << plumeProperties.plumeCenter << std::endl;
+    textOutput << "  Center: " << plumeProperties.plumeCenter.ValueOrDefault(NOT_A_NUMBER) << std::endl;
     textOutput << "  Offset: " << plumeProperties.offset << std::endl;
-    textOutput << "  Low Edge: " << plumeProperties.plumeEdgeLow << std::endl;
-    textOutput << "  High Edge: " << plumeProperties.plumeEdgeHigh << std::endl;
-    textOutput << "  HWHM Low: " << plumeProperties.plumeHalfLow << std::endl;
-    textOutput << "  HWHM High: " << plumeProperties.plumeHalfHigh << std::endl;
+    textOutput << "  Low Edge: " << plumeProperties.plumeEdgeLow.ValueOrDefault(NOT_A_NUMBER) << std::endl;
+    textOutput << "  High Edge: " << plumeProperties.plumeEdgeHigh.ValueOrDefault(NOT_A_NUMBER) << std::endl;
+    textOutput << "  HWHM Low: " << plumeProperties.plumeHalfLow.ValueOrDefault(NOT_A_NUMBER) << std::endl;
+    textOutput << "  HWHM High: " << plumeProperties.plumeHalfHigh.ValueOrDefault(NOT_A_NUMBER) << std::endl;
 }
 
 void PlumeSpectrumSelector::ExtractEvaluationData(
@@ -295,7 +295,7 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
         }
         return false;
     }
-    else if (settings.requireVisiblePlumeEdges && std::abs(properties.plumeHalfLow - NOT_A_NUMBER) < 1.0)
+    else if (settings.requireVisiblePlumeEdges && !properties.plumeHalfLow.HasValue())
     {
         if (errorMessage != nullptr)
         {
@@ -305,7 +305,7 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
         }
         return false;
     }
-    else if (settings.requireVisiblePlumeEdges && std::abs(properties.plumeHalfHigh - NOT_A_NUMBER) < 1.0)
+    else if (settings.requireVisiblePlumeEdges && !properties.plumeHalfHigh.HasValue())
     {
         if (errorMessage != nullptr)
         {
@@ -315,7 +315,7 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
         }
         return false;
     }
-    else if (std::abs(properties.plumeHalfLow - NOT_A_NUMBER) < 1.0 && std::abs(properties.plumeHalfHigh - NOT_A_NUMBER) < 1.0)
+    else if (!properties.plumeHalfLow.HasValue() && !properties.plumeHalfHigh.HasValue())
     {
         if (errorMessage != nullptr)
         {
@@ -348,8 +348,8 @@ std::vector<int> PlumeSpectrumSelector::FindSpectraInPlume(
 {
     // add all spectra in the scan-angle range [plumeHalfLow, plumeHalfHigh]
     std::vector<std::pair<int, double>> spectrumColumnVsIndex;
-    const double minimumScanAngle = std::max(settings.minimumScanAngle, properties.plumeHalfLow);
-    const double maximumScanAngle = std::min(settings.maximumScanAngle, (properties.plumeHalfHigh > -200.0) ? properties.plumeHalfHigh : +90.0);
+    const double minimumScanAngle = std::max(settings.minimumScanAngle, properties.plumeHalfLow.ValueOrDefault(-90.0));
+    const double maximumScanAngle = std::min(settings.maximumScanAngle, properties.plumeHalfHigh.ValueOrDefault(+90.0));
     for (int idx = 0; idx < (int)evaluationData.size(); ++idx)
     {
         if (evaluationData[idx].scanAngle > minimumScanAngle + 0.1 &&

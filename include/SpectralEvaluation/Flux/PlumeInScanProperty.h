@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <SpectralEvaluation/Definitions.h>
+#include <SpectralEvaluation/NullableValue.h>
 
 namespace novac
 {
@@ -22,16 +23,16 @@ public:
     CPlumeInScanProperty& operator=(const CPlumeInScanProperty& p2) = default;
 
     /** The centre position of the plume for the first motor (only in standard NOVAC instrument). Scan angle in degrees.*/
-    double plumeCenter = NOT_A_NUMBER;
+    novac::Nullable<double> plumeCenter;
 
     /** The centre position of the plume, for the second motor (only available in Heidelberg type instruments). Scan angle in degrees. */
-    double plumeCenter2 = NOT_A_NUMBER;
+    novac::Nullable<double> plumeCenter2;
 
     /** The estimated error in the estimation of the plume centre position for the first motor. */
-    double plumeCenterError = NOT_A_NUMBER;
+    novac::Nullable<double> plumeCenterError;
 
     /** The estimated error in the estimation of the plume centre position for the second motor (if any). */
-    double plumeCenterError2 = NOT_A_NUMBER;
+    novac::Nullable<double> plumeCenterError2;
 
     /** The offset of the scan, describes the column
         of gas in the sky-spectrum */
@@ -45,12 +46,12 @@ public:
 
     /** The edges of the plume. These are the scan angles (first motor only)
         where the colmn of the plume has dropped to 1/e from it's highest value. */
-    double plumeEdgeLow = NOT_A_NUMBER;
-    double plumeEdgeHigh = NOT_A_NUMBER;
+    novac::Nullable<double> plumeEdgeLow;
+    novac::Nullable<double> plumeEdgeHigh;
 
     /** The locations where the column values of the plume has dropped to half from it's highest value */
-    double plumeHalfHigh = NOT_A_NUMBER;
-    double plumeHalfLow = NOT_A_NUMBER;
+    novac::Nullable<double> plumeHalfHigh;
+    novac::Nullable<double> plumeHalfLow;
 
 };
 

@@ -645,7 +645,7 @@ void RatioCalculationController::SaveResultsToCsvFile(const std::string& filenam
         file << result.ratio.ratio << columnSeparator << result.ratio.error << columnSeparator;
         file << result.SignificantMinorSpecieDetection() << columnSeparator;
         file << result.plumeInScanProperties.completeness << columnSeparator;
-        file << result.plumeInScanProperties.plumeCenter << columnSeparator;
+        file << result.plumeInScanProperties.plumeCenter.ValueOrDefault(NOT_A_NUMBER) << columnSeparator;
         file << result.debugInfo.inPlumeSpectrum.m_info.m_numSpec << columnSeparator;
         file << result.debugInfo.outOfPlumeSpectrum.m_info.m_numSpec << columnSeparator;
 
