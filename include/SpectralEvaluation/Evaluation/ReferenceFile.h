@@ -67,8 +67,8 @@ public:
     CReferenceFile(const CReferenceFile& other);
 
     /** Moving this object */
-    CReferenceFile& operator=(CReferenceFile&& other);
-    CReferenceFile(CReferenceFile&& other);
+    CReferenceFile& operator=(CReferenceFile&& other) noexcept;
+    CReferenceFile(CReferenceFile&& other) noexcept;
 
     /** The name of the specie, e.g. SO2 or O3. */
     std::string m_specieName = "";

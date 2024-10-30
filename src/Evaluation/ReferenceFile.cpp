@@ -36,7 +36,7 @@ CReferenceFile& CReferenceFile::operator=(const CReferenceFile& other)
     return *this;
 }
 
-CReferenceFile& CReferenceFile::operator=(CReferenceFile&& other)
+CReferenceFile& CReferenceFile::operator=(CReferenceFile&& other) noexcept
 {
     this->m_path = std::move(other.m_path);
     this->m_crossSectionFile = std::move(other.m_crossSectionFile);
@@ -88,7 +88,7 @@ CReferenceFile::CReferenceFile(const CReferenceFile& other)
     }
 }
 
-CReferenceFile::CReferenceFile(CReferenceFile&& other)
+CReferenceFile::CReferenceFile(CReferenceFile&& other) noexcept
     : m_specieName(other.m_specieName),
     m_path(other.m_path),
     m_crossSectionFile(other.m_crossSectionFile),
