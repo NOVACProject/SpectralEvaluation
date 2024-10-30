@@ -170,6 +170,40 @@ std::pair<double, double> MinMax(const std::vector<double>& values, std::pair<si
     return std::pair<double, double>(minValue, maxValue);
 }
 
+std::pair<double, double> MinMax(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end, std::pair<size_t, size_t>& idx)
+{
+    if (start > end)
+    {
+        return std::pair<double, double>(0.0, 0.0);
+    }
+    if (start == end)
+    {
+        return std::pair<double, double>(*start, *start);
+    }
+
+    double minValue = *start;
+    double maxValue = *start;
+    size_t minIdx = 0U;
+    size_t maxIdx = 0U;
+    for (auto it = start; it < end; ++it)
+    {
+        if (*it < minValue)
+        {
+            minValue = *it;
+            minIdx = it - start;
+        }
+        else if (*it > maxValue)
+        {
+            maxValue = *it;
+            maxIdx = it - start;
+        }
+    }
+
+    idx.first = minIdx;
+    idx.second = maxIdx;
+    return std::pair<double, double>(minValue, maxValue);
+}
+
 double Sum(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end)
 {
     double sum = 0.0;

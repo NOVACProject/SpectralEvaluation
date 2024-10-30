@@ -74,6 +74,18 @@ public:
     /** Decrements the current time to the same time the day before */
     void DecrementOneDay();
 
+    /** Returns a CDateTime object which is set to the current (local PC) time. */
+    static CDateTime Now();
+
+    /** Returns a CDateTime object which is set to the current (UTC) time. */
+    static CDateTime UtcNow();
+
+    /** Returns a CDateTime set to the default min value. */
+    static CDateTime MinValue() { return CDateTime(0, 0, 0, 0, 0, 0); }
+
+    /** Returns a CDateTime set to the default max value. */
+    static CDateTime MaxValue() { return CDateTime(9999, 12, 31, 23, 59, 59); }
+
     /** Calculates the difference, in seconds, between two times.
             If t2 is later than t1, then the result will be negative.
             If either of the two is an invalid time (e.g. month=0 or month=14) then zero is returned. */

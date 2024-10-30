@@ -46,6 +46,11 @@ std::pair<double, double> MinMax(const std::vector<double>& values);
     If values.size() == 0 then (0.0, 0.0) is returned. */
 std::pair<double, double> MinMax(const std::vector<double>& values, std::pair<size_t, size_t>& idx);
 
+/** @return the minimum _and_ maximum value in the provided range of indices.
+    @param idx will be filled with the index where the minimum and maximum values are found, relative to 'start'.
+    If values.size() == 0 then (0.0, 0.0) is returned. */
+std::pair<double, double> MinMax(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end, std::pair<size_t, size_t>& idx);
+
 /** @return the sum of all the given values
     If values.size() == 0 then 0.0 is returned. */
 double Sum(const std::vector<double>& values);
