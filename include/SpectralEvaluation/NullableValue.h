@@ -51,11 +51,11 @@ public:
         return m_value;
     }
 
-    T ValueOrDefault(T default) const
+    T ValueOrDefault(T defaultValue) const
     {
         if (!m_isSet)
         {
-            return default;
+            return defaultValue;
         }
         return m_value;
     }
