@@ -132,8 +132,8 @@ public:
 
 /** Reads all the references specified in the window from disk.
     This requires that all references have an absolute path such that the files can be found.
-    @return true if all references could be read sucessfully. */
-bool ReadReferences(CFitWindow& window);
+    @throws novac::InvalidReferenceException if any of the references could not be read. */
+void ReadReferences(CFitWindow& window);
 
 /** Performs a high-pass filtering on all references which are not labelled as m_isFiltered. */
 void HighPassFilterReferences(CFitWindow& window);

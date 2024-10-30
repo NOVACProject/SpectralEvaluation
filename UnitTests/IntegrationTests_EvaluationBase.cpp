@@ -28,8 +28,7 @@ CFitWindow PrepareFitWindow()
         window.ref[refIdx].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
         window.ref[refIdx].m_squeezeValue = 1.0;
 
-        int retCode = window.ref[refIdx].ReadCrossSectionDataFromFile();
-        REQUIRE(retCode == 0);
+        window.ref[refIdx].ReadCrossSectionDataFromFile();
 
         ++refIdx;
     }
@@ -180,8 +179,7 @@ TEST_CASE("EvaluateShift Avaspec spectrum number 28 in scan", "[Evaluate][Evalua
 
     CFitWindow window = PrepareFitWindow();
     window.fraunhoferRef.m_path = TestData::GetSyntheticFraunhoferSpectrumName_2009175M1();
-    int retCode = window.fraunhoferRef.ReadCrossSectionDataFromFile();
-    REQUIRE(retCode == 0);
+    window.fraunhoferRef.ReadCrossSectionDataFromFile();
 
     // Read the spectra
     CEvaluationBase sut(log);

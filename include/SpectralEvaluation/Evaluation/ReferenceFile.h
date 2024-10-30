@@ -168,8 +168,8 @@ public:
     /** Reads the data of this reference file from disk.
         The file is taken from the member variable 'm_path' (which of course must be initialized first)
         and the result is written to 'm_data'. If this fails then m_data will be NULL.
-        @return 0 on success. */
-    int ReadCrossSectionDataFromFile();
+        @throws InvalidReferenceException if the data could not be read */
+    void ReadCrossSectionDataFromFile();
 
     /** Performs a convolution using the files m_crossSectionFile, m_slitFunctionFile and m_wavelengthCalibrationFile
         and saves the result in m_data.

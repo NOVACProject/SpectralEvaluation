@@ -46,8 +46,8 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
     broFitWindow.fitHigh = 939;
 
     // Read in the references
-    REQUIRE(true == ReadReferences(so2FitWindow));
-    REQUIRE(true == ReadReferences(broFitWindow));
+    ReadReferences(so2FitWindow);
+    ReadReferences(broFitWindow);
 
     SECTION("Polynomial fit")
     {

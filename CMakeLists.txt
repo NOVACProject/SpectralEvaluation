@@ -62,6 +62,7 @@ add_library(NovacSpectralEvaluation
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/DateTime.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Definitions.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/EstimatedValue.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Exceptions.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Geometry.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/GPSData.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Interpolation.h

@@ -4,6 +4,7 @@
 #include <SpectralEvaluation/Evaluation/ReferenceFile.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Calibration/ReferenceSpectrumConvolution.h>
+#include <SpectralEvaluation/File/File.h>
 
 namespace novac
 {
@@ -150,21 +151,30 @@ void CReferenceFile::SetSqueeze(SHIFT_TYPE option, double value, double value2)
     }
 }
 
-int CReferenceFile::ReadCrossSectionDataFromFile()
+void CReferenceFile::ReadCrossSectionDataFromFile()
 {
     if (m_path.size() == 0)
     {
-        return 1;
+        std::stringstream msg;
+        msg << "Attempted to read reference for '" << this->Name() << "' from disk but the path has not been set.";
+        throw InvalidReferenceException(msg.str());
+    }
+    else if (!IsExistingFile(m_path))
+    {
+        std::stringstream msg;
+        msg << "Attempted to read reference file from disk but the file does not exist. Path: '" << m_path << "'";
+        throw InvalidReferenceException(msg.str());
     }
 
     m_data.reset(new CCrossSectionData());
     if (m_data->ReadCrossSectionFile(m_path))
     {
         m_data.reset();
-        return 1;
-    }
 
-    return 0;
+        std::stringstream msg;
+        msg << "Attempted to read reference for '" << this->Name() << "' from disk. Path: '" << m_path << "'";
+        throw InvalidReferenceException(msg.str());
+    }
 }
 
 int CReferenceFile::ConvolveReference()

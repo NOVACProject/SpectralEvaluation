@@ -149,26 +149,17 @@ void CFitWindow::Clear()
     findOptimalShift = false;
 }
 
-bool ReadReferences(CFitWindow& window)
+void ReadReferences(CFitWindow& window)
 {
     // For each reference in the fit-window, read it in and make sure that it exists...
     for (int referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
     {
-        // Read in the cross section
-        if (window.ref[referenceIndex].ReadCrossSectionDataFromFile())
-        {
-            std::cout << "Failed to read cross section file: " << window.ref[referenceIndex].m_path.c_str() << std::endl;
-            return false;
-        }
+        window.ref[referenceIndex].ReadCrossSectionDataFromFile();
     }
 
     if (window.fraunhoferRef.m_path.size() > 4)
     {
-        if (window.fraunhoferRef.ReadCrossSectionDataFromFile())
-        {
-            std::cout << "Failed to read Fraunhofer reference file: " << window.fraunhoferRef.m_path.c_str() << std::endl;
-            return false;
-        }
+        window.fraunhoferRef.ReadCrossSectionDataFromFile();
     }
 
     // If children are defined, then read them as well
@@ -176,8 +167,6 @@ bool ReadReferences(CFitWindow& window)
     {
         ReadReferences(c);
     }
-
-    return true;
 }
 
 void HighPassFilterReferences(CFitWindow& window)

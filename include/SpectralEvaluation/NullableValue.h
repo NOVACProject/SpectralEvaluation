@@ -14,6 +14,14 @@ private:
     T m_value = T();
     bool m_isSet = false;
 
+    void VerifyIsSet() const
+    {
+        if (!m_isSet)
+        {
+            throw std::logic_error("Attempted to use a nullable value before it has been set.");
+        }
+    }
+
 public:
     Nullable() = default;
     // Creates a new Nullable with the provided value. This value is then set and Value() returns the set value.
@@ -25,14 +33,21 @@ public:
     Nullable& operator=(const Nullable& other) = default;
     Nullable& operator=(Nullable&& other) = default;
 
+    Nullable& operator+(double value) { static_assert(std::is_arithmetic<T>::value, "Not an arithmetic type"); VerifyIsSet(); return this->m_value + value; }
+    Nullable& operator-(double value) { static_assert(std::is_arithmetic<T>::value, "Not an arithmetic type"); VerifyIsSet(); return this->m_value - value; }
+    Nullable& operator*(double value) { static_assert(std::is_arithmetic<T>::value, "Not an arithmetic type"); VerifyIsSet(); return this->m_value * value; }
+    Nullable& operator/(double value) { static_assert(std::is_arithmetic<T>::value, "Not an arithmetic type"); VerifyIsSet(); return this->m_value / value; }
+
+
+    Nullable& operator+=(double value) { static_assert(std::is_arithmetic<T>::value, "Not an arithmetic type"); VerifyIsSet(); m_value += value; return *this; }
+    Nullable& operator-=(double value) { static_assert(std::is_arithmetic<T>::value, "Not an arithmetic type"); VerifyIsSet(); m_value -= value; return *this; }
+    Nullable& operator*=(double value) { static_assert(std::is_arithmetic<T>::value, "Not an arithmetic type"); VerifyIsSet(); m_value *= value; return *this; }
+
     // Value() retrieves the current value.
     // Throws std::logic_error if the value has not yet been set.
     T Value() const
     {
-        if (!m_isSet)
-        {
-            throw std::logic_error("Attempted to retrieve a nullable value before it has been set.");
-        }
+        VerifyIsSet();
         return m_value;
     }
 
