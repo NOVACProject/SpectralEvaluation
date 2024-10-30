@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <SpectralEvaluation/Units.h>
 
 namespace MathFit
 {
@@ -83,21 +84,23 @@ public:
     int SaveToFile(const std::string& filename) const;
 };
 
-/** Performs a high-pass filtering of this cross section file.
-    This will:
-        1) multiply by 2.5e15
-        2) exponentiate the cross section
-        3) high-pass filter (binomial, 500 passes)
-        4) log the cross section and
-        5) divide by 2.5e15 (optional)
-    If 'scaleToPpmm' is true then the reference is mutliplied by 2.5e15 before the filtering and divide by the same number after. */
-int HighPassFilter(CCrossSectionData& crossSection, bool scaleToPpmm = true);
+// Performs a high-pass filtering of this cross section file.
+// This will:
+//  1) multiply by 2.5e15
+//  2) exponentiate the cross section
+//  3) high-pass filter (binomial, 500 passes)
+//  4) log the cross section and
+//  5) divide by 2.5e15 (optional)
+// If is here assumed that the input cross section has a unit of cm2 / molecule.
+// @param desiredOutputUnit if set to CrossSectionUnit::cm2_molecule then the reference is mutliplied by 2.5e15 
+//  before the filtering and divide by the same number after. */
+void HighPassFilter(CCrossSectionData& crossSection, CrossSectionUnit desiredOutputUnit);
 
 /** Performs a high-pass filtering of a ring spectrum.
     This will:
         1) high-pass filter (binomial, 500 passes).
         2) log the cross section. */
-int HighPassFilter_Ring(CCrossSectionData& crossSection);
+void HighPassFilter_Ring(CCrossSectionData& crossSection);
 
 /** Multiplies this cross section with the given constant */
 int Multiply(CCrossSectionData& crossSection, double scalar);

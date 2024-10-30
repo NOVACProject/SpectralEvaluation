@@ -81,7 +81,7 @@ TEST_CASE("DoasFit - IntegrationTest with good scan - scan file 1", "[DoasFit][I
         so2FitWindow.fitType = FIT_TYPE::FIT_HP_DIV;
         for (int refIdx = 0; refIdx < so2FitWindow.nRef; ++refIdx)
         {
-            HighPassFilter(*so2FitWindow.ref[refIdx].m_data, false);
+            HighPassFilter(*so2FitWindow.ref[refIdx].m_data, CrossSectionUnit::cm2_molecule);
         }
 
         // Setup the DOAS Fit
@@ -121,7 +121,7 @@ TEST_CASE("DoasFit - IntegrationTest with good scan - scan file 1", "[DoasFit][I
         so2FitWindow.fitType = FIT_TYPE::FIT_HP_SUB;
         for (int refIdx = 0; refIdx < so2FitWindow.nRef; ++refIdx)
         {
-            HighPassFilter(*so2FitWindow.ref[refIdx].m_data, false);
+            HighPassFilter(*so2FitWindow.ref[refIdx].m_data, novac::CrossSectionUnit::cm2_molecule);
         }
 
         // Setup the DOAS Fit

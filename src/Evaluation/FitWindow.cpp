@@ -169,38 +169,6 @@ void ReadReferences(CFitWindow& window)
     }
 }
 
-void HighPassFilterReferences(CFitWindow& window)
-{
-    // If children are defined, then handle them as well
-    for (CFitWindow& c : window.child)
-    {
-        HighPassFilterReferences(c);
-    }
-
-    if (window.fitType != novac::FIT_TYPE::FIT_HP_DIV && window.fitType != novac::FIT_TYPE::FIT_HP_SUB)
-    {
-        return;
-    }
-
-    for (int referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
-    {
-        // Local handle for more convenient syntax.
-        CReferenceFile& thisReference = window.ref[referenceIndex];
-
-        if (!thisReference.m_isFiltered)
-        {
-            if (EqualsIgnoringCase(thisReference.m_specieName, "ring"))
-            {
-                HighPassFilter_Ring(*thisReference.m_data);
-            }
-            else
-            {
-                HighPassFilter(*thisReference.m_data);
-            }
-        }
-    }
-}
-
 void ScaleReferencesToMolecCm2(CFitWindow& window)
 {
     // If children are defined, then handle them as well

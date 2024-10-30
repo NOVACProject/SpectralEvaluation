@@ -82,11 +82,11 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
         broFitWindow.fitType = FIT_TYPE::FIT_HP_DIV;
         for (int refIdx = 0; refIdx < so2FitWindow.nRef; ++refIdx)
         {
-            HighPassFilter(*so2FitWindow.ref[refIdx].m_data, false);
+            HighPassFilter(*so2FitWindow.ref[refIdx].m_data, novac::CrossSectionUnit::cm2_molecule);
         }
         for (int refIdx = 0; refIdx < broFitWindow.nRef; ++refIdx)
         {
-            HighPassFilter(*broFitWindow.ref[refIdx].m_data, false);
+            HighPassFilter(*broFitWindow.ref[refIdx].m_data, novac::CrossSectionUnit::cm2_molecule);
         }
 
         // Setup the sut
