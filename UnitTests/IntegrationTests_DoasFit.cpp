@@ -23,7 +23,7 @@ TEST_CASE("DoasFit - IntegrationTest with good scan - scan file 1", "[DoasFit][I
     auto so2FitWindow = allWindows.front();
 
     // Read in the references
-    REQUIRE(true == ReadReferences(so2FitWindow));
+    ReadReferences(so2FitWindow);
 
     // Read in the spectra to use and dark-correct them
     CSpectrum darkSpectrum;

@@ -304,10 +304,7 @@ void SetupFitWindowReferences(novac::CFitWindow& window, const std::vector<Refer
     }
 
     // Make sure that all the references can be read.
-    if (!novac::ReadReferences(window))
-    {
-        throw std::invalid_argument("failed to read all references");
-    }
+    novac::ReadReferences(window);
 
     // Use the properties of the first (major) reference for the window
     window.name = window.ref[0].m_specieName;
