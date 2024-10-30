@@ -2,6 +2,7 @@
 
 namespace novac
 {
+
 /** Simple structure for remembering the scaling unit of a reference or absorption cross section */
 enum class CrossSectionUnit
 {

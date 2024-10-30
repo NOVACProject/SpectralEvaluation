@@ -277,7 +277,7 @@ int CCrossSectionData::SaveToFile(const std::string& filename) const
     return 0;
 }
 
-int HighPassFilter(CCrossSectionData& crossSection, bool scaleToPpmm)
+void HighPassFilter(CCrossSectionData& crossSection, CrossSectionUnit desiredOutputUnit)
 {
     CBasicMath mathObject;
 
@@ -289,15 +289,13 @@ int HighPassFilter(CCrossSectionData& crossSection, bool scaleToPpmm)
     mathObject.HighPassBinomial(crossSection.m_crossSection.data(), length, 500);
     mathObject.Log(crossSection.m_crossSection.data(), length);
 
-    if (!scaleToPpmm)
+    if (desiredOutputUnit == CrossSectionUnit::cm2_molecule)
     {
         mathObject.Div(crossSection.m_crossSection.data(), length, ppmmScaleFactor);
     }
-
-    return 0;
 }
 
-int HighPassFilter_Ring(CCrossSectionData& crossSection)
+void HighPassFilter_Ring(CCrossSectionData& crossSection)
 {
     CBasicMath mathObject;
 
@@ -305,10 +303,7 @@ int HighPassFilter_Ring(CCrossSectionData& crossSection)
 
     mathObject.HighPassBinomial(crossSection.m_crossSection.data(), length, 500);
     mathObject.Log(crossSection.m_crossSection.data(), length);
-
-    return 0;
 }
-
 
 int Multiply(CCrossSectionData& crossSection, double scalar)
 {
