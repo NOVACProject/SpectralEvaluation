@@ -51,6 +51,7 @@ std::ostream& operator << (std::ostream& out, const LogContext& c)
 
 const std::string LogContext::FileName = "file";
 const std::string LogContext::Directory = "directory";
+const std::string LogContext::FitWindow = "window";
 const std::string LogContext::Device = "device";
 const std::string LogContext::DeviceModel = "model";
 const std::string LogContext::Time = "time";

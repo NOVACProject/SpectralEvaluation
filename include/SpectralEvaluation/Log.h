@@ -35,6 +35,9 @@ public:
     // The name of a directory
     static const std::string Directory;
 
+    // The name of a fit window
+    static const std::string FitWindow;
+
     // Device serial number
     static const std::string Device;
 

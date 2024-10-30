@@ -173,6 +173,20 @@ void CDateTime::SetToNowUTC() {
     this->second = (unsigned char)tim->tm_sec;
 }
 
+CDateTime CDateTime::Now()
+{
+    CDateTime time;
+    time.SetToNow();
+    return time;
+}
+
+CDateTime CDateTime::UtcNow()
+{
+    CDateTime time;
+    time.SetToNowUTC();
+    return time;
+}
+
 double CDateTime::Difference(const CDateTime& t1, const CDateTime& t2) {
     struct tm tid1, tid2;
     tid1.tm_year = t1.year - 1900;
