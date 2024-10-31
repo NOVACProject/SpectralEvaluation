@@ -16,7 +16,7 @@ namespace novac
 /// <param name="RA"></param>
 /// <param name="dec"></param>
 /// <param name="EQT"></param>
-void EquatorialCoordinates(double D, double& RA, double& dec, double& EQT)
+static void EquatorialCoordinates(double D, double& RA, double& dec, double& EQT)
 {
     const double g_deg = fmod(357.529 + 0.98560028 * D, 360.0);
     const double g_rad = g_deg * DEGREETORAD;
@@ -50,7 +50,7 @@ void EquatorialCoordinates(double D, double& RA, double& dec, double& EQT)
     EQT = q_deg / 15.0 - RA / 15.0;
 }
 
-void HorizontalCoordinates(double lat, double H, double dec, double& elev, double& azim)
+static void HorizontalCoordinates(double lat, double H, double dec, double& elev, double& azim)
 {
     double H_rad = H * DEGREETORAD;
     double lat_rad = lat * DEGREETORAD;
@@ -80,15 +80,14 @@ void HorizontalCoordinates(double lat, double H, double dec, double& elev, doubl
 }
 
 /** Returns the hour angle given the longitude and equation of time. */
-double GetHourAngle(double hr, double lon, double EqT)
+static double GetHourAngle(double hr, double lon, double EqT)
 {
     return 15.0 * (hr + lon / 15 + EqT - 12);
 }
 
-void GetSunPosition(const CDateTime& gmtTime, double lat, double lon, double& SZA, double& SAZ)
+SolarPosition GetSunPosition(const CDateTime& gmtTime, CGPSData position)
 {
-    SZA = 0.0;
-    SAZ = 0.0;
+    SolarPosition result;
 
     // Get the julian day
     double D = JulianDay(gmtTime) - 2451545.0;
@@ -96,21 +95,24 @@ void GetSunPosition(const CDateTime& gmtTime, double lat, double lon, double& SZ
     // Get the Equatorial coordinates...
     double	RA; //	the right ascension (deg)
     double	dec; // the declination	(deg)
-    double	EqT;	// the equation of time (hours)
+    double	EqT; // the equation of time (hours)
     EquatorialCoordinates(D, RA, dec, EqT);
 
     // Get the hour angle
     double fractionalHour = (double)gmtTime.hour + gmtTime.minute / 60.0 + gmtTime.second / 3600.0;
-    double H = GetHourAngle(fractionalHour, lon, EqT);
+    double H = GetHourAngle(fractionalHour, position.m_longitude, EqT);
 
     // Get the horizontal coordinates
     double	elev, sAzim; // The elevation and azimuth (towards south);
-    HorizontalCoordinates(lat, H, dec, elev, sAzim);
+    HorizontalCoordinates(position.m_latitude, H, dec, elev, sAzim);
 
     // Convert the elevation into sza
-    SZA = 90.0 - elev;
+    result.zenithAngle = 90.0 - elev;
 
     // Convert the azimuth to a value counted from the north and 
-    SAZ = fmod(180.0 + sAzim, 360.0);
+    result.azimuth = fmod(180.0 + sAzim, 360.0);
+
+    return result;
 }
-}
+
+}  // namespace novac

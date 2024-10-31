@@ -60,15 +60,14 @@ add_library(NovacSpectralEvaluation
     ${DIALOGCONTROLLERS_SOURCES}
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Air.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/DateTime.h
-    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/NovacEnums.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Definitions.h
-    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Geometry.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/EstimatedValue.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Exceptions.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Geometry.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/GPSData.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Interpolation.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Log.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/NovacEnums.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/NullableValue.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Statistics.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/StringUtils.h
@@ -80,6 +79,7 @@ add_library(NovacSpectralEvaluation
     ${CMAKE_CURRENT_SOURCE_DIR}/src/GPSData.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Interpolation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Log.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/NovacEnums.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/NullableValue.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Statistics.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/StringUtils.cpp
