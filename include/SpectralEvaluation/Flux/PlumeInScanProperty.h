@@ -36,13 +36,13 @@ public:
 
     /** The offset of the scan, describes the column
         of gas in the sky-spectrum */
-    double offset = 0.0;
+    novac::Nullable<double> offset;
 
     /** The completeness of the scan. This is a value
         ranging from 0.5 to 1.0 trying to estimate
         how large portion of the plume is visible
         in the scan. */
-    double completeness = 0.0;
+    novac::Nullable<double> completeness;
 
     /** The edges of the plume. These are the scan angles (first motor only)
         where the colmn of the plume has dropped to 1/e from it's highest value. */
@@ -58,20 +58,6 @@ public:
 // --------------------------------------------------------------------
 // -------------- CALCULATING IF WE SEE THE PLUME ---------------------
 // --------------------------------------------------------------------
-
-/** Finds the plume in the supplied scan. Return value is true if there is a plume, otherwise false
-    @param scanAngles - the scanAngles for the measurements.
-    @param phi - the second scan angle for the measurements, only for Heidelberg-instruments with two motors.
-    @param columns - the slant columns for the measurements. Must be from a normal scan
-    @param columnErrors - the corresponding slant column errors for the measurement.
-    @param badEvaluation - the result of the quality judgement of the measured columns,
-                        badEvaluation[i] = true means a bad value
-    @param numPoints - the number of points in the scan. Must also be the length
-                        of the vectors 'columns', 'columnErrors', and 'badEvaluation'
-    @param plumeOffset - the offset of the plume. Must have been calculated by a prior call to CalculatePlumeOffset.
-    @param plumeProperties - Will on successful return be filled with the calculated properties of the plume (not completeness though).
-    @param message - Will be filled with the reason the plume wasn't found, if it wasn't.. */
-bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, long numPoints, double plumeOffset, CPlumeInScanProperty& plumeProperties, std::string* message = nullptr);
 
 /** Finds the plume in the supplied scan. Return value is true if there is a plume, otherwise false
     @param evaluatedScan - the evaluated scan.
@@ -121,11 +107,11 @@ bool CalculatePlumeCompleteness(const BasicScanEvaluationResult& evaluatedScan, 
 
 /** Calculates the 'offset' of the scan, i.e. the column amount in the sky spectrum, by judging from
     the lowest columns in the scan. */
-double CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation, long numPoints);
+Nullable<double> CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation, long numPoints);
 
 /** Calculates the 'offset' of the scan, i.e. the column amount in the sky spectrum, by judging from
     the lowest columns in the scan.
     This value is filled into the provided CPlumeInScanProperty and returned. */
-double CalculatePlumeOffset(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, CPlumeInScanProperty& plumeProperties);
+Nullable<double> CalculatePlumeOffset(const BasicScanEvaluationResult& evaluatedScan, int specieIdx);
 
 }

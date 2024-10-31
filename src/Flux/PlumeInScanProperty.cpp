@@ -102,11 +102,11 @@ template <class T> T Max(T* pBuffer, long bufLen)
 
 // Calculates the offset of the plume given all the evaluations of the 'good' spectra in the scan.
 // There needs to be at least six good measurements, as the baseline is taken as the 20% lowest values.
-static double CalculatePlumeOffsetFromGoodColumnValues(const std::vector<double>& goodColumns)
+static novac::Nullable<double> CalculatePlumeOffsetFromGoodColumnValues(const std::vector<double>& goodColumns)
 {
     if (goodColumns.size() <= 5)
     {
-        return 0.0;
+        return novac::Nullable<double>();
     }
 
     // Find the N lowest goodColumns values
@@ -116,7 +116,7 @@ static double CalculatePlumeOffsetFromGoodColumnValues(const std::vector<double>
     return Average(m.data(), N);
 }
 
-static double CalculatePlumeOffset(const std::vector< ScanEvaluationData>& evaluation)
+static novac::Nullable<double> CalculatePlumeOffset(const std::vector< ScanEvaluationData>& evaluation)
 {
     // calculate the offset as the average of the three lowest offsetCorrectedColumn values 
     //    that are not considered as 'bad' values
@@ -131,7 +131,7 @@ static double CalculatePlumeOffset(const std::vector< ScanEvaluationData>& evalu
     return CalculatePlumeOffsetFromGoodColumnValues(columns);
 }
 
-double CalculatePlumeOffset(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, CPlumeInScanProperty& plumeProperties)
+Nullable<double> CalculatePlumeOffset(const BasicScanEvaluationResult& evaluatedScan, int specieIdx)
 {
     std::vector<double> columns;
     for (size_t idx = 0; idx < evaluatedScan.m_spec.size(); ++idx)
@@ -143,12 +143,10 @@ double CalculatePlumeOffset(const BasicScanEvaluationResult& evaluatedScan, int 
         }
     }
 
-    plumeProperties.offset = CalculatePlumeOffsetFromGoodColumnValues(columns);
-
-    return plumeProperties.offset;
+    return CalculatePlumeOffsetFromGoodColumnValues(columns);
 }
 
-double CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation, long numPoints)
+Nullable<double> CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation, long numPoints)
 {
     // calculate the offset as the average of the three lowest offsetCorrectedColumn values 
     //    that are not considered as 'bad' values
@@ -165,7 +163,7 @@ double CalculatePlumeOffset(const std::vector<double>& columns, const std::vecto
 
     if (testColumns.size() <= 5)
     {
-        return 0.0;
+        return Nullable<double>();
     }
 
     // Find the N lowest offsetCorrectedColumn values
@@ -178,7 +176,7 @@ double CalculatePlumeOffset(const std::vector<double>& columns, const std::vecto
 
 /// --------------------------- FINDING THE PLUME IN ONE SCAN ---------------------------
 
-bool FindPlume(const std::vector< ScanEvaluationData>& evaluation, CPlumeInScanProperty& plumeProperties, std::string* message)
+static bool FindPlume(const std::vector< ScanEvaluationData>& evaluation, CPlumeInScanProperty& plumeProperties, std::string* message)
 {
     const int numberOfGoodspectra = static_cast<int>(evaluation.size());
 
@@ -193,7 +191,7 @@ bool FindPlume(const std::vector< ScanEvaluationData>& evaluation, CPlumeInScanP
     }
 
     // If the plume offset hasn't already been calculated then do so now.
-    if (std::abs(plumeProperties.offset) < 1.0)
+    if (!plumeProperties.offset.HasValue())
     {
         plumeProperties.offset = CalculatePlumeOffset(evaluation);
     }
@@ -348,7 +346,7 @@ bool FindPlume(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, do
 
 
 // VERSION 1: FROM NOVACPROGRAM
-bool FindPlume(
+static bool FindPlume(
     const std::vector<double>& scanAngles,
     const std::vector<double>& phi,
     const std::vector<double>& columns,
@@ -401,7 +399,7 @@ bool CalculatePlumeCompleteness(const BasicScanEvaluationResult& evaluatedScan, 
         badEvaluation.push_back(evaluatedScan.m_spec[idx].IsBad());
     }
 
-    return CalculatePlumeCompleteness(scanAngles, phi, columns, columnErrors, badEvaluation, plumeProperties.offset, numPoints, plumeProperties, message);
+    return CalculatePlumeCompleteness(scanAngles, phi, columns, columnErrors, badEvaluation, plumeProperties.offset.Value(), numPoints, plumeProperties, message);
 }
 
 // VERSION 1: FROM NOVACPROGRAM
@@ -419,11 +417,13 @@ bool CalculatePlumeCompleteness(
 
     int nDataPointsToAverage = 5;
 
+    plumeProperties.offset = offset;
+
     // Check if there is a plume at all...
     bool inPlume = ::novac::FindPlume(scanAngles, phi, columns, columnErrors, badEvaluation, numPoints, offset, plumeProperties, message);
     if (!inPlume)
     {
-        plumeProperties.completeness = 0.0; // <-- no plume at all
+        plumeProperties.completeness = Nullable<double>(); // <-- no plume at all
         return false;
     }
 
@@ -437,13 +437,15 @@ bool CalculatePlumeCompleteness(
             avgLeft += columns[k] - offset;
             ++nAverage;
             if (nAverage == nDataPointsToAverage)
+            {
                 break;
+            }
         }
     }
     if (nAverage < nDataPointsToAverage)
     {
         // not enough data-points to make an ok average, return fail
-        plumeProperties.completeness = 0.0; // <-- no plume at all
+        plumeProperties.completeness = Nullable<double>(); // <-- no plume at all
         return false;
     }
     avgLeft /= nDataPointsToAverage;
@@ -458,13 +460,15 @@ bool CalculatePlumeCompleteness(
             avgRight += columns[k] - offset;
             ++nAverage;
             if (nAverage == nDataPointsToAverage)
+            {
                 break;
+            }
         }
     }
     if (nAverage < nDataPointsToAverage)
     {
         // not enough data-points to make an ok average, return fail
-        plumeProperties.completeness = 0.0; // <-- no plume at all
+        plumeProperties.completeness = Nullable<double>(); // <-- no plume at all
         return false;
     }
     avgRight /= nDataPointsToAverage;
@@ -480,9 +484,7 @@ bool CalculatePlumeCompleteness(
     }
 
     // The completeness
-    plumeProperties.completeness = 1.0 - 0.5 * std::max(avgLeft, avgRight) / maxColumn;
-    if (plumeProperties.completeness > 1.0)
-        plumeProperties.completeness = 1.0;
+    plumeProperties.completeness = std::min(1.0, 1.0 - 0.5 * std::max(avgLeft, avgRight) / maxColumn);
 
     return true;
 }

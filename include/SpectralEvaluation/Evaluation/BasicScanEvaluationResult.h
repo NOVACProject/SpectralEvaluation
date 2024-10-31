@@ -1,6 +1,8 @@
 #pragma once
 
+#include <memory>
 #include <vector>
+#include <SpectralEvaluation/Molecule.h>
 #include <SpectralEvaluation/NovacEnums.h>
 #include <SpectralEvaluation/Evaluation/EvaluationResult.h>
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
@@ -78,6 +80,10 @@ public:
         @return -1 if the specie could not be found */
     int GetSpecieIndex(const std::string& specieName) const;
 
+    /** Returns the index of the specie.
+        @return -1 if the specie could not be found */
+    int GetSpecieIndex(Molecule molecule) const;
+
     #pragma region Getting properties of the scan
 
     unsigned long NumberOfEvaluatedSpectra() const { return m_specNum; }
@@ -102,6 +108,11 @@ std::vector<double> GetColumns(const BasicScanEvaluationResult& result, int spec
 /** @return the errors of all the evaluated columns for the specie with the provided index.
     @return an empty vector if result is empty specieIndex is invalid. */
 std::vector<double> GetColumnErrors(const BasicScanEvaluationResult& result, int specieIndex);
+
+/** Tries to find a plume in the provided scan result.
+    If the plume is found then the calculated properties are returned otherwise this returns nullptr.
+    This will fill in the scan offset, the plume completeness and the plume positions. */
+std::unique_ptr<novac::CPlumeInScanProperty> CalculatePlumeProperties(const BasicScanEvaluationResult& result, const Molecule& specie, std::string& message);
 
 /** Checks the kind of measurement mode of the provided scan */
 novac::MeasurementMode CheckMeasurementMode(const BasicScanEvaluationResult& result);

@@ -67,6 +67,7 @@ add_library(NovacSpectralEvaluation
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/GPSData.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Interpolation.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Log.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Molecule.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/NovacEnums.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/NullableValue.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Statistics.h
@@ -79,6 +80,7 @@ add_library(NovacSpectralEvaluation
     ${CMAKE_CURRENT_SOURCE_DIR}/src/GPSData.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Interpolation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Log.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Molecule.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/NovacEnums.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/NullableValue.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Statistics.cpp

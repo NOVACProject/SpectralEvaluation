@@ -28,7 +28,7 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
     REQUIRE(evaluationFileHandler.m_scan.size() == 1); // check assumption on the setup
 
     novac::CPlumeInScanProperty plumeInScanProperties;
-    novac::CalculatePlumeOffset(evaluationFileHandler.m_scan[0], 0, plumeInScanProperties);
+    plumeInScanProperties.offset = novac::CalculatePlumeOffset(evaluationFileHandler.m_scan[0], 0);
     REQUIRE(true == novac::CalculatePlumeCompleteness(evaluationFileHandler.m_scan[0], 0, plumeInScanProperties));
 
     // Read in the fit windows to use

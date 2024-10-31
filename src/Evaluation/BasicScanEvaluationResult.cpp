@@ -46,6 +46,12 @@ void BasicScanEvaluationResult::InitializeArrays(long size)
     m_specInfo.reserve(size);
 }
 
+
+int BasicScanEvaluationResult::GetSpecieIndex(Molecule molecule) const
+{
+    return this->GetSpecieIndex(molecule.name);
+}
+
 int BasicScanEvaluationResult::GetSpecieIndex(const std::string& specieName) const
 {
     // If there are no spectra, there can be no species
@@ -64,7 +70,7 @@ int BasicScanEvaluationResult::GetSpecieIndex(const std::string& specieName) con
     {
         if (EqualsIgnoringCase(m_spec[0].m_referenceResult[i].m_specieName, specieName))
         {
-            return (int)i;
+            return static_cast<int>(i);
         }
     }
 
@@ -121,6 +127,69 @@ std::vector<double> GetColumnErrors(const BasicScanEvaluationResult& result, int
     return errors;
 }
 
+#pragma region Getting the properties of the plume
+
+std::unique_ptr<novac::CPlumeInScanProperty> CalculatePlumeProperties(const BasicScanEvaluationResult& scan, const Molecule& specie, std::string& message)
+{
+    // if this is a wind-speed measurement, then there's no use to try to calculate the plume-centre
+    if (scan.m_measurementMode == novac::MeasurementMode::Windspeed)
+    {
+        return nullptr;
+    }
+    unsigned long numberOfSpectra = scan.NumberOfEvaluatedSpectra();
+    if (numberOfSpectra == 0)
+    {
+        return nullptr;
+    }
+
+    const int specieIndex = scan.GetSpecieIndex(specie.name);
+    if (specieIndex == -1)
+    {
+        return nullptr;
+    }
+
+    Nullable<double> offset = CalculatePlumeOffset(scan, specieIndex);
+    if (!offset.HasValue())
+    {
+        return nullptr;
+    }
+
+    // pull out the good data points out of the measurement and ignore the bad points
+    std::vector<double> scanAngle(numberOfSpectra);
+    std::vector<double> phi(numberOfSpectra);
+    std::vector<double> column(numberOfSpectra);
+    std::vector<double> columnError(numberOfSpectra);
+    std::vector<bool> badEval(numberOfSpectra);
+    for (unsigned long i = 0; i < numberOfSpectra; ++i)
+    {
+        if (scan.m_spec[i].IsBad() || scan.m_spec[i].IsDeleted())
+        {
+            badEval[i] = true;
+        }
+        else
+        {
+            badEval[i] = false;
+            scanAngle[i] = scan.m_specInfo[i].m_scanAngle;
+            phi[i] = scan.m_specInfo[i].m_scanAngle2;
+            column[i] = scan.m_spec[i].m_referenceResult[specieIndex].m_column;
+            columnError[i] = scan.m_spec[i].m_referenceResult[specieIndex].m_columnError;
+        }
+    }
+
+    // Estimate the completeness of the plume (this will call on FindPlume we don't need to do that here...)
+    CPlumeInScanProperty plumeProperties;
+    bool success = CalculatePlumeCompleteness(scanAngle, phi, column, columnError, badEval, offset.Value(), numberOfSpectra, plumeProperties, &message);
+    if (success)
+    {
+        plumeProperties.offset = offset;
+        return std::make_unique<CPlumeInScanProperty>(plumeProperties);
+    }
+
+    return nullptr;
+}
+
+#pragma endregion Getting the properties of the plume
+
 #pragma region Measurement Mode
 
 MeasurementMode CheckMeasurementMode(const BasicScanEvaluationResult& result)
@@ -158,6 +227,10 @@ bool IsStratosphereMeasurement(const BasicScanEvaluationResult& result)
     // If the measurement started at a time when the Solar Zenith Angle 
     // was larger than 75 degrees then it is not a wind-speed measurement
     const novac::SolarPosition sun = novac::GetSunPosition(result.m_specInfo[0].m_startTime, result.GetLocation());
+    if (std::abs(sun.zenithAngle.value) < 75.0)
+    {
+        return false;
+    }
 
     // It is here assumed that the measurement is a stratospheric measurment
     // if there are more than 3 repetitions in the zenith positon
@@ -165,23 +238,19 @@ bool IsStratosphereMeasurement(const BasicScanEvaluationResult& result)
     for (unsigned int k = 0; k < result.NumberOfEvaluatedSpectra(); ++k)
     {
         if (std::abs(result.m_specInfo[k].m_scanAngle) < 1e-2)
+        {
             ++nRepetitions;
+        }
         else
         {
             nRepetitions = 0;
         }
 
-        if (nRepetitions > 50)
+        if (nRepetitions > 3)
         {
-            if (std::abs(sun.zenithAngle.value) > 75.0)
-                return true;
-            else
-                return false;
+            return true;
         }
     }
-
-    if (nRepetitions > 2)
-        return true;
 
     return false;
 }
