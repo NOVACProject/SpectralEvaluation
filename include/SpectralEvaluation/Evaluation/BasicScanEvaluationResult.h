@@ -1,7 +1,9 @@
 #pragma once
 
 #include <vector>
+#include <SpectralEvaluation/NovacEnums.h>
 #include <SpectralEvaluation/Evaluation/EvaluationResult.h>
+#include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include <SpectralEvaluation/Spectra/SpectrumInfo.h>
 
 namespace novac
@@ -12,6 +14,8 @@ namespace novac
 class BasicScanEvaluationResult
 {
 public:
+
+    #pragma region Properties on the spectra in the scan itself
 
     /** The results of evaluating the spectra.
         There is one evaluation result for each spectrum in the scan.
@@ -42,6 +46,22 @@ public:
     /** A list of which spectra were corrupted and could not be evaluated.
         There is one entry here for each spectrum which wasn't evaluated. */
     std::vector<unsigned int> m_corruptedSpectra;
+
+    /** The type of the instrument used for this scan */
+    NovacInstrumentType m_instrumentType = NovacInstrumentType::Gothenburg;
+
+    /** Flag to signal if this is a wind measurement, a scan, or something else. */
+    MeasurementMode m_measurementMode = MeasurementMode::Unknown;
+
+    #pragma endregion Properties on the spectra in the scan itself
+
+    #pragma region Calculated properties on the scan
+
+    /** This contains the parameters of the plume that is seen in this scan,
+        such as the completeness or the centre angle of the plume. */
+    novac::CPlumeInScanProperty m_plumeProperties;
+
+    #pragma endregion Calculated properties on the scan
 
     /** Appends the provided result to the list of calculated results */
     int AppendResult(const novac::CEvaluationResult& evalRes, const novac::CSpectrumInfo& specInfo);

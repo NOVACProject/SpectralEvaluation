@@ -60,7 +60,9 @@ add_library(NovacSpectralEvaluation
     ${DIALOGCONTROLLERS_SOURCES}
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Air.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/DateTime.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/NovacEnums.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Definitions.h
+    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Geometry.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/EstimatedValue.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Exceptions.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Geometry.h

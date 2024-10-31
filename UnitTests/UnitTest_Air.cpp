@@ -1,6 +1,9 @@
 #include "catch.hpp"
 #include <SpectralEvaluation/Air.h>
 
+namespace novac
+{
+
 TEST_CASE("NmVacuumToNmAir")
 {
     SECTION("Red HeNe returns correct value.")
@@ -26,3 +29,4 @@ TEST_CASE("RefractiveIndexOfAir_Edlen")
     }
 }
 
+} // namespace novac

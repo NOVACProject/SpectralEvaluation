@@ -3,10 +3,6 @@
 cmake_minimum_required (VERSION 3.6)
 
 set(SPECTRUM_CLASS_HEADERS
-    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Air.h
-    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/DateTime.h
-    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Geometry.h
-    ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/EstimatedValue.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/Grid.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/IScanSpectrumSource.h
     ${SPECTRALEVAUATION_INCLUDE_DIRS}/SpectralEvaluation/Spectra/Scattering.h
@@ -19,8 +15,6 @@ set(SPECTRUM_CLASS_HEADERS
 
 
 set(SPECTRUM_CLASS_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/../DateTime.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/../Geometry.cpp
     ${CMAKE_CURRENT_LIST_DIR}/Scattering.cpp
     ${CMAKE_CURRENT_LIST_DIR}/Spectrum.cpp
     ${CMAKE_CURRENT_LIST_DIR}/SpectrumInfo.cpp
