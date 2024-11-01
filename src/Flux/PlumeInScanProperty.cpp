@@ -346,7 +346,7 @@ bool FindPlume(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, do
 
 
 // VERSION 1: FROM NOVACPROGRAM
-static bool FindPlume(
+bool FindPlume(
     const std::vector<double>& scanAngles,
     const std::vector<double>& phi,
     const std::vector<double>& columns,

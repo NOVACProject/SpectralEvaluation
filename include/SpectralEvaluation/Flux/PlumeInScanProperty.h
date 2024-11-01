@@ -60,6 +60,20 @@ public:
 // --------------------------------------------------------------------
 
 /** Finds the plume in the supplied scan. Return value is true if there is a plume, otherwise false
+    @param scanAngles - the scanAngles for the measurements.
+    @param phi - the second scan angle for the measurements, only for Heidelberg-instruments with two motors.
+    @param columns - the slant columns for the measurements. Must be from a normal scan
+    @param columnErrors - the corresponding slant column errors for the measurement.
+    @param badEvaluation - the result of the quality judgement of the measured columns,
+                        badEvaluation[i] = true means a bad value
+    @param numPoints - the number of points in the scan. Must also be the length
+                        of the vectors 'columns', 'columnErrors', and 'badEvaluation'
+    @param plumeOffset - the offset of the plume. Must have been calculated by a prior call to CalculatePlumeOffset.
+    @param plumeProperties - Will on successful return be filled with the calculated properties of the plume (not completeness though).
+    @param message - Will be filled with the reason the plume wasn't found, if it wasn't.. */
+bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, long numPoints, double plumeOffset, CPlumeInScanProperty& plumeProperties, std::string* message = nullptr);
+
+/** Finds the plume in the supplied scan. Return value is true if there is a plume, otherwise false
     @param evaluatedScan - the evaluated scan.
     @param specieIdx - the evaluated specie to get the columns for (normally zero).
     @param plumeOffset - the offset of the plume. Must have been calculated by a prior call to CalculatePlumeOffset.
