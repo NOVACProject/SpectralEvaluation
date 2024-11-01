@@ -19,14 +19,14 @@ CScanFileHandler::CScanFileHandler(ILogger& log)
 bool CScanFileHandler::CheckScanFile(novac::LogContext context, const std::string& fileName)
 {
     CSpectrumIO reader;
-    const std::string strings[] = { std::string("sky"), std::string("zenith"), std::string("dark"), std::string("offset"), std::string("dark_cur"), std::string("darkcur") };
-    int indices[] = { -1, -1, -1, -1, -1, -1 };
+    const std::vector<std::string> strings = { std::string("sky"), std::string("zenith"), std::string("dark"), std::string("offset"), std::string("dark_cur"), std::string("darkcur") };
+    std::vector<int> indices(6, -1);
     bool error = false;
 
     m_fileName = fileName;
 
     // Count the number of spectra in the .pak-file
-    m_specNum = reader.ScanSpectrumFile(m_fileName, strings, 6, indices);
+    m_specNum = reader.ScanSpectrumFile(m_fileName, strings, indices);
     if (m_specNum == 0)
     {
         return false;
@@ -50,7 +50,7 @@ bool CScanFileHandler::CheckScanFile(novac::LogContext context, const std::strin
                 {
                     this->m_lastError = reader.m_lastError;
                     std::stringstream msg;
-                    msg << "Could not read spectrum " << k << " from file. " << reader.FormatLastError();
+                    msg << "Could not read spectrum " << k << " from file. " << ToString(reader.m_lastError);
                     m_log.Error(context, msg.str());
                     fclose(f);
                     return false;
@@ -100,7 +100,7 @@ bool CScanFileHandler::CheckScanFile(novac::LogContext context, const std::strin
     if (error)
     {
         this->m_lastError = reader.m_lastError;
-        m_log.Error(context, "Could not read sky spectrum from file. " + reader.FormatLastError());
+        m_log.Error(context, "Could not read sky spectrum from file. " + ToString(reader.m_lastError));
         return false;
     }
 
@@ -134,7 +134,7 @@ bool CScanFileHandler::CheckScanFile(novac::LogContext context, const std::strin
     if (error)
     {
         this->m_lastError = reader.m_lastError;
-        m_log.Error(context, "Could not read dark spectrum from file." + reader.FormatLastError());
+        m_log.Error(context, "Could not read dark spectrum from file." + ToString(reader.m_lastError));
         return false;
     }
 
@@ -145,7 +145,7 @@ bool CScanFileHandler::CheckScanFile(novac::LogContext context, const std::strin
         if (true != reader.ReadSpectrum(m_fileName, indices[3], *spectrum))
         {
             this->m_lastError = reader.m_lastError;
-            m_log.Error(context, "Could not read offset spectrum from file." + reader.FormatLastError());
+            m_log.Error(context, "Could not read offset spectrum from file." + ToString(reader.m_lastError));
             return false;
         }
 
@@ -159,7 +159,7 @@ bool CScanFileHandler::CheckScanFile(novac::LogContext context, const std::strin
         if (true != reader.ReadSpectrum(m_fileName, indices[4], *spectrum))
         {
             this->m_lastError = reader.m_lastError;
-            m_log.Error(context, "Could not read dark current spectrum from file." + reader.FormatLastError());
+            m_log.Error(context, "Could not read dark current spectrum from file." + ToString(reader.m_lastError));
             return false;
         }
         this->m_darkCurrent = std::move(spectrum);
@@ -169,7 +169,7 @@ bool CScanFileHandler::CheckScanFile(novac::LogContext context, const std::strin
         std::unique_ptr<CSpectrum> spectrum = std::make_unique<CSpectrum>();
         if (true != reader.ReadSpectrum(m_fileName, indices[5], *spectrum))
         {
-            m_log.Error(context, "Could not read offset spectrum spectrum from file." + reader.FormatLastError());
+            m_log.Error(context, "Could not read offset spectrum spectrum from file." + ToString(reader.m_lastError));
             this->m_lastError = reader.m_lastError;
             return false;
         }
@@ -218,7 +218,7 @@ int CScanFileHandler::GetNextSpectrum(novac::LogContext context, CSpectrum& spec
         // instead of reading from the file itself.
         if (m_specReadSoFarNum >= m_spectrumBufferNum)
         {
-            this->m_lastError = CSpectrumIO::ERROR_SPECTRUM_NOT_FOUND;
+            this->m_lastError = FileError::SpectrumNotFound;
             ++m_specReadSoFarNum; // <-- go to the next spectum
             return 0;
         }
@@ -234,7 +234,7 @@ int CScanFileHandler::GetNextSpectrum(novac::LogContext context, CSpectrum& spec
         {
             // if there was an error reading the spectrum, set the error-flag
             this->m_lastError = reader.m_lastError;
-            m_log.Error(context, "Error reading spectrum." + reader.FormatLastError());
+            m_log.Error(context, "Error reading spectrum." + ToString(reader.m_lastError));
             ++m_specReadSoFarNum; // <-- go to the next spectum
             return 0;
         }
@@ -274,7 +274,7 @@ int CScanFileHandler::GetSpectrum(novac::LogContext context, CSpectrum& spec, lo
         {
             this->m_lastError = reader.m_lastError;
             std::stringstream msg;
-            msg << "Error reading spectrum number " << specNo << "in scan. Error code : " << reader.m_lastError;
+            msg << "Error reading spectrum number " << specNo << "in scan. Error code : " << ToString(reader.m_lastError);
             m_log.Information(context, msg.str());
             return 0;
         }

@@ -14,6 +14,25 @@ std::string ToString(NovacInstrumentType type)
     }
 }
 
+std::string ToString(FileError err)
+{
+    switch (err)
+    {
+    case FileError::NoError: return "No error";
+    case FileError::EndOfFile: return "End of File";
+    case FileError::CouldNotOpenfile: return "Could not open file";
+    case FileError::ChecksumMismatch: return "Checksum mismatch";
+    case FileError::SpectrumTooLarge: return "Spectrum too large to be opened";
+    case FileError::SpectrumNotFound: return "Requested spectrum not found";
+    case FileError::DecompressionError: return "Error decompressing spectrum";
+    case FileError::SpectrumNotComplete: return "Spectrum not complete in file";
+    case FileError::CouldNotChangeFilePosition: return "Could not change position in file";
+    default:
+        return "Unknown error";
+    }
+
+}
+
 std::string ToString(MeasurementMode mode)
 {
     switch (mode)
