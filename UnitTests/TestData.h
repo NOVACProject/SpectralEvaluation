@@ -12,6 +12,12 @@ public:
         return std::string("../TestData/");
     }
 
+    // region interesting .pak files
+    static std::string GetMeasuredSpectrumName_2002126M1()
+    {
+        return GetTestDataDirectory() + std::string("2002126M1/2002126M1_230120_0156_0.pak");
+    }
+
     // region Instrument Calibration
 
     static std::string GetMeasuredSpectrumName_I2J8549()

@@ -9,7 +9,7 @@ void NovacProgramWavelengthCalibrationController::ReadInput(novac::CSpectrum& me
     if (!pakFileHandler.CheckScanFile(context, m_inputSpectrumFile))
     {
         std::stringstream msg;
-        msg << "Cannot read the provided input spectrum file. Error:  " << pakFileHandler.m_lastError;
+        msg << "Cannot read the provided input spectrum file. Error:  " << novac::ToString(pakFileHandler.m_lastError);
         throw std::invalid_argument(msg.str());
     }
 

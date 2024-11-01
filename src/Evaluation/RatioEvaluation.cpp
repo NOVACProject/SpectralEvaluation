@@ -57,7 +57,7 @@ void RatioEvaluation::DarkCorrectSpectrum(IScanSpectrumSource& scan, CSpectrum& 
     auto correspondingDarkSpectrum = std::make_unique<CSpectrum>();
     if (!::novac::GetDark(scan, spectrum, m_darkSettings, *correspondingDarkSpectrum, errorMessage))
     {
-        return throw std::invalid_argument(errorMessage);
+        throw std::invalid_argument(errorMessage);
     }
     if (correspondingDarkSpectrum->NumSpectra() > 0)
     {
