@@ -15,7 +15,7 @@
 namespace novac
 {
 
-#pragma region Helper Methods
+// region Helper Methods
 
 static std::string BufferToString(const char* buffer, size_t bufferSize)
 {
@@ -33,7 +33,7 @@ static std::string BufferToString(const char* buffer, size_t bufferSize)
 static std::uint16_t CalculateChecksum(const std::vector<long>& data, size_t length)
 {
     std::uint32_t chk = 0;
-    for (long j = 0; j < length; j++)
+    for (size_t j = 0; j < length; j++)
     {
         chk += data[j];
     }
@@ -93,7 +93,7 @@ static FILE* OpenFileForReading(const std::string& fileName)
     return f;
 }
 
-#pragma endregion Helper Methods
+// endregion Helper Methods
 
 int CSpectrumIO::CountSpectra(const std::string& fileName)
 {

@@ -16,8 +16,7 @@ namespace novac
 class BasicScanEvaluationResult
 {
 public:
-
-#pragma region Properties on the spectra in the scan itself
+    // region Properties on the spectra in the scan itself
 
     /** The results of evaluating the spectra.
         There is one evaluation result for each spectrum in the scan.
@@ -55,15 +54,15 @@ public:
     /** Flag to signal if this is a wind measurement, a scan, or something else. */
     MeasurementMode m_measurementMode = MeasurementMode::Unknown;
 
-#pragma endregion Properties on the spectra in the scan itself
+    // endregion Properties on the spectra in the scan itself
 
-#pragma region Calculated properties on the scan
+    // region Calculated properties on the scan
 
     /** This contains the parameters of the plume that is seen in this scan,
         such as the completeness or the centre angle of the plume. */
     novac::CPlumeInScanProperty m_plumeProperties;
 
-#pragma endregion Calculated properties on the scan
+    // endregion Calculated properties on the scan
 
     /** Appends the provided result to the list of calculated results */
     int AppendResult(const novac::CEvaluationResult& evalRes, const novac::CSpectrumInfo& specInfo);
@@ -80,11 +79,11 @@ public:
         @return -1 if the specie could not be found */
     int GetSpecieIndex(const std::string& specieName) const;
 
+    // region Getting properties of the scan
+
     /** Returns the index of the specie.
         @return -1 if the specie could not be found */
     int GetSpecieIndex(Molecule molecule) const;
-
-    #pragma region Getting properties of the scan
 
     unsigned long NumberOfEvaluatedSpectra() const { return m_specNum; }
 
@@ -92,13 +91,11 @@ public:
     // If no GPS data is found then the retuned location has both latitude and longitude = 0.0.
     CGPSData GetLocation() const;
 
-    #pragma endregion Getting properties of the scan
+    // endregion Getting properties of the scan
 
 protected:
-
     /** The number of evaluated spectra. */
     unsigned long m_specNum = 0;
-
 };
 
 /** @return all the evaluated columns for the specie with the provided index.

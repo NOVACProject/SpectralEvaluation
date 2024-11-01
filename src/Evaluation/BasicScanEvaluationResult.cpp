@@ -127,7 +127,7 @@ std::vector<double> GetColumnErrors(const BasicScanEvaluationResult& result, int
     return errors;
 }
 
-#pragma region Getting the properties of the plume
+// region Getting the properties of the plume
 
 std::unique_ptr<novac::CPlumeInScanProperty> CalculatePlumeProperties(const BasicScanEvaluationResult& scan, const Molecule& specie, std::string& message)
 {
@@ -188,9 +188,9 @@ std::unique_ptr<novac::CPlumeInScanProperty> CalculatePlumeProperties(const Basi
     return nullptr;
 }
 
-#pragma endregion Getting the properties of the plume
+// endregion Getting the properties of the plume
 
-#pragma region Measurement Mode
+// region Measurement Mode
 
 MeasurementMode CheckMeasurementMode(const BasicScanEvaluationResult& result)
 {
@@ -427,6 +427,6 @@ bool IsCompositionMeasurement(const BasicScanEvaluationResult& result)
     return false;
 }
 
-#pragma endregion Measurement mode
+// endregion Measurement mode
 
 } // namespace novac
