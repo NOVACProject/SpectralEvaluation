@@ -3,11 +3,13 @@
 #include <memory>
 #include <vector>
 #include <SpectralEvaluation/DateTime.h>
+#include <SpectralEvaluation/NovacEnums.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Spectra/IScanSpectrumSource.h>
 
 namespace novac
 {
+enum class FileError;
 
 /** ScanFileHandler is a class to read in information from the scan-files
     (all the spectra from one scan are supposed to be packed together in one file in Manne's 'pak'-format.
@@ -42,7 +44,7 @@ public:
 
     /** If any error occurs in the reading of the file, this int is set to
         any of the errors defined int 'SpectrumIO.h. */
-    int m_lastError = 0;
+    FileError m_lastError = FileError::NoError;
 
     /** If any error occurs in the reading of the file, this is set to a
     *   human readable error message describing the problem. */

@@ -64,15 +64,15 @@ std::ostream& operator<<(std::ostream& os, const CGPSData& gps)
     return os;
 }
 
-/* The GPS reports latitude and longitude in the format ddmm.mmmm
-  , this function converts this to the format dd.dddd */
 double CGPSData::DoubleToAngle(double rawData)
 {
-    const double remainder = fmod(rawData, 100.0);
-    const int degree = (int)(rawData / 100);
-    const double fDegree = degree + remainder / 60.0;
+    // conversion of values on the format 'ddmm.mmmmm'
+    const int degree = static_cast<int>(rawData / 100.0); // extract the degrees part.
 
-    return fDegree;
+    const double minutes = fmod(rawData, 100.0); // extract the minutes part
+
+    // combine the two
+    return degree + minutes / 60.0;
 }
 
 
