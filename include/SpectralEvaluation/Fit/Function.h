@@ -61,6 +61,10 @@ namespace MathFit
 		{
 		}
 
+		virtual ~IFunction()
+		{
+		}
+
 		/**
 		* Calculates the function value at a given point. 
 		* This method is declared abstract, so it must be
