@@ -30,8 +30,8 @@ public:
     /** The longitude, in degrees (with decimals) with positive values on the easter hemisphere */
     double m_longitude = 0.0;
 
-    /* The GPS reports latitude and longitude in the format ddmm.mmmm
-            this function converts this to the format dd.dddd */
+    /* The GPS reports latitude and longitude in the format ddmm.mmmm (i.e. degrees and minutes)
+        this function converts this to the format dd.dddd (i.e. degrees with decimals). */
     static double DoubleToAngle(double rawData);
 };
 

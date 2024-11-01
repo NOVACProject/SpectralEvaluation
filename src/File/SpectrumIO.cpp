@@ -556,12 +556,12 @@ int CSpectrumIO::AddSpectrumToFile(const std::string& fileName, const CSpectrum&
     MKZY.flag = info.m_flag;
     MKZY.hdrsize = sizeof(struct MKZYhdr);
     MKZY.hdrversion = hdr_version;
-    sprintf(MKZY.instrumentname, "%.16s", spectrum.m_info.m_device.c_str());
+    sprintf(MKZY.instrumentname, "%.15s", spectrum.m_info.m_device.c_str());
     MKZY.lat = spectrum.Latitude();
     MKZY.lon = spectrum.Longitude();
     MKZY.measurecnt = (char)info.m_scanSpecNum;
     MKZY.measureidx = (char)info.m_scanIndex;
-    sprintf(MKZY.name, "%.12s", spectrum.m_info.m_name.c_str());
+    sprintf(MKZY.name, "%.11s", spectrum.m_info.m_name.c_str());
     MKZY.pixels = (std::uint16_t)spectrum.m_length;
     MKZY.size = outsiz;
     MKZY.startc = info.m_startChannel;
