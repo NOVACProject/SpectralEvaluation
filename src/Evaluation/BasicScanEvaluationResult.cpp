@@ -121,7 +121,7 @@ std::vector<double> GetColumnErrors(const BasicScanEvaluationResult& result, int
     return errors;
 }
 
-#pragma region Measurement Mode
+// region Measurement Mode
 
 MeasurementMode CheckMeasurementMode(const BasicScanEvaluationResult& result)
 {
@@ -358,6 +358,6 @@ bool IsCompositionMeasurement(const BasicScanEvaluationResult& result)
     return false;
 }
 
-#pragma endregion Measurement mode
+// endregion Measurement mode
 
 } // namespace novac
