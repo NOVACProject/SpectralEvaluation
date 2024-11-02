@@ -78,7 +78,7 @@ static BasicScanEvaluationResult GenerateGaussianScanResult(double amplitude, do
     return plume;
 }
 
-static constexpr double CalculateGaussianOneOverEFromFwhm(double gaussianFwhm)
+static double CalculateGaussianOneOverEFromFwhm(double gaussianFwhm)
 {
     const double sigma = (gaussianFwhm / 2.3548);
 
