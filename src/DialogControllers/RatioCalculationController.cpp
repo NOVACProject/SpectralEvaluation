@@ -501,6 +501,7 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
         return result;
     }
 
+    plumeInScanProperties.offset = offset;
     const bool plumeIsVisible = novac::CalculatePlumeCompleteness(initialResult, 0, plumeInScanProperties);
     result.plumeInScanProperties = plumeInScanProperties;
     if (!plumeIsVisible)

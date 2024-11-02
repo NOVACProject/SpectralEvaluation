@@ -3,6 +3,8 @@
 #include <SpectralEvaluation/Geometry.h>
 #include <SpectralEvaluation/StringUtils.h>
 
+#include <iostream>
+
 namespace novac
 {
 
@@ -57,6 +59,7 @@ int BasicScanEvaluationResult::GetSpecieIndex(const std::string& specieName) con
     // If there are no spectra, there can be no species
     if (m_spec.size() <= 0)
     {
+        std::cout << "No evaluated spectra, cannot find index of " << specieName << std::endl;
         return -1;
     }
 
@@ -68,12 +71,15 @@ int BasicScanEvaluationResult::GetSpecieIndex(const std::string& specieName) con
 
     for (size_t i = 0; i < m_spec[0].m_referenceResult.size(); ++i)
     {
+        std::cout << "Comparing: '" << m_spec[0].m_referenceResult[i].m_specieName << "' and '" << specieName << "'" << std::endl;
         if (EqualsIgnoringCase(m_spec[0].m_referenceResult[i].m_specieName, specieName))
         {
+            std::cout << "found specie index: " << i << std::endl;
             return static_cast<int>(i);
         }
     }
 
+    std::cout << "Could not find reference result for " << specieName << std::endl;
     return -1;
 }
 
@@ -134,17 +140,20 @@ std::unique_ptr<novac::CPlumeInScanProperty> CalculatePlumeProperties(const Basi
     // if this is a wind-speed measurement, then there's no use to try to calculate the plume-centre
     if (scan.m_measurementMode == novac::MeasurementMode::Windspeed)
     {
+        std::cout << "measurement is wind measurement, no plume properties can be calculated. " << std::endl;
         return nullptr;
     }
     unsigned long numberOfSpectra = scan.NumberOfEvaluatedSpectra();
     if (numberOfSpectra == 0)
     {
+        std::cout << "Cannot calculate plume properties if no spectra have been evaluated. " << std::endl;
         return nullptr;
     }
 
     const int specieIndex = scan.GetSpecieIndex(specie.name);
     if (specieIndex == -1)
     {
+        std::cout << "Could not find specie with name: '" << specie.name << "'" << std::endl;
         return nullptr;
     }
 

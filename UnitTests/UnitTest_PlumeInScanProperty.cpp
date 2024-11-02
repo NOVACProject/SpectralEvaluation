@@ -50,32 +50,35 @@ static BasicScanEvaluationResult GenerateGaussianScanResult(double amplitude, do
 {
     BasicScanEvaluationResult plume;
 
+    // A scan always has 51 measurements (novac standard)
     const int length = 51;
     const double sigma2 = (fwhmInScanAngles / 2.3548) * (fwhmInScanAngles / 2.3548); // sigma-squared
-
-    // A scan always has 51 measurements (novac standard)
-    plume.m_spec.resize(length);
 
     const double scanStepSize = 180.0 / (double)(length - 1);
     for (int stepIdx = 0; stepIdx < length; ++stepIdx)
     {
         const double alpha = -90.0 + scanStepSize * stepIdx;
-        plume.m_specInfo[stepIdx].m_scanAngle = static_cast<float>(alpha);
-        plume.m_specInfo[stepIdx].m_scanAngle2 = 0.0; // don't simulate the Heidelberg instrument
+        
+        CSpectrumInfo specInfo;
+        specInfo.m_scanAngle = static_cast<float>(alpha);
+        specInfo.m_scanAngle2 = 0.0; // don't simulate the Heidelberg instrument
 
-        double column = amplitude * exp(-(alpha - plumeCenter) * (alpha - plumeCenter) / (2.0 * sigma2));
-        column += offset;
+        CEvaluationResult evaluation;
+        const double column = offset + amplitude * exp(-(alpha - plumeCenter) * (alpha - plumeCenter) / (2.0 * sigma2));
 
         novac::CReferenceFitResult result;
+        result.m_specieName = "SO2";
         result.m_column = column;
         result.m_columnError = 0.0;
-        plume.m_spec[stepIdx].m_referenceResult.push_back(result);
+        evaluation.m_referenceResult.push_back(result);
+
+        plume.AppendResult(evaluation, specInfo);
     }
 
     return plume;
 }
 
-static double CalculateGaussianOneOverEFromFwhm(double gaussianFwhm)
+static constexpr double CalculateGaussianOneOverEFromFwhm(double gaussianFwhm)
 {
     const double sigma = (gaussianFwhm / 2.3548);
 
@@ -106,15 +109,17 @@ TEST_CASE("CalculatePlumeProperties with Gaussian plume", "[PlumeProperties]")
         const double acutalPlumeCenter = 0.0;
         const double actualPlumeFwhm = 20.0;
         auto plume = GenerateGaussianScanResult(200.0, acutalPlumeCenter, actualPlumeFwhm);
+        REQUIRE(plume.NumberOfEvaluatedSpectra() == 51);
+        REQUIRE(0 == plume.GetSpecieIndex(StandardMolecule::SO2));
         const double expectedPlumeWidth = CalculateGaussianOneOverEFromFwhm(actualPlumeFwhm);
 
         // Act
         auto plumeProperties = CalculatePlumeProperties(plume, StandardMolecule::SO2, message);
 
         // Assert, the calculated values should be as expected
-        REQUIRE(plumeProperties != nullptr);
+        REQUIRE(nullptr != plumeProperties);
         REQUIRE(std::abs(plumeProperties->plumeCenter.Value()) < angleTolerance);
-        REQUIRE(std::abs(plumeProperties->plumeCenter2.Value()) < 1.0);
+        REQUIRE(std::abs(plumeProperties->plumeCenter2.Value()) < angleTolerance); //plumecenter2 is set to zero, all the scan2 angles are zero
         REQUIRE(std::abs(plumeProperties->plumeEdgeHigh.Value() - acutalPlumeCenter - expectedPlumeWidth * 0.5) < angleTolerance);
         REQUIRE(std::abs(plumeProperties->plumeEdgeLow.Value() - acutalPlumeCenter + expectedPlumeWidth * 0.5) < angleTolerance);
         REQUIRE(std::abs(plumeProperties->plumeHalfHigh.Value() - acutalPlumeCenter - actualPlumeFwhm * 0.5) < 1.5 * angleTolerance);
@@ -133,8 +138,10 @@ TEST_CASE("CalculatePlumeProperties with Gaussian plume", "[PlumeProperties]")
         auto plumeProperties = CalculatePlumeProperties(plume, StandardMolecule::SO2, message);
 
         // Assert, the calculated values should be as expected
+        REQUIRE(nullptr != plumeProperties);
+        REQUIRE(plumeProperties->plumeCenter.HasValue());
         REQUIRE(std::abs(plumeProperties->plumeCenter.Value()) < angleTolerance);
-        REQUIRE(std::abs(plumeProperties->plumeCenter2.Value()) < 1.0);
+        REQUIRE(std::abs(plumeProperties->plumeCenter2.Value()) < angleTolerance); //plumecenter2 is set to zero, all the scan2 angles are zero
         REQUIRE(std::abs(plumeProperties->plumeEdgeHigh.Value() - acutalPlumeCenter - expectedPlumeWidth * 0.5) < angleTolerance);
         REQUIRE(std::abs(plumeProperties->plumeEdgeLow.Value() - acutalPlumeCenter + expectedPlumeWidth * 0.5) < angleTolerance);
         REQUIRE(std::abs(plumeProperties->plumeHalfHigh.Value() - acutalPlumeCenter - actualPlumeFwhm * 0.5) < 1.5 * angleTolerance);
@@ -151,6 +158,8 @@ TEST_CASE("CalculatePlumeProperties with Gaussian plume", "[PlumeProperties]")
         auto plumeProperties = CalculatePlumeProperties(plume, StandardMolecule::SO2, message);
 
         // Assert, the calculated values should be as expected
+        REQUIRE(nullptr != plumeProperties);
+        REQUIRE(plumeProperties->plumeCenter.HasValue());
         REQUIRE(std::abs(plumeProperties->plumeCenter.Value() - plumeCenter) < 4.0);
         REQUIRE(std::abs(plumeProperties->plumeCenter2.Value()) < 1.0);
         REQUIRE(std::abs(plumeProperties->plumeEdgeHigh.Value() - plumeCenter - expectedPlumeWidth * 0.5) < angleTolerance);
@@ -171,6 +180,8 @@ TEST_CASE("CalculatePlumeProperties with Gaussian plume", "[PlumeProperties]")
         auto plumeProperties = CalculatePlumeProperties(plume, StandardMolecule::SO2, message);
 
         // Assert, the calculated values should be as expected
+        REQUIRE(nullptr != plumeProperties);
+        REQUIRE(plumeProperties->plumeCenter.HasValue());
         REQUIRE(std::abs(plumeProperties->plumeCenter.Value() - acutalPlumeCenter) < 4.0);
         REQUIRE(std::abs(plumeProperties->plumeCenter2.Value()) < 1.0);
         REQUIRE(std::abs(plumeProperties->plumeEdgeHigh.Value() - acutalPlumeCenter - expectedPlumeWidth * 0.5) < angleTolerance);
@@ -189,6 +200,8 @@ TEST_CASE("CalculatePlumeProperties with Gaussian plume", "[PlumeProperties]")
         auto plumeProperties = CalculatePlumeProperties(plume, StandardMolecule::SO2, message);
 
         // Assert, the calculated values should be as expected
+        REQUIRE(nullptr != plumeProperties);
+        REQUIRE(plumeProperties->plumeCenter.HasValue());
         REQUIRE(std::abs(plumeProperties->plumeCenter.Value() - plumeCenter) < 4.0);
         REQUIRE(std::abs(plumeProperties->plumeCenter2.Value()) < 1.0);
         REQUIRE(std::abs(plumeProperties->plumeEdgeHigh.Value() - plumeCenter - expectedPlumeWidth * 0.5) < angleTolerance);
@@ -208,6 +221,8 @@ TEST_CASE("CalculatePlumeProperties with Gaussian plume", "[PlumeProperties]")
         auto plumeProperties = CalculatePlumeProperties(plume, StandardMolecule::SO2, message);
 
         // Assert, the calculated values should be as expected
+        REQUIRE(nullptr != plumeProperties);
+        REQUIRE(plumeProperties->plumeCenter.HasValue());
         REQUIRE(std::abs(plumeProperties->plumeCenter.Value() + 75.0) < 4.0);
         REQUIRE(std::abs(plumeProperties->plumeCenter2.Value()) < 1.0);
     }
@@ -220,6 +235,8 @@ TEST_CASE("CalculatePlumeProperties with Gaussian plume", "[PlumeProperties]")
         auto plumeProperties = CalculatePlumeProperties(plume, StandardMolecule::SO2, message);
 
         // Assert, the calculated values should be as expected
+        REQUIRE(nullptr != plumeProperties);
+        REQUIRE(plumeProperties->plumeCenter.HasValue());
         REQUIRE(std::abs(plumeProperties->plumeCenter.Value() - 75.0) < 4.0);
         REQUIRE(std::abs(plumeProperties->plumeCenter2.Value()) < 1.0);
     }
@@ -238,6 +255,8 @@ TEST_CASE("CalculatePlumeProperties with Gaussian plume", "[PlumeProperties]")
         auto plumeProperties = CalculatePlumeProperties(plume, StandardMolecule::SO2, message);
 
         // Assert, the calculated values should be as expected
+        REQUIRE(nullptr != plumeProperties);
+        REQUIRE(plumeProperties->plumeCenter.HasValue());
         REQUIRE(plumeProperties->plumeCenter.Value() < 90.0);
         REQUIRE(plumeProperties->plumeCenter.Value() > -90.0);
     }
@@ -251,7 +270,6 @@ TEST_CASE("CalculatePlumeProperties with measured plume (BroSo2 ratio measuremen
     const bool evaluationFileIsOk = evaluationFileHandler.ReadEvaluationLog(TestData::GetBrORatioEvaluationFile1());
     REQUIRE(evaluationFileIsOk); // check assumption on the setup
     REQUIRE(evaluationFileHandler.m_scan.size() == 1); // check assumption on the setup
-
 
     // Act
     auto plumeProperties = CalculatePlumeProperties(evaluationFileHandler.m_scan[0], StandardMolecule::SO2, message);
@@ -273,8 +291,8 @@ TEST_CASE("CalculatePlumeProperties with measured plume (BroSo2 ratio measuremen
 
     SECTION("Sets completeness and offset.")
     {
-        REQUIRE(plumeProperties->completeness.Value() == Approx(0.0));
-        REQUIRE(plumeProperties->offset.Value() == Approx(-1e8));
+        REQUIRE(plumeProperties->completeness.Value() == Approx(0.7).margin(0.01));
+        REQUIRE(plumeProperties->offset.Value() == Approx(-1.215e18));
     }
 }
 
