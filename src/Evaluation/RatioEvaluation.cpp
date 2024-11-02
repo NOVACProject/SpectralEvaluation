@@ -34,14 +34,21 @@ struct PreparedInputSpectraForDoasEvaluation
     std::vector<double> intensityOffsetSpectrum;
 };
 
-bool IsSuitableScanForRatioEvaluation(const Configuration::RatioEvaluationSettings& settings, const BasicScanEvaluationResult& scanResult, const CPlumeInScanProperty& properties, std::string& errorMessage)
+static bool IsSuitableScanForRatioEvaluation(const Configuration::RatioEvaluationSettings& settings, const BasicScanEvaluationResult& scanResult, const CPlumeInScanProperty& properties, std::string& errorMessage)
 {
-    if (static_cast<int>(scanResult.m_spec.size()) < settings.minNumberOfSpectraInPlume + settings.numberOfSpectraOutsideOfPlume)
+    if (static_cast<int>(scanResult.NumberOfEvaluatedSpectra()) < settings.minNumberOfSpectraInPlume + settings.numberOfSpectraOutsideOfPlume)
     {
         errorMessage = "Too few spectra in scan for creating adding an in-plume-spectrum and an out-of-plume-spectrum.";
         return false; // not enough spectra
     }
-    if (properties.completeness + 0.01 < settings.minimumPlumeCompleteness)
+    else if (!properties.completeness.HasValue())
+    {
+        std::stringstream message;
+        message << "Scan does not see the plume.";
+        errorMessage = message.str();
+        return false;
+    }
+    else if (properties.completeness.Value() + 0.01 < settings.minimumPlumeCompleteness)
     {
         std::stringstream message;
         message << "Plume completeness below threshold of " << settings.minimumPlumeCompleteness;

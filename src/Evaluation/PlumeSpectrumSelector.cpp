@@ -165,7 +165,7 @@ void PlumeSpectrumSelector::CreatePlumeSpectrumFile(
     textOutput << "Plume Properties: " << std::endl;
     textOutput << "  Completeness: " << plumeProperties.completeness << std::endl;
     textOutput << "  Center: " << plumeProperties.plumeCenter.ValueOrDefault(NOT_A_NUMBER) << std::endl;
-    textOutput << "  Offset: " << plumeProperties.offset << std::endl;
+    textOutput << "  Offset: " << plumeProperties.offset.ValueOrDefault(NOT_A_NUMBER) << std::endl;
     textOutput << "  Low Edge: " << plumeProperties.plumeEdgeLow.ValueOrDefault(NOT_A_NUMBER) << std::endl;
     textOutput << "  High Edge: " << plumeProperties.plumeEdgeHigh.ValueOrDefault(NOT_A_NUMBER) << std::endl;
     textOutput << "  HWHM Low: " << plumeProperties.plumeHalfLow.ValueOrDefault(NOT_A_NUMBER) << std::endl;
@@ -285,7 +285,7 @@ bool PlumeSpectrumSelector::IsSuitableScanForRatioEvaluation(
         }
         return false;
     }
-    else if (properties.completeness + 0.01 < settings.minimumPlumeCompleteness)
+    else if (!properties.completeness.HasValue() || properties.completeness.Value() + 0.01 < settings.minimumPlumeCompleteness)
     {
         if (errorMessage != nullptr)
         {

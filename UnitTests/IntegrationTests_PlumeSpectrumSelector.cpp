@@ -66,7 +66,7 @@ TEST_CASE("PlumeSpectrumSelector returns expected in and out of plume for good s
     const int so2Index = 0; // so2 is the first specie here, different from the GetBrORatioEvaluationFile2 and GetBrORatioEvaluationFile3
 
     novac::CPlumeInScanProperty plumeInScanProperties;
-    novac::CalculatePlumeOffset(evaluationFileHandler.m_scan[0], so2Index, plumeInScanProperties);
+    plumeInScanProperties.offset = novac::CalculatePlumeOffset(evaluationFileHandler.m_scan[0], so2Index);
     REQUIRE(true == novac::CalculatePlumeCompleteness(evaluationFileHandler.m_scan[0], 0, plumeInScanProperties));
 
     // Act
@@ -130,7 +130,7 @@ TEST_CASE("PlumeSpectrumSelector returns no in and out of plume for scan with to
     const int so2Index = 1; // here, O3 is actually the first specie
 
     novac::CPlumeInScanProperty plumeInScanProperties;
-    novac::CalculatePlumeOffset(evaluationFileHandler.m_scan[0], so2Index, plumeInScanProperties);
+    plumeInScanProperties.offset = novac::CalculatePlumeOffset(evaluationFileHandler.m_scan[0], so2Index);
     REQUIRE(true == novac::CalculatePlumeCompleteness(evaluationFileHandler.m_scan[0], 1, plumeInScanProperties));
 
     // Act
@@ -163,7 +163,7 @@ TEST_CASE("PlumeSpectrumSelector returns expected in and out of plume for good s
     const int so2Index = 1; // here, O3 is actually the first specie
 
     novac::CPlumeInScanProperty plumeInScanProperties;
-    novac::CalculatePlumeOffset(evaluationFileHandler.m_scan[0], so2Index, plumeInScanProperties);
+    plumeInScanProperties.offset = novac::CalculatePlumeOffset(evaluationFileHandler.m_scan[0], so2Index);
     REQUIRE(true == novac::CalculatePlumeCompleteness(evaluationFileHandler.m_scan[0], 1, plumeInScanProperties));
 
     // Act

@@ -36,13 +36,13 @@ public:
 
     /** The offset of the scan, describes the column
         of gas in the sky-spectrum */
-    double offset = 0.0;
+    novac::Nullable<double> offset;
 
     /** The completeness of the scan. This is a value
         ranging from 0.5 to 1.0 trying to estimate
         how large portion of the plume is visible
         in the scan. */
-    double completeness = 0.0;
+    novac::Nullable<double> completeness;
 
     /** The edges of the plume. These are the scan angles (first motor only)
         where the colmn of the plume has dropped to 1/e from it's highest value. */
@@ -121,11 +121,11 @@ bool CalculatePlumeCompleteness(const BasicScanEvaluationResult& evaluatedScan, 
 
 /** Calculates the 'offset' of the scan, i.e. the column amount in the sky spectrum, by judging from
     the lowest columns in the scan. */
-double CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation, long numPoints);
+Nullable<double> CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation, long numPoints);
 
 /** Calculates the 'offset' of the scan, i.e. the column amount in the sky spectrum, by judging from
     the lowest columns in the scan.
     This value is filled into the provided CPlumeInScanProperty and returned. */
-double CalculatePlumeOffset(const BasicScanEvaluationResult& evaluatedScan, int specieIdx, CPlumeInScanProperty& plumeProperties);
+Nullable<double> CalculatePlumeOffset(const BasicScanEvaluationResult& evaluatedScan, int specieIdx);
 
 }

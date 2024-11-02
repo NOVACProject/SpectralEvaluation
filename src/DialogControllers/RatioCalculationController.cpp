@@ -493,7 +493,15 @@ RatioCalculationResult RatioCalculationController::EvaluateScan(
 
     // Calculate the properties of the plume (low large portion of the plume we see and at what angle).
     novac::CPlumeInScanProperty plumeInScanProperties;
-    novac::CalculatePlumeOffset(initialResult, 0, plumeInScanProperties);
+    const novac::Nullable<double> offset = novac::CalculatePlumeOffset(initialResult, 0);
+    if (!offset.HasValue())
+    {
+        result.debugInfo.errorMessage = "No visible plume";
+        m_results.push_back(result);
+        return result;
+    }
+
+    plumeInScanProperties.offset = offset;
     const bool plumeIsVisible = novac::CalculatePlumeCompleteness(initialResult, 0, plumeInScanProperties);
     result.plumeInScanProperties = plumeInScanProperties;
     if (!plumeIsVisible)
