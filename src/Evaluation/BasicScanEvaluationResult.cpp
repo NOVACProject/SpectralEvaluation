@@ -71,10 +71,8 @@ int BasicScanEvaluationResult::GetSpecieIndex(const std::string& specieName) con
 
     for (size_t i = 0; i < m_spec[0].m_referenceResult.size(); ++i)
     {
-        std::cout << "Comparing: '" << m_spec[0].m_referenceResult[i].m_specieName << "' and '" << specieName << "'" << std::endl;
         if (EqualsIgnoringCase(m_spec[0].m_referenceResult[i].m_specieName, specieName))
         {
-            std::cout << "found specie index: " << i << std::endl;
             return static_cast<int>(i);
         }
     }
