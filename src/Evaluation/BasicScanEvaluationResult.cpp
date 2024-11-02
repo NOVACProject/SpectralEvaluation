@@ -187,6 +187,7 @@ std::unique_ptr<novac::CPlumeInScanProperty> CalculatePlumeProperties(const Basi
 
     // Estimate the completeness of the plume (this will call on FindPlume we don't need to do that here...)
     CPlumeInScanProperty plumeProperties;
+    plumeProperties.offset = offset;
     bool success = CalculatePlumeCompleteness(scanAngle, phi, column, columnError, badEval, offset.Value(), numberOfSpectra, plumeProperties, &message);
     if (success)
     {
