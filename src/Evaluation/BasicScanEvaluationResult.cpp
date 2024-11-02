@@ -71,10 +71,8 @@ int BasicScanEvaluationResult::GetSpecieIndex(const std::string& specieName) con
 
     for (size_t i = 0; i < m_spec[0].m_referenceResult.size(); ++i)
     {
-        std::cout << "Comparing: '" << m_spec[0].m_referenceResult[i].m_specieName << "' and '" << specieName << "'" << std::endl;
         if (EqualsIgnoringCase(m_spec[0].m_referenceResult[i].m_specieName, specieName))
         {
-            std::cout << "found specie index: " << i << std::endl;
             return static_cast<int>(i);
         }
     }
@@ -187,6 +185,7 @@ std::unique_ptr<novac::CPlumeInScanProperty> CalculatePlumeProperties(const Basi
 
     // Estimate the completeness of the plume (this will call on FindPlume we don't need to do that here...)
     CPlumeInScanProperty plumeProperties;
+    plumeProperties.offset = offset;
     bool success = CalculatePlumeCompleteness(scanAngle, phi, column, columnError, badEval, offset.Value(), numberOfSpectra, plumeProperties, &message);
     if (success)
     {
