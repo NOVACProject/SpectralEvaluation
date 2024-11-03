@@ -28,7 +28,7 @@ CFitWindow::CFitWindow(const CFitWindow& other)
     findOptimalShift(other.findOptimalShift),
     child(begin(other.child), end(other.child))
 {
-    for (int i = 0; i < other.nRef; ++i)
+    for (size_t i = 0; i < other.nRef; ++i)
     {
         this->ref[i] = other.ref[i];
     }
@@ -55,7 +55,7 @@ CFitWindow::CFitWindow(CFitWindow&& other)
     findOptimalShift(other.findOptimalShift),
     child(begin(other.child), end(other.child))
 {
-    for (int i = 0; i < other.nRef; ++i)
+    for (size_t i = 0; i < other.nRef; ++i)
     {
         this->ref[i] = std::move(other.ref[i]);
     }
@@ -80,7 +80,7 @@ CFitWindow& CFitWindow::operator=(const CFitWindow& other)
     this->specLength = other.specLength;
     this->startChannel = other.startChannel;
 
-    for (int i = 0; i < other.nRef; ++i)
+    for (size_t i = 0; i < other.nRef; ++i)
     {
         this->ref[i] = other.ref[i];
     }
@@ -109,7 +109,7 @@ CFitWindow& CFitWindow::operator=(CFitWindow&& other)
     this->specLength = other.specLength;
     this->startChannel = other.startChannel;
 
-    for (int i = 0; i < other.nRef; ++i)
+    for (size_t i = 0; i < other.nRef; ++i)
     {
         this->ref[i] = std::move(other.ref[i]);
     }
@@ -152,7 +152,7 @@ void CFitWindow::Clear()
 void ReadReferences(CFitWindow& window)
 {
     // For each reference in the fit-window, read it in and make sure that it exists...
-    for (int referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
+    for (size_t referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
     {
         window.ref[referenceIndex].ReadCrossSectionDataFromFile();
     }
@@ -177,7 +177,7 @@ void ScaleReferencesToMolecCm2(CFitWindow& window)
         ScaleReferencesToMolecCm2(c);
     }
 
-    for (int referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
+    for (size_t referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
     {
         // Local handle for more convenient syntax.
         CReferenceFile& thisReference = window.ref[referenceIndex];
@@ -213,9 +213,9 @@ void AddAsReference(CFitWindow& window, const std::vector<double>& referenceData
     window.nRef += 1;
 }
 
-int AddAsSky(CFitWindow& window, const std::vector<double>& referenceData, SHIFT_TYPE shiftOption)
+size_t AddAsSky(CFitWindow& window, const std::vector<double>& referenceData, SHIFT_TYPE shiftOption)
 {
-    int indexOfSkySpectrum = window.nRef;
+    const size_t indexOfSkySpectrum = window.nRef;
 
     window.ref[window.nRef].m_data = std::make_unique<novac::CCrossSectionData>(referenceData);
     window.ref[window.nRef].m_specieName = "sky";

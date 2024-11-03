@@ -676,7 +676,7 @@ namespace novac
         }
 
         // 4. Include the pseudo-absorbers derived from the derivative of the instrument-line-shape function.
-        std::vector<int> parameterIndices;
+        std::vector<size_t> parameterIndices;
         for (int parameterIdx = 0; parameterIdx < 2; ++parameterIdx)
         {
             auto diffSampledLineShape = std::make_unique<novac::CCrossSectionData>();

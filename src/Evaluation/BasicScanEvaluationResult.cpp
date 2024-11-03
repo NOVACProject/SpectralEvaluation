@@ -141,7 +141,8 @@ std::unique_ptr<novac::CPlumeInScanProperty> CalculatePlumeProperties(const Basi
         std::cout << "measurement is wind measurement, no plume properties can be calculated. " << std::endl;
         return nullptr;
     }
-    unsigned long numberOfSpectra = scan.NumberOfEvaluatedSpectra();
+
+    const size_t numberOfSpectra = scan.NumberOfEvaluatedSpectra();
     if (numberOfSpectra == 0)
     {
         std::cout << "Cannot calculate plume properties if no spectra have been evaluated. " << std::endl;

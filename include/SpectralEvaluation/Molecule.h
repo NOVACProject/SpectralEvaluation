@@ -19,6 +19,8 @@ enum class StandardMolecule
     HCHO
 };
 
+std::string ToString(StandardMolecule molecule);
+
 const double AVOGADROS_NUMBER = 6.02214179e23;
 
 /** The class <b>Molecule</b> is used to pass the properties of an individual

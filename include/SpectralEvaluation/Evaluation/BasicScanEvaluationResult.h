@@ -46,7 +46,7 @@ public:
 
     /** A list of which spectra were corrupted and could not be evaluated.
         There is one entry here for each spectrum which wasn't evaluated. */
-    std::vector<unsigned int> m_corruptedSpectra;
+    std::vector<size_t> m_corruptedSpectra;
 
     /** The type of the instrument used for this scan */
     NovacInstrumentType m_instrumentType = NovacInstrumentType::Gothenburg;
@@ -85,7 +85,7 @@ public:
         @return -1 if the specie could not be found */
     int GetSpecieIndex(Molecule molecule) const;
 
-    unsigned long NumberOfEvaluatedSpectra() const { return m_specNum; }
+    size_t NumberOfEvaluatedSpectra() const { return m_specNum; }
 
     // Attempts to retrieve the location of the instrument from the SpectrumInfo.
     // If no GPS data is found then the retuned location has both latitude and longitude = 0.0.
@@ -95,7 +95,7 @@ public:
 
 protected:
     /** The number of evaluated spectra. */
-    unsigned long m_specNum = 0;
+    size_t m_specNum = 0;
 };
 
 /** @return all the evaluated columns for the specie with the provided index.

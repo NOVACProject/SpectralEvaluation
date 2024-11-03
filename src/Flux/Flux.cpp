@@ -7,44 +7,48 @@
 #include <vector>
 #include <iostream>
 
-double CalculateFluxFlatScanner(const double* scanAngle, const double* column, double offset, int nDataPoints, double windSpeed, double windDirection, double relativePlumeHeight, double compass, double gasFactor)
+double CalculateFluxFlatScanner(const double* scanAngle, const double* column, double offset, size_t nDataPoints, double windSpeed, double windDirection, double relativePlumeHeight, double compass, double gasFactor)
 {
-    double avgVCD, VCD1, VCD2, TAN1, TAN2, distance;
-    double flux = 0;
-    double partialFlux;
+    if (nDataPoints <= 2)
+    {
+        return 0.0;
+    }
+
+    double totalFlux = 0;
 
     // the wind factor
-    double windFactor = std::abs(std::cos(DEGREETORAD * (windDirection - compass)));
+    const double windFactor = std::abs(std::cos(DEGREETORAD * (windDirection - compass)));
 
     // now calculate the flux
-    for (int i = 0; i < nDataPoints - 1; ++i) {
+    for (size_t i = 0; i < nDataPoints - 1; ++i)
+    {
         if (std::abs(std::abs(scanAngle[i]) - 90.0) < 0.5)
             continue; // the distance-calculation has a singularity at +-90 degrees so just skip those points!
         if (std::abs(std::abs(scanAngle[i + 1]) - 90.0) < 0.5)
             continue; // the distance-calculation has a singularity at +-90 degrees so just skip those points!
 
         // The vertical columns
-        VCD1 = (column[i] - offset) * std::cos(DEGREETORAD * scanAngle[i]);
-        VCD2 = (column[i + 1] - offset) * std::cos(DEGREETORAD * scanAngle[i + 1]);
+        const double VCD1 = (column[i] - offset) * std::cos(DEGREETORAD * scanAngle[i]);
+        const double VCD2 = (column[i + 1] - offset) * std::cos(DEGREETORAD * scanAngle[i + 1]);
 
         // calculating the horisontal distance
-        TAN1 = std::tan(DEGREETORAD * scanAngle[i]);
-        TAN2 = std::tan(DEGREETORAD * scanAngle[i + 1]);
-        distance = relativePlumeHeight * std::abs(TAN2 - TAN1);
+        const double TAN1 = std::tan(DEGREETORAD * scanAngle[i]);
+        const double TAN2 = std::tan(DEGREETORAD * scanAngle[i + 1]);
+        const double distance = relativePlumeHeight * std::abs(TAN2 - TAN1);
 
         // The average vertical column
-        avgVCD = (1E-6) * gasFactor * (VCD1 + VCD2) * 0.5;
+        const double avgVCD = (1E-6) * gasFactor * (VCD1 + VCD2) * 0.5;
 
         // The flux...
-        partialFlux = distance * avgVCD * windSpeed * windFactor;
+        const double partialFlux = distance * avgVCD * windSpeed * windFactor;
 
-        flux += partialFlux;
+        totalFlux += partialFlux;
     }
 
-    return std::abs(flux);
+    return std::abs(totalFlux);
 }
 
-double CalculateFluxConicalScanner(const double* scanAngle, const double* column, double offset, int nDataPoints, double windSpeed, double windDirection, double relativePlumeHeight, double compass, double gasFactor, double coneAngle, double tilt)
+double CalculateFluxConicalScanner(const double* scanAngle, const double* column, double offset, size_t nDataPoints, double windSpeed, double windDirection, double relativePlumeHeight, double compass, double gasFactor, double coneAngle, double tilt)
 {
     if (std::isnan(windSpeed) || std::isnan(windDirection) || std::isnan(relativePlumeHeight) || std::isnan(offset) || std::isnan(compass) || std::isnan(tilt) || std::isnan(gasFactor))
     {
@@ -80,7 +84,7 @@ double CalculateFluxConicalScanner(const double* scanAngle, const double* column
     assert(!std::isnan(cos_tilt));
 
     // First prepare the buffers before we calculate anything
-    for (int i = 0; i < nDataPoints - 1; ++i)
+    for (size_t i = 0; i < nDataPoints - 1; ++i)
     {
         // The slant columns
         scd[i] = column[i] - offset;
@@ -143,13 +147,13 @@ double CalculateFluxConicalScanner(const double* scanAngle, const double* column
     return std::abs(flux);
 }
 
-double CalculateFluxHeidelbergScanner(const double* scanAngle1, const double* scanAngle2, const double* column, double offset, int nDataPoints, double windSpeed, double windDirection, double relativePlumeHeight, double /*compass*/)
+double CalculateFluxHeidelbergScanner(const double* scanAngle1, const double* scanAngle2, const double* column, double offset, size_t nDataPoints, double windSpeed, double windDirection, double relativePlumeHeight, double /*compass*/)
 {
     double flux = 0;
     double partialFlux;
 
     // local-data buffer to store the intermediate calculations
-    // double	*alpha							= new double[nDataPoints];
+    // double	*alpha  = new double[nDataPoints];
 
     double* elev = new double[nDataPoints];
     double* azim = new double[nDataPoints];
@@ -160,7 +164,8 @@ double CalculateFluxHeidelbergScanner(const double* scanAngle1, const double* sc
     double* y = new double[nDataPoints];
 
     // First prepare the buffers before we calculate anything
-    for (int i = 0; i < nDataPoints - 1; ++i) {
+    for (size_t i = 0; i < nDataPoints - 1; ++i)
+    {
         // The slant columns
         scd[i] = column[i + 1] - offset;
 
@@ -187,7 +192,8 @@ double CalculateFluxHeidelbergScanner(const double* scanAngle1, const double* sc
 
     // Now make the actual flux-calculation
     /*TODO: flux calculations for Heidelberg instrument differ from Gothenborg instrument because local and global coordinate system do not differ!!!! Define another loop for Heidelberg?*/
-    for (int i = 0; i < nDataPoints - 2; ++i) {
+    for (int i = 0; i < nDataPoints - 2; ++i)
+    {
         if (std::abs(std::abs(elev[i]) - HALF_PI) < 1e-2 || std::abs(std::abs(elev[i + 1]) - HALF_PI) < 1e-2)
             continue;// This algorithm does not work very well for scanangles around +-90 degrees
 

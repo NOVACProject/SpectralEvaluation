@@ -75,7 +75,7 @@ int CEvaluationBase::CreateReferenceSpectra()
     ClearRefereneSpectra();
 
     // 1) Create the references
-    for (int i = 0; i < m_window.nRef; i++)
+    for (size_t i = 0; i < m_window.nRef; i++)
     {
         auto newRef = DefaultReferenceSpectrumFunction();
 
@@ -97,7 +97,7 @@ int CEvaluationBase::CreateReferenceSpectra()
     }
 
     // 2) Couple the references
-    for (int i = 0; i < m_window.nRef; i++)
+    for (size_t i = 0; i < m_window.nRef; i++)
     {
         // Chech the options for the column value
         switch (m_window.ref[i].m_columnOption)
@@ -833,7 +833,7 @@ int CEvaluationBase::EvaluateShift(novac::LogContext context, const CSpectrum& m
     cRefSum.AddReference(*solarSpec); // <-- at last add the reference to the summation object
 
     // Link the shifts of the 'normal' cross sections to the shift of the solar spectrum
-    for (int ii = 0; ii < m_window.nRef; ++ii)
+    for (size_t ii = 0; ii < m_window.nRef; ++ii)
     {
         // Link the shift and squeeze to the solar-reference
         solarSpec->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_ref[ii], CReferenceSpectrumFunction::SHIFT);
@@ -926,7 +926,7 @@ int CEvaluationBase::EvaluateShift(novac::LogContext context, const CSpectrum& m
 
 std::string CEvaluationBase::GetReferenceName(size_t referenceIndex) const
 {
-    if (referenceIndex < (size_t)m_window.nRef)
+    if (referenceIndex < m_window.nRef)
     {
         return m_window.ref[referenceIndex].m_specieName; // user supplied reference
     }
