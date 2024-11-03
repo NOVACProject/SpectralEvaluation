@@ -71,7 +71,7 @@ public:
     @param plumeOffset - the offset of the plume. Must have been calculated by a prior call to CalculatePlumeOffset.
     @param plumeProperties - Will on successful return be filled with the calculated properties of the plume (not completeness though).
     @param message - Will be filled with the reason the plume wasn't found, if it wasn't.. */
-bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, long numPoints, double plumeOffset, CPlumeInScanProperty& plumeProperties, std::string* message = nullptr);
+bool FindPlume(const std::vector<double>& scanAngles, const std::vector<double>& phi, const std::vector<double>& columns, const std::vector<double>& columnErrors, const std::vector<bool>& badEvaluation, size_t numPoints, double plumeOffset, CPlumeInScanProperty& plumeProperties, std::string* message = nullptr);
 
 /** Finds the plume in the supplied scan. Return value is true if there is a plume, otherwise false
     @param evaluatedScan - the evaluated scan.
@@ -102,7 +102,7 @@ bool CalculatePlumeCompleteness(
     const std::vector<double>& columnErrors,
     const std::vector<bool>& badEvaluation,
     double offset,
-    long numPoints,
+    size_t numPoints,
     CPlumeInScanProperty& plumeProperties,
     std::string* message = nullptr);
 
@@ -121,7 +121,7 @@ bool CalculatePlumeCompleteness(const BasicScanEvaluationResult& evaluatedScan, 
 
 /** Calculates the 'offset' of the scan, i.e. the column amount in the sky spectrum, by judging from
     the lowest columns in the scan. */
-Nullable<double> CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation, long numPoints);
+Nullable<double> CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation);
 
 /** Calculates the 'offset' of the scan, i.e. the column amount in the sky spectrum, by judging from
     the lowest columns in the scan.

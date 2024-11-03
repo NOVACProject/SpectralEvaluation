@@ -146,14 +146,19 @@ Nullable<double> CalculatePlumeOffset(const BasicScanEvaluationResult& evaluated
     return CalculatePlumeOffsetFromGoodColumnValues(columns);
 }
 
-Nullable<double> CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation, long numPoints)
+Nullable<double> CalculatePlumeOffset(const std::vector<double>& columns, const std::vector<bool>& badEvaluation)
 {
+    if (columns.size() != badEvaluation.size())
+    {
+        throw std::invalid_argument("Invalid call to CalculatePlumeOffset, the length of 'columns' does not match the length of 'badEvaluation'");
+    }
+
     // calculate the offset as the average of the three lowest offsetCorrectedColumn values 
     //    that are not considered as 'bad' values
     std::vector<double> testColumns;
     testColumns.reserve(columns.size());
 
-    for (int i = 0; i < numPoints; ++i)
+    for (size_t i = 0; i < columns.size(); ++i)
     {
         if (!badEvaluation[i])
         {
@@ -352,14 +357,14 @@ bool FindPlume(
     const std::vector<double>& columns,
     const std::vector<double>& columnErrors,
     const std::vector<bool>& badEvaluation,
-    long numPoints,
+    size_t numPoints,
     double plumeOffset,
     CPlumeInScanProperty& plumeProperties,
     std::string* message)
 {
     std::vector< ScanEvaluationData> evaluation;
 
-    for (long idx = 0; idx < numPoints; ++idx)
+    for (size_t idx = 0; idx < numPoints; ++idx)
     {
         if (badEvaluation[idx])
         {
@@ -387,9 +392,9 @@ bool CalculatePlumeCompleteness(const BasicScanEvaluationResult& evaluatedScan, 
     std::vector<double> columns;
     std::vector<double> columnErrors;
     std::vector<bool> badEvaluation;
-    const long numPoints = static_cast<long>(evaluatedScan.m_spec.size());
+    const size_t numPoints = evaluatedScan.m_spec.size();
 
-    for (long idx = 0; idx < numPoints; ++idx)
+    for (size_t idx = 0; idx < numPoints; ++idx)
     {
         scanAngles.push_back(evaluatedScan.m_specInfo[idx].m_scanAngle);
         phi.push_back(evaluatedScan.m_specInfo[idx].m_scanAngle2);
@@ -410,12 +415,17 @@ bool CalculatePlumeCompleteness(
     const std::vector<double>& columnErrors,
     const std::vector<bool>& badEvaluation,
     double offset,
-    long numPoints,
+    size_t numPoints,
     CPlumeInScanProperty& plumeProperties,
     std::string* message)
 {
+    const size_t nDataPointsToAverage = 5;
 
-    int nDataPointsToAverage = 5;
+    if (numPoints < nDataPointsToAverage)
+    {
+        plumeProperties.completeness = Nullable<double>(); // <-- no plume at all
+        return false;
+    }
 
     plumeProperties.offset = offset;
 
@@ -430,7 +440,7 @@ bool CalculatePlumeCompleteness(
     // Calculate the average of the 'nDataPointsToAverage' left-most values
     double avgLeft = 0.0;
     int nAverage = 0;
-    for (int k = 0; k < numPoints; ++k)
+    for (size_t k = 0; k < numPoints; ++k)
     {
         if (!badEvaluation[k])
         {
@@ -453,7 +463,7 @@ bool CalculatePlumeCompleteness(
     // Calculate the average of the 'nDataPointsToAverage' right-most values
     double avgRight = 0.0;
     nAverage = 0;
-    for (int k = numPoints - 1; k > 0; --k)
+    for (size_t k = numPoints - 1; k > 0; --k)
     {
         if (!badEvaluation[k])
         {
