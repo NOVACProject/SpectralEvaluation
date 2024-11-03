@@ -53,7 +53,7 @@ public:
 
     /** The number of references to use */
     // TODO: Remove when 'ref' is a std::vector.
-    int nRef = 0;
+    size_t nRef = 0;
 
     /** The Fraunhofer-reference spectrum which we can use
         to determine the shift (&squeeze) between the measured
@@ -149,6 +149,6 @@ void AddAsReference(CFitWindow& window, const std::vector<double>& referenceData
     The reference will be added as column fixed to -1, squeeze fixed to one and the shift according to the provided shift option.
     This will increase the number of references inlcuded in the window by one.
     @return the index of the newly inserted reference. */
-int AddAsSky(CFitWindow& window, const std::vector<double>& referenceData, SHIFT_TYPE shiftOption = SHIFT_TYPE::SHIFT_FIX);
+size_t AddAsSky(CFitWindow& window, const std::vector<double>& referenceData, SHIFT_TYPE shiftOption = SHIFT_TYPE::SHIFT_FIX);
 
 }

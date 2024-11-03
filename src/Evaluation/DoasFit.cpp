@@ -116,7 +116,7 @@ void DoasFit::Setup(const CFitWindow& setup)
     newReferenceSetup->columnScaleFactor = (setup.fitType == FIT_TYPE::FIT_POLY) ? -1.0 : +1.0;
 
     // 1) Create the references
-    for (int refIdx = 0; refIdx < setup.nRef; ++refIdx)
+    for (size_t refIdx = 0; refIdx < setup.nRef; ++refIdx)
     {
         if (setup.ref[refIdx].m_data == nullptr)
         {
@@ -147,7 +147,7 @@ void DoasFit::Setup(const CFitWindow& setup)
     }
 
     // 2) Couple the references
-    for (int refIdx = 0; refIdx < setup.nRef; ++refIdx)
+    for (size_t refIdx = 0; refIdx < setup.nRef; ++refIdx)
     {
         // Check the options for the column value.
         //  Notice the multiplication with minus one here, this is done to keep the signs of everything compatible with DOASIS.

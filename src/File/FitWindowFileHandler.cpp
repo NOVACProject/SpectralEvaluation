@@ -312,7 +312,7 @@ bool CFitWindowFileHandler::WriteFitWindow(const novac::CFitWindow& window, cons
         fprintf(f, "%s<solarSpectrum>%s</solarSpectrum>\n", indent.c_str(), window.fraunhoferRef.m_path.c_str());
     }
 
-    fprintf(f, "%s<nRef>%d</nRef>\n", indent.c_str(), window.nRef);
+    fprintf(f, "%s<nRef>%zd</nRef>\n", indent.c_str(), window.nRef);
 
     for (int i = 0; i < window.nRef; ++i)
     {

@@ -73,15 +73,15 @@ void RatioEvaluation::DarkCorrectSpectrum(IScanSpectrumSource& scan, CSpectrum& 
     spectrum.Sub(*correspondingDarkSpectrum);
 }
 
-void AddRingSpectraAsReferences(CFitWindow& localSO2FitWindow, const std::vector<double>& ringSpectrum, const std::vector<double>& ringLambda4Spectrum, int skySpectrumIdx)
+void AddRingSpectraAsReferences(CFitWindow& localSO2FitWindow, const std::vector<double>& ringSpectrum, const std::vector<double>& ringLambda4Spectrum, size_t skySpectrumIdx)
 {
     if (localSO2FitWindow.ringCalculation != RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING)
     {
-        AddAsReference(localSO2FitWindow, ringSpectrum, "ring", skySpectrumIdx);
+        AddAsReference(localSO2FitWindow, ringSpectrum, "ring", static_cast<int>(skySpectrumIdx));
 
         if (localSO2FitWindow.ringCalculation == RING_CALCULATION_OPTION::CALCULATE_RING_X2)
         {
-            AddAsReference(localSO2FitWindow, ringLambda4Spectrum, "ringLambda4", skySpectrumIdx);
+            AddAsReference(localSO2FitWindow, ringLambda4Spectrum, "ringLambda4", static_cast<int>(skySpectrumIdx));
         }
     }
 }
@@ -139,7 +139,7 @@ DoasResult RunEvaluation(const CFitWindow& window, PreparedInputSpectraForDoasEv
 {
     CFitWindow localCopyOfWindow = window;
 
-    int skySpectrumIdx = 0;
+    size_t skySpectrumIdx = 0;
     if (window.fitType != FIT_TYPE::FIT_HP_DIV)
     {
         skySpectrumIdx = AddAsSky(localCopyOfWindow, spectra.filteredOutOfPlumespectrum, SHIFT_TYPE::SHIFT_FREE);
@@ -149,7 +149,7 @@ DoasResult RunEvaluation(const CFitWindow& window, PreparedInputSpectraForDoasEv
 
     if (window.fitType == FIT_TYPE::FIT_POLY && localCopyOfWindow.includeIntensitySpacePolyominal)
     {
-        AddAsReference(localCopyOfWindow, spectra.intensityOffsetSpectrum, "offset", skySpectrumIdx);
+        AddAsReference(localCopyOfWindow, spectra.intensityOffsetSpectrum, "offset", static_cast<int>(skySpectrumIdx));
     }
 
     DoasFit doas;
