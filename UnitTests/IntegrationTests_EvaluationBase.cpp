@@ -92,7 +92,7 @@ TEST_CASE("Evaluate Avaspec spectrum number eight in scan", "[Evaluate][Evaluati
     // Assert
     REQUIRE(returnCode == 0);
 
-    REQUIRE(window.nRef == int(sut.m_result.m_referenceResult.size()));
+    REQUIRE(window.nRef == sut.m_result.m_referenceResult.size());
 
     REQUIRE(sut.m_result.m_delta == Approx(0.0752).margin(0.001));
     REQUIRE(sut.m_result.m_chiSquare == Approx(0.0119).margin(0.001));
@@ -145,7 +145,7 @@ TEST_CASE("Evaluate Avaspec spectrum number 21 in scan", "[Evaluate][EvaluationB
     // Assert
     REQUIRE(returnCode == 0);
 
-    REQUIRE(window.nRef == int(sut.m_result.m_referenceResult.size()));
+    REQUIRE(window.nRef == sut.m_result.m_referenceResult.size());
 
     REQUIRE(sut.m_result.m_delta == Approx(0.0429).margin(0.001));
     REQUIRE(sut.m_result.m_chiSquare == Approx(0.0066).margin(0.001));

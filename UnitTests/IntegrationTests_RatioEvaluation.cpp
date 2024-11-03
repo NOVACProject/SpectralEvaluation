@@ -80,11 +80,11 @@ TEST_CASE("RatioEvaluation - IntegrationTest with good scan - scan file 1", "[Ra
         // (but keep the unit in molec/cm2 as this makes it possible to have the same values in the assertions here as in the test above).
         so2FitWindow.fitType = FIT_TYPE::FIT_HP_DIV;
         broFitWindow.fitType = FIT_TYPE::FIT_HP_DIV;
-        for (int refIdx = 0; refIdx < so2FitWindow.nRef; ++refIdx)
+        for (size_t refIdx = 0; refIdx < so2FitWindow.nRef; ++refIdx)
         {
             HighPassFilter(*so2FitWindow.ref[refIdx].m_data, novac::CrossSectionUnit::cm2_molecule);
         }
-        for (int refIdx = 0; refIdx < broFitWindow.nRef; ++refIdx)
+        for (size_t refIdx = 0; refIdx < broFitWindow.nRef; ++refIdx)
         {
             HighPassFilter(*broFitWindow.ref[refIdx].m_data, novac::CrossSectionUnit::cm2_molecule);
         }
