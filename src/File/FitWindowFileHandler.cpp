@@ -314,7 +314,7 @@ bool CFitWindowFileHandler::WriteFitWindow(const novac::CFitWindow& window, cons
 
     fprintf(f, "%s<nRef>%zd</nRef>\n", indent.c_str(), window.nRef);
 
-    for (int i = 0; i < window.nRef; ++i)
+    for (size_t i = 0; i < window.nRef; ++i)
     {
         fprintf(f, "%s<ref name=\"%s\">\n", indent.c_str(), window.ref[i].m_specieName.c_str());
         fprintf(f, "%s\t<path>%s</path>\n", indent.c_str(), window.ref[i].m_path.c_str());

@@ -118,7 +118,7 @@ double CalculateFluxConicalScanner(const double* scanAngle, const double* column
     }
 
     // Now make the actual flux-calculation
-    for (int i = 0; i < nDataPoints - 2; ++i)
+    for (size_t i = 0; i < nDataPoints - 2; ++i)
     {
         if (std::abs(std::abs(alpha[i]) - HALF_PI) < 1e-2 || std::abs(std::abs(alpha[i + 1]) - HALF_PI) < 1e-2)
         {
@@ -192,7 +192,7 @@ double CalculateFluxHeidelbergScanner(const double* scanAngle1, const double* sc
 
     // Now make the actual flux-calculation
     /*TODO: flux calculations for Heidelberg instrument differ from Gothenborg instrument because local and global coordinate system do not differ!!!! Define another loop for Heidelberg?*/
-    for (int i = 0; i < nDataPoints - 2; ++i)
+    for (size_t i = 0; i < nDataPoints - 2; ++i)
     {
         if (std::abs(std::abs(elev[i]) - HALF_PI) < 1e-2 || std::abs(std::abs(elev[i + 1]) - HALF_PI) < 1e-2)
             continue;// This algorithm does not work very well for scanangles around +-90 degrees

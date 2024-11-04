@@ -439,7 +439,7 @@ bool CalculatePlumeCompleteness(
 
     // Calculate the average of the 'nDataPointsToAverage' left-most values
     double avgLeft = 0.0;
-    int nAverage = 0;
+    size_t nAverage = 0;
     for (size_t k = 0; k < numPoints; ++k)
     {
         if (!badEvaluation[k])
@@ -485,7 +485,7 @@ bool CalculatePlumeCompleteness(
 
     // Find the maximum offsetCorrectedColumn value
     double maxColumn = 0.0;
-    for (int k = 0; k < numPoints; ++k)
+    for (size_t k = 0; k < numPoints; ++k)
     {
         if (!badEvaluation[k])
         {

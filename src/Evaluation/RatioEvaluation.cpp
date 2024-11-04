@@ -88,11 +88,11 @@ void AddRingSpectraAsReferences(CFitWindow& localSO2FitWindow, const std::vector
 
 int FindReferenceIndex(const CFitWindow& window, const std::string& nameToFind)
 {
-    for (int ii = 0; ii < window.nRef; ++ii)
+    for (size_t ii = 0; ii < window.nRef; ++ii)
     {
         if (EqualsIgnoringCase(window.ref[ii].m_specieName, nameToFind))
         {
-            return ii;
+            return static_cast<int>(ii);
         }
     }
 
