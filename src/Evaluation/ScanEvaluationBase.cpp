@@ -253,7 +253,6 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
     const CFitWindow& fitWindow,
     const novac::SpectrometerModel& spectrometerModel,
     const Configuration::CDarkSettings& darkSettings,
-    const Configuration::CSkySettings& skySettings,
     CScanFileHandler& scan)
 {
     // Check that the Fraunhofer reference has been read in
@@ -296,6 +295,15 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
         spectrum.Div(spectrum.NumSpectra());
     }
 
+    // verification here, the measured spectrum should now have an intensity range which matches the range of the spectrometer model.
+    if (spectrum.MaxValue(0, spectrum.m_length) > spectrometerModel.maximumIntensityForSingleReadout + 1)
+    {
+        std::stringstream msg;
+        msg << "Unexpected spectrum range. Max value: " << spectrum.MaxValue(0, spectrum.m_length);
+        msg << " is larger than expected maximum intensity of: " << spectrometerModel.maximumIntensityForSingleReadout << " for a device of type " << spectrometerModel.modelName;
+        m_log.Error(context, msg.str());
+    }
+
     CSpectrum dark;
     if (!GetDark(scan, spectrum, dark, &darkSettings))
     {
@@ -308,23 +316,9 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
     }
     spectrum.Sub(dark);
 
-
-    CSpectrum sky;
-    if (!GetSky(scan, skySettings, sky))
-    {
-        m_log.Information(context, "Failed to get sky spectrum, determination of shift-and-squeeze from Fraunhofer lines failed.");
-        return nullptr; // fail
-    }
-    if (sky.NumSpectra() > 0 && !m_averagedSpectra)
-    {
-        sky.Div(sky.NumSpectra());
-    }
-    sky.Sub(dark);
-
     // 3. Do the evaluation.
     CFitWindow copyOfFitWindow = fitWindow;
     CEvaluationBase shiftEvaluator(copyOfFitWindow, m_log);
-    shiftEvaluator.SetSkySpectrum(sky);
 
     novac::ShiftEvaluationResult shiftResult;
     if (shiftEvaluator.EvaluateShift(context, spectrum, shiftResult))
