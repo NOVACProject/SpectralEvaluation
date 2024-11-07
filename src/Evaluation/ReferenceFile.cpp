@@ -208,7 +208,7 @@ void CReferenceFile::VerifyReferenceValues(int fromIndex, int toIndex) const
     {
         std::stringstream message;
         message << "Invalid call to 'VerifyReferenceValues'. From: " << fromIndex << " and To: " << toIndex << " are out of range.";
-        throw std::invalid_argument(message.str());
+        throw InvalidReferenceException(message.str());
     }
 
     if (this->m_data == nullptr)
