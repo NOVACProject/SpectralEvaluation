@@ -825,6 +825,7 @@ int CEvaluationBase::EvaluateShift(novac::LogContext context, const CSpectrum& m
     // Chech the options for the column value
     const double concentrationMultiplier = (m_window.fitType == FIT_TYPE::FIT_POLY) ? -1.0 : 1.0;
     solarSpec->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, concentrationMultiplier * solarSpec->GetAmplitudeScale());
+    solarSpec->ReleaseParameter(CReferenceSpectrumFunction::SHIFT);
 
     // Fix the squeeze
     solarSpec->FixParameter(CReferenceSpectrumFunction::SQUEEZE, (TFitData)1.0);
@@ -836,6 +837,8 @@ int CEvaluationBase::EvaluateShift(novac::LogContext context, const CSpectrum& m
     for (size_t ii = 0; ii < m_window.nRef; ++ii)
     {
         // Link the shift and squeeze to the solar-reference
+        m_ref[ii]->ReleaseParameter(CReferenceSpectrumFunction::SHIFT);
+        m_ref[ii]->ReleaseParameter(CReferenceSpectrumFunction::SQUEEZE);
         solarSpec->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_ref[ii], CReferenceSpectrumFunction::SHIFT);
         solarSpec->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_ref[ii], CReferenceSpectrumFunction::SQUEEZE);
 
@@ -890,12 +893,20 @@ int CEvaluationBase::EvaluateShift(novac::LogContext context, const CSpectrum& m
         SaveResidual(cFirstFit);
 
         // finally get the fit-result
-        // double column       = (double)solarSpec->GetModelParameter(CReferenceSpectrumFunction::CONCENTRATION);
-        // double columnError  = (double)solarSpec->GetModelParameterError(CReferenceSpectrumFunction::CONCENTRATION);
+        assert(std::abs((double)solarSpec->GetModelParameter(CReferenceSpectrumFunction::CONCENTRATION) - concentrationMultiplier) < 1e-6);
+        assert(std::abs((double)solarSpec->GetModelParameterError(CReferenceSpectrumFunction::CONCENTRATION)) < 1e-6);
+
         shiftResult.shift = (double)solarSpec->GetModelParameter(CReferenceSpectrumFunction::SHIFT);
         shiftResult.shiftError = (double)solarSpec->GetModelParameterError(CReferenceSpectrumFunction::SHIFT);
         shiftResult.squeeze = (double)solarSpec->GetModelParameter(CReferenceSpectrumFunction::SQUEEZE);
         shiftResult.squeezeError = (double)solarSpec->GetModelParameterError(CReferenceSpectrumFunction::SQUEEZE);
+
+        // also verify that the setup did what we expected out of it...
+        for (size_t ii = 0; ii < m_window.nRef; ++ii)
+        {
+            assert(std::abs(shiftResult.shift - m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::SHIFT)) < 1e-3);
+            assert(std::abs(shiftResult.squeeze - m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::SQUEEZE)) < 1e-3);
+        }
 
         return 0;
     }

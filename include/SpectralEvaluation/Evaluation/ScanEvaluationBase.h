@@ -45,7 +45,6 @@ public:
         const CFitWindow& fitWindow,
         const novac::SpectrometerModel& spectrometerModel,
         const Configuration::CDarkSettings& darkSettings,
-        const Configuration::CSkySettings& skySettings,
         CScanFileHandler& scan);
 
     /** @return the index of the spectrum with the 'most suitable intensity for fitting', i.e. this is the

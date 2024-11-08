@@ -13,7 +13,7 @@
   <Catch2Adapter disabled="false">
     <DebugBreak>on</DebugBreak>
     <DiscoverCommandLine>--list-tests</DiscoverCommandLine><!-- Note this custom discoverer is not part of the Catch2 framework -->
-    <DiscoverTimeout>500</DiscoverTimeout>
+    <DiscoverTimeout>5000</DiscoverTimeout>
     <FilenameFilter>.*</FilenameFilter>
     <IncludeHidden>true</IncludeHidden>
     <Logging>Verbose</Logging>
