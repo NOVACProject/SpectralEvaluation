@@ -893,10 +893,8 @@ int CEvaluationBase::EvaluateShift(novac::LogContext context, const CSpectrum& m
         SaveResidual(cFirstFit);
 
         // finally get the fit-result
-        const double column = (double)solarSpec->GetModelParameter(CReferenceSpectrumFunction::CONCENTRATION);
-        const double columnError = (double)solarSpec->GetModelParameterError(CReferenceSpectrumFunction::CONCENTRATION);
-        assert(std::abs(column - concentrationMultiplier) < 1e-6);
-        assert(std::abs(columnError) < 1e-6);
+        assert(std::abs((double)solarSpec->GetModelParameter(CReferenceSpectrumFunction::CONCENTRATION) - concentrationMultiplier) < 1e-6);
+        assert(std::abs((double)solarSpec->GetModelParameterError(CReferenceSpectrumFunction::CONCENTRATION)) < 1e-6);
 
         shiftResult.shift = (double)solarSpec->GetModelParameter(CReferenceSpectrumFunction::SHIFT);
         shiftResult.shiftError = (double)solarSpec->GetModelParameterError(CReferenceSpectrumFunction::SHIFT);

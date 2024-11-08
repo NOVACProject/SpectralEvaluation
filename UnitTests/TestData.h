@@ -53,9 +53,9 @@ public:
     static std::vector<std::string> GetReferences_2009175M1()
     {
         return std::vector <std::string>{
-            GetTestDataDirectory() + std::string("2009175M1/2002127M1_SO2_Bogumil_293K.txt"),
+            GetTestDataDirectory() + std::string("2009175M1/2002127M1_SO2_Bogumil_293K_HP500_PPMM.txt"),
                 GetTestDataDirectory() + std::string("2009175M1/2002127M1_Ring_HP500_PPMM.txt"),
-                GetTestDataDirectory() + std::string("2009175M1/2002127M1_O3_Voigt_223K.txt")
+                GetTestDataDirectory() + std::string("2009175M1/2002127M1_O3_Voigt_223K_HP500_PPMM.txt")
         };
     }
 

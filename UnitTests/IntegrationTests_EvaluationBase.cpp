@@ -8,7 +8,7 @@ namespace novac
 {
 
 //Region Helper methods
-CFitWindow PrepareFitWindow()
+static CFitWindow PrepareFitWindow()
 {
     const auto references = TestData::GetReferences_2009175M1();
     REQUIRE(3 == references.size()); // Assumption here
@@ -36,7 +36,7 @@ CFitWindow PrepareFitWindow()
     return window;
 }
 
-CSpectrum ReadSpectrumNumber(const std::string& scanFile, int number)
+static CSpectrum ReadSpectrumNumber(const std::string& scanFile, int number)
 {
     CSpectrumIO reader;
 
@@ -48,12 +48,12 @@ CSpectrum ReadSpectrumNumber(const std::string& scanFile, int number)
     return spectrum;
 }
 
-CSpectrum ReadSkySpectrum(const std::string& scanFile)
+static CSpectrum ReadSkySpectrum(const std::string& scanFile)
 {
     return ReadSpectrumNumber(scanFile, 0);
 }
 
-CSpectrum ReadDarkSpectrum(const std::string& scanFile)
+static CSpectrum ReadDarkSpectrum(const std::string& scanFile)
 {
     return ReadSpectrumNumber(scanFile, 1);
 }
@@ -61,7 +61,7 @@ CSpectrum ReadDarkSpectrum(const std::string& scanFile)
 //endregion
 
 
-TEST_CASE("Evaluate Avaspec spectrum number eight in scan", "[Evaluate][EvaluationBase]")
+TEST_CASE("Evaluate Avaspec spectrum number eight in scan", "[Evaluate][EvaluationBase][2009175M1_211214_1817_0]")
 {
     const auto scanFile = TestData::GetMeasuredSpectrumName_2009175M1();
 
@@ -71,12 +71,12 @@ TEST_CASE("Evaluate Avaspec spectrum number eight in scan", "[Evaluate][Evaluati
     CSpectrumIO reader;
     CFitWindow window = PrepareFitWindow();
 
-    // Read the spectra
     CEvaluationBase sut(log);
     sut.SetFitWindow(window);
 
+    // Read the spectra (and divide them by the number of readouts already)
     CSpectrum skySpectrum = ReadSkySpectrum(scanFile);
-    CSpectrum darkSpectrum = ReadDarkSpectrum(scanFile);
+    const CSpectrum darkSpectrum = ReadDarkSpectrum(scanFile);
     CSpectrum spectrumToEvaluate = ReadSpectrumNumber(scanFile, 8);
     REQUIRE(spectrumToEvaluate.ScanAngle() == Approx(-68.0)); // Verification that we did indeed read the correct spectrum
 
@@ -87,7 +87,7 @@ TEST_CASE("Evaluate Avaspec spectrum number eight in scan", "[Evaluate][Evaluati
     sut.SetSkySpectrum(skySpectrum);
 
     // Act
-    int returnCode = sut.Evaluate(spectrumToEvaluate);
+    const int returnCode = sut.Evaluate(spectrumToEvaluate);
 
     // Assert
     REQUIRE(returnCode == 0);
@@ -114,7 +114,7 @@ TEST_CASE("Evaluate Avaspec spectrum number eight in scan", "[Evaluate][Evaluati
     REQUIRE(sut.m_result.m_referenceResult[2].m_squeeze == 1.0);
 }
 
-TEST_CASE("Evaluate Avaspec spectrum number 21 in scan", "[Evaluate][EvaluationBase]")
+TEST_CASE("Evaluate Avaspec spectrum number 21 in scan", "[Evaluate][EvaluationBase][2009175M1_211214_1817_0]")
 {
     const auto scanFile = TestData::GetMeasuredSpectrumName_2009175M1();
 
@@ -124,12 +124,12 @@ TEST_CASE("Evaluate Avaspec spectrum number 21 in scan", "[Evaluate][EvaluationB
     CSpectrumIO reader;
     CFitWindow window = PrepareFitWindow();
 
-    // Read the spectra
     CEvaluationBase sut(log);
     sut.SetFitWindow(window);
 
+    // Read the spectra (and divide them by the number of readouts already)
     CSpectrum skySpectrum = ReadSkySpectrum(scanFile);
-    CSpectrum darkSpectrum = ReadDarkSpectrum(scanFile);
+    const CSpectrum darkSpectrum = ReadDarkSpectrum(scanFile);
     CSpectrum spectrumToEvaluate = ReadSpectrumNumber(scanFile, 21);
     REQUIRE(spectrumToEvaluate.ScanAngle() == Approx(-21.0)); // Verification that we did indeed read the correct spectrum
 
@@ -140,7 +140,7 @@ TEST_CASE("Evaluate Avaspec spectrum number 21 in scan", "[Evaluate][EvaluationB
     sut.SetSkySpectrum(skySpectrum);
 
     // Act
-    int returnCode = sut.Evaluate(spectrumToEvaluate);
+    const int returnCode = sut.Evaluate(spectrumToEvaluate);
 
     // Assert
     REQUIRE(returnCode == 0);
@@ -167,8 +167,7 @@ TEST_CASE("Evaluate Avaspec spectrum number 21 in scan", "[Evaluate][EvaluationB
     REQUIRE(sut.m_result.m_referenceResult[2].m_squeeze == 1.0);
 }
 
-
-TEST_CASE("EvaluateShift Avaspec spectrum number 28 in scan", "[Evaluate][EvaluationBase]")
+TEST_CASE("EvaluateShift Avaspec spectrum number 28 in scan", "[Evaluate][EvaluationBase][2009175M1_211214_1817_0]")
 {
     const auto scanFile = TestData::GetMeasuredSpectrumName_2009175M1();
 
@@ -178,15 +177,17 @@ TEST_CASE("EvaluateShift Avaspec spectrum number 28 in scan", "[Evaluate][Evalua
     novac::LogContext context;
 
     CFitWindow window = PrepareFitWindow();
+    window.UV = 0; // Avaspec and the UV option are not great together
     window.fraunhoferRef.m_path = TestData::GetSyntheticFraunhoferSpectrumName_2009175M1();
     window.fraunhoferRef.ReadCrossSectionDataFromFile();
+    novac::HighPassFilter_Ring(*window.fraunhoferRef.m_data); // filter the fraunhofer reference, to match the other references.
 
-    // Read the spectra
     CEvaluationBase sut(log);
     sut.SetFitWindow(window);
 
+    // Read the spectra (and divide them by the number of readouts already)
     CSpectrum skySpectrum = ReadSkySpectrum(scanFile);
-    CSpectrum darkSpectrum = ReadDarkSpectrum(scanFile);
+    const CSpectrum darkSpectrum = ReadDarkSpectrum(scanFile);
     CSpectrum spectrumToEvaluate = ReadSpectrumNumber(scanFile, 28);
     REQUIRE(spectrumToEvaluate.ScanAngle() == Approx(3.0)); // Verification that we did indeed read the correct spectrum
 
@@ -194,20 +195,19 @@ TEST_CASE("EvaluateShift Avaspec spectrum number 28 in scan", "[Evaluate][Evalua
     skySpectrum.Sub(darkSpectrum);
     spectrumToEvaluate.Sub(darkSpectrum);
 
-    sut.SetSkySpectrum(skySpectrum);
-
     novac::ShiftEvaluationResult result;
 
     // Act
-    int returnCode = sut.EvaluateShift(context, spectrumToEvaluate, result);
+    const int returnCode = sut.EvaluateShift(context, spectrumToEvaluate, result);
 
     // Assert
     REQUIRE(returnCode == 0);
 
-    REQUIRE(result.shift == Approx(0.219).margin(0.01));
-    REQUIRE(result.shiftError == Approx(0.091).margin(0.01));
+    REQUIRE(result.shift == Approx(-1.64).margin(0.01));
+    REQUIRE(result.shiftError == Approx(0.061).margin(0.01));
     REQUIRE(result.squeeze == Approx(1.0));
     REQUIRE(result.squeezeError == Approx(0.0));
+    REQUIRE(result.chi2 < 0.24);
 }
 
 }
