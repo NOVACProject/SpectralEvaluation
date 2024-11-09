@@ -75,7 +75,7 @@ int CEvaluationBase::CreateReferenceSpectra()
     ClearRefereneSpectra();
 
     // 1) Create the references
-    for (size_t i = 0; i < m_window.nRef; i++)
+    for (size_t i = 0; i < m_window.reference.size(); i++)
     {
         auto newRef = DefaultReferenceSpectrumFunction();
 
@@ -83,9 +83,9 @@ int CEvaluationBase::CreateReferenceSpectra()
         // transformation of the spectral data into a B-Spline that will be used to interpolate the 
         // reference spectrum during shift and squeeze operations
         CVector yValues;
-        yValues.Copy(m_window.ref[i].m_data->m_crossSection.data(), m_window.ref[i].m_data->GetSize());
+        yValues.Copy(m_window.reference[i].m_data->m_crossSection.data(), m_window.reference[i].m_data->GetSize());
 
-        auto tempXVec = vXData.SubVector(0, m_window.ref[i].m_data->GetSize());
+        auto tempXVec = vXData.SubVector(0, m_window.reference[i].m_data->GetSize());
         if (!newRef->SetData(tempXVec, yValues))
         {
             Error0("Error initializing spline object!");
@@ -97,16 +97,16 @@ int CEvaluationBase::CreateReferenceSpectra()
     }
 
     // 2) Couple the references
-    for (size_t i = 0; i < m_window.nRef; i++)
+    for (size_t i = 0; i < m_window.reference.size(); i++)
     {
         // Chech the options for the column value
-        switch (m_window.ref[i].m_columnOption)
+        switch (m_window.reference[i].m_columnOption)
         {
         case SHIFT_TYPE::SHIFT_FIX:
-            m_ref[i]->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, m_window.ref[i].m_columnValue * m_ref[i]->GetAmplitudeScale());
+            m_ref[i]->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, m_window.reference[i].m_columnValue * m_ref[i]->GetAmplitudeScale());
             break;
         case SHIFT_TYPE::SHIFT_LINK:
-            m_ref[(int)m_window.ref[i].m_columnValue]->LinkParameter(CReferenceSpectrumFunction::CONCENTRATION, *m_ref[i], CReferenceSpectrumFunction::CONCENTRATION);
+            m_ref[(int)m_window.reference[i].m_columnValue]->LinkParameter(CReferenceSpectrumFunction::CONCENTRATION, *m_ref[i], CReferenceSpectrumFunction::CONCENTRATION);
             break;
         case SHIFT_TYPE::SHIFT_FREE:
             m_ref[i]->ReleaseParameter(CReferenceSpectrumFunction::CONCENTRATION);
@@ -116,16 +116,16 @@ int CEvaluationBase::CreateReferenceSpectra()
         }
 
         // Check the options for the shift
-        switch (m_window.ref[i].m_shiftOption)
+        switch (m_window.reference[i].m_shiftOption)
         {
         case SHIFT_TYPE::SHIFT_FIX:
-            m_ref[i]->FixParameter(CReferenceSpectrumFunction::SHIFT, m_window.ref[i].m_shiftValue);
+            m_ref[i]->FixParameter(CReferenceSpectrumFunction::SHIFT, m_window.reference[i].m_shiftValue);
             break;
         case SHIFT_TYPE::SHIFT_LINK:
-            m_ref[(int)m_window.ref[i].m_shiftValue]->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_ref[i], CReferenceSpectrumFunction::SHIFT);
+            m_ref[(int)m_window.reference[i].m_shiftValue]->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_ref[i], CReferenceSpectrumFunction::SHIFT);
             break;
         case SHIFT_TYPE::SHIFT_LIMIT:
-            m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)m_window.ref[i].m_shiftValue, (TFitData)m_window.ref[i].m_shiftMaxValue, 1);
+            m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)m_window.reference[i].m_shiftValue, (TFitData)m_window.reference[i].m_shiftMaxValue, 1);
             break;
         default:
             m_ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SHIFT, (TFitData)0.0);
@@ -134,16 +134,16 @@ int CEvaluationBase::CreateReferenceSpectra()
         }
 
         // Check the options for the squeeze
-        switch (m_window.ref[i].m_squeezeOption)
+        switch (m_window.reference[i].m_squeezeOption)
         {
         case SHIFT_TYPE::SHIFT_FIX:
-            m_ref[i]->FixParameter(CReferenceSpectrumFunction::SQUEEZE, m_window.ref[i].m_squeezeValue);
+            m_ref[i]->FixParameter(CReferenceSpectrumFunction::SQUEEZE, m_window.reference[i].m_squeezeValue);
             break;
         case SHIFT_TYPE::SHIFT_LINK:
-            m_ref[(int)m_window.ref[i].m_squeezeValue]->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_ref[i], CReferenceSpectrumFunction::SQUEEZE);
+            m_ref[(int)m_window.reference[i].m_squeezeValue]->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_ref[i], CReferenceSpectrumFunction::SQUEEZE);
             break;
         case SHIFT_TYPE::SHIFT_LIMIT:
-            m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)m_window.ref[i].m_squeezeValue, (TFitData)m_window.ref[i].m_squeezeMaxValue, 1e7);
+            m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)m_window.reference[i].m_squeezeValue, (TFitData)m_window.reference[i].m_squeezeMaxValue, 1e7);
             break;
         default:
             m_ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SQUEEZE, (TFitData)1.0);
@@ -834,7 +834,7 @@ int CEvaluationBase::EvaluateShift(novac::LogContext context, const CSpectrum& m
     cRefSum.AddReference(*solarSpec); // <-- at last add the reference to the summation object
 
     // Link the shifts of the 'normal' cross sections to the shift of the solar spectrum
-    for (size_t ii = 0; ii < m_window.nRef; ++ii)
+    for (size_t ii = 0; ii < m_window.reference.size(); ++ii)
     {
         // Link the shift and squeeze to the solar-reference
         m_ref[ii]->ReleaseParameter(CReferenceSpectrumFunction::SHIFT);
@@ -902,7 +902,7 @@ int CEvaluationBase::EvaluateShift(novac::LogContext context, const CSpectrum& m
         shiftResult.squeezeError = (double)solarSpec->GetModelParameterError(CReferenceSpectrumFunction::SQUEEZE);
 
         // also verify that the setup did what we expected out of it...
-        for (size_t ii = 0; ii < m_window.nRef; ++ii)
+        for (size_t ii = 0; ii < m_window.reference.size(); ++ii)
         {
             assert(std::abs(shiftResult.shift - m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::SHIFT)) < 1e-3);
             assert(std::abs(shiftResult.squeeze - m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::SQUEEZE)) < 1e-3);
@@ -937,9 +937,9 @@ int CEvaluationBase::EvaluateShift(novac::LogContext context, const CSpectrum& m
 
 std::string CEvaluationBase::GetReferenceName(size_t referenceIndex) const
 {
-    if (referenceIndex < m_window.nRef)
+    if (referenceIndex < m_window.reference.size())
     {
-        return m_window.ref[referenceIndex].m_specieName; // user supplied reference
+        return m_window.reference[referenceIndex].m_specieName; // user supplied reference
     }
     else if (referenceIndex >= this->m_ref.size())
     {

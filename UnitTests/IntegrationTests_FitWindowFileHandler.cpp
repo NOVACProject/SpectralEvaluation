@@ -35,11 +35,11 @@ TEST_CASE("FitWindowFileHandler can read .nfw file for SO2 from the NovacProgram
     REQUIRE(result.front().fraunhoferRef.m_path == "../TestData/BrORatio/D2J2124_SolarSpec_Master.txt");
 
     // finally the references
-    REQUIRE(result.front().nRef == 2);
-    REQUIRE(result.front().ref[0].m_specieName == "SO2");
-    REQUIRE(result.front().ref[0].m_path == "../TestData/BrORatio/D2J2124_SO2_Bogumil_293K_Master.txt");
-    REQUIRE(result.front().ref[1].m_specieName == "O3");
-    REQUIRE(result.front().ref[1].m_path == "../TestData/BrORatio/D2J2124_O3_Voigt_223K_Master.txt");
+    REQUIRE(result.front().reference.size() == 2);
+    REQUIRE(result.front().reference[0].m_specieName == "SO2");
+    REQUIRE(result.front().reference[0].m_path == "../TestData/BrORatio/D2J2124_SO2_Bogumil_293K_Master.txt");
+    REQUIRE(result.front().reference[1].m_specieName == "O3");
+    REQUIRE(result.front().reference[1].m_path == "../TestData/BrORatio/D2J2124_O3_Voigt_223K_Master.txt");
     }
 
 TEST_CASE("FitWindowFileHandler can read .nfw file for BrO from the NovacProgram", "[FitWindowFileHandler][IntegrationTest]")
@@ -72,13 +72,13 @@ TEST_CASE("FitWindowFileHandler can read .nfw file for BrO from the NovacProgram
     REQUIRE(result.front().fraunhoferRef.m_path == "../TestData/BrORatio/D2J2124_SolarSpec_Master.txt");
 
     // finally the references
-    REQUIRE(result.front().nRef == 3);
-    REQUIRE(result.front().ref[0].m_specieName == "BrO");
-    REQUIRE(result.front().ref[0].m_path == "../TestData/BrORatio/D2J2124_BrO_Fleischmann_298K.txt");
-    REQUIRE(result.front().ref[1].m_specieName == "SO2");
-    REQUIRE(result.front().ref[1].m_path == "../TestData/BrORatio/D2J2124_SO2_Bogumil_293K_Master.txt");
-    REQUIRE(result.front().ref[2].m_specieName == "O3");
-    REQUIRE(result.front().ref[2].m_path == "../TestData/BrORatio/D2J2124_O3_Voigt_223K_Master.txt");
+    REQUIRE(result.front().reference.size() == 3);
+    REQUIRE(result.front().reference[0].m_specieName == "BrO");
+    REQUIRE(result.front().reference[0].m_path == "../TestData/BrORatio/D2J2124_BrO_Fleischmann_298K.txt");
+    REQUIRE(result.front().reference[1].m_specieName == "SO2");
+    REQUIRE(result.front().reference[1].m_path == "../TestData/BrORatio/D2J2124_SO2_Bogumil_293K_Master.txt");
+    REQUIRE(result.front().reference[2].m_specieName == "O3");
+    REQUIRE(result.front().reference[2].m_path == "../TestData/BrORatio/D2J2124_O3_Voigt_223K_Master.txt");
     }
 
 TEST_CASE("FitWindowFileHandler can read back one saved fit window", "[FitWindowFileHandler][IntegrationTest]")
@@ -103,7 +103,7 @@ TEST_CASE("FitWindowFileHandler can read back one saved fit window", "[FitWindow
     originalWindow.skySqueeze = 0.98765;
     originalWindow.specLength = 1234;
     originalWindow.UV = 0;
-    originalWindow.nRef = 6;
+    originalWindow.reference.resize(6);
 
     // Act: save the fit window to file and then read it back again.
     CFitWindowFileHandler sut;

@@ -249,7 +249,7 @@ TEST_CASE("CalculatePlumeProperties with Gaussian plume", "[PlumeProperties]")
         auto plume = GenerateGaussianScanResult(200.0, acutalPlumeCenter, actualPlumeFwhm, columnOffsetInMeasurement);
         // add a couple of 'bad' measurements in the beginning...
         plume.m_spec[0].m_referenceResult[0].m_column = -5000.0;
-        plume.m_spec[0].m_referenceResult[1].m_column = -5000.0;
+        plume.m_spec[1].m_referenceResult[0].m_column = -5000.0;
 
         // Act
         auto plumeProperties = CalculatePlumeProperties(plume, StandardMolecule::SO2, message);

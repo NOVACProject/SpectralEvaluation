@@ -48,12 +48,7 @@ public:
     int channel = 0;
 
     /** The reference files to use */
-    // TODO: Use std::vector for this, to remove unnecessary limit on number of references
-    CReferenceFile ref[MAX_N_REFERENCES];
-
-    /** The number of references to use */
-    // TODO: Remove when 'ref' is a std::vector.
-    size_t nRef = 0;
+    std::vector<CReferenceFile> reference;
 
     /** The Fraunhofer-reference spectrum which we can use
         to determine the shift (&squeeze) between the measured
