@@ -15,13 +15,11 @@ private:
 public:
     InvalidReferenceException(const char* msg) :
         m_msg(msg)
-    {
-    }
+    {}
 
     InvalidReferenceException(std::string msg) :
         m_msg(msg.c_str())
-    {
-    }
+    {}
 
     const char* what() const noexcept override final { return m_msg.c_str(); }
 };
@@ -57,6 +55,10 @@ class CReferenceFile
 public:
     CReferenceFile() = default;
     ~CReferenceFile() = default;
+
+    CReferenceFile(const std::string path)
+        : m_path(path)
+    {}
 
     /** Creates this reference file as an in-memory copy of the
         provided cross section */

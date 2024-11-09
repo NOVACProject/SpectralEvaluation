@@ -40,6 +40,8 @@ public:
     // The standard index range to use when removing offset for an USB2000 device in the visible range.
     static IndexRange StandardUSB2000OffsetRemovalRange() { return IndexRange(2, 20); }
 
+    size_t NumberOfReferences() const { return this->reference.size(); }
+
     /** The lower edge of the fit window (in pixels) */
     int fitLow = 320;
 

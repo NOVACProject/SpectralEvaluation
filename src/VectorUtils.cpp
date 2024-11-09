@@ -280,7 +280,7 @@ void Add(std::vector<double>& values, double factor)
 {
     for (double& v : values)
     {
-        v -= factor;
+        v += factor;
     }
 }
 
