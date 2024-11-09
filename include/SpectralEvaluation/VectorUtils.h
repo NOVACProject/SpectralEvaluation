@@ -71,6 +71,15 @@ double SumOfSquaredDifferences(const std::vector<double>& a, const std::vector<d
 /** Multiplies all values in the provided vector with the provided factor */
 void Mult(std::vector<double>& values, double factor);
 
+// Divides each value in 'first' with the corresponding value in 'second'.
+// The result is stored in 'first'.
+// All divisions by zero will be equal to zero.
+// @throws std::invalid_argument if first.size() != second.size()
+void Div(std::vector<double>& first, const std::vector<double>& second);
+
+/** Adds the provided value to each value in the vector */
+void Add(std::vector<double>& values, double factor);
+
 /** Inverts all values in the provided vector, i.e. values[ii] = 1.0/values[ii] */
 void Invert(std::vector<double>& values);
 
@@ -84,6 +93,15 @@ void Mult(const std::vector<double>& firstVector, std::vector<double>& secondVec
 
 /** Calculates the exponent of the provided values */
 void Exp(std::vector<double>& values);
+
+/** Calculates the natural logarithm (base e) of the provided values */
+void Log(std::vector<double>& values);
+
+/** Performs a high-pass binomial filtering on the given values */
+void HighPassBinomial(std::vector<double>& values, int nIterations);
+
+/** Performs a low-pass binomial filtering on the given values */
+void LowPassBinomial(std::vector<double>& values, int nIterations);
 
 /** @return the Average of all the given values
     If values.size() == 0 then 0.0 is returned. */

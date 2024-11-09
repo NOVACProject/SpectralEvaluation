@@ -47,7 +47,7 @@ public:
 
     void Mul(double* fFirst, int iSize, double fConst);
 
-    void Sub(double* fFirst, int iSize, double fConst);
+    void Sub(double* fFirst, int iSize, double fConst) const;
 
     void Add(double* fFirst, int iSize, double fConst);
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SpectralEvaluation/Definitions.h>
+#include <SpectralEvaluation/Math/IndexRange.h>
 #include <SpectralEvaluation/Evaluation/ReferenceFile.h>
 #include <SpectralEvaluation/Evaluation/DoasFitEnumDeclarations.h>
 #include <vector>
@@ -32,6 +33,12 @@ public:
 
     CFitWindow& operator=(CFitWindow&& other);
     CFitWindow(CFitWindow&& other);
+
+    // The standard index range to use when removing offset for an USB2000 device in the UV range.
+    static IndexRange StandardUvOffsetRemovalRange() { return IndexRange(50, 200); }
+
+    // The standard index range to use when removing offset for an USB2000 device in the visible range.
+    static IndexRange StandardUSB2000OffsetRemovalRange() { return IndexRange(2, 20); }
 
     /** The lower edge of the fit window (in pixels) */
     int fitLow = 320;
@@ -103,9 +110,11 @@ public:
         This parameter works in the same way as the CSpectrumInfo::m_interlaceStep */
     int interlaceStep = 1;
 
-    /** 'UV' is true if the start wavelength of the spectrum is 290 nm or shorter */
-    // TODO: replace this with the pixel-range which should be used for the offset-correction (which what this variable is used for)
-    int UV = 1;
+    // offsetRemovalRange is the range of pixels which should be used to calculate an 'offset'
+    // which is then subtracted from the spectrum before the evaluation.
+    // For USB2000 series spectrometers starting in the UV range, this is the pixel range 50 to 200.
+    // For USB2000 series spectrometers starting in the visible range, this is the pixel range 2 to 20 (which are the optically covered pixels).
+    IndexRange offsetRemovalRange = IndexRange(50, 200);
 
     /** True if the scan should be twice, once for finding the highest column value.
         The spectrum with the highest column value is then evluated again with

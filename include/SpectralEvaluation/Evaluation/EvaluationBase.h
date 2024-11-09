@@ -71,11 +71,11 @@ public:
 
     /** Removes the offset from the supplied spectrum */
     // TODO: Change the last parameter from a boolean to the pixel-range which should be used!!
-    void RemoveOffset(double* spectrum, int sumChn, bool UV = true);
+    void RemoveOffset(double* spectrum, int sumChn, IndexRange range) const;
 
     /** Removes the offset from the supplied spectrum.
         The offset is calculated in the [from, to] region but the offset is subtracted from the entire spectrum. */
-    void RemoveOffset(std::vector<double>& spectrum, size_t from, size_t to);
+    void RemoveOffset(std::vector<double>& spectrum, IndexRange range) const;
 
     /** Sets the sky-spectrum to use. This will be used in the upcoming evaluations.
         The provided spectrum must have been corrected for dark. */
@@ -167,16 +167,17 @@ protected:
     void CreateXDataVector(int numberOfChannels);
 
     // Prepares the spectra for evaluation
+    [[deprecated]]
     void PrepareSpectra(double* sky, double* meas, const CFitWindow& window);
 
     // Prepares the spectra for evaluation
-    void PrepareSpectra_HP_Div(double* sky, double* meas, const CFitWindow& window);
+    void PrepareSpectra(std::vector<double>& sky, std::vector<double>& meas, const CFitWindow& window) const;
 
-    // Prepares the spectra for evaluation
-    void PrepareSpectra_HP_Sub(double* sky, double* meas, const CFitWindow& window);
+    void PrepareSpectra_HP_Div(std::vector<double>& sky, std::vector<double>& meas, const CFitWindow& window) const;
 
-    // Prepares the spectra for evaluation
-    void PrepareSpectra_Poly(double* sky, double* meas, const CFitWindow& window);
+    void PrepareSpectra_HP_Sub(std::vector<double>& sky, std::vector<double>& meas, const CFitWindow& window) const;
+
+    void PrepareSpectra_Poly(std::vector<double>& sky, std::vector<double>& meas, const CFitWindow& window) const;
 
     /** Updates the m_residual and m_result.delta */
     void SaveResidual(MathFit::CStandardFit& firstFit);
@@ -195,5 +196,16 @@ protected:
 
     // @return the name of the reference with the given index into m_ref
     std::string GetReferenceName(size_t referenceIndex) const;
+
+private:
+    // The following method is deprecated and should be removed eventually.
+    void PrepareSpectra_HP_Div(double* sky, double* meas, const CFitWindow& window);
+
+    // The following method is deprecated and should be removed eventually.
+    void PrepareSpectra_HP_Sub(double* sky, double* meas, const CFitWindow& window);
+
+    // The following method is deprecated and should be removed eventually.
+    void PrepareSpectra_Poly(double* sky, double* meas, const CFitWindow& window);
+
 };
 }

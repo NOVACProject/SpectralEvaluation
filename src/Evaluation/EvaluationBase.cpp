@@ -1,5 +1,6 @@
 #include <SpectralEvaluation/Evaluation/EvaluationBase.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
+#include <SpectralEvaluation/VectorUtils.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Spectra/Scattering.h>
 
@@ -21,8 +22,6 @@
 
 #include <limits>
 #include <sstream>
-
-using namespace MathFit;
 
 namespace novac
 {
@@ -177,45 +176,40 @@ int CEvaluationBase::CreateReferenceSpectra()
     return 0;
 }
 
-void CEvaluationBase::RemoveOffset(double* spectrum, int sumChn, bool UV)
+void CEvaluationBase::RemoveOffset(double* spectrum, int spectrumLength, IndexRange range) const
 {
-    // TODO: Read this from the number of optically covered pixels of the SpectrometerModel
-    int offsetFrom = (UV) ? 50 : 2;
-    int offsetTo = (UV) ? 200 : 20;
-
-    //  remove any remaining offset in the measured spectrum
+    // remove any remaining offset in the measured spectrum
     double avg = 0;
-    for (int i = offsetFrom; i < offsetTo; i++)
+    for (size_t i = range.from; i < range.to; i++)
     {
         avg += spectrum[i];
     }
-    avg = avg / (double)(offsetTo - offsetFrom);
+    avg = avg / (double)range.Length();
 
-    Sub(spectrum, sumChn, avg);
+    Sub(spectrum, spectrumLength, avg);
 
     return;
 }
 
-void CEvaluationBase::RemoveOffset(std::vector<double>& spectrum, size_t from, size_t to)
+void CEvaluationBase::RemoveOffset(std::vector<double>& spectrum, IndexRange range) const
 {
-    if (from > to || to > spectrum.size())
+    if (range.from > range.to || range.to > spectrum.size())
     {
         std::stringstream msg;
-        msg << "Cannot remove offset, invalid spectrum region [" << from << ", " << to << "] for spectrum of length " << spectrum.size();
+        msg << "Cannot remove offset, invalid spectrum region [" << range.from << ", " << range.to << "] for spectrum of length " << spectrum.size();
         throw std::invalid_argument(msg.str());
     }
 
-    double avg = 0;
-    for (size_t i = from; i < to; i++)
+    double average = 0;
+    for (size_t i = range.from; i < range.to; i++)
     {
-        avg += spectrum[i];
+        average += spectrum[i];
     }
-    avg = avg / (double)(to - from);
+    average = average / (double)range.Length();
 
-    Sub(spectrum.data(), static_cast<int>(spectrum.size()), avg);
+    ::Add(spectrum, -average);
 
     return;
-
 }
 
 void CEvaluationBase::PrepareSpectra(double* sky, double* meas, const CFitWindow& window)
@@ -229,11 +223,20 @@ void CEvaluationBase::PrepareSpectra(double* sky, double* meas, const CFitWindow
         return PrepareSpectra_Poly(sky, meas, window);
 }
 
+void CEvaluationBase::PrepareSpectra(std::vector<double>& sky, std::vector<double>& meas, const CFitWindow& window) const
+{
+    if (window.fitType == FIT_TYPE::FIT_HP_DIV)
+        return PrepareSpectra_HP_Div(sky, meas, window);
+    if (window.fitType == FIT_TYPE::FIT_HP_SUB)
+        return PrepareSpectra_HP_Sub(sky, meas, window);
+    if (window.fitType == FIT_TYPE::FIT_POLY)
+        return PrepareSpectra_Poly(sky, meas, window);
+}
+
 void CEvaluationBase::PrepareSpectra_HP_Div(double* skyArray, double* measArray, const CFitWindow& window)
 {
-
     //  1. Remove any remaining offset
-    RemoveOffset(measArray, window.specLength, window.UV);
+    RemoveOffset(measArray, window.specLength, window.offsetRemovalRange);
 
     // 2. Divide the measured spectrum with the sky spectrum
     Div(measArray, skyArray, window.specLength, 0.0);
@@ -248,11 +251,41 @@ void CEvaluationBase::PrepareSpectra_HP_Div(double* skyArray, double* measArray,
     //	LowPassBinomial(measArray,window.specLength, 5);
 }
 
+void CEvaluationBase::PrepareSpectra_HP_Div(std::vector<double>& skyArray, std::vector<double>& measArray, const CFitWindow& window) const
+{
+    //  1. Remove any remaining offset
+    RemoveOffset(measArray, window.offsetRemovalRange);
+
+    // 2. Divide the measured spectrum with the sky spectrum
+    ::Div(measArray, skyArray);
+
+    // 3. high pass filter
+    ::HighPassBinomial(measArray, 500);
+
+    // 4. log(spec)
+    ::Log(measArray);
+
+    // 5. low pass filter
+    //	LowPassBinomial(measArray,window.specLength, 5);
+}
+
+void CEvaluationBase::PrepareSpectra_HP_Sub(std::vector<double>& /*skyArray*/, std::vector<double>& measArray, const CFitWindow& window) const
+{
+    // 1. remove any remaining offset in the measured spectrum
+    RemoveOffset(measArray, window.offsetRemovalRange);
+
+    // 2. high pass filter
+    ::HighPassBinomial(measArray, 500);
+
+    // 3. log(spec)
+    ::Log(measArray);
+}
+
 void CEvaluationBase::PrepareSpectra_HP_Sub(double* /*skyArray*/, double* measArray, const CFitWindow& window)
 {
 
     // 1. remove any remaining offset in the measured spectrum
-    RemoveOffset(measArray, window.specLength, window.UV);
+    RemoveOffset(measArray, window.specLength, window.offsetRemovalRange);
 
     // 2. high pass filter
     HighPassBinomial(measArray, window.specLength, 500);
@@ -264,7 +297,7 @@ void CEvaluationBase::PrepareSpectra_HP_Sub(double* /*skyArray*/, double* measAr
 void CEvaluationBase::PrepareSpectra_Poly(double* /*skyArray*/, double* measArray, const CFitWindow& window)
 {
     // 1. remove any remaining offset in the measured spectrum
-    RemoveOffset(measArray, window.specLength, window.UV);
+    RemoveOffset(measArray, window.specLength, window.offsetRemovalRange);
 
     // 2. log(spec)
     Log(measArray, window.specLength);
@@ -274,6 +307,18 @@ void CEvaluationBase::PrepareSpectra_Poly(double* /*skyArray*/, double* measArra
     {
         measArray[i] *= -1.0;
     }
+}
+
+void CEvaluationBase::PrepareSpectra_Poly(std::vector<double>& /*skyArray*/, std::vector<double>& measArray, const CFitWindow& window) const
+{
+    // 1. remove any remaining offset in the measured spectrum
+    RemoveOffset(measArray, window.offsetRemovalRange);
+
+    // 2. log(spec)
+    ::Log(measArray);
+
+    // 3. Multiply the spectrum with -1 to get the correct sign for everything
+    ::Mult(measArray, -1.0);
 }
 
 int CEvaluationBase::SetSkySpectrum(const CSpectrum& spec)
@@ -302,7 +347,7 @@ int CEvaluationBase::SetSkySpectrum(const CCrossSectionData& spec, bool removeOf
     // Remove any remaining offset of the sky-spectrum
     if (removeOffset)
     {
-        RemoveOffset(m_sky.m_crossSection.data(), m_sky.GetSize(), m_window.UV);
+        RemoveOffset(m_sky.m_crossSection.data(), m_sky.GetSize(), m_window.offsetRemovalRange);
     }
 
     if (m_window.fitType == FIT_TYPE::FIT_HP_SUB)
@@ -557,7 +602,7 @@ int CEvaluationBase::Evaluate(const double* measured, size_t measuredLength, int
     // --------- prepare the spectrum for evaluation -----------------
     //----------------------------------------------------------------
 
-    PrepareSpectra(m_sky.m_crossSection.data(), measArray.data(), m_window);
+    PrepareSpectra(m_sky.m_crossSection, measArray, m_window);
     m_measuredData = std::vector<double>(begin(measArray), end(measArray));
 
     //----------------------------------------------------------------
@@ -753,7 +798,7 @@ int CEvaluationBase::EvaluateShift(novac::LogContext context, const CSpectrum& m
     // --------- prepare the spectrum for evaluation -----------------
     //----------------------------------------------------------------
 
-    RemoveOffset(measArray.data(), m_window.specLength, m_window.UV);
+    RemoveOffset(measArray, m_window.offsetRemovalRange);
     if (m_window.fitType == FIT_TYPE::FIT_HP_DIV || m_window.fitType == FIT_TYPE::FIT_HP_SUB)
     {
         HighPassBinomial(measArray.data(), m_window.specLength, 500);

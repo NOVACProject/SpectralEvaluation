@@ -176,7 +176,7 @@ TEST_CASE("EvaluateShift Avaspec spectrum number 28 in scan", "[Evaluate][Evalua
     novac::LogContext context;
 
     CFitWindow window = PrepareFitWindow();
-    window.UV = 0; // Avaspec and the UV option are not great together
+    window.offsetRemovalRange = novac::IndexRange(2, 20);
     window.fraunhoferRef.m_path = TestData::GetSyntheticFraunhoferSpectrumName_2009175M1();
     window.fraunhoferRef.ReadCrossSectionDataFromFile();
     novac::HighPassFilter_Ring(*window.fraunhoferRef.m_data); // filter the fraunhofer reference, to match the other references.

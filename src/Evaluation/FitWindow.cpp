@@ -24,7 +24,7 @@ CFitWindow::CFitWindow(const CFitWindow& other)
     skyShift(other.skyShift),
     skySqueeze(other.skySqueeze),
     interlaceStep(other.interlaceStep),
-    UV(other.UV),
+    offsetRemovalRange(other.offsetRemovalRange),
     findOptimalShift(other.findOptimalShift),
     child(begin(other.child), end(other.child))
 {}
@@ -45,7 +45,7 @@ CFitWindow::CFitWindow(CFitWindow&& other)
     skyShift(other.skyShift),
     skySqueeze(other.skySqueeze),
     interlaceStep(other.interlaceStep),
-    UV(other.UV),
+    offsetRemovalRange(other.offsetRemovalRange),
     findOptimalShift(other.findOptimalShift),
     child(begin(other.child), end(other.child))
 {
@@ -66,7 +66,7 @@ CFitWindow& CFitWindow::operator=(const CFitWindow& other)
     this->polyOrder = other.polyOrder;
     this->includeIntensitySpacePolyominal = other.includeIntensitySpacePolyominal;
     this->ringCalculation = other.ringCalculation;
-    this->UV = other.UV;
+    this->offsetRemovalRange = other.offsetRemovalRange;
     this->specLength = other.specLength;
     this->startChannel = other.startChannel;
 
@@ -92,7 +92,7 @@ CFitWindow& CFitWindow::operator=(CFitWindow&& other)
     this->polyOrder = other.polyOrder;
     this->includeIntensitySpacePolyominal = other.includeIntensitySpacePolyominal;
     this->ringCalculation = other.ringCalculation;
-    this->UV = other.UV;
+    this->offsetRemovalRange = other.offsetRemovalRange;
     this->specLength = other.specLength;
     this->startChannel = other.startChannel;
 
@@ -118,7 +118,7 @@ void CFitWindow::Clear()
     polyOrder = 5;
     ringCalculation = RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING;
     includeIntensitySpacePolyominal = false;
-    UV = true;
+    offsetRemovalRange = IndexRange(50, 200);
     reference.clear();
     reference.reserve(10);
 
