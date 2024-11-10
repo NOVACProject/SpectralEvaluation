@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stddef.h>
+#include <iosfwd>
 
 namespace novac
 {
@@ -22,6 +23,9 @@ struct IndexRange
     inline size_t Length() const { return to - from; }
 
     bool operator==(const IndexRange& other) const { return this->from == other.from && this->to == other.to; }
+
+    friend std::ostream& operator<<(std::ostream& os, const IndexRange& range);
+
 };
 
 }

@@ -1,9 +1,20 @@
 #include <SpectralEvaluation/Math/SpectrumMath.h>
 #include <SpectralEvaluation/Spectra/IScanSpectrumSource.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/Math/IndexRange.h>
+
+#include <iostream>
 
 namespace novac
 {
+
+std::ostream& operator<<(std::ostream& os, const IndexRange& range)
+{
+    char buffer[128];
+    sprintf(buffer, "[%zd to %zd]", range.from, range.to);
+    os << std::string(buffer);
+    return os;
+}
 
 int AverageSpectra(IScanSpectrumSource& scan, const std::vector<int>& indices, CSpectrum& result, bool average)
 {
