@@ -31,12 +31,10 @@ using namespace MathFit;
 bool CBasicMath::mDoNotUseMathLimits = false;
 
 CBasicMath::CBasicMath()
-{
-}
+{}
 
 CBasicMath::~CBasicMath()
-{
-}
+{}
 
 double* CBasicMath::LowPassBinomial(double* fData, int iSize, int iNIterations)
 {
@@ -104,10 +102,11 @@ double* CBasicMath::HighPassBinomial(double* fData, int iSize, int iNIterations)
 
 double* CBasicMath::Log(double* fData, int iSize)
 {
-    int i;
-
-    for (i = 0; i < iSize; i++)
+    for (int i = 0; i < iSize; i++)
+    {
         fData[i] = fData[i] <= 0 ? 0.0 : log(fData[i]);
+    }
+
     return(fData);
 }
 
@@ -348,7 +347,7 @@ void CBasicMath::Sub(double* fFirst, const double* fSec, int iSize, double fFact
     }
 }
 
-void CBasicMath::Sub(double* fFirst, int iSize, double fConst)
+void CBasicMath::Sub(double* fFirst, int iSize, double fConst) const
 {
     for (int i = 0; i < iSize; i++)
     {

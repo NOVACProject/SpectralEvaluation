@@ -72,7 +72,8 @@ bool ParseReference(rapidxml::xml_node<>* referenceNode, novac::CReferenceFile& 
         else if (TagNameEqualsIgnoringCase(childNode, "shiftOption"))
         {
             const int value = std::atoi(childNode->value());
-            switch (value) {
+            switch (value)
+            {
             case 0: reference.m_shiftOption = novac::SHIFT_TYPE::SHIFT_FREE; break;
             case 1: reference.m_shiftOption = novac::SHIFT_TYPE::SHIFT_FIX; break;
             case 2: reference.m_shiftOption = novac::SHIFT_TYPE::SHIFT_LINK; break;
@@ -86,7 +87,8 @@ bool ParseReference(rapidxml::xml_node<>* referenceNode, novac::CReferenceFile& 
         else if (TagNameEqualsIgnoringCase(childNode, "squeezeOption"))
         {
             const int value = std::atoi(childNode->value());
-            switch (value) {
+            switch (value)
+            {
             case 0: reference.m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FREE; break;
             case 1: reference.m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX; break;
             case 2: reference.m_squeezeOption = novac::SHIFT_TYPE::SHIFT_LINK; break;
@@ -100,7 +102,8 @@ bool ParseReference(rapidxml::xml_node<>* referenceNode, novac::CReferenceFile& 
         else if (TagNameEqualsIgnoringCase(childNode, "columnOption"))
         {
             const int value = std::atoi(childNode->value());
-            switch (value) {
+            switch (value)
+            {
             case 0: reference.m_columnOption = novac::SHIFT_TYPE::SHIFT_FREE; break;
             case 1: reference.m_columnOption = novac::SHIFT_TYPE::SHIFT_FIX; break;
             case 2: reference.m_columnOption = novac::SHIFT_TYPE::SHIFT_LINK; break;
@@ -118,7 +121,7 @@ bool ParseReference(rapidxml::xml_node<>* referenceNode, novac::CReferenceFile& 
     return true; // TODO: When to return false?
 }
 
-bool ParseFitWindow(rapidxml::xml_node<>* fitWindowNode, novac::CFitWindow& window)
+static bool ParseFitWindow(rapidxml::xml_node<>* fitWindowNode, novac::CFitWindow& window)
 {
     // Get the name of the window itself.
     auto attr = fitWindowNode->first_attribute();
@@ -185,11 +188,27 @@ bool ParseFitWindow(rapidxml::xml_node<>* fitWindowNode, novac::CFitWindow& wind
         }
         else if (TagNameEqualsIgnoringCase(childNode, "UV"))
         {
-            window.UV = std::atoi(childNode->value());
+            const int UV = std::atoi(childNode->value());
+            if (UV)
+            {
+                window.offsetRemovalRange = novac::CFitWindow::StandardUvOffsetRemovalRange();
+            }
+            else
+            {
+                window.offsetRemovalRange = novac::CFitWindow::StandardUSB2000OffsetRemovalRange();
+            }
         }
         else if (TagNameEqualsIgnoringCase(childNode, "shiftSky"))
         {
             window.shiftSky = std::atoi(childNode->value());
+        }
+        else if (TagNameEqualsIgnoringCase(childNode, "offsetFrom"))
+        {
+            window.offsetRemovalRange.from = static_cast<size_t>(std::atoi(childNode->value()));
+        }
+        else if (TagNameEqualsIgnoringCase(childNode, "offsetTo"))
+        {
+            window.offsetRemovalRange.to = static_cast<size_t>(std::atoi(childNode->value()));
         }
         else if (TagNameEqualsIgnoringCase(childNode, "skyShift"))
         {
@@ -217,8 +236,7 @@ bool ParseFitWindow(rapidxml::xml_node<>* fitWindowNode, novac::CFitWindow& wind
             CReferenceFile reference;
             if (ParseReference(childNode, reference))
             {
-                window.ref[window.nRef] = reference;
-                window.nRef += 1;
+                window.reference.push_back(reference);
             }
         }
 
@@ -298,7 +316,8 @@ bool CFitWindowFileHandler::WriteFitWindow(const novac::CFitWindow& window, cons
     fprintf(f, "%s<specLength>%d</specLength>\n", indent.c_str(), window.specLength);
 
     fprintf(f, "%s<fOptShift>%d</fOptShift>\n", indent.c_str(), window.findOptimalShift);
-    fprintf(f, "%s<UV>%d</UV>\n", indent.c_str(), window.UV);
+    fprintf(f, "%s<offsetFrom>%zd</offsetFrom>\n", indent.c_str(), window.offsetRemovalRange.from);
+    fprintf(f, "%s<offsetTo>%zd</offsetTo>\n", indent.c_str(), window.offsetRemovalRange.to);
     fprintf(f, "%s<shiftSky>%d</shiftSky>\n", indent.c_str(), window.shiftSky);
     if (window.shiftSky == 2)
     {
@@ -312,29 +331,29 @@ bool CFitWindowFileHandler::WriteFitWindow(const novac::CFitWindow& window, cons
         fprintf(f, "%s<solarSpectrum>%s</solarSpectrum>\n", indent.c_str(), window.fraunhoferRef.m_path.c_str());
     }
 
-    fprintf(f, "%s<nRef>%zd</nRef>\n", indent.c_str(), window.nRef);
+    fprintf(f, "%s<nRef>%zd</nRef>\n", indent.c_str(), window.reference.size());
 
-    for (size_t i = 0; i < window.nRef; ++i)
+    for (size_t i = 0; i < window.reference.size(); ++i)
     {
-        fprintf(f, "%s<ref name=\"%s\">\n", indent.c_str(), window.ref[i].m_specieName.c_str());
-        fprintf(f, "%s\t<path>%s</path>\n", indent.c_str(), window.ref[i].m_path.c_str());
+        fprintf(f, "%s<ref name=\"%s\">\n", indent.c_str(), window.reference[i].m_specieName.c_str());
+        fprintf(f, "%s\t<path>%s</path>\n", indent.c_str(), window.reference[i].m_path.c_str());
 
-        fprintf(f, "%s\t<shiftOption>%d</shiftOption>\n", indent.c_str(), (int)window.ref[i].m_shiftOption);
-        if (window.ref[i].m_shiftOption != novac::SHIFT_TYPE::SHIFT_FREE)
+        fprintf(f, "%s\t<shiftOption>%d</shiftOption>\n", indent.c_str(), (int)window.reference[i].m_shiftOption);
+        if (window.reference[i].m_shiftOption != novac::SHIFT_TYPE::SHIFT_FREE)
         {
-            fprintf(f, "%s\t<shiftValue>%lf</shiftValue>\n", indent.c_str(), window.ref[i].m_shiftValue);
+            fprintf(f, "%s\t<shiftValue>%lf</shiftValue>\n", indent.c_str(), window.reference[i].m_shiftValue);
         }
 
-        fprintf(f, "%s\t<squeezeOption>%d</squeezeOption>\n", indent.c_str(), (int)window.ref[i].m_squeezeOption);
-        if (window.ref[i].m_squeezeOption != novac::SHIFT_TYPE::SHIFT_FREE)
+        fprintf(f, "%s\t<squeezeOption>%d</squeezeOption>\n", indent.c_str(), (int)window.reference[i].m_squeezeOption);
+        if (window.reference[i].m_squeezeOption != novac::SHIFT_TYPE::SHIFT_FREE)
         {
-            fprintf(f, "%s\t<squeezeValue>%lf</squeezeValue>\n", indent.c_str(), window.ref[i].m_squeezeValue);
+            fprintf(f, "%s\t<squeezeValue>%lf</squeezeValue>\n", indent.c_str(), window.reference[i].m_squeezeValue);
         }
 
-        fprintf(f, "%s\t<columnOption>%d</columnOption>\n", indent.c_str(), (int)window.ref[i].m_columnOption);
-        if (window.ref[i].m_columnOption != novac::SHIFT_TYPE::SHIFT_FREE)
+        fprintf(f, "%s\t<columnOption>%d</columnOption>\n", indent.c_str(), (int)window.reference[i].m_columnOption);
+        if (window.reference[i].m_columnOption != novac::SHIFT_TYPE::SHIFT_FREE)
         {
-            fprintf(f, "%s\t<columnValue>%lf</columnValue>\n", indent.c_str(), window.ref[i].m_columnValue);
+            fprintf(f, "%s\t<columnValue>%lf</columnValue>\n", indent.c_str(), window.reference[i].m_columnValue);
         }
 
         fprintf(f, "%s</ref>\n", indent.c_str());

@@ -268,7 +268,7 @@ size_t RatioCalculationController::NumberOfPakFilesInSetup() const
 }
 
 
-void SetupFitWindowReferences(novac::CFitWindow& window, const std::vector<ReferenceForRatioCalculation>& references, const novac::WavelengthRange& wavelengthRange, bool isMajor)
+static void SetupFitWindowReferences(novac::CFitWindow& window, const std::vector<ReferenceForRatioCalculation>& references, const novac::WavelengthRange& wavelengthRange, bool isMajor)
 {
     window.ringCalculation = novac::RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING;
     window.includeIntensitySpacePolyominal = true;
@@ -284,14 +284,15 @@ void SetupFitWindowReferences(novac::CFitWindow& window, const std::vector<Refer
 
         if (ref.m_path != "")
         {
-            window.ref[window.nRef].m_path = ref.m_path;
-            window.ref[window.nRef].m_specieName = ref.m_name;
-            window.ref[window.nRef].m_shiftOption = novac::SHIFT_TYPE::SHIFT_FIX;
-            window.ref[window.nRef].m_shiftValue = 0.0;
-            window.ref[window.nRef].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
-            window.ref[window.nRef].m_squeezeValue = 1.0;
+            novac::CReferenceFile reference;
+            reference.m_path = ref.m_path;
+            reference.m_specieName = ref.m_name;
+            reference.m_shiftOption = novac::SHIFT_TYPE::SHIFT_FIX;
+            reference.m_shiftValue = 0.0;
+            reference.m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
+            reference.m_squeezeValue = 1.0;
 
-            window.nRef++;
+            window.reference.push_back(reference);
         }
         else if (ref.m_automaticallyCalculate && ref.specie == StandardDoasSpecie::RING)
         {
@@ -307,22 +308,22 @@ void SetupFitWindowReferences(novac::CFitWindow& window, const std::vector<Refer
     novac::ReadReferences(window);
 
     // Use the properties of the first (major) reference for the window
-    window.name = window.ref[0].m_specieName;
+    window.name = window.reference.front().m_specieName;
 
-    if (window.ref[0].m_data->m_waveLength.size() == 0)
+    if (window.reference.front().m_data->m_waveLength.size() == 0)
     {
         std::stringstream message;
-        message << "failed to set the fit range,the reference " << window.ref[0].m_specieName << " does not have a wavelength calibration";
+        message << "failed to set the fit range,the reference " << window.reference.front().m_specieName << " does not have a wavelength calibration";
         throw std::invalid_argument(message.str());
     }
 
     // Setup the channel range where the fit should be done.
-    const double fractionalFitLow = window.ref[0].m_data->FindWavelength(wavelengthRange.low);
-    const double fractionalFitHigh = window.ref[0].m_data->FindWavelength(wavelengthRange.high);
+    const double fractionalFitLow = window.reference.front().m_data->FindWavelength(wavelengthRange.low);
+    const double fractionalFitHigh = window.reference.front().m_data->FindWavelength(wavelengthRange.high);
     if (fractionalFitLow < -0.5 || fractionalFitHigh < -0.5)
     {
         std::stringstream message;
-        message << "failed to set the fit range,the reference " << window.ref[0].m_specieName;
+        message << "failed to set the fit range,the reference " << window.reference.front().m_specieName;
         message << " does not cover the fit range: " << wavelengthRange.low << " to " << wavelengthRange.high << " nm";
         throw std::invalid_argument(message.str());
     }

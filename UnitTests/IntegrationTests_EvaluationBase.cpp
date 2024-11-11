@@ -17,20 +17,19 @@ static CFitWindow PrepareFitWindow()
     window.fitLow = 475;
     window.fitHigh = 643;
     window.fitType = novac::FIT_TYPE::FIT_HP_DIV;
-    window.nRef = (int)references.size();
-    int refIdx = 0;
+    window.reference.reserve(references.size());
     for (auto& reference : references)
     {
-        window.ref[refIdx].m_path = reference;
-        window.ref[refIdx].m_columnOption = novac::SHIFT_TYPE::SHIFT_FREE;
-        window.ref[refIdx].m_shiftOption = novac::SHIFT_TYPE::SHIFT_FIX;
-        window.ref[refIdx].m_shiftValue = 0.0;
-        window.ref[refIdx].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
-        window.ref[refIdx].m_squeezeValue = 1.0;
+        CReferenceFile ref;
+        ref.m_path = reference;
+        ref.m_columnOption = novac::SHIFT_TYPE::SHIFT_FREE;
+        ref.m_shiftOption = novac::SHIFT_TYPE::SHIFT_FIX;
+        ref.m_shiftValue = 0.0;
+        ref.m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
+        ref.m_squeezeValue = 1.0;
+        ref.ReadCrossSectionDataFromFile();
 
-        window.ref[refIdx].ReadCrossSectionDataFromFile();
-
-        ++refIdx;
+        window.reference.push_back(ref);
     }
 
     return window;
@@ -92,7 +91,7 @@ TEST_CASE("Evaluate Avaspec spectrum number eight in scan", "[Evaluate][Evaluati
     // Assert
     REQUIRE(returnCode == 0);
 
-    REQUIRE(window.nRef == sut.m_result.m_referenceResult.size());
+    REQUIRE(window.reference.size() == sut.m_result.m_referenceResult.size());
 
     REQUIRE(sut.m_result.m_delta == Approx(0.0752).margin(0.001));
     REQUIRE(sut.m_result.m_chiSquare == Approx(0.0119).margin(0.001));
@@ -145,7 +144,7 @@ TEST_CASE("Evaluate Avaspec spectrum number 21 in scan", "[Evaluate][EvaluationB
     // Assert
     REQUIRE(returnCode == 0);
 
-    REQUIRE(window.nRef == sut.m_result.m_referenceResult.size());
+    REQUIRE(window.reference.size() == sut.m_result.m_referenceResult.size());
 
     REQUIRE(sut.m_result.m_delta == Approx(0.0429).margin(0.001));
     REQUIRE(sut.m_result.m_chiSquare == Approx(0.0066).margin(0.001));
@@ -177,7 +176,7 @@ TEST_CASE("EvaluateShift Avaspec spectrum number 28 in scan", "[Evaluate][Evalua
     novac::LogContext context;
 
     CFitWindow window = PrepareFitWindow();
-    window.UV = 0; // Avaspec and the UV option are not great together
+    window.offsetRemovalRange = novac::IndexRange(2, 20);
     window.fraunhoferRef.m_path = TestData::GetSyntheticFraunhoferSpectrumName_2009175M1();
     window.fraunhoferRef.ReadCrossSectionDataFromFile();
     novac::HighPassFilter_Ring(*window.fraunhoferRef.m_data); // filter the fraunhofer reference, to match the other references.

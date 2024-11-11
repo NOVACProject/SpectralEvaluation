@@ -11,7 +11,7 @@ CFitWindow::CFitWindow(const CFitWindow& other)
     : fitLow(other.fitLow),
     fitHigh(other.fitHigh),
     channel(other.channel),
-    nRef(other.nRef),
+    reference(other.reference),
     fraunhoferRef(other.fraunhoferRef),
     polyOrder(other.polyOrder),
     includeIntensitySpacePolyominal(other.includeIntensitySpacePolyominal),
@@ -24,21 +24,15 @@ CFitWindow::CFitWindow(const CFitWindow& other)
     skyShift(other.skyShift),
     skySqueeze(other.skySqueeze),
     interlaceStep(other.interlaceStep),
-    UV(other.UV),
+    offsetRemovalRange(other.offsetRemovalRange),
     findOptimalShift(other.findOptimalShift),
     child(begin(other.child), end(other.child))
-{
-    for (size_t i = 0; i < other.nRef; ++i)
-    {
-        this->ref[i] = other.ref[i];
-    }
-}
+{}
 
 CFitWindow::CFitWindow(CFitWindow&& other)
     : fitLow(other.fitLow),
     fitHigh(other.fitHigh),
     channel(other.channel),
-    nRef(other.nRef),
     fraunhoferRef(other.fraunhoferRef),
     polyOrder(other.polyOrder),
     includeIntensitySpacePolyominal(other.includeIntensitySpacePolyominal),
@@ -51,14 +45,11 @@ CFitWindow::CFitWindow(CFitWindow&& other)
     skyShift(other.skyShift),
     skySqueeze(other.skySqueeze),
     interlaceStep(other.interlaceStep),
-    UV(other.UV),
+    offsetRemovalRange(other.offsetRemovalRange),
     findOptimalShift(other.findOptimalShift),
     child(begin(other.child), end(other.child))
 {
-    for (size_t i = 0; i < other.nRef; ++i)
-    {
-        this->ref[i] = std::move(other.ref[i]);
-    }
+    reference = std::move(other.reference);
 }
 
 CFitWindow& CFitWindow::operator=(const CFitWindow& other)
@@ -72,18 +63,15 @@ CFitWindow& CFitWindow::operator=(const CFitWindow& other)
     this->skySqueeze = other.skySqueeze;
     this->interlaceStep = other.interlaceStep;
     this->name = other.name;
-    this->nRef = other.nRef;
     this->polyOrder = other.polyOrder;
     this->includeIntensitySpacePolyominal = other.includeIntensitySpacePolyominal;
     this->ringCalculation = other.ringCalculation;
-    this->UV = other.UV;
+    this->offsetRemovalRange = other.offsetRemovalRange;
     this->specLength = other.specLength;
     this->startChannel = other.startChannel;
 
-    for (size_t i = 0; i < other.nRef; ++i)
-    {
-        this->ref[i] = other.ref[i];
-    }
+    this->reference = std::vector<CReferenceFile>(begin(other.reference), end(other.reference));
+
     this->fraunhoferRef = other.fraunhoferRef;
     this->findOptimalShift = other.findOptimalShift;
     this->child = std::vector<CFitWindow>(begin(other.child), end(other.child));
@@ -101,18 +89,14 @@ CFitWindow& CFitWindow::operator=(CFitWindow&& other)
     this->skySqueeze = other.skySqueeze;
     this->interlaceStep = other.interlaceStep;
     this->name = std::move(other.name);
-    this->nRef = other.nRef;
     this->polyOrder = other.polyOrder;
     this->includeIntensitySpacePolyominal = other.includeIntensitySpacePolyominal;
     this->ringCalculation = other.ringCalculation;
-    this->UV = other.UV;
+    this->offsetRemovalRange = other.offsetRemovalRange;
     this->specLength = other.specLength;
     this->startChannel = other.startChannel;
 
-    for (size_t i = 0; i < other.nRef; ++i)
-    {
-        this->ref[i] = std::move(other.ref[i]);
-    }
+    this->reference = std::move(other.reference);
     this->fraunhoferRef = other.fraunhoferRef;
     this->findOptimalShift = other.findOptimalShift;
     this->child = std::move(other.child);
@@ -131,16 +115,12 @@ void CFitWindow::Clear()
     shiftSky = true;
     interlaceStep = 1;
     name = "SO2";
-    nRef = 0;
     polyOrder = 5;
     ringCalculation = RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING;
     includeIntensitySpacePolyominal = false;
-    UV = true;
-    for (int i = 0; i < MAX_N_REFERENCES; ++i)
-    {
-        ref[i].m_path = "";
-        ref[i].m_specieName = "";
-    }
+    offsetRemovalRange = IndexRange(50, 200);
+    reference.clear();
+    reference.reserve(10);
 
     child.clear();
 
@@ -152,9 +132,9 @@ void CFitWindow::Clear()
 void ReadReferences(CFitWindow& window)
 {
     // For each reference in the fit-window, read it in and make sure that it exists...
-    for (size_t referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
+    for (CReferenceFile& ref : window.reference)
     {
-        window.ref[referenceIndex].ReadCrossSectionDataFromFile();
+        ref.ReadCrossSectionDataFromFile();
     }
 
     if (window.fraunhoferRef.m_path.size() > 4)
@@ -177,11 +157,8 @@ void ScaleReferencesToMolecCm2(CFitWindow& window)
         ScaleReferencesToMolecCm2(c);
     }
 
-    for (size_t referenceIndex = 0; referenceIndex < window.nRef; ++referenceIndex)
+    for (CReferenceFile& thisReference : window.reference)
     {
-        // Local handle for more convenient syntax.
-        CReferenceFile& thisReference = window.ref[referenceIndex];
-
         if (thisReference.m_isFiltered)
         {
             // Convert from ppmm to moleculues / cm2
@@ -192,41 +169,44 @@ void ScaleReferencesToMolecCm2(CFitWindow& window)
 
 void AddAsReference(CFitWindow& window, const std::vector<double>& referenceData, const std::string& name, int linkShiftToIdx)
 {
-    window.ref[window.nRef].m_data = std::make_unique<CCrossSectionData>(referenceData);
-    window.ref[window.nRef].m_specieName = name;
-    window.ref[window.nRef].m_columnOption = novac::SHIFT_TYPE::SHIFT_FREE;
-    window.ref[window.nRef].m_columnValue = 1.0;
-    window.ref[window.nRef].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
-    window.ref[window.nRef].m_squeezeValue = 1.0;
+    CReferenceFile newReference;
+
+    newReference.m_data = std::make_unique<CCrossSectionData>(referenceData);
+    newReference.m_specieName = name;
+    newReference.m_columnOption = novac::SHIFT_TYPE::SHIFT_FREE;
+    newReference.m_columnValue = 1.0;
+    newReference.m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
+    newReference.m_squeezeValue = 1.0;
 
     if (linkShiftToIdx >= 0)
     {
-        window.ref[window.nRef].m_shiftOption = SHIFT_TYPE::SHIFT_LINK;
-        window.ref[window.nRef].m_shiftValue = linkShiftToIdx;
+        newReference.m_shiftOption = SHIFT_TYPE::SHIFT_LINK;
+        newReference.m_shiftValue = linkShiftToIdx;
     }
     else
     {
-        window.ref[window.nRef].m_shiftOption = SHIFT_TYPE::SHIFT_FIX;
-        window.ref[window.nRef].m_shiftValue = 0.0;
+        newReference.m_shiftOption = SHIFT_TYPE::SHIFT_FIX;
+        newReference.m_shiftValue = 0.0;
     }
 
-    window.nRef += 1;
+    window.reference.push_back(newReference);
 }
 
 size_t AddAsSky(CFitWindow& window, const std::vector<double>& referenceData, SHIFT_TYPE shiftOption)
 {
-    const size_t indexOfSkySpectrum = window.nRef;
+    CReferenceFile newReference;
 
-    window.ref[window.nRef].m_data = std::make_unique<novac::CCrossSectionData>(referenceData);
-    window.ref[window.nRef].m_specieName = "sky";
-    window.ref[window.nRef].m_columnOption = novac::SHIFT_TYPE::SHIFT_FIX;
-    window.ref[window.nRef].m_columnValue = -1.0;
-    window.ref[window.nRef].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
-    window.ref[window.nRef].m_squeezeValue = 1.0;
-    window.ref[window.nRef].m_shiftOption = shiftOption;
-    window.ref[window.nRef].m_shiftValue = 0.0;
-    window.nRef += 1;
+    newReference.m_data = std::make_unique<novac::CCrossSectionData>(referenceData);
+    newReference.m_specieName = "sky";
+    newReference.m_columnOption = novac::SHIFT_TYPE::SHIFT_FIX;
+    newReference.m_columnValue = -1.0;
+    newReference.m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
+    newReference.m_squeezeValue = 1.0;
+    newReference.m_shiftOption = shiftOption;
+    newReference.m_shiftValue = 0.0;
 
-    return indexOfSkySpectrum;
+    window.reference.push_back(newReference);
+
+    return window.reference.size();
 }
 }

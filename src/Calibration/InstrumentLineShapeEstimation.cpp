@@ -641,38 +641,42 @@ namespace novac
         math.Log(filteredFraunhoferSpectrum.data(), currentFraunhoferSpectrum->m_length);
 
         // 1. Include the Fraunhofer reference as the first reference
-        doasFitSetup.nRef = 1;
-        doasFitSetup.ref[0].m_data = std::make_unique<novac::CCrossSectionData>(filteredFraunhoferSpectrum);
-        doasFitSetup.ref[0].m_columnOption = novac::SHIFT_TYPE::SHIFT_FIX;
-        doasFitSetup.ref[0].m_columnValue = -1.0;
-        doasFitSetup.ref[0].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
-        doasFitSetup.ref[0].m_squeezeValue = 1.0;
-        doasFitSetup.ref[0].m_shiftOption = shiftOption;
-        doasFitSetup.ref[0].m_shiftValue = 0.0;
+        doasFitSetup.reference.clear();
+        CReferenceFile fraunhofer;
+        fraunhofer.m_data = std::make_unique<novac::CCrossSectionData>(filteredFraunhoferSpectrum);
+        fraunhofer.m_columnOption = novac::SHIFT_TYPE::SHIFT_FIX;
+        fraunhofer.m_columnValue = -1.0;
+        fraunhofer.m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
+        fraunhofer.m_squeezeValue = 1.0;
+        fraunhofer.m_shiftOption = shiftOption;
+        fraunhofer.m_shiftValue = 0.0;
+        doasFitSetup.reference.push_back(fraunhofer);
 
         // 2. Include the Ring spectrum as the second reference.
         auto ringSpectrum = std::make_unique<novac::CSpectrum>(Doasis::Scattering::CalcRingSpectrum(*currentFraunhoferSpectrum));
         std::vector<double> filteredRingSpectrum{ ringSpectrum->m_data, ringSpectrum->m_data + ringSpectrum->m_length };
         math.Log(filteredRingSpectrum.data(), ringSpectrum->m_length);
-        doasFitSetup.ref[doasFitSetup.nRef].m_data = std::make_unique<novac::CCrossSectionData>(filteredRingSpectrum);
-        doasFitSetup.ref[doasFitSetup.nRef].m_columnOption = novac::SHIFT_TYPE::SHIFT_FREE;
-        doasFitSetup.ref[doasFitSetup.nRef].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
-        doasFitSetup.ref[doasFitSetup.nRef].m_squeezeValue = 1.0;
-        doasFitSetup.ref[doasFitSetup.nRef].m_shiftOption = novac::SHIFT_TYPE::SHIFT_LINK;
-        doasFitSetup.ref[doasFitSetup.nRef].m_shiftValue = 0.0;
-        doasFitSetup.nRef += 1;
+        CReferenceFile ringReference;
+        ringReference.m_data = std::make_unique<novac::CCrossSectionData>(filteredRingSpectrum);
+        ringReference.m_columnOption = novac::SHIFT_TYPE::SHIFT_FREE;
+        ringReference.m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
+        ringReference.m_squeezeValue = 1.0;
+        ringReference.m_shiftOption = novac::SHIFT_TYPE::SHIFT_LINK;
+        ringReference.m_shiftValue = 0.0;
+        doasFitSetup.reference.push_back(ringReference);
 
         // 3. Include the Ozone spectrum as the third reference (if required)
         if (ozoneSpectrumGen != nullptr)
         {
+            CReferenceFile ozoneReference;
             auto currentOzoneSpectrum = ozoneSpectrumGen->GetCrossSection(selectedPixelToWavelengthMapping, sampledLineShape, fwhm, false);
-            doasFitSetup.ref[doasFitSetup.nRef].m_data = std::make_unique<novac::CCrossSectionData>(*currentOzoneSpectrum);
-            doasFitSetup.ref[doasFitSetup.nRef].m_columnOption = novac::SHIFT_TYPE::SHIFT_FREE;
-            doasFitSetup.ref[doasFitSetup.nRef].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
-            doasFitSetup.ref[doasFitSetup.nRef].m_squeezeValue = 1.0;
-            doasFitSetup.ref[doasFitSetup.nRef].m_shiftOption = novac::SHIFT_TYPE::SHIFT_LINK;
-            doasFitSetup.ref[doasFitSetup.nRef].m_shiftValue = 0.0;
-            doasFitSetup.nRef += 1;
+            ozoneReference.m_data = std::make_unique<novac::CCrossSectionData>(*currentOzoneSpectrum);
+            ozoneReference.m_columnOption = novac::SHIFT_TYPE::SHIFT_FREE;
+            ozoneReference.m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
+            ozoneReference.m_squeezeValue = 1.0;
+            ozoneReference.m_shiftOption = novac::SHIFT_TYPE::SHIFT_LINK;
+            ozoneReference.m_shiftValue = 0.0;
+            doasFitSetup.reference.push_back(ozoneReference);
         }
 
         // 4. Include the pseudo-absorbers derived from the derivative of the instrument-line-shape function.
@@ -693,15 +697,16 @@ namespace novac
                 pseudoAbsorber->m_crossSection[ii] = IsZero(currentFraunhoferSpectrum->m_data[ii]) ? 0.0 : diffFraunhofer->m_data[ii] / currentFraunhoferSpectrum->m_data[ii];
             }
 
-            parameterIndices.push_back(doasFitSetup.nRef); // remember the index to pick out the results from
+            parameterIndices.push_back(doasFitSetup.reference.size()); // remember the index to pick out the results from
 
-            doasFitSetup.ref[doasFitSetup.nRef].m_data = std::move(pseudoAbsorber);
-            doasFitSetup.ref[doasFitSetup.nRef].m_columnOption = novac::SHIFT_TYPE::SHIFT_FREE;
-            doasFitSetup.ref[doasFitSetup.nRef].m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
-            doasFitSetup.ref[doasFitSetup.nRef].m_squeezeValue = 1.0;
-            doasFitSetup.ref[doasFitSetup.nRef].m_shiftOption = novac::SHIFT_TYPE::SHIFT_LINK;
-            doasFitSetup.ref[doasFitSetup.nRef].m_shiftValue = 0.0;
-            doasFitSetup.nRef += 1;
+            CReferenceFile newReference;
+            newReference.m_data = std::move(pseudoAbsorber);
+            newReference.m_columnOption = novac::SHIFT_TYPE::SHIFT_FREE;
+            newReference.m_squeezeOption = novac::SHIFT_TYPE::SHIFT_FIX;
+            newReference.m_squeezeValue = 1.0;
+            newReference.m_shiftOption = novac::SHIFT_TYPE::SHIFT_LINK;
+            newReference.m_shiftValue = 0.0;
+            doasFitSetup.reference.push_back(newReference);
         }
 
         DoasFit doas;
@@ -721,11 +726,11 @@ namespace novac
 
         // Now also estimate the currentError by doing the DOAS fit without the Pseudo-absorbers
         {
-            doasFitSetup.ref[parameterIndices.front()].m_columnOption = novac::SHIFT_TYPE::SHIFT_FIX;
-            doasFitSetup.ref[parameterIndices.front()].m_columnValue = 0.0;
+            doasFitSetup.reference[parameterIndices.front()].m_columnOption = novac::SHIFT_TYPE::SHIFT_FIX;
+            doasFitSetup.reference[parameterIndices.front()].m_columnValue = 0.0;
 
-            doasFitSetup.ref[parameterIndices.back()].m_columnOption = novac::SHIFT_TYPE::SHIFT_FIX;
-            doasFitSetup.ref[parameterIndices.back()].m_columnValue = 0.0;
+            doasFitSetup.reference[parameterIndices.back()].m_columnOption = novac::SHIFT_TYPE::SHIFT_FIX;
+            doasFitSetup.reference[parameterIndices.back()].m_columnValue = 0.0;
 
             doas.Setup(doasFitSetup);
 

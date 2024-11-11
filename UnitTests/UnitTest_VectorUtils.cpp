@@ -1,5 +1,6 @@
 #include "catch.hpp"
 #include <SpectralEvaluation/VectorUtils.h>
+#include <SpectralEvaluation/Evaluation/BasicMath.h>
 
 TEST_CASE("Min", "[Min][VectorUtils]")
 {
@@ -330,5 +331,257 @@ TEST_CASE("FindNLowest", "[FindNLowest][VectorUtils]")
         REQUIRE(7 == result[5]);
         REQUIRE(9 == result[6]);
         REQUIRE(12 == result[7]);
+    }
+}
+
+TEST_CASE("HighPassBinomial - Constant vector", "[HighPassBinomial][VectorUtils]")
+{
+    CBasicMath math;
+
+    SECTION("Constant value vector zeroes out after one iteration")
+    {
+        std::vector<double> values(128, 5.0);
+        std::vector<double> values2(128, 5.0);
+
+        // Act
+        ::HighPassBinomial(values, 1);
+        math.HighPassBinomial(values2.data(), static_cast<int>(values2.size()), 1);
+
+        // Assert, the two vectors should now have the same value.
+        for (size_t ii = 0; ii < values.size(); ++ii)
+        {
+            REQUIRE(Approx(values[ii]) == values2[ii]);
+        }
+    }
+
+    SECTION("Constant value vector zeroes out after 500 iterations")
+    {
+        std::vector<double> values(128, 5.0);
+        std::vector<double> values2(128, 5.0);
+
+        // Act
+        ::HighPassBinomial(values, 500);
+        math.HighPassBinomial(values2.data(), static_cast<int>(values2.size()), 500);
+
+        // Assert, the two vectors should now have the same value.
+        for (size_t ii = 0; ii < values.size(); ++ii)
+        {
+            REQUIRE(Approx(values[ii]) == values2[ii]);
+        }
+    }
+
+    SECTION("Odd sized Constant value vector zeroes out after 500 iterations")
+    {
+        std::vector<double> values(61, 5.0);
+        std::vector<double> values2(61, 5.0);
+
+        // Act
+        ::HighPassBinomial(values, 1);
+        math.HighPassBinomial(values2.data(), static_cast<int>(values2.size()), 500);
+
+        // Assert, the two vectors should now have the same value.
+        for (size_t ii = 0; ii < values.size(); ++ii)
+        {
+            REQUIRE(Approx(values[ii]) == values2[ii]);
+        }
+    }
+}
+
+
+TEST_CASE("HighPassBinomial - Random vector matches result from BasicMath", "[HighPassBinomial][VectorUtils]")
+{
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_real_distribution<> dist(-10.0, 10.0); // distribution in range [0, +10.0]
+
+    std::vector<double> values;
+    std::vector<double> values2;
+
+    CBasicMath math;
+
+    SECTION("Even sized value vector: one iteration")
+    {
+        for (size_t ii = 0; ii < 128; ++ii)
+        {
+            const double v = dist(rng);
+            values.push_back(v);
+            values2.push_back(v);
+        }
+
+        // Act
+        ::HighPassBinomial(values, 1);
+        math.HighPassBinomial(values2.data(), static_cast<int>(values2.size()), 1);
+
+        // Assert, the two vectors should now have the same value.
+        for (size_t ii = 0; ii < values.size(); ++ii)
+        {
+            REQUIRE(Approx(values[ii]) == values2[ii]);
+        }
+    }
+    SECTION("Even sized value vector: 500 iterations")
+    {
+        for (size_t ii = 0; ii < 128; ++ii)
+        {
+            const double v = dist(rng);
+            values.push_back(v);
+            values2.push_back(v);
+        }
+
+        // Act
+        ::HighPassBinomial(values, 500);
+        math.HighPassBinomial(values2.data(), static_cast<int>(values2.size()), 500);
+
+        // Assert, the two vectors should now have the same value.
+        for (size_t ii = 0; ii < values.size(); ++ii)
+        {
+            REQUIRE(Approx(values[ii]) == values2[ii]);
+        }
+    }
+
+    SECTION("Odd sized value vector: 500 iterations")
+    {
+        for (size_t ii = 0; ii < 61; ++ii)
+        {
+            const double v = dist(rng);
+            values.push_back(v);
+            values2.push_back(v);
+        }
+
+        // Act
+        ::HighPassBinomial(values, 500);
+        math.HighPassBinomial(values2.data(), static_cast<int>(values2.size()), 500);
+
+        // Assert, the two vectors should now have the same value.
+        for (size_t ii = 0; ii < values.size(); ++ii)
+        {
+            REQUIRE(Approx(values[ii]) == values2[ii]);
+        }
+    }
+}
+
+
+TEST_CASE("LowPassBinomial - Constant vector", "[LowPassBinomial][VectorUtils]")
+{
+    CBasicMath math;
+
+    SECTION("Constant value vector zeroes out after one iteration")
+    {
+        std::vector<double> values(128, 5.0);
+        std::vector<double> values2(128, 5.0);
+
+        // Act
+        ::LowPassBinomial(values, 1);
+        math.LowPassBinomial(values2.data(), static_cast<int>(values2.size()), 1);
+
+        // Assert, the two vectors should now have the same value.
+        for (size_t ii = 0; ii < values.size(); ++ii)
+        {
+            REQUIRE(Approx(values[ii]) == values2[ii]);
+        }
+    }
+
+    SECTION("Constant value vector zeroes out after 500 iterations")
+    {
+        std::vector<double> values(128, 5.0);
+        std::vector<double> values2(128, 5.0);
+
+        // Act
+        ::LowPassBinomial(values, 500);
+        math.LowPassBinomial(values2.data(), static_cast<int>(values2.size()), 500);
+
+        // Assert, the two vectors should now have the same value.
+        for (size_t ii = 0; ii < values.size(); ++ii)
+        {
+            REQUIRE(Approx(values[ii]) == values2[ii]);
+        }
+    }
+
+    SECTION("Odd sized Constant value vector zeroes out after 500 iterations")
+    {
+        std::vector<double> values(61, 5.0);
+        std::vector<double> values2(61, 5.0);
+
+        // Act
+        ::LowPassBinomial(values, 1);
+        math.LowPassBinomial(values2.data(), static_cast<int>(values2.size()), 500);
+
+        // Assert, the two vectors should now have the same value.
+        for (size_t ii = 0; ii < values.size(); ++ii)
+        {
+            REQUIRE(Approx(values[ii]) == values2[ii]);
+        }
+    }
+}
+
+
+TEST_CASE("LowPassBinomial - Random vector matches result from BasicMath", "[LowPassBinomial][VectorUtils]")
+{
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_real_distribution<> dist(-10.0, 10.0); // distribution in range [0, +10.0]
+
+    std::vector<double> values;
+    std::vector<double> values2;
+
+    CBasicMath math;
+
+    SECTION("Even sized value vector: one iteration")
+    {
+        for (size_t ii = 0; ii < 128; ++ii)
+        {
+            const double v = dist(rng);
+            values.push_back(v);
+            values2.push_back(v);
+        }
+
+        // Act
+        ::LowPassBinomial(values, 1);
+        math.LowPassBinomial(values2.data(), static_cast<int>(values2.size()), 1);
+
+        // Assert, the two vectors should now have the same value.
+        for (size_t ii = 0; ii < values.size(); ++ii)
+        {
+            REQUIRE(Approx(values[ii]) == values2[ii]);
+        }
+    }
+
+    SECTION("Even sized value vector: 500 iterations")
+    {
+        for (size_t ii = 0; ii < 128; ++ii)
+        {
+            const double v = dist(rng);
+            values.push_back(v);
+            values2.push_back(v);
+        }
+
+        // Act
+        ::LowPassBinomial(values, 500);
+        math.LowPassBinomial(values2.data(), static_cast<int>(values2.size()), 500);
+
+        // Assert, the two vectors should now have the same value.
+        for (size_t ii = 0; ii < values.size(); ++ii)
+        {
+            REQUIRE(Approx(values[ii]) == values2[ii]);
+        }
+    }
+
+    SECTION("Odd sized value vector: 500 iterations")
+    {
+        for (size_t ii = 0; ii < 61; ++ii)
+        {
+            const double v = dist(rng);
+            values.push_back(v);
+            values2.push_back(v);
+        }
+
+        // Act
+        ::LowPassBinomial(values, 500);
+        math.LowPassBinomial(values2.data(), static_cast<int>(values2.size()), 500);
+
+        // Assert, the two vectors should now have the same value.
+        for (size_t ii = 0; ii < values.size(); ++ii)
+        {
+            REQUIRE(Approx(values[ii]) == values2[ii]);
+        }
     }
 }

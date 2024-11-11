@@ -6,7 +6,7 @@
 namespace novac
 {
 TEST_CASE("FitWindowFileHandler can read .nfw file for SO2 from the NovacProgram", "[FitWindowFileHandler][IntegrationTest]")
-    {
+{
     const std::string& filename = TestData::GetBrORatioFitWindowFileSO2();
 
     CFitWindowFileHandler sut;
@@ -28,22 +28,23 @@ TEST_CASE("FitWindowFileHandler can read .nfw file for SO2 from the NovacProgram
     REQUIRE(result.front().specLength == 2048);
 
     REQUIRE(result.front().findOptimalShift == 0);
-    REQUIRE(result.front().UV == 1);
+    REQUIRE(result.front().offsetRemovalRange.from == 50);
+    REQUIRE(result.front().offsetRemovalRange.to == 200);
     REQUIRE(result.front().shiftSky == 0);
     REQUIRE(result.front().interlaceStep == 1);
 
     REQUIRE(result.front().fraunhoferRef.m_path == "../TestData/BrORatio/D2J2124_SolarSpec_Master.txt");
 
     // finally the references
-    REQUIRE(result.front().nRef == 2);
-    REQUIRE(result.front().ref[0].m_specieName == "SO2");
-    REQUIRE(result.front().ref[0].m_path == "../TestData/BrORatio/D2J2124_SO2_Bogumil_293K_Master.txt");
-    REQUIRE(result.front().ref[1].m_specieName == "O3");
-    REQUIRE(result.front().ref[1].m_path == "../TestData/BrORatio/D2J2124_O3_Voigt_223K_Master.txt");
-    }
+    REQUIRE(result.front().reference.size() == 2);
+    REQUIRE(result.front().reference[0].m_specieName == "SO2");
+    REQUIRE(result.front().reference[0].m_path == "../TestData/BrORatio/D2J2124_SO2_Bogumil_293K_Master.txt");
+    REQUIRE(result.front().reference[1].m_specieName == "O3");
+    REQUIRE(result.front().reference[1].m_path == "../TestData/BrORatio/D2J2124_O3_Voigt_223K_Master.txt");
+}
 
 TEST_CASE("FitWindowFileHandler can read .nfw file for BrO from the NovacProgram", "[FitWindowFileHandler][IntegrationTest]")
-    {
+{
     const std::string& filename = TestData::GetBrORatioFitWindowFileBrO();
 
     CFitWindowFileHandler sut;
@@ -65,24 +66,25 @@ TEST_CASE("FitWindowFileHandler can read .nfw file for BrO from the NovacProgram
     REQUIRE(result.front().specLength == 2048);
 
     REQUIRE(result.front().findOptimalShift == 0);
-    REQUIRE(result.front().UV == 1);
+    REQUIRE(result.front().offsetRemovalRange.from == 50);
+    REQUIRE(result.front().offsetRemovalRange.to == 200);
     REQUIRE(result.front().shiftSky == 0);
     REQUIRE(result.front().interlaceStep == 1);
 
     REQUIRE(result.front().fraunhoferRef.m_path == "../TestData/BrORatio/D2J2124_SolarSpec_Master.txt");
 
     // finally the references
-    REQUIRE(result.front().nRef == 3);
-    REQUIRE(result.front().ref[0].m_specieName == "BrO");
-    REQUIRE(result.front().ref[0].m_path == "../TestData/BrORatio/D2J2124_BrO_Fleischmann_298K.txt");
-    REQUIRE(result.front().ref[1].m_specieName == "SO2");
-    REQUIRE(result.front().ref[1].m_path == "../TestData/BrORatio/D2J2124_SO2_Bogumil_293K_Master.txt");
-    REQUIRE(result.front().ref[2].m_specieName == "O3");
-    REQUIRE(result.front().ref[2].m_path == "../TestData/BrORatio/D2J2124_O3_Voigt_223K_Master.txt");
-    }
+    REQUIRE(result.front().reference.size() == 3);
+    REQUIRE(result.front().reference[0].m_specieName == "BrO");
+    REQUIRE(result.front().reference[0].m_path == "../TestData/BrORatio/D2J2124_BrO_Fleischmann_298K.txt");
+    REQUIRE(result.front().reference[1].m_specieName == "SO2");
+    REQUIRE(result.front().reference[1].m_path == "../TestData/BrORatio/D2J2124_SO2_Bogumil_293K_Master.txt");
+    REQUIRE(result.front().reference[2].m_specieName == "O3");
+    REQUIRE(result.front().reference[2].m_path == "../TestData/BrORatio/D2J2124_O3_Voigt_223K_Master.txt");
+}
 
 TEST_CASE("FitWindowFileHandler can read back one saved fit window", "[FitWindowFileHandler][IntegrationTest]")
-    {
+{
     const std::string filename = TestData::GetTemporaryFitWindowFileName();
 
     // Setup a fit-window to write to file. Add some odd values here such that we know we're not getting defaults back
@@ -102,8 +104,8 @@ TEST_CASE("FitWindowFileHandler can read back one saved fit window", "[FitWindow
     originalWindow.skyShift = 3.141;
     originalWindow.skySqueeze = 0.98765;
     originalWindow.specLength = 1234;
-    originalWindow.UV = 0;
-    originalWindow.nRef = 6;
+    originalWindow.offsetRemovalRange = IndexRange(4, 73);
+    originalWindow.reference.resize(6);
 
     // Act: save the fit window to file and then read it back again.
     CFitWindowFileHandler sut;
@@ -127,7 +129,6 @@ TEST_CASE("FitWindowFileHandler can read back one saved fit window", "[FitWindow
     REQUIRE(originalWindow.skyShift == readBackWindow.front().skyShift);
     REQUIRE(originalWindow.skySqueeze == readBackWindow.front().skySqueeze);
     REQUIRE(originalWindow.specLength == readBackWindow.front().specLength);
-    REQUIRE(originalWindow.UV == readBackWindow.front().UV);
-
-    }
+    REQUIRE(originalWindow.offsetRemovalRange == readBackWindow.front().offsetRemovalRange);
+}
 }

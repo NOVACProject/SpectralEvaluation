@@ -338,12 +338,12 @@ CEvaluationBase* ScanEvaluationBase::FindOptimumShiftAndSqueezeFromFraunhoferRef
         CFitWindow improvedFitWindow = fitWindow;
 
         // The fit is good enough to use the values
-        for (size_t it = 0; it < improvedFitWindow.nRef; ++it)
+        for (size_t it = 0; it < improvedFitWindow.reference.size(); ++it)
         {
-            improvedFitWindow.ref[it].m_shiftOption = SHIFT_TYPE::SHIFT_FIX;
-            improvedFitWindow.ref[it].m_squeezeOption = SHIFT_TYPE::SHIFT_FIX;
-            improvedFitWindow.ref[it].m_shiftValue = shiftResult.shift;
-            improvedFitWindow.ref[it].m_squeezeValue = shiftResult.squeeze;
+            improvedFitWindow.reference[it].m_shiftOption = SHIFT_TYPE::SHIFT_FIX;
+            improvedFitWindow.reference[it].m_squeezeOption = SHIFT_TYPE::SHIFT_FIX;
+            improvedFitWindow.reference[it].m_shiftValue = shiftResult.shift;
+            improvedFitWindow.reference[it].m_squeezeValue = shiftResult.squeeze;
         }
 
         std::stringstream msg;

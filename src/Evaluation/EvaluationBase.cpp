@@ -1,5 +1,6 @@
 #include <SpectralEvaluation/Evaluation/EvaluationBase.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
+#include <SpectralEvaluation/VectorUtils.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/Spectra/Scattering.h>
 
@@ -21,8 +22,6 @@
 
 #include <limits>
 #include <sstream>
-
-using namespace MathFit;
 
 namespace novac
 {
@@ -75,7 +74,7 @@ int CEvaluationBase::CreateReferenceSpectra()
     ClearRefereneSpectra();
 
     // 1) Create the references
-    for (size_t i = 0; i < m_window.nRef; i++)
+    for (size_t i = 0; i < m_window.reference.size(); i++)
     {
         auto newRef = DefaultReferenceSpectrumFunction();
 
@@ -83,9 +82,9 @@ int CEvaluationBase::CreateReferenceSpectra()
         // transformation of the spectral data into a B-Spline that will be used to interpolate the 
         // reference spectrum during shift and squeeze operations
         CVector yValues;
-        yValues.Copy(m_window.ref[i].m_data->m_crossSection.data(), m_window.ref[i].m_data->GetSize());
+        yValues.Copy(m_window.reference[i].m_data->m_crossSection.data(), m_window.reference[i].m_data->GetSize());
 
-        auto tempXVec = vXData.SubVector(0, m_window.ref[i].m_data->GetSize());
+        auto tempXVec = vXData.SubVector(0, m_window.reference[i].m_data->GetSize());
         if (!newRef->SetData(tempXVec, yValues))
         {
             Error0("Error initializing spline object!");
@@ -97,16 +96,16 @@ int CEvaluationBase::CreateReferenceSpectra()
     }
 
     // 2) Couple the references
-    for (size_t i = 0; i < m_window.nRef; i++)
+    for (size_t i = 0; i < m_window.reference.size(); i++)
     {
         // Chech the options for the column value
-        switch (m_window.ref[i].m_columnOption)
+        switch (m_window.reference[i].m_columnOption)
         {
         case SHIFT_TYPE::SHIFT_FIX:
-            m_ref[i]->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, m_window.ref[i].m_columnValue * m_ref[i]->GetAmplitudeScale());
+            m_ref[i]->FixParameter(CReferenceSpectrumFunction::CONCENTRATION, m_window.reference[i].m_columnValue * m_ref[i]->GetAmplitudeScale());
             break;
         case SHIFT_TYPE::SHIFT_LINK:
-            m_ref[(int)m_window.ref[i].m_columnValue]->LinkParameter(CReferenceSpectrumFunction::CONCENTRATION, *m_ref[i], CReferenceSpectrumFunction::CONCENTRATION);
+            m_ref[(int)m_window.reference[i].m_columnValue]->LinkParameter(CReferenceSpectrumFunction::CONCENTRATION, *m_ref[i], CReferenceSpectrumFunction::CONCENTRATION);
             break;
         case SHIFT_TYPE::SHIFT_FREE:
             m_ref[i]->ReleaseParameter(CReferenceSpectrumFunction::CONCENTRATION);
@@ -116,16 +115,16 @@ int CEvaluationBase::CreateReferenceSpectra()
         }
 
         // Check the options for the shift
-        switch (m_window.ref[i].m_shiftOption)
+        switch (m_window.reference[i].m_shiftOption)
         {
         case SHIFT_TYPE::SHIFT_FIX:
-            m_ref[i]->FixParameter(CReferenceSpectrumFunction::SHIFT, m_window.ref[i].m_shiftValue);
+            m_ref[i]->FixParameter(CReferenceSpectrumFunction::SHIFT, m_window.reference[i].m_shiftValue);
             break;
         case SHIFT_TYPE::SHIFT_LINK:
-            m_ref[(int)m_window.ref[i].m_shiftValue]->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_ref[i], CReferenceSpectrumFunction::SHIFT);
+            m_ref[(int)m_window.reference[i].m_shiftValue]->LinkParameter(CReferenceSpectrumFunction::SHIFT, *m_ref[i], CReferenceSpectrumFunction::SHIFT);
             break;
         case SHIFT_TYPE::SHIFT_LIMIT:
-            m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)m_window.ref[i].m_shiftValue, (TFitData)m_window.ref[i].m_shiftMaxValue, 1);
+            m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SHIFT, (TFitData)m_window.reference[i].m_shiftValue, (TFitData)m_window.reference[i].m_shiftMaxValue, 1);
             break;
         default:
             m_ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SHIFT, (TFitData)0.0);
@@ -134,16 +133,16 @@ int CEvaluationBase::CreateReferenceSpectra()
         }
 
         // Check the options for the squeeze
-        switch (m_window.ref[i].m_squeezeOption)
+        switch (m_window.reference[i].m_squeezeOption)
         {
         case SHIFT_TYPE::SHIFT_FIX:
-            m_ref[i]->FixParameter(CReferenceSpectrumFunction::SQUEEZE, m_window.ref[i].m_squeezeValue);
+            m_ref[i]->FixParameter(CReferenceSpectrumFunction::SQUEEZE, m_window.reference[i].m_squeezeValue);
             break;
         case SHIFT_TYPE::SHIFT_LINK:
-            m_ref[(int)m_window.ref[i].m_squeezeValue]->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_ref[i], CReferenceSpectrumFunction::SQUEEZE);
+            m_ref[(int)m_window.reference[i].m_squeezeValue]->LinkParameter(CReferenceSpectrumFunction::SQUEEZE, *m_ref[i], CReferenceSpectrumFunction::SQUEEZE);
             break;
         case SHIFT_TYPE::SHIFT_LIMIT:
-            m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)m_window.ref[i].m_squeezeValue, (TFitData)m_window.ref[i].m_squeezeMaxValue, 1e7);
+            m_ref[i]->SetParameterLimits(CReferenceSpectrumFunction::SQUEEZE, (TFitData)m_window.reference[i].m_squeezeValue, (TFitData)m_window.reference[i].m_squeezeMaxValue, 1e7);
             break;
         default:
             m_ref[i]->SetDefaultParameter(CReferenceSpectrumFunction::SQUEEZE, (TFitData)1.0);
@@ -177,45 +176,40 @@ int CEvaluationBase::CreateReferenceSpectra()
     return 0;
 }
 
-void CEvaluationBase::RemoveOffset(double* spectrum, int sumChn, bool UV)
+void CEvaluationBase::RemoveOffset(double* spectrum, int spectrumLength, IndexRange range) const
 {
-    // TODO: Read this from the number of optically covered pixels of the SpectrometerModel
-    int offsetFrom = (UV) ? 50 : 2;
-    int offsetTo = (UV) ? 200 : 20;
-
-    //  remove any remaining offset in the measured spectrum
+    // remove any remaining offset in the measured spectrum
     double avg = 0;
-    for (int i = offsetFrom; i < offsetTo; i++)
+    for (size_t i = range.from; i < range.to; i++)
     {
         avg += spectrum[i];
     }
-    avg = avg / (double)(offsetTo - offsetFrom);
+    avg = avg / (double)range.Length();
 
-    Sub(spectrum, sumChn, avg);
+    Sub(spectrum, spectrumLength, avg);
 
     return;
 }
 
-void CEvaluationBase::RemoveOffset(std::vector<double>& spectrum, size_t from, size_t to)
+void CEvaluationBase::RemoveOffset(std::vector<double>& spectrum, IndexRange range) const
 {
-    if (from > to || to > spectrum.size())
+    if (range.from > range.to || range.to > spectrum.size())
     {
         std::stringstream msg;
-        msg << "Cannot remove offset, invalid spectrum region [" << from << ", " << to << "] for spectrum of length " << spectrum.size();
+        msg << "Cannot remove offset, invalid spectrum region [" << range.from << ", " << range.to << "] for spectrum of length " << spectrum.size();
         throw std::invalid_argument(msg.str());
     }
 
-    double avg = 0;
-    for (size_t i = from; i < to; i++)
+    double average = 0;
+    for (size_t i = range.from; i < range.to; i++)
     {
-        avg += spectrum[i];
+        average += spectrum[i];
     }
-    avg = avg / (double)(to - from);
+    average = average / (double)range.Length();
 
-    Sub(spectrum.data(), static_cast<int>(spectrum.size()), avg);
+    ::Add(spectrum, -average);
 
     return;
-
 }
 
 void CEvaluationBase::PrepareSpectra(double* sky, double* meas, const CFitWindow& window)
@@ -229,11 +223,20 @@ void CEvaluationBase::PrepareSpectra(double* sky, double* meas, const CFitWindow
         return PrepareSpectra_Poly(sky, meas, window);
 }
 
+void CEvaluationBase::PrepareSpectra(std::vector<double>& sky, std::vector<double>& meas, const CFitWindow& window) const
+{
+    if (window.fitType == FIT_TYPE::FIT_HP_DIV)
+        return PrepareSpectra_HP_Div(sky, meas, window);
+    if (window.fitType == FIT_TYPE::FIT_HP_SUB)
+        return PrepareSpectra_HP_Sub(sky, meas, window);
+    if (window.fitType == FIT_TYPE::FIT_POLY)
+        return PrepareSpectra_Poly(sky, meas, window);
+}
+
 void CEvaluationBase::PrepareSpectra_HP_Div(double* skyArray, double* measArray, const CFitWindow& window)
 {
-
     //  1. Remove any remaining offset
-    RemoveOffset(measArray, window.specLength, window.UV);
+    RemoveOffset(measArray, window.specLength, window.offsetRemovalRange);
 
     // 2. Divide the measured spectrum with the sky spectrum
     Div(measArray, skyArray, window.specLength, 0.0);
@@ -248,11 +251,41 @@ void CEvaluationBase::PrepareSpectra_HP_Div(double* skyArray, double* measArray,
     //	LowPassBinomial(measArray,window.specLength, 5);
 }
 
+void CEvaluationBase::PrepareSpectra_HP_Div(std::vector<double>& skyArray, std::vector<double>& measArray, const CFitWindow& window) const
+{
+    //  1. Remove any remaining offset
+    RemoveOffset(measArray, window.offsetRemovalRange);
+
+    // 2. Divide the measured spectrum with the sky spectrum
+    ::Div(measArray, skyArray);
+
+    // 3. high pass filter
+    ::HighPassBinomial(measArray, 500);
+
+    // 4. log(spec)
+    ::Log(measArray);
+
+    // 5. low pass filter
+    //	LowPassBinomial(measArray,window.specLength, 5);
+}
+
+void CEvaluationBase::PrepareSpectra_HP_Sub(std::vector<double>& /*skyArray*/, std::vector<double>& measArray, const CFitWindow& window) const
+{
+    // 1. remove any remaining offset in the measured spectrum
+    RemoveOffset(measArray, window.offsetRemovalRange);
+
+    // 2. high pass filter
+    ::HighPassBinomial(measArray, 500);
+
+    // 3. log(spec)
+    ::Log(measArray);
+}
+
 void CEvaluationBase::PrepareSpectra_HP_Sub(double* /*skyArray*/, double* measArray, const CFitWindow& window)
 {
 
     // 1. remove any remaining offset in the measured spectrum
-    RemoveOffset(measArray, window.specLength, window.UV);
+    RemoveOffset(measArray, window.specLength, window.offsetRemovalRange);
 
     // 2. high pass filter
     HighPassBinomial(measArray, window.specLength, 500);
@@ -264,7 +297,7 @@ void CEvaluationBase::PrepareSpectra_HP_Sub(double* /*skyArray*/, double* measAr
 void CEvaluationBase::PrepareSpectra_Poly(double* /*skyArray*/, double* measArray, const CFitWindow& window)
 {
     // 1. remove any remaining offset in the measured spectrum
-    RemoveOffset(measArray, window.specLength, window.UV);
+    RemoveOffset(measArray, window.specLength, window.offsetRemovalRange);
 
     // 2. log(spec)
     Log(measArray, window.specLength);
@@ -274,6 +307,18 @@ void CEvaluationBase::PrepareSpectra_Poly(double* /*skyArray*/, double* measArra
     {
         measArray[i] *= -1.0;
     }
+}
+
+void CEvaluationBase::PrepareSpectra_Poly(std::vector<double>& /*skyArray*/, std::vector<double>& measArray, const CFitWindow& window) const
+{
+    // 1. remove any remaining offset in the measured spectrum
+    RemoveOffset(measArray, window.offsetRemovalRange);
+
+    // 2. log(spec)
+    ::Log(measArray);
+
+    // 3. Multiply the spectrum with -1 to get the correct sign for everything
+    ::Mult(measArray, -1.0);
 }
 
 int CEvaluationBase::SetSkySpectrum(const CSpectrum& spec)
@@ -302,7 +347,7 @@ int CEvaluationBase::SetSkySpectrum(const CCrossSectionData& spec, bool removeOf
     // Remove any remaining offset of the sky-spectrum
     if (removeOffset)
     {
-        RemoveOffset(m_sky.m_crossSection.data(), m_sky.GetSize(), m_window.UV);
+        RemoveOffset(m_sky.m_crossSection.data(), m_sky.GetSize(), m_window.offsetRemovalRange);
     }
 
     if (m_window.fitType == FIT_TYPE::FIT_HP_SUB)
@@ -557,7 +602,7 @@ int CEvaluationBase::Evaluate(const double* measured, size_t measuredLength, int
     // --------- prepare the spectrum for evaluation -----------------
     //----------------------------------------------------------------
 
-    PrepareSpectra(m_sky.m_crossSection.data(), measArray.data(), m_window);
+    PrepareSpectra(m_sky.m_crossSection, measArray, m_window);
     m_measuredData = std::vector<double>(begin(measArray), end(measArray));
 
     //----------------------------------------------------------------
@@ -753,7 +798,7 @@ int CEvaluationBase::EvaluateShift(novac::LogContext context, const CSpectrum& m
     // --------- prepare the spectrum for evaluation -----------------
     //----------------------------------------------------------------
 
-    RemoveOffset(measArray.data(), m_window.specLength, m_window.UV);
+    RemoveOffset(measArray, m_window.offsetRemovalRange);
     if (m_window.fitType == FIT_TYPE::FIT_HP_DIV || m_window.fitType == FIT_TYPE::FIT_HP_SUB)
     {
         HighPassBinomial(measArray.data(), m_window.specLength, 500);
@@ -834,7 +879,7 @@ int CEvaluationBase::EvaluateShift(novac::LogContext context, const CSpectrum& m
     cRefSum.AddReference(*solarSpec); // <-- at last add the reference to the summation object
 
     // Link the shifts of the 'normal' cross sections to the shift of the solar spectrum
-    for (size_t ii = 0; ii < m_window.nRef; ++ii)
+    for (size_t ii = 0; ii < m_window.reference.size(); ++ii)
     {
         // Link the shift and squeeze to the solar-reference
         m_ref[ii]->ReleaseParameter(CReferenceSpectrumFunction::SHIFT);
@@ -902,7 +947,7 @@ int CEvaluationBase::EvaluateShift(novac::LogContext context, const CSpectrum& m
         shiftResult.squeezeError = (double)solarSpec->GetModelParameterError(CReferenceSpectrumFunction::SQUEEZE);
 
         // also verify that the setup did what we expected out of it...
-        for (size_t ii = 0; ii < m_window.nRef; ++ii)
+        for (size_t ii = 0; ii < m_window.reference.size(); ++ii)
         {
             assert(std::abs(shiftResult.shift - m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::SHIFT)) < 1e-3);
             assert(std::abs(shiftResult.squeeze - m_ref[ii]->GetModelParameter(CReferenceSpectrumFunction::SQUEEZE)) < 1e-3);
@@ -937,9 +982,9 @@ int CEvaluationBase::EvaluateShift(novac::LogContext context, const CSpectrum& m
 
 std::string CEvaluationBase::GetReferenceName(size_t referenceIndex) const
 {
-    if (referenceIndex < m_window.nRef)
+    if (referenceIndex < m_window.reference.size())
     {
-        return m_window.ref[referenceIndex].m_specieName; // user supplied reference
+        return m_window.reference[referenceIndex].m_specieName; // user supplied reference
     }
     else if (referenceIndex >= this->m_ref.size())
     {

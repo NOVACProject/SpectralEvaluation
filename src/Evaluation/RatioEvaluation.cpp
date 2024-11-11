@@ -86,11 +86,11 @@ void AddRingSpectraAsReferences(CFitWindow& localSO2FitWindow, const std::vector
     }
 }
 
-int FindReferenceIndex(const CFitWindow& window, const std::string& nameToFind)
+static int FindReferenceIndex(const CFitWindow& window, const std::string& nameToFind)
 {
-    for (size_t ii = 0; ii < window.nRef; ++ii)
+    for (size_t ii = 0; ii < window.reference.size(); ++ii)
     {
-        if (EqualsIgnoringCase(window.ref[ii].m_specieName, nameToFind))
+        if (EqualsIgnoringCase(window.reference[ii].m_specieName, nameToFind))
         {
             return static_cast<int>(ii);
         }
@@ -99,7 +99,7 @@ int FindReferenceIndex(const CFitWindow& window, const std::string& nameToFind)
     return -1;
 }
 
-std::vector<double> PrepareRingLambda4Spectrum(const std::vector<double>& ringSpectrum, const std::vector<double>& wavelength)
+static std::vector<double> PrepareRingLambda4Spectrum(const std::vector<double>& ringSpectrum, const std::vector<double>& wavelength)
 {
     if (ringSpectrum.size() != wavelength.size())
     {
@@ -239,9 +239,9 @@ std::vector<Ratio> RatioEvaluation::Run(novac::LogContext context, IScanSpectrum
         {
             debugInfo.outOfPlumeSpectrum.m_wavelength = m_masterFitWindow.fraunhoferRef.m_data->m_waveLength;
         }
-        else if (m_masterFitWindow.ref[0].m_data->m_waveLength.size() == m_masterFitWindow.ref[0].m_data->m_crossSection.size())
+        else if (m_masterFitWindow.reference[0].m_data->m_waveLength.size() == m_masterFitWindow.reference[0].m_data->m_crossSection.size())
         {
-            debugInfo.outOfPlumeSpectrum.m_wavelength = m_masterFitWindow.ref[0].m_data->m_waveLength;
+            debugInfo.outOfPlumeSpectrum.m_wavelength = m_masterFitWindow.reference[0].m_data->m_waveLength;
         }
         else
         {
@@ -285,8 +285,8 @@ std::vector<Ratio> RatioEvaluation::Run(novac::LogContext context, IScanSpectrum
             const int so2RefIdx = FindReferenceIndex(broFitWindow, so2DoasResult.referenceResult[0].name);
             if (so2RefIdx > 0)
             {
-                broFitWindow.ref[so2RefIdx].m_columnOption = SHIFT_TYPE::SHIFT_FIX;
-                broFitWindow.ref[so2RefIdx].m_columnValue = so2DoasResult.referenceResult[0].column;
+                broFitWindow.reference[so2RefIdx].m_columnOption = SHIFT_TYPE::SHIFT_FIX;
+                broFitWindow.reference[so2RefIdx].m_columnValue = so2DoasResult.referenceResult[0].column;
             }
 
             DoasResult broDoasResult = RunEvaluation(broFitWindow, filteredSpectra);
