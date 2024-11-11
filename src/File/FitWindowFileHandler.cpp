@@ -202,6 +202,14 @@ static bool ParseFitWindow(rapidxml::xml_node<>* fitWindowNode, novac::CFitWindo
         {
             window.shiftSky = std::atoi(childNode->value());
         }
+        else if (TagNameEqualsIgnoringCase(childNode, "offsetFrom"))
+        {
+            window.offsetRemovalRange.from = static_cast<size_t>(std::atoi(childNode->value()));
+        }
+        else if (TagNameEqualsIgnoringCase(childNode, "offsetTo"))
+        {
+            window.offsetRemovalRange.to = static_cast<size_t>(std::atoi(childNode->value()));
+        }
         else if (TagNameEqualsIgnoringCase(childNode, "skyShift"))
         {
             window.skyShift = std::atof(childNode->value());
