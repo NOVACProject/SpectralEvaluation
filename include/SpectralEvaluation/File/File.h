@@ -53,7 +53,7 @@ std::string EnsureFilenameHasSuffix(const std::string& fullFilePath, const std::
 /** Returns the file name component of the provide full filename and path */
 std::string GetFileName(const std::string& fullFileNameAndPath);
 
-/** Returns the file extension (suffix) from the provided full file path */
+/* Returns the file extension (suffix) from the provided full file path or filename */
 std::string GetFileExtension(const std::string& fullFilePath);
 
 /** Saves the full instrument calibration to a single file using the extended STD-format.

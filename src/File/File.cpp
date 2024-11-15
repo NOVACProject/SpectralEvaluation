@@ -345,22 +345,10 @@ std::string GetFileExtension(const std::string& fullFilePath)
         return std::string();
     }
 
-    const size_t lastForwardSlash = fullFilePath.rfind('\\');
-    const size_t lastBackwardSlash = fullFilePath.rfind('/');
-
-    if ((lastForwardSlash != fullFilePath.npos && lastPeriod > lastForwardSlash) ||
-        (lastBackwardSlash != fullFilePath.npos && lastPeriod > lastBackwardSlash))
-    {
-        return fullFilePath.substr(lastPeriod, fullFilePath.size() - lastPeriod);
-    }
-    else
-    {
-        // no period found _after_ the last path-separator character, hence no suffix
-        return std::string();
-    }
+    return fullFilePath.substr(lastPeriod, fullFilePath.size() - lastPeriod);
 }
 
-std::string GetFileName(const std::string& fullFileNameAndPath, char pathSeparator)
+static std::string GetFileName(const std::string& fullFileNameAndPath, char pathSeparator)
 {
     auto position = fullFileNameAndPath.rfind(pathSeparator);
     if (position == std::string::npos)
@@ -375,7 +363,7 @@ std::string GetFileName(const std::string& fullFileNameAndPath, char pathSeparat
 std::string GetFileName(const std::string& fullFileNameAndPath)
 {
     // first attempt with using windows path-separator.
-    std::string result = GetFileName(fullFileNameAndPath, '\\');
+    const std::string result = GetFileName(fullFileNameAndPath, '\\');
     if (!result.empty())
     {
         return result;
@@ -385,7 +373,7 @@ std::string GetFileName(const std::string& fullFileNameAndPath)
     return GetFileName(fullFileNameAndPath, '/');
 }
 
-std::pair<std::string, std::string> FormatProperty(const char* name, double value)
+static std::pair<std::string, std::string> FormatProperty(const char* name, double value)
 {
     char formattedValue[128];
     sprintf(formattedValue, "%.9g", value);
