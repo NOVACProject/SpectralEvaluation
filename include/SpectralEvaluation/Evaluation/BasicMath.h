@@ -10,7 +10,7 @@ namespace MathFit
 class CVector;
 }
 
-#include "../Fit/FitException.h"
+#include <SpectralEvaluation/Fit/FitException.h>
 
 #if _MSC_VER > 1000
 #pragma once
@@ -47,7 +47,7 @@ public:
 
     void Mul(double* fFirst, int iSize, double fConst);
 
-    void Sub(double* fFirst, int iSize, double fConst);
+    void Sub(double* fFirst, int iSize, double fConst) const;
 
     void Add(double* fFirst, int iSize, double fConst);
 

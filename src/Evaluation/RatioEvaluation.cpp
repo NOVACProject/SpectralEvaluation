@@ -3,135 +3,345 @@
 #include <SpectralEvaluation/Evaluation/DarkSpectrum.h>
 #include <SpectralEvaluation/Configuration/DarkSettings.h>
 #include <SpectralEvaluation/Evaluation/EvaluationResult.h>
-#include <SpectralEvaluation/Evaluation/EvaluationBase.h>
+#include <SpectralEvaluation/Evaluation/BasicMath.h>
+#include <SpectralEvaluation/Evaluation/DoasFit.h>
+#include <SpectralEvaluation/Evaluation/DoasFitPreparation.h>
+#include <SpectralEvaluation/Evaluation/PlumeSpectrumSelector.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 #include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include <SpectralEvaluation/File/ScanFileHandler.h>
+#include <SpectralEvaluation/StringUtils.h>
+#include <SpectralEvaluation/Math/SpectrumMath.h>
 
+#include <cmath>
 #include <numeric>
+#include <sstream>
 
 namespace novac
 {
-RatioEvaluation::RatioEvaluation(const RatioEvaluationSettings& settings, const Configuration::CDarkSettings& darkSettings)
-    : m_darkSettings(darkSettings), m_settings(settings)
+
+struct PreparedInputSpectraForDoasEvaluation
 {
-}
+    std::vector<double> filteredInPlumeSpectrum;
 
-std::vector<Ratio> RatioEvaluation::Run(CScanFileHandler& scan)
+    std::vector<double> filteredOutOfPlumespectrum;
+
+    std::vector<double> ringSpectrum;
+
+    std::vector<double> ringLambda4Spectrum;
+
+    std::vector<double> intensityOffsetSpectrum;
+};
+
+static bool IsSuitableScanForRatioEvaluation(const Configuration::RatioEvaluationSettings& settings, const BasicScanEvaluationResult& scanResult, const CPlumeInScanProperty& properties, std::string& errorMessage)
 {
-    std::vector<Ratio> result;
-
-    if (!IsSuitableScanForRatioEvaluation(m_settings, m_masterResult, m_masterResultProperties))
+    if (static_cast<int>(scanResult.NumberOfEvaluatedSpectra()) < settings.minNumberOfSpectraInPlume + settings.numberOfSpectraOutsideOfPlume)
     {
-        return result;
-    }
-
-    std::vector<int> referenceSpectra;
-    std::vector<int> plumeSpectra;
-    SelectSpectraForRatioEvaluation(m_settings, m_masterResult, m_masterResultProperties, referenceSpectra, plumeSpectra);
-    if (referenceSpectra.size() < (size_t)m_settings.minNumberOfReferenceSpectra ||
-        plumeSpectra.size() < (size_t)m_settings.minNumberOfSpectraInPlume)
-    {
-        return result;
-    }
-
-
-
-    CSpectrum inPlumeSpectrum;
-    AverageSpectra(scan, plumeSpectra, inPlumeSpectrum);
-
-    CSpectrum inPlumeDark;
-    if (!::novac::GetDark(scan, inPlumeSpectrum, m_darkSettings, inPlumeDark, m_lastErrorMessage))
-    {
-        // TODO: Handle errors
-    }
-    if (inPlumeDark.NumSpectra() > 0 && !m_averagedSpectra)
-    {
-        inPlumeDark.Div(inPlumeDark.NumSpectra());
-    }
-    inPlumeSpectrum.Sub(inPlumeDark);
-
-
-
-    CSpectrum outOfPlumeSpectrum;
-    AverageSpectra(scan, referenceSpectra, outOfPlumeSpectrum);
-
-    CSpectrum outOfPlumeDark;
-    if (!::novac::GetDark(scan, outOfPlumeSpectrum, m_darkSettings, outOfPlumeDark, m_lastErrorMessage))
-    {
-        // TODO: Handle errors
-    }
-    if (outOfPlumeDark.NumSpectra() > 0 && !m_averagedSpectra)
-    {
-        outOfPlumeDark.Div(outOfPlumeDark.NumSpectra());
-    }
-    outOfPlumeSpectrum.Sub(outOfPlumeDark);
-
-
-
-    // Calculate the SO2 column in the spectrum
-    double masterColumn = 0.0;
-    double masterColumnError = 0.0;
-    std::string masterSpecieName;
-    {
-        CEvaluationBase eval{ m_masterFitWindow };
-        eval.SetSkySpectrum(outOfPlumeSpectrum);
-        if (eval.Evaluate(inPlumeSpectrum))
-        {
-            // TODO: Handle errors here...
-        }
-        else
-        {
-            masterColumn = eval.m_result.m_referenceResult[0].m_column;
-            masterColumnError = eval.m_result.m_referenceResult[0].m_columnError;
-            masterSpecieName = m_masterFitWindow.ref[0].m_specieName;
-        }
-    }
-
-
-    // Now finally calculate the ratios
-    for (const CFitWindow& window : m_referenceFit)
-    {
-        CFitWindow windowCopy = window;
-        ReadReferences(windowCopy);
-        CEvaluationBase eval{ windowCopy };
-        eval.SetSkySpectrum(outOfPlumeSpectrum);
-        if (eval.Evaluate(inPlumeSpectrum))
-        {
-            // Handle errors here
-        }
-        else
-        {
-            Ratio r;
-            r.minorResult = eval.m_result.m_referenceResult[0].m_column;
-            r.minorError = eval.m_result.m_referenceResult[0].m_columnError;
-            r.minorSpecieName = window.ref[0].m_specieName;
-
-            r.majorResult = masterColumn;
-            r.majorError = masterColumnError;
-            r.majorSpecieName = masterSpecieName;
-
-            r.ratio = eval.m_result.m_referenceResult[0].m_column / masterColumn;
-            r.error = std::abs(r.ratio) * std::sqrt(std::pow(r.minorError / r.minorResult, 2.0) + std::pow(r.majorError / r.majorResult, 2.0));
-
-            result.push_back(r);
-        }
-    }
-    return result;
-}
-
-
-bool IsSuitableScanForRatioEvaluation(const RatioEvaluationSettings& settings, const BasicScanEvaluationResult& scanResult, const CPlumeInScanProperty& properties)
-{
-    if (scanResult.m_spec.size() < settings.minNumberOfSpectraInPlume + settings.minNumberOfReferenceSpectra)
-    {
+        errorMessage = "Too few spectra in scan for creating adding an in-plume-spectrum and an out-of-plume-spectrum.";
         return false; // not enough spectra
     }
-    if (properties.completeness < 0.7)
+    else if (!properties.completeness.HasValue())
     {
+        std::stringstream message;
+        message << "Scan does not see the plume.";
+        errorMessage = message.str();
+        return false;
+    }
+    else if (properties.completeness.Value() + 0.01 < settings.minimumPlumeCompleteness)
+    {
+        std::stringstream message;
+        message << "Plume completeness below threshold of " << settings.minimumPlumeCompleteness;
+        errorMessage = message.str();
         return false;
     }
     return true; // TODO: Add more checks...
+}
+
+void RatioEvaluation::DarkCorrectSpectrum(IScanSpectrumSource& scan, CSpectrum& spectrum) const
+{
+    std::string errorMessage;
+    auto correspondingDarkSpectrum = std::make_unique<CSpectrum>();
+    if (!::novac::GetDark(scan, spectrum, m_darkSettings, *correspondingDarkSpectrum, errorMessage))
+    {
+        throw std::invalid_argument(errorMessage);
+    }
+    if (correspondingDarkSpectrum->NumSpectra() > 0)
+    {
+        correspondingDarkSpectrum->Mult(spectrum.NumSpectra() / (double)correspondingDarkSpectrum->NumSpectra());
+    }
+    spectrum.Sub(*correspondingDarkSpectrum);
+}
+
+void AddRingSpectraAsReferences(CFitWindow& localSO2FitWindow, const std::vector<double>& ringSpectrum, const std::vector<double>& ringLambda4Spectrum, size_t skySpectrumIdx)
+{
+    if (localSO2FitWindow.ringCalculation != RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING)
+    {
+        AddAsReference(localSO2FitWindow, ringSpectrum, "ring", static_cast<int>(skySpectrumIdx));
+
+        if (localSO2FitWindow.ringCalculation == RING_CALCULATION_OPTION::CALCULATE_RING_X2)
+        {
+            AddAsReference(localSO2FitWindow, ringLambda4Spectrum, "ringLambda4", static_cast<int>(skySpectrumIdx));
+        }
+    }
+}
+
+static int FindReferenceIndex(const CFitWindow& window, const std::string& nameToFind)
+{
+    for (size_t ii = 0; ii < window.reference.size(); ++ii)
+    {
+        if (EqualsIgnoringCase(window.reference[ii].m_specieName, nameToFind))
+        {
+            return static_cast<int>(ii);
+        }
+    }
+
+    return -1;
+}
+
+static std::vector<double> PrepareRingLambda4Spectrum(const std::vector<double>& ringSpectrum, const std::vector<double>& wavelength)
+{
+    if (ringSpectrum.size() != wavelength.size())
+    {
+        throw std::invalid_argument("Cannot calculate a ringxlambda4 spectrum if the length of the ring spectrum differs from the wavelength calibration length.");
+    }
+
+    std::vector<double> result;
+    result.resize(ringSpectrum.size());
+
+    for (size_t ii = 0; ii < ringSpectrum.size(); ++ii)
+    {
+        const double lambda = wavelength[ii];
+        result[ii] = ringSpectrum[ii] * std::pow(lambda, 4.0);
+    }
+
+    return result;
+}
+
+Ratio RatioEvaluation::CalculateRatio(const DoasResult& majorWindow, const DoasResult& minorWindow)
+{
+    Ratio ratio;
+    ratio.minorResult = minorWindow.referenceResult[0].column;
+    ratio.minorError = minorWindow.referenceResult[0].columnError;
+    ratio.minorSpecieName = minorWindow.referenceResult[0].name;
+
+    ratio.majorResult = majorWindow.referenceResult[0].column;
+    ratio.majorError = majorWindow.referenceResult[0].columnError;
+    ratio.majorSpecieName = majorWindow.referenceResult[0].name;
+
+    ratio.ratio = ratio.minorResult / ratio.majorResult;
+    ratio.error = std::abs(ratio.ratio) * std::sqrt(std::pow(ratio.minorError / ratio.minorResult, 2.0) + std::pow(ratio.majorError / ratio.majorResult, 2.0));
+
+    return ratio;
+}
+
+DoasResult RunEvaluation(const CFitWindow& window, PreparedInputSpectraForDoasEvaluation& spectra)
+{
+    CFitWindow localCopyOfWindow = window;
+
+    size_t skySpectrumIdx = 0;
+    if (window.fitType != FIT_TYPE::FIT_HP_DIV)
+    {
+        skySpectrumIdx = AddAsSky(localCopyOfWindow, spectra.filteredOutOfPlumespectrum, SHIFT_TYPE::SHIFT_FREE);
+    }
+
+    AddRingSpectraAsReferences(localCopyOfWindow, spectra.ringSpectrum, spectra.ringLambda4Spectrum, skySpectrumIdx);
+
+    if (window.fitType == FIT_TYPE::FIT_POLY && localCopyOfWindow.includeIntensitySpacePolyominal)
+    {
+        AddAsReference(localCopyOfWindow, spectra.intensityOffsetSpectrum, "offset", static_cast<int>(skySpectrumIdx));
+    }
+
+    DoasFit doas;
+    doas.Setup(localCopyOfWindow);
+
+    DoasResult doasResult;
+    doas.Run(spectra.filteredInPlumeSpectrum.data(), spectra.filteredInPlumeSpectrum.size(), doasResult);
+
+    return doasResult;
+}
+
+RatioEvaluation::RatioEvaluation(const Configuration::RatioEvaluationSettings& settings, const Configuration::CDarkSettings& darkSettings, novac::ILogger& log)
+    : m_darkSettings(darkSettings), m_settings(settings), m_log(log)
+{
+}
+
+std::vector<Ratio> RatioEvaluation::Run(novac::LogContext context, IScanSpectrumSource& scan, RatioEvaluationDebugInformation* debugInfo)
+{
+    if (debugInfo != nullptr)
+    {
+        return this->Run(context, scan, *debugInfo);
+    }
+    else
+    {
+        RatioEvaluationDebugInformation localDebugInfo;
+        return this->Run(context, scan, localDebugInfo);
+    }
+}
+
+std::vector<Ratio> RatioEvaluation::Run(novac::LogContext context, IScanSpectrumSource& scan, RatioEvaluationDebugInformation& debugInfo)
+{
+    std::vector<Ratio> result;
+    debugInfo.doasResults.clear();
+
+    try
+    {
+        ValidateSetup();
+
+        if (!IsSuitableScanForRatioEvaluation(m_settings, m_masterResult, m_masterResultProperties, debugInfo.errorMessage))
+        {
+            return result;
+        }
+
+        const SpectrometerModel spectrometerModel = (m_spectrometerModel != nullptr) ? *m_spectrometerModel : (CSpectrometerDatabase::GetInstance().GetModel(m_masterResult.m_skySpecInfo.m_specModelName));
+
+        // Get some parameters regarding the scan and the spectrometer
+        debugInfo.spectrometerModel = spectrometerModel.modelName;
+        debugInfo.spectrometerFullDynamicRange = spectrometerModel.maximumIntensityForSingleReadout;
+
+        {
+            PlumeSpectrumSelector selector(m_log);
+            std::unique_ptr<PlumeSpectra> selectedSpectra = selector.CreatePlumeSpectra(context, scan, m_masterResult, m_masterResultProperties, m_settings, spectrometerModel, 0);
+            if (selectedSpectra == nullptr)
+            {
+                return result;
+            }
+            debugInfo.outOfPlumeSpectrumIndices = selectedSpectra->referenceSpectrumIndices;
+            debugInfo.plumeSpectrumIndices = selectedSpectra->inPlumeSpectrumIndices;
+            debugInfo.rejectedSpectrumIndices = selectedSpectra->rejectedSpectrumIndices;
+            if (selectedSpectra->inPlumeSpectrum != nullptr)
+            {
+                debugInfo.inPlumeSpectrum = *(selectedSpectra->inPlumeSpectrum);
+                DarkCorrectSpectrum(scan, debugInfo.inPlumeSpectrum);
+            }
+            if (selectedSpectra->referenceSpectrum != nullptr)
+            {
+                debugInfo.outOfPlumeSpectrum = *(selectedSpectra->referenceSpectrum);
+                DarkCorrectSpectrum(scan, debugInfo.outOfPlumeSpectrum);
+            }
+        }
+
+        if (debugInfo.outOfPlumeSpectrumIndices.size() < (size_t)m_settings.numberOfSpectraOutsideOfPlume ||
+            debugInfo.plumeSpectrumIndices.size() < (size_t)m_settings.minNumberOfSpectraInPlume)
+        {
+            std::stringstream message;
+            message << "Too few suitable spectra for in-plume or out-of-plume. ";
+            message << "In plume: " << debugInfo.plumeSpectrumIndices.size() << " selected and " << m_settings.minNumberOfSpectraInPlume << " required. ";
+            message << "Out of plume: " << debugInfo.outOfPlumeSpectrumIndices.size() << " selected and " << m_settings.numberOfSpectraOutsideOfPlume << " required. ";
+            debugInfo.errorMessage = message.str();
+
+            return result;
+        }
+
+        // Get the pixel-to-wavelength calibration of the out-of-plume-spectrum.
+        // TODO: Decide on a better input for this.
+        if (m_masterFitWindow.fraunhoferRef.m_data != nullptr && static_cast<long>(m_masterFitWindow.fraunhoferRef.m_data->m_waveLength.size()) == debugInfo.outOfPlumeSpectrum.m_length)
+        {
+            debugInfo.outOfPlumeSpectrum.m_wavelength = m_masterFitWindow.fraunhoferRef.m_data->m_waveLength;
+        }
+        else if (m_masterFitWindow.reference[0].m_data->m_waveLength.size() == m_masterFitWindow.reference[0].m_data->m_crossSection.size())
+        {
+            debugInfo.outOfPlumeSpectrum.m_wavelength = m_masterFitWindow.reference[0].m_data->m_waveLength;
+        }
+        else
+        {
+            debugInfo.errorMessage = "Failed to retrieve a pixel-to-wavelength calibration for the setup";
+            return result;
+        }
+
+        /* Notice that there are several improvements which can be done to the fit here, some TODO:s
+        * TODO: If the references are calibrated towards the sky spectrum (could be an input option here) then we can link the shift of all the references to sky.
+        * TODO: The shift of the sky can be linked to the calculated Ring and RingxLambda4
+        */
+        PreparedInputSpectraForDoasEvaluation filteredSpectra;
+
+        if (m_masterFitWindow.fitType != FIT_TYPE::FIT_HP_DIV)
+        {
+            filteredSpectra.filteredOutOfPlumespectrum = DoasFitPreparation::PrepareSkySpectrum(debugInfo.outOfPlumeSpectrum, m_masterFitWindow.fitType);
+        }
+        else
+        {
+            DoasFitPreparation::RemoveOffset(debugInfo.outOfPlumeSpectrum);
+        }
+        filteredSpectra.filteredInPlumeSpectrum = DoasFitPreparation::PrepareMeasuredSpectrum(debugInfo.inPlumeSpectrum, debugInfo.outOfPlumeSpectrum, m_masterFitWindow.fitType);
+        filteredSpectra.intensityOffsetSpectrum = DoasFitPreparation::PrepareIntensitySpacePolynomial(debugInfo.outOfPlumeSpectrum);
+
+        if (AnyFitWindowRequiresRingSpectrum())
+        {
+            filteredSpectra.ringSpectrum = DoasFitPreparation::PrepareRingSpectrum(debugInfo.outOfPlumeSpectrum, m_masterFitWindow.fitType);
+            filteredSpectra.ringLambda4Spectrum = PrepareRingLambda4Spectrum(filteredSpectra.ringSpectrum, debugInfo.outOfPlumeSpectrum.m_wavelength);
+        }
+
+        // Calculate the SO2 column in the spectrum
+        DoasResult so2DoasResult = RunEvaluation(m_masterFitWindow, filteredSpectra);
+        debugInfo.doasResults.push_back(so2DoasResult);
+
+        // Evaluate for the minor species and calculate the ratios
+        for (const CFitWindow& window : m_referenceFit)
+        {
+            CFitWindow broFitWindow = window;
+
+            // Fix SO2 to the column retrieved in the first result (if it is included in this window)
+            const int so2RefIdx = FindReferenceIndex(broFitWindow, so2DoasResult.referenceResult[0].name);
+            if (so2RefIdx > 0)
+            {
+                broFitWindow.reference[so2RefIdx].m_columnOption = SHIFT_TYPE::SHIFT_FIX;
+                broFitWindow.reference[so2RefIdx].m_columnValue = so2DoasResult.referenceResult[0].column;
+            }
+
+            DoasResult broDoasResult = RunEvaluation(broFitWindow, filteredSpectra);
+            debugInfo.doasResults.push_back(broDoasResult);
+
+            Ratio r = CalculateRatio(so2DoasResult, broDoasResult);
+
+            result.push_back(r);
+        }
+        return result;
+    }
+    catch (DoasFitException& ex)
+    {
+        debugInfo.errorMessage = "Error when performing DOAS fit ";
+        if (ex.m_fitWindowName.size() > 0)
+        {
+            debugInfo.errorMessage += "(" + ex.m_fitWindowName + ")";
+        }
+        debugInfo.errorMessage += "Message: " + std::string(ex.what());
+        return result;
+    }
+    catch (std::exception& ex)
+    {
+        debugInfo.errorMessage = ex.what();
+        return result;
+    }
+}
+
+bool RatioEvaluation::AnyFitWindowRequiresRingSpectrum() const
+{
+    if (m_masterFitWindow.ringCalculation != RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING)
+    {
+        return true;
+    }
+    for (const auto& window : m_referenceFit)
+    {
+        if (window.ringCalculation != RING_CALCULATION_OPTION::DO_NOT_CALCULATE_RING)
+        {
+            return true;
+        }
+    }
+
+    // no window requiring a Ring spectrum was found.
+    return false;
+}
+
+void RatioEvaluation::ValidateSetup() const
+{
+    for (const auto& window : m_referenceFit)
+    {
+        if (window.fitType != m_masterFitWindow.fitType)
+        {
+            throw std::invalid_argument("Mixed types of fit windows. All Doas fits must have the same fit type.");
+        }
+    }
 }
 
 // Calculates the average column value of the given specie in the index [startIdx, endIdx]
@@ -143,74 +353,5 @@ double AverageColumnValue(const BasicScanEvaluationResult& scanResult, int speci
         sum += scanResult.m_spec[ii].m_referenceResult[specieIndex].m_column;
     }
     return sum / (double)(endIdx - startIdx);
-}
-
-void SelectSpectraForRatioEvaluation(const RatioEvaluationSettings& settings, const BasicScanEvaluationResult& scanResult, const CPlumeInScanProperty& properties, std::vector<int>& referenceSpectra, std::vector<int>& inPlumeSpectra)
-{
-    referenceSpectra.clear();
-    inPlumeSpectra.clear();
-
-    const size_t referenceRegionWidth = 10U;
-
-    if (scanResult.m_spec.size() <= referenceRegionWidth)
-    {
-        return; // Cannot retrieve a region, too few spectra...
-    }
-
-    const int so2SpecieIndex = 0; // TODO: figure this out
-
-    // Step 1, find the in-plume region.
-    for (size_t idx = 0; idx < scanResult.m_spec.size(); ++idx)
-    {
-        if (scanResult.m_specInfo[idx].m_scanAngle >= properties.plumeEdgeLow &&
-            scanResult.m_specInfo[idx].m_scanAngle <= properties.plumeEdgeHigh &&
-            scanResult.m_spec[idx].m_referenceResult[so2SpecieIndex].m_column >= settings.minInPlumeColumn)
-        {
-            inPlumeSpectra.push_back((int)idx);
-        }
-    }
-
-    // Step 2, find the reference region (10 adjacent spectra with lowest avg column value)
-    size_t startIdxOfReferenceRegion = 0U;
-    double lowestMeanColumnValue = std::numeric_limits<double>::max();
-    for (size_t startIdxCandidate = 0U; startIdxCandidate < scanResult.m_spec.size() - referenceRegionWidth; ++startIdxCandidate)
-    {
-        const double meanColumnValue = AverageColumnValue(scanResult, so2SpecieIndex, startIdxCandidate, startIdxCandidate + referenceRegionWidth);
-        if (meanColumnValue < lowestMeanColumnValue)
-        {
-            lowestMeanColumnValue = meanColumnValue;
-            startIdxOfReferenceRegion = startIdxCandidate;
-        }
-    }
-
-    referenceSpectra = std::vector<int>(referenceRegionWidth);
-    std::iota(begin(referenceSpectra), end(referenceSpectra), (int)startIdxOfReferenceRegion);
-
-    return;
-}
-
-int AverageSpectra(CScanFileHandler& scan, const std::vector<int>& indices, CSpectrum& result)
-{
-    if (indices.size() == 0)
-    {
-        return 0;
-    }
-
-    scan.GetSpectrum(result, indices[0]);
-    int nofAveragedSpectra = 1;
-
-    for (size_t ii = 1; ii < indices.size(); ++ii)
-    {
-        CSpectrum tmpSpec;
-        if (scan.GetSpectrum(tmpSpec, indices[ii]))
-        {
-            result.Add(tmpSpec);
-            ++nofAveragedSpectra;
-        }
-    }
-
-    result.Div((double)nofAveragedSpectra);
-
-    return nofAveragedSpectra;
 }
 }

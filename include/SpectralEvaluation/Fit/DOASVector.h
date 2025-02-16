@@ -156,7 +156,7 @@ namespace MathFit
 			TFitData fScale = (TFitData)(iMidIndex - iLeftIndex);
 
 			TFitData fLeft = GetAt(iLeftIndex) + fOffset;
-			TFitData fMid = GetAt(iMidIndex) + fOffset;
+			// TFitData fMid = GetAt(iMidIndex) + fOffset;
 			TFitData fRight = GetAt(iRightIndex) + fOffset;
 
 			// interpolate I_o

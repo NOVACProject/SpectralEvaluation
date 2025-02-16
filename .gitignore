@@ -4,5 +4,9 @@ backups
 /bin/Debug
 .vs/
 .vscode/
+*.cppcheck
+/cppcheck-build-dir/
 /bin/SpectralEvaluationTests
 /bin/TestData/Temporary_InstrumentCalibration.std
+
+Temporary_*

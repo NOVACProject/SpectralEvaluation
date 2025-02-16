@@ -17,13 +17,18 @@ private:
 public:
     DoasFitException(const char* msg) :
         m_msg(msg)
-    {}
+    {
+    }
 
     DoasFitException(const std::string& msg) :
         m_msg(msg.c_str())
-    {}
+    {
+    }
 
     const char* what() const noexcept override final { return m_msg; }
+
+    // The name of the fit window which failed (optional).
+    std::string m_fitWindowName;
 };
 
 /// <summary>
@@ -69,7 +74,7 @@ struct DoasResult
     std::vector<double> measuredSpectrum;
 
     /// <summary>
-    /// The valeus of the fitted polynomial.
+    /// The values of the fitted polynomial.
     /// Length equals the length of the fit region used.
     /// </summary>
     std::vector<double> polynomialValues;
@@ -181,6 +186,11 @@ private:
     /// This is setup when providing a FitWindow to use.
     /// </summary>
     void* m_referenceSetup = nullptr;
+
+    /// <summary>
+    /// A user given name of this evaluation.
+    /// </summary>
+    std::string m_name;
 
     /// <summary>
     /// Clears the memory used by m_referenceSetup.

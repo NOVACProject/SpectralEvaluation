@@ -1,10 +1,11 @@
 #pragma once
 
-#include "BasicMath.h"
+#include <SpectralEvaluation/Log.h>
+#include <SpectralEvaluation/Fit/ReferenceSpectrumFunction.h>
+#include <SpectralEvaluation/Evaluation/BasicMath.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Evaluation/FitWindow.h>
-#include "EvaluationResult.h"
-#include "../Fit/ReferenceSpectrumFunction.h"
+#include <SpectralEvaluation/Evaluation/EvaluationResult.h>
 
 namespace MathFit
 {
@@ -15,24 +16,33 @@ namespace novac
 {
 class CSpectrum;
 
+struct ShiftEvaluationResult
+{
+    double shift = 0.0;
+    double shiftError = 0.0;
+    double squeeze = 0.0;
+    double squeezeError = 0.0;
+    double chi2 = 0.0;
+};
+
 /** The CEvaluationBase is the base class for all evaluation-classes
     in NovacProgram, NovacPPP and MobileDOAS and collects common elements and routines */
 class CEvaluationBase : public CBasicMath
 {
 public:
-    CEvaluationBase();
+    CEvaluationBase(novac::ILogger& log);
 
     // This object is not copyable due to the nature of its members.
     //  This could be implemented in the future if necessary
     CEvaluationBase(const CEvaluationBase&) = delete;
     CEvaluationBase& operator=(const CEvaluationBase&) = delete;
 
-    explicit CEvaluationBase(const CFitWindow &window);
+    explicit CEvaluationBase(const CFitWindow& window, novac::ILogger& log);
 
     virtual ~CEvaluationBase();
 
     /** Sets the fit window to use. This will initialize the 'ref' member variables. */
-    void SetFitWindow(const CFitWindow &window);
+    void SetFitWindow(const CFitWindow& window);
 
     /** @return a reference to the local fit window */
     const CFitWindow& FitWindow() const { return m_window; }
@@ -61,7 +71,11 @@ public:
 
     /** Removes the offset from the supplied spectrum */
     // TODO: Change the last parameter from a boolean to the pixel-range which should be used!!
-    void RemoveOffset(double *spectrum, int sumChn, bool UV = true);
+    void RemoveOffset(double* spectrum, int sumChn, IndexRange range) const;
+
+    /** Removes the offset from the supplied spectrum.
+        The offset is calculated in the [from, to] region but the offset is subtracted from the entire spectrum. */
+    void RemoveOffset(std::vector<double>& spectrum, IndexRange range) const;
 
     /** Sets the sky-spectrum to use. This will be used in the upcoming evaluations.
         The provided spectrum must have been corrected for dark. */
@@ -90,7 +104,7 @@ public:
                     relative to the solarReference-spectrum found in 'window'
         @return 0 if the fit succeeds and the shift & squeeze could be determined
         @return 1 if any error occured, see m_lastError for the error message. */
-    int EvaluateShift(const CSpectrum &measured, double &shift, double &shiftError, double &squeeze, double &squeezeError);
+    int EvaluateShift(novac::LogContext context, const CSpectrum& measured, ShiftEvaluationResult& result);
 
     /** Returns the evaluation result for the last spectrum
            @return a reference to a 'CEvaluationResult' - data structure which holds the information from the last evaluation */
@@ -98,7 +112,7 @@ public:
 
     /** Returns the polynomial that was fitted in the last evaluation */
     // TODO: Change to std::vector<double>
-    const double *GetPolynomial() const { return m_result.m_polynomial; }
+    const double* GetPolynomial() const { return m_result.m_polynomial; }
 
     /** @return the number of references included in the fit.
         This may be higher than the number of referene from the fit window if
@@ -129,6 +143,8 @@ public:
 
 protected:
 
+    novac::ILogger& m_log;
+
     /** The sky spectrum to use in the evaluations.
         This is set by calling 'SetSkySpectrum' which must be called prior to calling 'Evaluate' */
     CCrossSectionData m_sky;
@@ -151,16 +167,17 @@ protected:
     void CreateXDataVector(int numberOfChannels);
 
     // Prepares the spectra for evaluation
-    void PrepareSpectra(double *sky, double *meas, const CFitWindow &window);
+    [[deprecated]]
+    void PrepareSpectra(double* sky, double* meas, const CFitWindow& window);
 
     // Prepares the spectra for evaluation
-    void PrepareSpectra_HP_Div(double *sky, double *meas, const CFitWindow &window);
+    void PrepareSpectra(std::vector<double>& sky, std::vector<double>& meas, const CFitWindow& window) const;
 
-    // Prepares the spectra for evaluation
-    void PrepareSpectra_HP_Sub(double *sky, double *meas, const CFitWindow &window);
+    void PrepareSpectra_HP_Div(std::vector<double>& sky, std::vector<double>& meas, const CFitWindow& window) const;
 
-    // Prepares the spectra for evaluation
-    void PrepareSpectra_Poly(double *sky, double *meas, const CFitWindow &window);
+    void PrepareSpectra_HP_Sub(std::vector<double>& sky, std::vector<double>& meas, const CFitWindow& window) const;
+
+    void PrepareSpectra_Poly(std::vector<double>& sky, std::vector<double>& meas, const CFitWindow& window) const;
 
     /** Updates the m_residual and m_result.delta */
     void SaveResidual(MathFit::CStandardFit& firstFit);
@@ -179,5 +196,16 @@ protected:
 
     // @return the name of the reference with the given index into m_ref
     std::string GetReferenceName(size_t referenceIndex) const;
+
+private:
+    // The following method is deprecated and should be removed eventually.
+    void PrepareSpectra_HP_Div(double* sky, double* meas, const CFitWindow& window);
+
+    // The following method is deprecated and should be removed eventually.
+    void PrepareSpectra_HP_Sub(double* sky, double* meas, const CFitWindow& window);
+
+    // The following method is deprecated and should be removed eventually.
+    void PrepareSpectra_Poly(double* sky, double* meas, const CFitWindow& window);
+
 };
 }

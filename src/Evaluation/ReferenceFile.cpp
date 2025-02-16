@@ -1,11 +1,15 @@
+#include <sstream>
+#include <cmath>
+#include <limits>
 #include <SpectralEvaluation/Evaluation/ReferenceFile.h>
 #include <SpectralEvaluation/Evaluation/CrossSectionData.h>
 #include <SpectralEvaluation/Calibration/ReferenceSpectrumConvolution.h>
+#include <SpectralEvaluation/File/File.h>
 
 namespace novac
 {
 
-CReferenceFile &CReferenceFile::operator=(const CReferenceFile &other)
+CReferenceFile& CReferenceFile::operator=(const CReferenceFile& other)
 {
     this->m_path = other.m_path;
     this->m_crossSectionFile = other.m_crossSectionFile;
@@ -32,7 +36,7 @@ CReferenceFile &CReferenceFile::operator=(const CReferenceFile &other)
     return *this;
 }
 
-CReferenceFile &CReferenceFile::operator=(CReferenceFile&& other)
+CReferenceFile& CReferenceFile::operator=(CReferenceFile&& other) noexcept
 {
     this->m_path = std::move(other.m_path);
     this->m_crossSectionFile = std::move(other.m_crossSectionFile);
@@ -84,7 +88,7 @@ CReferenceFile::CReferenceFile(const CReferenceFile& other)
     }
 }
 
-CReferenceFile::CReferenceFile(CReferenceFile&& other)
+CReferenceFile::CReferenceFile(CReferenceFile&& other) noexcept
     : m_specieName(other.m_specieName),
     m_path(other.m_path),
     m_crossSectionFile(other.m_crossSectionFile),
@@ -147,21 +151,30 @@ void CReferenceFile::SetSqueeze(SHIFT_TYPE option, double value, double value2)
     }
 }
 
-int CReferenceFile::ReadCrossSectionDataFromFile()
+void CReferenceFile::ReadCrossSectionDataFromFile()
 {
     if (m_path.size() == 0)
     {
-        return 1;
+        std::stringstream msg;
+        msg << "Attempted to read reference for '" << this->Name() << "' from disk but the path has not been set.";
+        throw InvalidReferenceException(msg.str());
+    }
+    else if (!IsExistingFile(m_path))
+    {
+        std::stringstream msg;
+        msg << "Attempted to read reference file from disk but the file does not exist. Path: '" << m_path << "'";
+        throw InvalidReferenceException(msg.str());
     }
 
     m_data.reset(new CCrossSectionData());
     if (m_data->ReadCrossSectionFile(m_path))
     {
         m_data.reset();
-        return 1;
-    }
 
-    return 0;
+        std::stringstream msg;
+        msg << "Attempted to read reference for '" << this->Name() << "' from disk. Path: '" << m_path << "'";
+        throw InvalidReferenceException(msg.str());
+    }
 }
 
 int CReferenceFile::ConvolveReference()
@@ -177,4 +190,76 @@ int CReferenceFile::ConvolveReference()
     return 0;
 }
 
+static std::string NameAndPathOfReference(const CReferenceFile& ref)
+{
+    std::stringstream message;
+    message << "'" << ref.Name() << "' (" << ref.m_path << ")";
+    return message.str();
 }
+
+static bool AreEqual(double a, double b, double epsilon)
+{
+    return (std::abs(a - b) <= epsilon * std::max(std::abs(a), std::abs(b)));
+}
+
+void CReferenceFile::VerifyReferenceValues(int fromIndex, int toIndex) const
+{
+    if (fromIndex < 0 || toIndex < 0 || toIndex <= fromIndex)
+    {
+        std::stringstream message;
+        message << "Invalid call to 'VerifyReferenceValues'. From: " << fromIndex << " and To: " << toIndex << " are out of range.";
+        throw InvalidReferenceException(message.str());
+    }
+
+    if (this->m_data == nullptr)
+    {
+        std::stringstream message;
+        message << "Invalid reference " << NameAndPathOfReference(*this) << ". Data is null.";
+        throw InvalidReferenceException(message.str());
+    }
+    if (this->m_data->m_crossSection.size() < (size_t)toIndex)
+    {
+        std::stringstream message;
+        message << "Invalid setup of reference " << NameAndPathOfReference(*this) << ". Data does not cover fit region.";
+        throw InvalidReferenceException(message.str());
+    }
+
+    fromIndex = std::max(fromIndex, 0);
+    toIndex = std::min(std::max(toIndex, fromIndex + 1), int(this->m_data->GetSize()));
+
+    double minValue = this->m_data->m_crossSection[fromIndex];
+    double maxValue = this->m_data->m_crossSection[fromIndex];
+
+    for (int idx = fromIndex; idx < toIndex; ++idx)
+    {
+        if (std::isnan(this->m_data->m_crossSection[idx]))
+        {
+            std::stringstream message;
+            message << "Invalid reference " << NameAndPathOfReference(*this) << ". Data contains NaN.";
+            throw InvalidReferenceException(message.str());
+        }
+        minValue = std::min(minValue, this->m_data->m_crossSection[idx]);
+        maxValue = std::max(maxValue, this->m_data->m_crossSection[idx]);
+    }
+
+    if (AreEqual(minValue, maxValue, std::numeric_limits<double>::epsilon()))
+    {
+        std::stringstream message;
+        message << "Invalid reference " << NameAndPathOfReference(*this) << ". Data has constant value " << maxValue << " in fit region (" << fromIndex << " to " << toIndex << ").";
+        throw InvalidReferenceException(message.str());
+    }
+
+    return;
+}
+
+std::string CReferenceFile::Name() const
+{
+    if (this->m_specieName.length() > 0)
+    {
+        return this->m_specieName;
+    }
+    return std::string("unnamed reference");
+}
+
+}
+

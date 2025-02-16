@@ -6,6 +6,10 @@ is known by an element in the database (which can be the case if a the
 wind direction was calculated by combining two scans). */
 #define NOT_A_NUMBER -9999.0
 
+// The maximum number of references to include in any Doas fit.
+// TODO: Remove, this is only used for fixed size arrays, which we should try to avoid.
+#define MAX_N_REFERENCES 10
+
 // converts degrees to radians
 #define DEGREETORAD 0.017453 
 

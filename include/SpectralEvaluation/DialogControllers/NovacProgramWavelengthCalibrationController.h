@@ -5,8 +5,8 @@
 class NovacProgramWavelengthCalibrationController : public WavelengthCalibrationController
 {
 public:
-    NovacProgramWavelengthCalibrationController()
-        : WavelengthCalibrationController()
+    NovacProgramWavelengthCalibrationController(novac::ILogger& log)
+        : WavelengthCalibrationController(log)
     {
         // NovacProgram will always add spectra together
         m_spectraAreAverages = false;

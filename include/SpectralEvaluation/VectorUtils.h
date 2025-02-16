@@ -5,6 +5,7 @@
 // ---------------------------------------------------------------------------------------------------------------
 
 #include <vector>
+#include <stddef.h>
 
 /** @return the maximum value in the provided vector.
     @param idx will be filled with the index where the maximum value is found.
@@ -45,6 +46,11 @@ std::pair<double, double> MinMax(const std::vector<double>& values);
     If values.size() == 0 then (0.0, 0.0) is returned. */
 std::pair<double, double> MinMax(const std::vector<double>& values, std::pair<size_t, size_t>& idx);
 
+/** @return the minimum _and_ maximum value in the provided range of indices.
+    @param idx will be filled with the index where the minimum and maximum values are found, relative to 'start'.
+    If values.size() == 0 then (0.0, 0.0) is returned. */
+std::pair<double, double> MinMax(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end, std::pair<size_t, size_t>& idx);
+
 /** @return the sum of all the given values
     If values.size() == 0 then 0.0 is returned. */
 double Sum(const std::vector<double>& values);
@@ -65,6 +71,15 @@ double SumOfSquaredDifferences(const std::vector<double>& a, const std::vector<d
 /** Multiplies all values in the provided vector with the provided factor */
 void Mult(std::vector<double>& values, double factor);
 
+// Divides each value in 'first' with the corresponding value in 'second'.
+// The result is stored in 'first'.
+// All divisions by zero will be equal to zero.
+// @throws std::invalid_argument if first.size() != second.size()
+void Div(std::vector<double>& first, const std::vector<double>& second);
+
+/** Adds the provided value to each value in the vector */
+void Add(std::vector<double>& values, double factor);
+
 /** Inverts all values in the provided vector, i.e. values[ii] = 1.0/values[ii] */
 void Invert(std::vector<double>& values);
 
@@ -79,6 +94,15 @@ void Mult(const std::vector<double>& firstVector, std::vector<double>& secondVec
 /** Calculates the exponent of the provided values */
 void Exp(std::vector<double>& values);
 
+/** Calculates the natural logarithm (base e) of the provided values */
+void Log(std::vector<double>& values);
+
+/** Performs a high-pass binomial filtering on the given values */
+void HighPassBinomial(std::vector<double>& values, int nIterations);
+
+/** Performs a low-pass binomial filtering on the given values */
+void LowPassBinomial(std::vector<double>& values, int nIterations);
+
 /** @return the Average of all the given values
     If values.size() == 0 then 0.0 is returned. */
 double Average(const std::vector<double>& values);
@@ -86,6 +110,14 @@ double Average(const std::vector<double>& values);
 /** @return the Average of all the values between start and end.
     If values.size() == 0 then 0.0 is returned. */
 double Average(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end);
+
+/** This function calculates the variance of all the elements
+    If values.size() <= 1 then 0.0 is returned. */
+double Variance(const std::vector<double>& values);
+
+/** This function calculates the standard deviation of all the elements
+    If values.size() <= 1 then 0.0 is returned. */
+double Stdev(const std::vector<double>& values);
 
 /** @return the average of all the given values weighted with the inverse of each of the error.
     If values.size() == 0 or values.size() != errors.size() then 0.0 is returned. */

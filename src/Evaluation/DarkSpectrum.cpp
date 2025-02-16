@@ -1,13 +1,13 @@
 #include <SpectralEvaluation/Evaluation/DarkSpectrum.h>
 #include <SpectralEvaluation/Configuration/DarkSettings.h>
-#include <SpectralEvaluation/File/ScanFileHandler.h>
+#include <SpectralEvaluation/Spectra/IScanSpectrumSource.h>
 
 namespace novac
 {
 // Defined in ScanEvaluationBase.cpp
 bool ReadSpectrumFromFile(const std::string& fullFilename, CSpectrum& spec);
 
-bool GetDark(CScanFileHandler& scan, const CSpectrum& spec, const Configuration::CDarkSettings& darkSettings, CSpectrum& dark, std::string& errorMessage)
+bool GetDark(const IScanSpectrumSource& scan, const CSpectrum& spec, const Configuration::CDarkSettings& darkSettings, CSpectrum& dark, std::string& errorMessage)
 {
     // 1. The user wants to take the dark spectrum directly from the measurement
     //      as the second spectrum in the scan.
@@ -103,7 +103,7 @@ bool GetDark(CScanFileHandler& scan, const CSpectrum& spec, const Configuration:
     return false;
 }
 
-bool ModelDarkSpectrum(CScanFileHandler& scan, const CSpectrum& spec, const Configuration::CDarkSettings& darkSettings, CSpectrum& dark, std::string& errorMessage)
+bool ModelDarkSpectrum(const IScanSpectrumSource& scan, const CSpectrum& spec, const Configuration::CDarkSettings& darkSettings, CSpectrum& dark, std::string& errorMessage)
 {
     bool offsetCorrectDC = true;
 
@@ -162,7 +162,7 @@ bool ModelDarkSpectrum(CScanFileHandler& scan, const CSpectrum& spec, const Conf
     }
 }
 
-bool GetOffsetSpectrum(CScanFileHandler& scan, const Configuration::CDarkSettings& darkSettings, CSpectrum& offsetSpectrum)
+bool GetOffsetSpectrum(const IScanSpectrumSource& scan, const Configuration::CDarkSettings& darkSettings, CSpectrum& offsetSpectrum)
 {
     if (darkSettings.m_offsetOption == Configuration::DARK_MODEL_OPTION::USER_SUPPLIED)
     {
@@ -170,11 +170,11 @@ bool GetOffsetSpectrum(CScanFileHandler& scan, const Configuration::CDarkSetting
     }
     else
     {
-        return 0 != scan.GetOffset(offsetSpectrum);
+        return 0 == scan.GetOffset(offsetSpectrum);
     }
 }
 
-bool GetDarkCurrentSpectrum(CScanFileHandler& scan, const Configuration::CDarkSettings& darkSettings, CSpectrum& darkCurrent, bool& needsOffsetCorrection)
+bool GetDarkCurrentSpectrum(const IScanSpectrumSource& scan, const Configuration::CDarkSettings& darkSettings, CSpectrum& darkCurrent, bool& needsOffsetCorrection)
 {
     needsOffsetCorrection = true;
     if (darkSettings.m_darkCurrentOption == Configuration::DARK_MODEL_OPTION::USER_SUPPLIED)
@@ -191,7 +191,7 @@ bool GetDarkCurrentSpectrum(CScanFileHandler& scan, const Configuration::CDarkSe
     }
     else
     {
-        return 0 != scan.GetDarkCurrent(darkCurrent);
+        return 0 == scan.GetDarkCurrent(darkCurrent);
     }
 }
 

@@ -4,6 +4,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <assert.h>
+#include <limits>
 
 double Max(const std::vector<double>& values, size_t& idx)
 {
@@ -169,6 +170,40 @@ std::pair<double, double> MinMax(const std::vector<double>& values, std::pair<si
     return std::pair<double, double>(minValue, maxValue);
 }
 
+std::pair<double, double> MinMax(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end, std::pair<size_t, size_t>& idx)
+{
+    if (start > end)
+    {
+        return std::pair<double, double>(0.0, 0.0);
+    }
+    if (start == end)
+    {
+        return std::pair<double, double>(*start, *start);
+    }
+
+    double minValue = *start;
+    double maxValue = *start;
+    size_t minIdx = 0U;
+    size_t maxIdx = 0U;
+    for (auto it = start; it < end; ++it)
+    {
+        if (*it < minValue)
+        {
+            minValue = *it;
+            minIdx = it - start;
+        }
+        else if (*it > maxValue)
+        {
+            maxValue = *it;
+            maxIdx = it - start;
+        }
+    }
+
+    idx.first = minIdx;
+    idx.second = maxIdx;
+    return std::pair<double, double>(minValue, maxValue);
+}
+
 double Sum(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end)
 {
     double sum = 0.0;
@@ -221,6 +256,34 @@ void Mult(std::vector<double>& values, double factor)
     }
 }
 
+void Div(std::vector<double>& first, const std::vector<double>& second)
+{
+    if (first.size() != second.size())
+    {
+        throw std::invalid_argument("Invalid argument to 'Div'. The two vectors must have equal length.");
+    }
+
+    for (size_t i = 0; i < first.size(); i++)
+    {
+        if (second[i] != 0)
+        {
+            first[i] /= second[i];
+        }
+        else
+        {
+            first[i] = 0;
+        }
+    }
+}
+
+void Add(std::vector<double>& values, double factor)
+{
+    for (double& v : values)
+    {
+        v += factor;
+    }
+}
+
 void Invert(std::vector<double>& values)
 {
     for (double& v : values)
@@ -266,6 +329,75 @@ void Exp(std::vector<double>& values)
     }
 }
 
+void Log(std::vector<double>& values)
+{
+    for (double& v : values)
+    {
+        v = (v <= 0) ? 0.0 : std::log(v);
+    }
+}
+
+void LowPassBinomial(std::vector<double>& values, int nIterations)
+{
+    if (values.size() < 3)
+    {
+        return; // nothing to do.
+    }
+
+    // The binomial filtering is done by, for each, calculating a new value
+    // as (0.25 * value to the left + 0.5 * this value + 0.25 * value to the right)
+    // In order to do this efficiently, we keep the three values (left, middle, right) in memory
+    // and calculate the outputs based on this. Notice that this algo will in each iteration overwrite
+    // the contents of the vector, hence it is important that we load the values of the vector into memory
+    // before overwriting them.
+
+    for (int iteration = 0; iteration < nIterations; ++iteration)
+    {
+        double leftValue = values[0];
+        double thisValue = values[0];
+        double rightValue = values[1];
+
+        for (size_t ii = 0; ii < values.size() - 2; ++ii)
+        {
+            const double output = 0.5 * thisValue + 0.25 * (leftValue + rightValue);
+
+            // update the three values before saving in the calculated value
+            leftValue = values[ii];
+            thisValue = values[ii + 1];
+            rightValue = values[ii + 2];
+
+            // save the calculated value
+            values[ii] = output;
+        }
+
+        // The last two values are calculated separately (in order to not have to check the indices in the loop)
+        values[values.size() - 2] = 0.5 * thisValue + 0.25 * (leftValue + rightValue);
+        values[values.size() - 1] = 0.5 * rightValue + 0.25 * (thisValue + rightValue);
+    }
+
+    return;
+}
+
+void HighPassBinomial(std::vector<double>& values, int nIterations)
+{
+    // create copy of original data
+    std::vector<double> fBuffer(begin(values), end(values));
+
+    // create low pass filtered data
+    LowPassBinomial(fBuffer, nIterations);
+
+    // remove low pass part from data
+    for (size_t i = 0; i < values.size(); i++)
+    {
+        if (fBuffer[i] != 0.0)
+            values[i] /= fBuffer[i];
+        else
+            values[i] = 0;
+    }
+
+    return;
+}
+
 double Average(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end)
 {
     if (start > end)
@@ -289,6 +421,35 @@ double Average(std::vector<double>::const_iterator start, std::vector<double>::c
 double Average(const std::vector<double>& values)
 {
     return Average(begin(values), end(values));
+}
+
+double Variance(const std::vector<double>& values)
+{
+    if (values.size() <= 1)
+    {
+        return 0.0;
+    }
+
+    // First get the mean-value
+    double mean = Average(values);
+
+    double sum = 0;
+    for (size_t k = 0; k < values.size(); ++k)
+    {
+        sum += (values[k] - mean) * (values[k] - mean);
+    }
+    sum = sum / static_cast<double>(values.size());
+    return sum;
+}
+
+double Stdev(const std::vector<double>& values)
+{
+    if (values.size() <= 1)
+    {
+        return 0.0;
+    }
+
+    return std::sqrt(Variance(values));
 }
 
 double MinOfAbsolutes(const std::vector<double>& values)

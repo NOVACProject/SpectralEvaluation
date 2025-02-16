@@ -31,34 +31,31 @@ using namespace MathFit;
 bool CBasicMath::mDoNotUseMathLimits = false;
 
 CBasicMath::CBasicMath()
-{
-}
+{}
 
 CBasicMath::~CBasicMath()
-{
-}
+{}
 
 double* CBasicMath::LowPassBinomial(double* fData, int iSize, int iNIterations)
 {
-    std::vector<double> fBuffer(iSize);
+    std::vector<double> fBuffer(iSize); // an additional buffer, since we can't do the filtering in place
     double* fOut = fData;
     double* fIn = fBuffer.data();
     const int iLast = iSize - 1;
     const int iFirst = 0;
 
-    int j, i;
-    for (j = 0; j < iNIterations; j++)
+    for (int iteration = 0; iteration < iNIterations; ++iteration)
     {
         // now swap buffers
         double* fTemp = fIn;
         fIn = fOut;
         fOut = fTemp;
 
-        for (i = iFirst; i < iSize; i++)
+        for (int i = iFirst; i < iSize; i++)
         {
-            double lMid, lLeft, lRight;
+            double lLeft, lRight;
 
-            lMid = fIn[i];
+            const double lMid = fIn[i];
             if (i == iFirst)
                 lLeft = fIn[i];
             else
@@ -68,10 +65,12 @@ double* CBasicMath::LowPassBinomial(double* fData, int iSize, int iNIterations)
                 lRight = fIn[i];
             else
                 lRight = fIn[i + 1];
-            fOut[i] = 0.5 * lMid + 0.25 * lLeft + 0.25 * lRight;
+
+            fOut[i] = 0.5 * lMid + 0.25 * (lLeft + lRight);
         }
     }
-    if (fOut != fData) {
+    if (fOut != fData)
+    {
         memcpy(fData, fOut, sizeof(double) * iSize);
     }
 
@@ -103,10 +102,11 @@ double* CBasicMath::HighPassBinomial(double* fData, int iSize, int iNIterations)
 
 double* CBasicMath::Log(double* fData, int iSize)
 {
-    int i;
-
-    for (i = 0; i < iSize; i++)
+    for (int i = 0; i < iSize; i++)
+    {
         fData[i] = fData[i] <= 0 ? 0.0 : log(fData[i]);
+    }
+
     return(fData);
 }
 
@@ -347,7 +347,7 @@ void CBasicMath::Sub(double* fFirst, const double* fSec, int iSize, double fFact
     }
 }
 
-void CBasicMath::Sub(double* fFirst, int iSize, double fConst)
+void CBasicMath::Sub(double* fFirst, int iSize, double fConst) const
 {
     for (int i = 0; i < iSize; i++)
     {
@@ -621,7 +621,8 @@ void CBasicMath::CrossCorrelate(double* fFirst, int iLengthFirst, double* fSec, 
         iStopIndexSec += iLengthSec / 2;
 
         int iSecIndex;
-        for (iSecIndex = iStartIndexSec; iSecIndex < iStopIndexSec; iFirstIndex++, iSecIndex++) {
+        for (iSecIndex = iStartIndexSec; iSecIndex < iStopIndexSec; iFirstIndex++, iSecIndex++)
+        {
             fSum += fFirst[iFirstIndex] * fSec[iSecIndex];
         }
 
@@ -721,20 +722,24 @@ void CBasicMath::DFourier(double data[], unsigned long nn, int isign)
 
     n = nn << 1;
     j = 1;
-    for (i = 1; i < n; i += 2) {
-        if (j > i) {
+    for (i = 1; i < n; i += 2)
+    {
+        if (j > i)
+        {
             SWAP(data[j], data[i]);
             SWAP(data[j + 1], data[i + 1]);
         }
         m = n >> 1;
-        while (m >= 2 && j > m) {
+        while (m >= 2 && j > m)
+        {
             j -= m;
             m >>= 1;
         }
         j += m;
     }
     mmax = 2;
-    while (n > mmax) {
+    while (n > mmax)
+    {
         istep = mmax << 1;
         theta = isign * (6.28318530717959 / mmax);
         wtemp = sin(0.5 * theta);
@@ -742,8 +747,10 @@ void CBasicMath::DFourier(double data[], unsigned long nn, int isign)
         wpi = sin(theta);
         wr = 1.0;
         wi = 0.0;
-        for (m = 1; m < mmax; m += 2) {
-            for (i = m; i <= n; i += istep) {
+        for (m = 1; m < mmax; m += 2)
+        {
+            for (i = m; i <= n; i += istep)
+            {
                 j = i + mmax;
                 tempr = wr * data[j] - wi * data[j + 1];
                 tempi = wr * data[j + 1] + wi * data[j];
@@ -829,7 +836,8 @@ void CBasicMath::InverseFFT(double* fReal, double* fImaginary, double* fData, in
 
     DFourier(fBuffer.data() - 1, iLength, -1);
 
-    for (i = 0; i < iLength; i++) {
+    for (i = 0; i < iLength; i++)
+    {
         fData[i] = fBuffer[i * 2] / (double)iLength;
     }
 }

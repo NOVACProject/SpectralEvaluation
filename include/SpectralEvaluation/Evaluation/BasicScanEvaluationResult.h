@@ -1,7 +1,11 @@
 #pragma once
 
+#include <memory>
 #include <vector>
+#include <SpectralEvaluation/Molecule.h>
+#include <SpectralEvaluation/NovacEnums.h>
 #include <SpectralEvaluation/Evaluation/EvaluationResult.h>
+#include <SpectralEvaluation/Flux/PlumeInScanProperty.h>
 #include <SpectralEvaluation/Spectra/SpectrumInfo.h>
 
 namespace novac
@@ -12,6 +16,7 @@ namespace novac
 class BasicScanEvaluationResult
 {
 public:
+    // region Properties on the spectra in the scan itself
 
     /** The results of evaluating the spectra.
         There is one evaluation result for each spectrum in the scan.
@@ -41,7 +46,23 @@ public:
 
     /** A list of which spectra were corrupted and could not be evaluated.
         There is one entry here for each spectrum which wasn't evaluated. */
-    std::vector<unsigned int> m_corruptedSpectra;
+    std::vector<size_t> m_corruptedSpectra;
+
+    /** The type of the instrument used for this scan */
+    NovacInstrumentType m_instrumentType = NovacInstrumentType::Gothenburg;
+
+    /** Flag to signal if this is a wind measurement, a scan, or something else. */
+    MeasurementMode m_measurementMode = MeasurementMode::Unknown;
+
+    // endregion Properties on the spectra in the scan itself
+
+    // region Calculated properties on the scan
+
+    /** This contains the parameters of the plume that is seen in this scan,
+        such as the completeness or the centre angle of the plume. */
+    novac::CPlumeInScanProperty m_plumeProperties;
+
+    // endregion Calculated properties on the scan
 
     /** Appends the provided result to the list of calculated results */
     int AppendResult(const novac::CEvaluationResult& evalRes, const novac::CSpectrumInfo& specInfo);
@@ -56,17 +77,57 @@ public:
         E.g. checks the scan result for which index corresponds to SO2.
         The comparison is done ignoring case.
         @return -1 if the specie could not be found */
-    int GetSpecieIndex(const char* specieName) const;
+    int GetSpecieIndex(const std::string& specieName) const;
+
+    // region Getting properties of the scan
+
+    /** Returns the index of the specie.
+        @return -1 if the specie could not be found */
+    int GetSpecieIndex(Molecule molecule) const;
+
+    size_t NumberOfEvaluatedSpectra() const { return m_specNum; }
+
+    // Attempts to retrieve the location of the instrument from the SpectrumInfo.
+    // If no GPS data is found then the retuned location has both latitude and longitude = 0.0.
+    CGPSData GetLocation() const;
+
+    // endregion Getting properties of the scan
 
 protected:
-
     /** The number of evaluated spectra. */
-    unsigned long m_specNum = 0;
-
+    size_t m_specNum = 0;
 };
 
 /** @return all the evaluated columns for the specie with the provided index.
     @return an empty vector if result is empty specieIndex is invalid. */
 std::vector<double> GetColumns(const BasicScanEvaluationResult& result, int specieIndex);
+
+/** @return the errors of all the evaluated columns for the specie with the provided index.
+    @return an empty vector if result is empty specieIndex is invalid. */
+std::vector<double> GetColumnErrors(const BasicScanEvaluationResult& result, int specieIndex);
+
+/** Tries to find a plume in the provided scan result.
+    If the plume is found then the calculated properties are returned otherwise this returns nullptr.
+    This will fill in the scan offset, the plume completeness and the plume positions. */
+std::unique_ptr<novac::CPlumeInScanProperty> CalculatePlumeProperties(const BasicScanEvaluationResult& result, const Molecule& specie, std::string& message);
+
+/** Checks the kind of measurement mode of the provided scan */
+novac::MeasurementMode CheckMeasurementMode(const BasicScanEvaluationResult& result);
+
+bool IsFluxMeasurement(const BasicScanEvaluationResult& result);
+
+bool IsWindMeasurement(const BasicScanEvaluationResult& result);
+
+bool IsWindMeasurement_Gothenburg(const BasicScanEvaluationResult& result);
+
+bool IsWindMeasurement_Heidelberg(const BasicScanEvaluationResult& result);
+
+bool IsStratosphereMeasurement(const BasicScanEvaluationResult& result);
+
+bool IsDirectSunMeasurement(const BasicScanEvaluationResult& result);
+
+bool IsLunarMeasurement(const BasicScanEvaluationResult& result);
+
+bool IsCompositionMeasurement(const BasicScanEvaluationResult& result);
 
 }

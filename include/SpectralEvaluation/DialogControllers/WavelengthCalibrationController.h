@@ -3,8 +3,10 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <SpectralEvaluation/Log.h>
 #include <SpectralEvaluation/Spectra/WavelengthRange.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
+#include <SpectralEvaluation/Spectra/SpectrometerModel.h>
 
 namespace novac
 {
@@ -19,7 +21,7 @@ namespace novac
 class WavelengthCalibrationController
 {
 public:
-    WavelengthCalibrationController();
+    WavelengthCalibrationController(novac::ILogger& log);
     virtual ~WavelengthCalibrationController();
 
     enum class InstrumentLineShapeFitOption
@@ -64,6 +66,10 @@ public:
             in order to get a full calibration. */
     std::unique_ptr<novac::InstrumentCalibration> m_resultingCalibration;
 
+    // The model of the spectrometer which generated the spectra.
+    // This can be nullptr in which case the model is determined from the measurement.
+    std::unique_ptr<novac::SpectrometerModel> m_spectrometerModel;
+
     /** User friendly description of the fitted parameters for the instrument line shape function. */
     std::vector<std::pair<std::string, std::string>> m_instrumentLineShapeParameterDescriptions;
 
@@ -71,7 +77,7 @@ public:
     std::string m_errorMessage;
 
     /** An elementary log, will contain debugging information from running the calibration. */
-    std::vector<std::string> m_log;
+    std::vector<std::string> m_logMessages;
 
     /** An optional override of the check for the maximum intensity of the spectrometer model.
         Sometimes the intensity is specified by the user directly and not taken from the device (e.g. directory reading mode in MobileDoas)
@@ -149,6 +155,8 @@ public:
 
 protected:
 
+    novac::ILogger& m_log;
+
     virtual void ReadInput(novac::CSpectrum& measurement) = 0;
 
     /** Guesses for an instrment line shape from the measured spectrum. Useful if no measured instrument line shape exists */
@@ -156,9 +164,12 @@ protected:
 
     /** Checks the provided (dark corrected) spectrum and makes sure that it is good enough for the calibration to succeed.
         @throws an std::invalid_argument exception if the spectrum isn't good enough.  */
-    void CheckSpectrumQuality(const novac::CSpectrum& spectrum) const;
+    void CheckSpectrumQuality(const novac::CSpectrum& spectrum, const novac::SpectrometerModel& spectrometerModel) const;
 
-    double GetSpectrometerMaxIntensityForSingleReadout(const novac::CSpectrum& spectrum, const novac::SpectrometerModel& model) const;
+    double GetSpectrometerMaxIntensityForSingleReadout(const novac::CSpectrum& spectrum, const novac::SpectrometerModel& spectrometerModel) const;
+
+    // Retrieves a spectrometer model to be used. Either from the 'm_spectrometerModel' if that is set, or by guessing the model from the serial.
+    novac::SpectrometerModel GetModelForMeasurement(const std::string& deviceSerial) const;
 
     void Log(const std::string& message);
     void Log(const std::string& message, double value);
@@ -171,8 +182,8 @@ protected:
 class MobileDoasWavelengthCalibrationController : public WavelengthCalibrationController
 {
 public:
-    MobileDoasWavelengthCalibrationController()
-        : WavelengthCalibrationController()
+    MobileDoasWavelengthCalibrationController(novac::ILogger& log)
+        : WavelengthCalibrationController(log)
     {
         // MobileDOAS will always average spectra together
         m_spectraAreAverages = true;
@@ -194,8 +205,8 @@ protected:
 class InMemoryWavelengthCalibrationController : public WavelengthCalibrationController
 {
 public:
-    InMemoryWavelengthCalibrationController()
-        : WavelengthCalibrationController() { }
+    InMemoryWavelengthCalibrationController(novac::ILogger& log)
+        : WavelengthCalibrationController(log) { }
 
     /** The spectrum to calibrate. Notice that this may be modified during the calibration. */
     novac::CSpectrum m_measuredSpectrum;

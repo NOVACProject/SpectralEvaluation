@@ -55,10 +55,11 @@ std::vector<std::pair<std::string, std::string>> GetFunctionDescription(const no
     return result;
 }
 
-WavelengthCalibrationController::WavelengthCalibrationController()
+WavelengthCalibrationController::WavelengthCalibrationController(novac::ILogger& log)
     : m_instrumentLineShapeFitOption(InstrumentLineShapeFitOption::None),
     m_instrumentLineShapeFitRegion(330.0, 350.0),
-    m_calibrationDebug(0U)
+    m_calibrationDebug(0U),
+    m_log(log)
 {
 }
 
@@ -101,10 +102,24 @@ void WavelengthCalibrationController::CreateGuessForInstrumentLineShape(const st
     calibration.instrumentLineShapeGrid = estimatedInstrumentLineShape.m_waveLength;
 }
 
+
+novac::SpectrometerModel WavelengthCalibrationController::GetModelForMeasurement(const std::string& deviceSerial) const
+{
+    if (m_spectrometerModel != nullptr)
+    {
+        return *(m_spectrometerModel);
+    }
+
+    auto model = novac::CSpectrometerDatabase::GetInstance().GuessModelFromSerial(deviceSerial);
+    model.averagesSpectra = m_spectraAreAverages;
+
+    return model;
+}
+
 void WavelengthCalibrationController::RunCalibration()
 {
     m_errorMessage.clear();
-    m_log.clear();
+    m_logMessages.clear();
     m_instrumentLineShapeParameterDescriptions.clear();
 
     auto startTime = std::chrono::steady_clock::now();
@@ -118,8 +133,10 @@ void WavelengthCalibrationController::RunCalibration()
     // Copy out the spectrum, such that the user can see it.
     m_calibrationDebug.measuredSpectrum = std::vector<double>(measuredSpectrum.m_data, measuredSpectrum.m_data + measuredSpectrum.m_length);
 
+    auto spectrometerModel = GetModelForMeasurement(measuredSpectrum.m_info.m_device);
+
     // Check that this is a good measurement, according to our standards.
-    CheckSpectrumQuality(measuredSpectrum);
+    CheckSpectrumQuality(measuredSpectrum, spectrometerModel);
 
     // Read the initial calibration
     m_initialCalibration = std::make_unique<novac::InstrumentCalibration>();
@@ -373,12 +390,9 @@ double WavelengthCalibrationController::GetSpectrometerMaxIntensityForSingleRead
     return novac::GetMaximumSaturationRatioOfSpectrum(spectrum, maximumIntensityForSingleReadout);
 }
 
-void WavelengthCalibrationController::CheckSpectrumQuality(const novac::CSpectrum& spectrum) const
+void WavelengthCalibrationController::CheckSpectrumQuality(const novac::CSpectrum& spectrum, const novac::SpectrometerModel& spectrometerModel) const
 {
-    auto model = novac::CSpectrometerDatabase::GetInstance().GuessModelFromSerial(spectrum.m_info.m_device);
-    model.averagesSpectra = m_spectraAreAverages; // Make sure that the spectrometer model is up-to-date
-
-    const double maximumSaturationRatio = GetSpectrometerMaxIntensityForSingleReadout(spectrum, model);
+    const double maximumSaturationRatio = GetSpectrometerMaxIntensityForSingleReadout(spectrum, spectrometerModel);
 
     if (std::isnan(maximumSaturationRatio))
     {
@@ -390,7 +404,7 @@ void WavelengthCalibrationController::CheckSpectrumQuality(const novac::CSpectru
     {
         std::stringstream message;
         message << "The provided sky spectrum seems to be saturated ";
-        message << "(maximum intensity: " << spectrum.MaxValue(0, spectrum.m_length) << ", corresponding to : " << 100 * maximumSaturationRatio << "% of full range for a " << model.modelName << ").";
+        message << "(maximum intensity: " << spectrum.MaxValue(0, spectrum.m_length) << ", corresponding to : " << 100 * maximumSaturationRatio << "% of full range for a " << spectrometerModel.modelName << ").";
         message << "Calibration aborted";
         throw std::invalid_argument(message.str());
     }
@@ -399,7 +413,7 @@ void WavelengthCalibrationController::CheckSpectrumQuality(const novac::CSpectru
     {
         std::stringstream message;
         message << "The provided sky spectrum seems to be too dark for the calibration to succeed ";
-        message << "(maximum intensity: " << spectrum.MaxValue(0, spectrum.m_length) << ", corresponding to : " << 100 * maximumSaturationRatio << "% of full range for a " << model.modelName << ").";
+        message << "(maximum intensity: " << spectrum.MaxValue(0, spectrum.m_length) << ", corresponding to : " << 100 * maximumSaturationRatio << "% of full range for a " << spectrometerModel.modelName << ").";
         message << "Calibration aborted";
         throw std::invalid_argument(message.str());
     }
@@ -409,7 +423,7 @@ void WavelengthCalibrationController::ClearResult()
 {
     m_calibrationDebug = WavelengthCalibrationController::WavelengthCalibrationDebugState(0U);
     m_errorMessage.clear();
-    m_log.clear();
+    m_logMessages.clear();
     m_instrumentLineShapeParameterDescriptions.clear();
     m_resultingCalibration.reset();
     m_initialCalibration.reset();
@@ -417,21 +431,21 @@ void WavelengthCalibrationController::ClearResult()
 
 void WavelengthCalibrationController::Log(const std::string& message)
 {
-    m_log.push_back(message);
+    m_logMessages.push_back(message);
 }
 
 void WavelengthCalibrationController::Log(const std::string& message, double value)
 {
     std::stringstream formattedMessage;
     formattedMessage << message << value;
-    m_log.push_back(formattedMessage.str());
+    m_logMessages.push_back(formattedMessage.str());
 }
 
 void WavelengthCalibrationController::Log(const std::string& part1, const std::string& part2)
 {
     std::string message = part1;
     message.append(part2);
-    m_log.push_back(message);
+    m_logMessages.push_back(message);
 }
 
 void MobileDoasWavelengthCalibrationController::ReadInput(novac::CSpectrum& measuredSpectrum)

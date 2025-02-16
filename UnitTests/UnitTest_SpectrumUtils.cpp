@@ -1,5 +1,7 @@
 #include "catch.hpp"
 #include <string.h>
+#include <iostream>
+
 #include <SpectralEvaluation/Spectra/SpectrumUtils.h>
 #include <SpectralEvaluation/Spectra/Spectrum.h>
 #include <SpectralEvaluation/File/STDFile.h>
@@ -46,7 +48,7 @@ namespace novac
             bool ret = novac::Derivative(inputSpectrum.m_data, inputSpectrum.m_length, result);
 
             REQUIRE(ret == true);
-            REQUIRE(inputSpectrum.m_length == result.size());
+            REQUIRE(inputSpectrum.m_length == static_cast<long>(result.size()));
             for (size_t ii = 0; ii < result.size(); ++ii)
             {
                 REQUIRE(std::abs(result[ii] < 1e-9));

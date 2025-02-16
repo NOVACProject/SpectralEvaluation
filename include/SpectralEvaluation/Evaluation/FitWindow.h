@@ -1,15 +1,14 @@
 #pragma once
 
+#include <SpectralEvaluation/Definitions.h>
+#include <SpectralEvaluation/Math/IndexRange.h>
 #include <SpectralEvaluation/Evaluation/ReferenceFile.h>
 #include <SpectralEvaluation/Evaluation/DoasFitEnumDeclarations.h>
 #include <vector>
 
-// TODO: Remove
-#define MAX_N_REFERENCES 10
 
 namespace novac
 {
-
 enum class RING_CALCULATION_OPTION
 {
     DO_NOT_CALCULATE_RING,  // the user supplies a ring spectrum, don't calculate any
@@ -35,24 +34,30 @@ public:
     CFitWindow& operator=(CFitWindow&& other);
     CFitWindow(CFitWindow&& other);
 
+    // The standard index range to use when removing offset for an USB2000 device in the UV range.
+    static IndexRange StandardUvOffsetRemovalRange() { return IndexRange(50, 200); }
+
+    // The standard index range to use when removing offset for an USB2000 device in the visible range.
+    static IndexRange StandardUSB2000OffsetRemovalRange() { return IndexRange(2, 20); }
+
+    size_t NumberOfReferences() const { return this->reference.size(); }
+
     /** The lower edge of the fit window (in pixels) */
     int fitLow = 320;
 
     /** The upper edge of the fit window (in pixels) */
     int fitHigh = 460;
 
-    /** The channel which is used in this fit window
+    /** The channel of the spectrometer for which this fit window is valid.
+        Almost all spectrometers have only one channel however the Ocean Optics SD2000 may have
+        up to eight channels inside one casing. Each such channel is a separate spectrometer, with different
+        optical properties, however they all share the same serial number and are therefore handled as one device.
         For a normal spectrometer this is equal to 0
         For the SD2000-spectrometers this can be 0 or 1 */
     int channel = 0;
 
     /** The reference files to use */
-    // TODO: Use std::vector for this, to remove unnecessary limit on number of references
-    CReferenceFile ref[MAX_N_REFERENCES];
-
-    /** The number of references to use */
-    // TODO: Remove when 'ref' is a std::vector.
-    int nRef = 0;
+    std::vector<CReferenceFile> reference;
 
     /** The Fraunhofer-reference spectrum which we can use
         to determine the shift (&squeeze) between the measured
@@ -107,9 +112,11 @@ public:
         This parameter works in the same way as the CSpectrumInfo::m_interlaceStep */
     int interlaceStep = 1;
 
-    /** 'UV' is true if the start wavelength of the spectrum is 290 nm or shorter */
-    // TODO: replace this with the pixel-range which should be used for the offset-correction (which this variable is used for)
-    int UV = 1;
+    // offsetRemovalRange is the range of pixels which should be used to calculate an 'offset'
+    // which is then subtracted from the spectrum before the evaluation.
+    // For USB2000 series spectrometers starting in the UV range, this is the pixel range 50 to 200.
+    // For USB2000 series spectrometers starting in the visible range, this is the pixel range 2 to 20 (which are the optically covered pixels).
+    IndexRange offsetRemovalRange = IndexRange(50, 200);
 
     /** True if the scan should be twice, once for finding the highest column value.
         The spectrum with the highest column value is then evluated again with
@@ -130,15 +137,24 @@ public:
 };
 
 /** Reads all the references specified in the window from disk.
-     @return true if all references could be read sucessfully. */
-bool ReadReferences(CFitWindow& window);
-
-/** Performs a high-pass filtering on all references which are not labelled as m_isFiltered. */
-void HighPassFilterReferences(CFitWindow& window);
+    This requires that all references have an absolute path such that the files can be found.
+    @throws novac::InvalidReferenceException if any of the references could not be read. */
+void ReadReferences(CFitWindow& window);
 
 /** Performs a rescaling of all read in references to the unit of Molecules/cm2.
     It is here assumed that any reference which is NOT filtered is in the unit of Molecules/cm2
     and any reference which IS filtered is in the unit of PPMM. The reference will be scaled accordingly. */
 void ScaleReferencesToMolecCm2(CFitWindow& window);
+
+/** Adds the provided vector of data as a reference to the current window. No processing of the reference data will be done.
+    The reference will be added as free column, fixed squeeze and shift either fixed (if linkShiftToIdx is -1) or as linked to the reference with the provided idx.
+    This will increase the number of references included in the window by one. */
+void AddAsReference(CFitWindow& window, const std::vector<double>& referenceData, const std::string& name, int linkShiftToIdx = -1);
+
+/* Adds the provided vector of data as a 'sky' spectrum to the current window. No processing of the reference data will be done.
+    The reference will be added as column fixed to -1, squeeze fixed to one and the shift according to the provided shift option.
+    This will increase the number of references inlcuded in the window by one.
+    @return the index of the newly inserted reference. */
+size_t AddAsSky(CFitWindow& window, const std::vector<double>& referenceData, SHIFT_TYPE shiftOption = SHIFT_TYPE::SHIFT_FIX);
 
 }
